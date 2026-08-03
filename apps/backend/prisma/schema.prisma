@@ -1,0 +1,221 @@
+// EduAnalyzeAI - Prisma Schema
+// Models are added incrementally, one phase at a time, per the project roadmap.
+// Phase 1: Organization Structure (Faculty -> Department -> Program -> Curriculum).
+// Phase 2: User, Role, Scope Model (no auth logic yet — Phase 3).
+// Phase 3: Authentication (Email+Password+OTP, Google OAuth). Password
+// reset uses a separate token mechanism, added in its own later phase —
+// not part of this schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Faculty {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departments Department[]
+  userScopes  UserScope[]
+
+  @@map("faculties")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String
+  code        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  facultyId   String
+  faculty     Faculty  @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+
+  programs    Program[]
+  userScopes  UserScope[]
+
+  @@unique([facultyId, code])
+  @@map("departments")
+}
+
+model Program {
+  id           String   @id @default(uuid())
+  name         String
+  code         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  curricula      Curriculum[]
+  userScopes     UserScope[]
+  studentProfiles StudentProfile[]
+
+  @@unique([departmentId, name])
+  @@unique([departmentId, code])
+  @@map("programs")
+}
+
+model Curriculum {
+  id                    String   @id @default(uuid())
+  version               String
+  effectiveYear         Int
+  isActive              Boolean  @default(true)
+  isOpenForRegistration Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  programId             String
+  program               Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
+
+  studentProfiles       StudentProfile[]
+
+  @@unique([programId, version])
+  @@unique([programId, id])
+  @@map("curricula")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  fullName     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userRoles      UserRole[]
+  scopes         UserScope[]
+  studentProfile StudentProfile?
+  authMethods    UserAuthMethod[]
+  otpCodes       OtpCode[]
+
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  role      Role
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model UserScope {
+  id           String     @id @default(uuid())
+  userId       String
+  level        ScopeLevel
+  facultyId    String?
+  departmentId String?
+  programId    String?
+  createdAt    DateTime   @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  faculty    Faculty?    @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  program    Program?    @relation(fields: [programId], references: [id], onDelete: Restrict)
+
+  @@map("user_scopes")
+}
+
+model StudentProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  studentCode   String   @unique
+  programId     String
+  curriculumId  String
+  admissionYear Int
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  program    Program    @relation(fields: [programId], references: [id], onDelete: Restrict)
+  curriculum Curriculum @relation(fields: [programId, curriculumId], references: [programId, id], onDelete: Restrict)
+
+  @@map("student_profiles")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ScopeLevel {
+  FACULTY
+  DEPARTMENT
+  PROGRAM
+}
+
+model UserAuthMethod {
+  id             String       @id @default(uuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String?
+  createdAt      DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, provider])
+  @@unique([provider, providerUserId])
+  @@map("user_auth_methods")
+}
+
+model OtpCode {
+  id           String     @id @default(uuid())
+  userId       String
+  codeHash     String
+  purpose      OtpPurpose @default(LOGIN)
+  expiresAt    DateTime
+  isUsed       Boolean    @default(false)
+  attemptCount Int        @default(0)
+  createdAt    DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("otp_codes")
+}
+
+enum AuthProvider {
+  PASSWORD
+  GOOGLE
+}
+
+enum OtpPurpose {
+  LOGIN
+}
+
+// Holds a not-yet-a-User Google identity while the client collects the
+// remaining registration fields (studentCode/programId/curriculumId/
+// admissionYear) that Google's callback can never provide. No relation to
+// User — none exists yet when this row is created. Consumed (deleted) in
+// the same transaction that finally creates the User.
+model GooglePendingRegistration {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  email     String
+  googleId  String
+  fullName  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("google_pending_registrations")
+}
