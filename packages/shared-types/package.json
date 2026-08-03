@@ -1,0 +1,11 @@
+{
+  "name": "@eduanalyze-ai/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Types shared between EduAnalyzeAI backend and frontend",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}
