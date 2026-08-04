@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CurriculumContentModule } from './modules/curriculum-content/curriculum-content.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from './modules/auth/auth.module';
     OrganizationModule,
     UsersModule,
     AuthModule,
+    CurriculumContentModule,
     // Further feature modules are registered here one phase at a time.
   ],
   controllers: [],

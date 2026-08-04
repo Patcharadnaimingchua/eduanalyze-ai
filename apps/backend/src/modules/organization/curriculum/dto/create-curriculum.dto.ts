@@ -25,6 +25,10 @@ export class CreateCurriculumDto {
   @IsInt()
   effectiveYear!: number;
 
+  @ApiProperty({ example: 132 })
+  @IsInt()
+  totalCredits!: number;
+
   @ApiPropertyOptional({ example: false, default: false })
   @IsOptional()
   @IsBoolean()

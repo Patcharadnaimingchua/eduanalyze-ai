@@ -5,6 +5,9 @@
 // Phase 3: Authentication (Email+Password+OTP, Google OAuth). Password
 // reset uses a separate token mechanism, added in its own later phase —
 // not part of this schema.
+// Phase 4: Curriculum Content (Course, Course Category, Curriculum
+// Requirement, Prerequisite). CLO/PLO/Mapping/Achievement Threshold are
+// out of scope — deferred to Phase 5.
 
 generator client {
   provider = "prisma-client-js"
@@ -71,6 +74,7 @@ model Curriculum {
   id                    String   @id @default(uuid())
   version               String
   effectiveYear         Int
+  totalCredits          Int
   isActive              Boolean  @default(true)
   isOpenForRegistration Boolean  @default(false)
   createdAt             DateTime @default(now())
@@ -80,6 +84,9 @@ model Curriculum {
   program               Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
 
   studentProfiles       StudentProfile[]
+  categories            CourseCategory[]
+  courses               Course[]
+  requirements          CurriculumRequirement[]
 
   @@unique([programId, version])
   @@unique([programId, id])
@@ -218,4 +225,84 @@ model GooglePendingRegistration {
   createdAt DateTime @default(now())
 
   @@map("google_pending_registrations")
+}
+
+model CourseCategory {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+
+  courses     Course[]
+  requirement CurriculumRequirement?
+
+  @@unique([curriculumId, name])
+  @@unique([curriculumId, id])
+  @@map("course_categories")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String
+  name        String
+  credits     Int
+  description String?
+  isRequired  Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+
+  categoryId String
+  category   CourseCategory @relation(fields: [curriculumId, categoryId], references: [curriculumId, id], onDelete: Restrict)
+
+  prerequisitesRequired Prerequisite[] @relation("CoursePrerequisites")
+  prerequisiteFor       Prerequisite[] @relation("PrerequisiteForCourses")
+
+  @@unique([curriculumId, code])
+  @@map("courses")
+}
+
+model CurriculumRequirement {
+  id         String   @id @default(uuid())
+  minCredits Int
+  minCourses Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+
+  categoryId String         @unique
+  category   CourseCategory @relation(fields: [curriculumId, categoryId], references: [curriculumId, id], onDelete: Restrict)
+
+  @@unique([curriculumId, categoryId])
+  @@map("curriculum_requirements")
+}
+
+// courseId/prerequisiteCourseId both reference Course — a self-relation
+// via two named relations. groupId is null for a plain AND requirement
+// (every row for a given courseId must be satisfied); rows sharing the
+// same non-null groupId will represent an OR group ("pass at least one")
+// once that checker logic is built — no migration needed to add that,
+// the column is already here.
+model Prerequisite {
+  id                   String   @id @default(uuid())
+  courseId             String
+  prerequisiteCourseId String
+  groupId              String?
+  createdAt            DateTime @default(now())
+
+  course             Course @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Restrict)
+  prerequisiteCourse Course @relation("PrerequisiteForCourses", fields: [prerequisiteCourseId], references: [id], onDelete: Restrict)
+
+  @@unique([courseId, prerequisiteCourseId])
+  @@map("prerequisites")
 }
