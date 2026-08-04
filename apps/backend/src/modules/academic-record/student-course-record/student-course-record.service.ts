@@ -9,6 +9,12 @@ import { CreateStudentCourseRecordDto } from './dto/create-student-course-record
 import { UpdateStudentCourseRecordDto } from './dto/update-student-course-record.dto';
 import { GRADE_POINTS, SEMESTER_TERM_RANK } from './grade-point.constant';
 
+// Colocated with the service that produces it — no separate types file
+// exists yet in this module.
+export type LatestCourseAttempt = Prisma.StudentCourseRecordGetPayload<{
+  include: { semester: { include: { academicYear: true } } };
+}>;
+
 @Injectable()
 export class StudentCourseRecordService {
   constructor(
@@ -111,21 +117,7 @@ export class StudentCourseRecordService {
       await this.studentProfileService.findActiveByIdOrThrow(studentProfileId);
     }
 
-    const records = await this.prisma.studentCourseRecord.findMany({
-      where: { studentProfileId },
-      include: { semester: { include: { academicYear: true } } },
-    });
-
-    // Retake policy (confirmed): the latest attempt replaces earlier ones
-    // for GPA purposes — group by courseId, keep only the record from the
-    // most recent (academicYear.year, term) per course.
-    const latestByCourse = new Map<string, (typeof records)[number]>();
-    for (const record of records) {
-      const existing = latestByCourse.get(record.courseId);
-      if (!existing || this.isLaterAttempt(record, existing)) {
-        latestByCourse.set(record.courseId, record);
-      }
-    }
+    const latestByCourse = await this.getLatestAttemptsPerCourse(studentProfileId);
 
     let gradePointSum = 0;
     let creditsCounted = 0;
@@ -143,6 +135,30 @@ export class StudentCourseRecordService {
       creditsCounted,
       courseCount: latestByCourse.size,
     };
+  }
+
+  // Retake policy (confirmed in Phase 6): the latest attempt replaces
+  // earlier ones — group by courseId, keep only the record from the most
+  // recent (academicYear.year, term) per course. Shared by calculateGpa
+  // and CreditCheckerService (per CONVENTIONS.md §6, never reimplemented
+  // at a second call site). No ownership check here — the caller must
+  // have already validated studentProfileId belongs to the requester.
+  async getLatestAttemptsPerCourse(
+    studentProfileId: string,
+  ): Promise<Map<string, LatestCourseAttempt>> {
+    const records = await this.prisma.studentCourseRecord.findMany({
+      where: { studentProfileId },
+      include: { semester: { include: { academicYear: true } } },
+    });
+
+    const latestByCourse = new Map<string, LatestCourseAttempt>();
+    for (const record of records) {
+      const existing = latestByCourse.get(record.courseId);
+      if (!existing || this.isLaterAttempt(record, existing)) {
+        latestByCourse.set(record.courseId, record);
+      }
+    }
+    return latestByCourse;
   }
 
   private isLaterAttempt(

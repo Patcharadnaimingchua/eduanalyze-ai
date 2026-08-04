@@ -27,3 +27,26 @@ export const SEMESTER_TERM_RANK: Record<SemesterTerm, number> = {
   SECOND: 2,
   SUMMER: 3,
 };
+
+// Pass/fail status for Smart Credit Checker (Phase 7) — a DIFFERENT
+// question from GRADE_POINTS above (GPA effect). S counts as PASS here
+// (credits earned) even though it has no GPA effect (matches real use for
+// non-GPA courses like Cooperative Education) — confirmed product
+// decision, not an oversight. W/I are EXCLUDED from both studied and
+// passed — a withdrawn/incomplete course lands in the same
+// "not yet studied" bucket as a course never attempted, rather than a
+// separate withdrawn/incomplete bucket — also a confirmed decision.
+export const GRADE_STATUS: Record<Grade, 'PASS' | 'FAIL' | 'EXCLUDED'> = {
+  A: 'PASS',
+  B_PLUS: 'PASS',
+  B: 'PASS',
+  C_PLUS: 'PASS',
+  C: 'PASS',
+  D_PLUS: 'PASS',
+  D: 'PASS',
+  S: 'PASS',
+  F: 'FAIL',
+  U: 'FAIL',
+  W: 'EXCLUDED',
+  I: 'EXCLUDED',
+};
