@@ -8,6 +8,7 @@ import { OrganizationModule } from './modules/organization/organization.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CurriculumContentModule } from './modules/curriculum-content/curriculum-content.module';
+import { AcademicRecordModule } from './modules/academic-record/academic-record.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CurriculumContentModule } from './modules/curriculum-content/curriculum
     UsersModule,
     AuthModule,
     CurriculumContentModule,
+    AcademicRecordModule,
     // Further feature modules are registered here one phase at a time.
   ],
   controllers: [],

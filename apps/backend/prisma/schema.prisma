@@ -160,6 +160,8 @@ model StudentProfile {
   program    Program    @relation(fields: [programId], references: [id], onDelete: Restrict)
   curriculum Curriculum @relation(fields: [programId, curriculumId], references: [programId, id], onDelete: Restrict)
 
+  courseRecords StudentCourseRecord[]
+
   @@map("student_profiles")
 }
 
@@ -272,6 +274,7 @@ model Course {
   prerequisitesRequired Prerequisite[] @relation("CoursePrerequisites")
   prerequisiteFor       Prerequisite[] @relation("PrerequisiteForCourses")
   clos                  Clo[]
+  studentRecords        StudentCourseRecord[]
 
   @@unique([curriculumId, code])
   @@map("courses")
@@ -377,4 +380,86 @@ model CloPloMapping {
 
   @@unique([cloId, ploId])
   @@map("clo_plo_mappings")
+}
+
+// Global master data (not scoped to Program/Curriculum) — shared across
+// the whole university, per PROJECT_CONTEXT.md §16. Year is Buddhist Era
+// (พ.ศ.), same convention as Curriculum.effectiveYear.
+model AcademicYear {
+  id        String   @id @default(uuid())
+  year      Int      @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  semesters Semester[]
+
+  @@map("academic_years")
+}
+
+enum SemesterTerm {
+  FIRST
+  SECOND
+  SUMMER
+}
+
+model Semester {
+  id             String       @id @default(uuid())
+  term           SemesterTerm
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+
+  records        StudentCourseRecord[]
+
+  @@unique([academicYearId, term])
+  @@map("semesters")
+}
+
+// Thai 8-level scale (A .. F) plus special grades (W/I/S/U). Grade-point
+// mapping is a fixed national-standard constant, hardcoded in
+// StudentCourseRecordService rather than a DB lookup table — see
+// CONVENTIONS.md discussion in Phase 6 planning.
+enum Grade {
+  A
+  B_PLUS
+  B
+  C_PLUS
+  C
+  D_PLUS
+  D
+  F
+  W
+  I
+  S
+  U
+}
+
+// Self-reported by the student (PROJECT_CONTEXT.md §16 — no REG
+// integration). credits is a snapshot of Course.credits at the time this
+// record was created, not a live join — protects the student's own
+// historical record from being changed by an unrelated later edit to the
+// course catalog. Hard-delete: §16 frames removal as the student
+// correcting a mis-entered row, not something requiring an audit trail.
+model StudentCourseRecord {
+  id               String   @id @default(uuid())
+  grade            Grade
+  credits          Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
+
+  courseId         String
+  course           Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  semesterId       String
+  semester         Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+
+  @@unique([studentProfileId, courseId, semesterId])
+  @@map("student_course_records")
 }

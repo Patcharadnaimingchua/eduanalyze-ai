@@ -58,6 +58,18 @@ create(@Body() dto: CreateFacultyDto) { ... }
 
 Guards are added in Phase 3 (auth) but the chain shape is fixed now so every module built before then still slots into it without rewrites.
 
+### 3a. Self-Ownership Check (STUDENT-authored data)
+
+Every module up to Phase 5 is `SUPER_ADMIN`-only CRUD, so `RolesGuard` alone was enough. Starting Phase 6 (`StudentCourseRecord`, and later Smart Credit Checker / Course Assessment), a `STUDENT` can create/read/update/delete their *own* rows only — a case `RolesGuard` cannot express, since it checks the role name, not which row the role owns.
+
+**Where the check lives:** the service layer, never the controller — per §6, this is business logic (a branch on a domain value: does `studentProfile.userId` match the requester?), not orchestration.
+
+**How it's implemented**, using `StudentCourseRecordService` as the reference shape:
+- The controller passes the authenticated `RequestUser` (from `@Req()`/a `@CurrentUser()` decorator) through to every service method, alongside the DTO/id.
+- `findAll(user)`: if `user.roles` includes `STUDENT` (and not `SUPER_ADMIN`), resolve `user.sub → studentProfile.id` first, then query with `where: { studentProfileId }` directly — **never** fetch all rows and filter in memory. Query-level filtering makes "forgot to filter" structurally impossible, not just a discipline problem for whoever edits this method next.
+- `findOne(id, user)` / `update(id, dto, user)` / `remove(id, user)`: query with `where: { id, studentProfileId: ownStudentProfileId }` (STUDENT) or `where: { id }` (`SUPER_ADMIN`, no ownership filter). If the row isn't found under that `where`, throw `NotFoundException` — the exact same exception as a genuinely nonexistent id.
+- **Never throw `ForbiddenException` (403) for "exists but not yours."** A 403 confirms the row exists, which is an information-disclosure leak (OWASP Broken Access Control) — whether the record exists and whether the requester owns it must be indistinguishable from the response.
+
 ## 4. Error Handling Convention
 
 Throw Nest's built-in `HttpException` subclasses — never return error shapes manually from a controller.
