@@ -71,22 +71,27 @@ model Program {
 }
 
 model Curriculum {
-  id                    String   @id @default(uuid())
-  version               String
-  effectiveYear         Int
-  totalCredits          Int
-  isActive              Boolean  @default(true)
-  isOpenForRegistration Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                          String   @id @default(uuid())
+  version                     String
+  effectiveYear               Int
+  totalCredits                Int
+  isActive                    Boolean  @default(true)
+  isOpenForRegistration       Boolean  @default(false)
+  // Default Achievement Threshold (%) per PROJECT_CONTEXT.md §22 — a Clo
+  // may override this via Clo.achievementThreshold; when null there, this
+  // value applies.
+  defaultAchievementThreshold Int      @default(70)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
 
-  programId             String
-  program               Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
+  programId                   String
+  program                     Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
 
-  studentProfiles       StudentProfile[]
-  categories            CourseCategory[]
-  courses               Course[]
-  requirements          CurriculumRequirement[]
+  studentProfiles             StudentProfile[]
+  categories                  CourseCategory[]
+  courses                     Course[]
+  requirements                CurriculumRequirement[]
+  plos                        Plo[]
 
   @@unique([programId, version])
   @@unique([programId, id])
@@ -266,6 +271,7 @@ model Course {
 
   prerequisitesRequired Prerequisite[] @relation("CoursePrerequisites")
   prerequisiteFor       Prerequisite[] @relation("PrerequisiteForCourses")
+  clos                  Clo[]
 
   @@unique([curriculumId, code])
   @@map("courses")
@@ -306,4 +312,69 @@ model Prerequisite {
 
   @@unique([courseId, prerequisiteCourseId])
   @@map("prerequisites")
+}
+
+// Program Learning Outcome — scoped to Curriculum (not Program), since a
+// curriculum revision may also revise its PLOs. PROJECT_CONTEXT.md §20:
+// the count/detail of PLOs is program-specific (IT currently has 6) and
+// must never be hardcoded.
+model Plo {
+  id           String   @id @default(uuid())
+  code         String
+  name         String
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+
+  cloMappings  CloPloMapping[]
+
+  @@unique([curriculumId, code])
+  @@map("plos")
+}
+
+// Course Learning Outcome — scoped to Course. achievementThreshold is an
+// optional per-CLO override (%); when null, Curriculum.defaultAchievementThreshold
+// applies (PROJECT_CONTEXT.md §22).
+model Clo {
+  id                   String   @id @default(uuid())
+  code                 String
+  description          String
+  achievementThreshold Int?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  courseId             String
+  course               Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  ploMappings          CloPloMapping[]
+
+  @@unique([courseId, code])
+  @@map("clos")
+}
+
+// CLO-PLO many-to-many with weight (PROJECT_CONTEXT.md §21). Soft-delete
+// (unlike Prerequisite) — see CONVENTIONS.md §7 note: this mapping
+// directly parameterizes Achievement/PLO % calculations that feed Radar
+// Charts and trend analytics, so hard-deleting it would make past
+// dashboard values unreproducible.
+model CloPloMapping {
+  id        String   @id @default(uuid())
+  weight    Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cloId     String
+  clo       Clo @relation(fields: [cloId], references: [id], onDelete: Restrict)
+
+  ploId     String
+  plo       Plo @relation(fields: [ploId], references: [id], onDelete: Restrict)
+
+  @@unique([cloId, ploId])
+  @@map("clo_plo_mappings")
 }

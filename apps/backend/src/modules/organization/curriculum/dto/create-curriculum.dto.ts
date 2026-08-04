@@ -6,7 +6,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 export class CreateCurriculumDto {
@@ -33,4 +35,11 @@ export class CreateCurriculumDto {
   @IsOptional()
   @IsBoolean()
   isOpenForRegistration?: boolean;
+
+  @ApiPropertyOptional({ example: 70, default: 70, minimum: 0, maximum: 100 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  defaultAchievementThreshold?: number;
 }

@@ -151,6 +151,10 @@ async remove(id: string) {
 
 Same shape for every level down the chain: `DepartmentService.remove` counts active `Program`s, `ProgramService.remove` counts active `Curriculum`s. The error message always states the exact count of blocking children, not just that deletion failed.
 
+The real rule for choosing soft- vs hard-delete on a new entity is not "is it a mapping table" — it's whether the entity is a parameter of a calculation that gets shown to users and needs to stay reproducible over time. `Course`/`CourseCategory`/`Curriculum` are soft-delete because deleting them would break Smart Credit Checker results for students who already took that course. `Prerequisite` is hard-delete because it's a pure boolean structural gate with no accumulated value. `CloPloMapping` is soft-delete for the same reason as `Course`: it directly parameterizes Achievement/PLO % calculations that feed Radar Charts and trend analytics (§23), so losing an old mapping row would make a previously-shown dashboard value unreproducible.
+
+**Known limitation, tracked for the Achievement calculation phase:** `CloPloMapping`'s `isActive` flag only protects against the mapping being *deleted*. It does **not** provide a full audit trail — if `weight` (or a CLO's `achievementThreshold`) is edited in place, `updatedAt` overwrites the previous value with no history kept. When the Achievement calculation phase (PROJECT_CONTEXT.md §22–23) is designed, revisit whether that's good enough or whether Achievement results need to be persisted as a snapshot (e.g. an `AchievementSnapshot`/`AchievementDetail` table that copies the `weight`/`achievementThreshold` values used at calculation time) so historical dashboard values stay stable even if a mapping is edited later, not just deleted.
+
 ## 8. Scope Resolution Rule (Phase 3 onward)
 
 Every time a user's real permissions are resolved from `UserScope`, the resolver must join and check `isActive` on whichever `Faculty`/`Department`/`Program` that scope points to — via the `findActiveByIdOrThrow` pattern or equivalent. Never treat the mere existence of a `UserScope` row as proof the permission is still valid.

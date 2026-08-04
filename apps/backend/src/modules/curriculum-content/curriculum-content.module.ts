@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
+import { CloPloMappingModule } from './clo-plo-mapping/clo-plo-mapping.module';
+import { CloModule } from './clo/clo.module';
 import { CourseCategoryModule } from './course-category/course-category.module';
 import { CourseModule } from './course/course.module';
 import { CurriculumRequirementModule } from './curriculum-requirement/curriculum-requirement.module';
+import { PloModule } from './plo/plo.module';
 import { PrerequisiteModule } from './prerequisite/prerequisite.module';
 
 @Module({
@@ -10,6 +13,9 @@ import { PrerequisiteModule } from './prerequisite/prerequisite.module';
     CourseModule,
     CurriculumRequirementModule,
     PrerequisiteModule,
+    PloModule,
+    CloModule,
+    CloPloMappingModule,
   ],
 })
 export class CurriculumContentModule {}

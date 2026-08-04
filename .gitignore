@@ -39,6 +39,11 @@ apps/backend/prisma/*.js
 apps/backend/prisma/*.js.map
 apps/backend/prisma/*.d.ts
 
+# One-off test/verification scripts (ts-node compiled byproducts)
+apps/backend/*.tmp.js
+apps/backend/*.tmp.js.map
+apps/backend/*.tmp.d.ts
+
 # Misc
 *.tsbuildinfo
 .eslintcache

@@ -1,0 +1,92 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { PloService } from './plo.service';
+import { CreatePloDto } from './dto/create-plo.dto';
+import { UpdatePloDto } from './dto/update-plo.dto';
+
+@ApiTags('curriculum-content')
+@Controller('plos')
+export class PloController {
+  constructor(private readonly ploService: PloService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List active PLOs' })
+  @ApiResponse({ status: 200, description: 'List of active PLOs' })
+  findAll() {
+    return this.ploService.findAll();
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get a PLO by id' })
+  @ApiResponse({ status: 200, description: 'PLO found' })
+  @ApiResponse({ status: 404, description: 'PLO not found' })
+  findOne(@Param('id') id: string) {
+    return this.ploService.findOne(id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Create a PLO' })
+  @ApiResponse({ status: 201, description: 'PLO created' })
+  @ApiResponse({ status: 404, description: 'Curriculum not found or inactive' })
+  @ApiResponse({
+    status: 409,
+    description: 'PLO code already in use within this curriculum',
+  })
+  create(@Body() dto: CreatePloDto) {
+    return this.ploService.create(dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update a PLO' })
+  @ApiResponse({ status: 200, description: 'PLO updated' })
+  @ApiResponse({ status: 404, description: 'PLO not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'PLO code already in use within this curriculum',
+  })
+  update(@Param('id') id: string, @Body() dto: UpdatePloDto) {
+    return this.ploService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Soft-delete a PLO' })
+  @ApiResponse({ status: 200, description: 'PLO deactivated' })
+  @ApiResponse({ status: 404, description: 'PLO not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'PLO still has active CLO-PLO mappings',
+  })
+  remove(@Param('id') id: string) {
+    return this.ploService.remove(id);
+  }
+}
