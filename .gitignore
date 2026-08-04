@@ -35,6 +35,9 @@ Thumbs.db
 
 # Prisma
 apps/backend/prisma/dev.db
+apps/backend/prisma/*.js
+apps/backend/prisma/*.js.map
+apps/backend/prisma/*.d.ts
 
 # Misc
 *.tsbuildinfo

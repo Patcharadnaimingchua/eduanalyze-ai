@@ -250,6 +250,7 @@ model Course {
   id          String   @id @default(uuid())
   code        String
   name        String
+  nameEn      String?
   credits     Int
   description String?
   isRequired  Boolean  @default(true)

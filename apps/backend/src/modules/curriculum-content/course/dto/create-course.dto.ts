@@ -16,11 +16,17 @@ export class CreateCourseDto {
   @MaxLength(20)
   code!: string;
 
-  @ApiProperty({ example: 'Introduction to Programming' })
+  @ApiProperty({ example: 'หลักการเขียนโปรแกรม' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
   name!: string;
+
+  @ApiPropertyOptional({ example: 'Principles of Programming' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  nameEn?: string;
 
   @ApiProperty({ example: 3 })
   @IsInt()
