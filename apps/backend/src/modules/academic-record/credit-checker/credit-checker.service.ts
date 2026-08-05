@@ -1,16 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { StudentProfile } from '@prisma/client';
+import { Prisma, StudentProfile } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RequestUser } from '../../auth/request-user.interface';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
 import { GRADE_STATUS } from '../student-course-record/grade-point.constant';
-import { StudentCourseRecordService } from '../student-course-record/student-course-record.service';
+import {
+  LatestCourseAttempt,
+  StudentCourseRecordService,
+} from '../student-course-record/student-course-record.service';
 import {
   CategoryProgress,
   CourseSummary,
   CreditCheckReport,
   GraduationReadiness,
 } from './credit-checker-report.interface';
+
+// Colocated with the service that produces it, same pattern as
+// LatestCourseAttempt in student-course-record.service.ts.
+export type CreditCheckCurriculumTree = Prisma.CurriculumGetPayload<{
+  include: {
+    categories: {
+      include: {
+        requirement: true;
+        courses: { include: { prerequisitesRequired: true } };
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class CreditCheckerService {
@@ -29,8 +45,24 @@ export class CreditCheckerService {
       user,
     );
 
-    const curriculum = await this.prisma.curriculum.findUniqueOrThrow({
-      where: { id: profile.curriculumId },
+    const curriculum = await this.loadCurriculumTree(profile.curriculumId);
+
+    const latestByCourse =
+      await this.studentCourseRecordService.getLatestAttemptsPerCourse(
+        profile.id,
+      );
+
+    return this.computeCreditCheck(profile, curriculum, latestByCourse);
+  }
+
+  // Extracted so curriculum-wide callers (Phase 9 Chunk 4+) can fetch the
+  // curriculum tree ONCE and reuse it across many students, instead of
+  // re-fetching it per student the way checkCredits does for a single one.
+  async loadCurriculumTree(
+    curriculumId: string,
+  ): Promise<CreditCheckCurriculumTree> {
+    return this.prisma.curriculum.findUniqueOrThrow({
+      where: { id: curriculumId },
       include: {
         categories: {
           where: { isActive: true },
@@ -44,12 +76,17 @@ export class CreditCheckerService {
         },
       },
     });
+  }
 
-    const latestByCourse =
-      await this.studentCourseRecordService.getLatestAttemptsPerCourse(
-        profile.id,
-      );
-
+  // Pure/internal — no I/O, no ownership check, takes already-fetched
+  // data. Extracted (same shape as calculateGpaFromAttempts in Phase 9
+  // Chunk 3) so curriculum-wide callers can reuse the exact same
+  // computation without re-fetching the curriculum tree per student.
+  computeCreditCheck(
+    profile: Pick<StudentProfile, 'id' | 'curriculumId'>,
+    curriculum: CreditCheckCurriculumTree,
+    latestByCourse: Map<string, LatestCourseAttempt>,
+  ): CreditCheckReport {
     // Per PROJECT_CONTEXT.md §18: every metric below is computed by
     // iterating the STUDENT'S OWN curriculum's courses and looking each up
     // in the latest-attempts map — never by summing the map directly

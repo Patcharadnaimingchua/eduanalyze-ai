@@ -12,14 +12,20 @@ import {
 } from '../../academic-record/student-course-record/student-course-record.service';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
 import { CurriculumService } from '../../organization/curriculum/curriculum.service';
+import { CreditCheckerService } from '../../academic-record/credit-checker/credit-checker.service';
 import { CloAchievementService } from '../clo-achievement/clo-achievement.service';
 import {
   CohortPloAchievementReport,
+  CourseAnalyticsEntry,
   CoursePloAchievementReport,
   CoursePloEntry,
+  CurriculumPloAchievementReport,
+  LowestCloEntry,
   RadarPoint,
   StudentPloAchievementReport,
 } from './plo-achievement-report.interface';
+
+const AT_RISK_GPA_THRESHOLD = 2.0;
 
 type PloWithMappings = Prisma.PloGetPayload<{
   include: {
@@ -39,6 +45,7 @@ export class PloAchievementService {
     private readonly studentCourseRecordService: StudentCourseRecordService,
     private readonly cloAchievementService: CloAchievementService,
     private readonly curriculumService: CurriculumService,
+    private readonly creditCheckerService: CreditCheckerService,
   ) {}
 
   async calculateForStudent(
@@ -234,6 +241,235 @@ export class PloAchievementService {
       strengths,
       areasForImprovement,
     };
+  }
+
+  // Curriculum-wide analytics — deliberately does NOT call
+  // calculateForCohort per distinct admissionYear (that would re-fetch
+  // `plos` and re-validate the curriculum once per cohort, AND process
+  // every student twice, since cohorts partition the full student set).
+  // Instead: fetch plos/curriculum tree/students ONCE, then run a single
+  // loop that accumulates into BOTH curriculum-wide and per-cohort
+  // buckets simultaneously. calculateForCohort itself is untouched and
+  // still serves its own single-cohort endpoint.
+  async calculateForCurriculum(
+    curriculumId: string,
+  ): Promise<CurriculumPloAchievementReport> {
+    await this.curriculumService.findActiveByIdOrThrow(curriculumId);
+
+    const plos = await this.prisma.plo.findMany({
+      where: { curriculumId, isActive: true },
+      include: {
+        cloMappings: {
+          where: { isActive: true },
+          include: { clo: { select: { id: true, courseId: true } } },
+        },
+      },
+    });
+    const curriculumTree = await this.creditCheckerService.loadCurriculumTree(
+      curriculumId,
+    );
+    const students = await this.prisma.studentProfile.findMany({
+      where: { curriculumId, isActive: true },
+    });
+
+    const gpas: number[] = [];
+    let studentsAtRiskCount = 0;
+    let graduationReadyCount = 0;
+    const ploSums = new Map<string, { sum: number; count: number }>();
+
+    const cohortGpas = new Map<number, number[]>();
+    const cohortPloSums = new Map<
+      number,
+      Map<string, { sum: number; count: number }>
+    >();
+
+    for (const student of students) {
+      const attempts =
+        await this.studentCourseRecordService.getLatestAttemptsPerCourse(
+          student.id,
+        );
+
+      const { gpa } =
+        this.studentCourseRecordService.calculateGpaFromAttempts(attempts);
+      if (gpa !== null) {
+        gpas.push(gpa);
+        if (gpa < AT_RISK_GPA_THRESHOLD) {
+          studentsAtRiskCount += 1;
+        }
+        this.pushInto(cohortGpas, student.admissionYear, gpa);
+      }
+
+      const { graduationReadiness } = this.creditCheckerService.computeCreditCheck(
+        student,
+        curriculumTree,
+        attempts,
+      );
+      if (graduationReadiness.isReady) {
+        graduationReadyCount += 1;
+      }
+
+      const radar = this.computeStudentPloScores(plos, attempts);
+      this.accumulateRadar(ploSums, radar);
+      const cohortSums =
+        cohortPloSums.get(student.admissionYear) ??
+        cohortPloSums.set(student.admissionYear, new Map()).get(
+          student.admissionYear,
+        )!;
+      this.accumulateRadar(cohortSums, radar);
+    }
+
+    const radar = this.buildRadarFromSums(plos, ploSums);
+    const { strengths, areasForImprovement } =
+      this.rankStrengthsAndWeaknesses(radar);
+
+    const cohortComparison: CohortPloAchievementReport[] = Array.from(
+      cohortGpas.keys(),
+    )
+      .sort((a, b) => a - b)
+      .map((year) => {
+        const yearGpas = cohortGpas.get(year) ?? [];
+        const yearRadar = this.buildRadarFromSums(
+          plos,
+          cohortPloSums.get(year) ?? new Map(),
+        );
+        const ranked = this.rankStrengthsAndWeaknesses(yearRadar);
+        return {
+          curriculumId,
+          admissionYear: year,
+          studentCount: students.filter((s) => s.admissionYear === year)
+            .length,
+          averageGpa: yearGpas.length > 0 ? this.average(yearGpas) : null,
+          gpaSampleSize: yearGpas.length,
+          radar: yearRadar,
+          strengths: ranked.strengths,
+          areasForImprovement: ranked.areasForImprovement,
+        };
+      });
+
+    // Separate data shape from the student loop above — own N₂ query cost,
+    // documented as a known limitation in TODO.md (same pattern as the
+    // per-student N-query note from Phase 9 Chunk 3).
+    const courses = await this.prisma.course.findMany({
+      where: { curriculumId, isActive: true },
+      orderBy: { code: 'asc' },
+    });
+
+    const courseAnalytics: CourseAnalyticsEntry[] = [];
+    let lowestAchievement = Infinity;
+    let lowestClos: LowestCloEntry[] = [];
+
+    for (const course of courses) {
+      const report = await this.cloAchievementService.calculateForCourse(
+        course.id,
+      );
+      courseAnalytics.push({
+        courseId: course.id,
+        code: course.code,
+        name: course.name,
+        achievementPercent: report.achievementPercent,
+      });
+
+      // Every CLO of this course shares report.achievementPercent — there
+      // is no per-CLO percent field on CloAchievementEntry (Phase 8
+      // limitation, see TODO.md).
+      for (const clo of report.clos) {
+        if (report.achievementPercent < lowestAchievement) {
+          lowestAchievement = report.achievementPercent;
+          lowestClos = [
+            {
+              cloId: clo.cloId,
+              code: clo.code,
+              description: clo.description,
+              courseId: course.id,
+              courseCode: course.code,
+              courseName: course.name,
+              achievementPercent: report.achievementPercent,
+            },
+          ];
+        } else if (report.achievementPercent === lowestAchievement) {
+          lowestClos.push({
+            cloId: clo.cloId,
+            code: clo.code,
+            description: clo.description,
+            courseId: course.id,
+            courseCode: course.code,
+            courseName: course.name,
+            achievementPercent: report.achievementPercent,
+          });
+        }
+      }
+    }
+
+    const withData = radar.filter(
+      (p): p is RadarPoint & { value: number } => p.value !== null,
+    );
+    const lowestPlo =
+      withData.length > 0
+        ? withData.reduce((min, p) => (p.value < min.value ? p : min))
+        : null;
+
+    return {
+      curriculumId,
+      studentCount: students.length,
+      averageGpa: gpas.length > 0 ? this.average(gpas) : null,
+      gpaSampleSize: gpas.length,
+      studentsAtRiskCount,
+      graduationReadyCount,
+      graduationReadyPercent:
+        students.length > 0
+          ? (graduationReadyCount / students.length) * 100
+          : null,
+      radar,
+      strengths,
+      areasForImprovement,
+      lowestPlo,
+      lowestClos,
+      courseAnalytics,
+      cohortComparison,
+    };
+  }
+
+  private pushInto<K>(map: Map<K, number[]>, key: K, value: number) {
+    const existing = map.get(key);
+    if (existing) {
+      existing.push(value);
+    } else {
+      map.set(key, [value]);
+    }
+  }
+
+  private accumulateRadar(
+    sums: Map<string, { sum: number; count: number }>,
+    radar: RadarPoint[],
+  ) {
+    for (const point of radar) {
+      if (point.value === null) {
+        continue; // no data for this student/PLO — excluded, not zero
+      }
+      const entry = sums.get(point.ploId) ?? { sum: 0, count: 0 };
+      entry.sum += point.value;
+      entry.count += 1;
+      sums.set(point.ploId, entry);
+    }
+  }
+
+  private buildRadarFromSums(
+    plos: PloWithMappings[],
+    sums: Map<string, { sum: number; count: number }>,
+  ): RadarPoint[] {
+    return plos.map((plo) => {
+      const entry = sums.get(plo.id);
+      return {
+        ploId: plo.id,
+        code: plo.code,
+        name: plo.name,
+        value: entry ? entry.sum / entry.count : null,
+      };
+    });
+  }
+
+  private average(values: number[]) {
+    return values.reduce((a, b) => a + b, 0) / values.length;
   }
 
   // Pure/internal — no I/O, takes already-fetched data. Reusable by

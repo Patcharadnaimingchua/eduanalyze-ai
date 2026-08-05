@@ -76,4 +76,18 @@ export class PloAchievementController {
       admissionYear,
     );
   }
+
+  @Get('curriculum/:curriculumId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'PLO Achievement for a whole curriculum — student count, average GPA, graduation readiness, students at risk, average PLO radar, lowest CLO/PLO, course analytics, cohort comparison (PROJECT_CONTEXT.md §23D)',
+  })
+  @ApiResponse({ status: 200, description: 'Curriculum PLO achievement report' })
+  @ApiResponse({ status: 404, description: 'Curriculum not found or inactive' })
+  calculateForCurriculum(@Param('curriculumId') curriculumId: string) {
+    return this.ploAchievementService.calculateForCurriculum(curriculumId);
+  }
 }

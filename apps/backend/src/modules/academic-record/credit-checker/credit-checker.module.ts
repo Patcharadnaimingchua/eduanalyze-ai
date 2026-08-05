@@ -8,5 +8,6 @@ import { CreditCheckerService } from './credit-checker.service';
   imports: [StudentProfileModule, StudentCourseRecordModule],
   controllers: [CreditCheckerController],
   providers: [CreditCheckerService],
+  exports: [CreditCheckerService],
 })
 export class CreditCheckerModule {}

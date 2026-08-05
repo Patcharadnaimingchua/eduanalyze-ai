@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CreditCheckerModule } from '../../academic-record/credit-checker/credit-checker.module';
 import { StudentCourseRecordModule } from '../../academic-record/student-course-record/student-course-record.module';
 import { CurriculumModule } from '../../organization/curriculum/curriculum.module';
 import { StudentProfileModule } from '../../users/student-profile/student-profile.module';
@@ -12,6 +13,7 @@ import { PloAchievementService } from './plo-achievement.service';
     StudentCourseRecordModule,
     CloAchievementModule,
     CurriculumModule,
+    CreditCheckerModule,
   ],
   controllers: [PloAchievementController],
   providers: [PloAchievementService],

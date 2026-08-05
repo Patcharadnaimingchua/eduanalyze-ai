@@ -47,3 +47,48 @@ export interface CohortPloAchievementReport {
   strengths: RadarPoint[];
   areasForImprovement: RadarPoint[];
 }
+
+export interface LowestCloEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  achievementPercent: number;
+}
+
+export interface CourseAnalyticsEntry {
+  courseId: string;
+  code: string;
+  name: string;
+  achievementPercent: number;
+}
+
+export interface CurriculumPloAchievementReport {
+  curriculumId: string;
+  studentCount: number;
+  averageGpa: number | null;
+  gpaSampleSize: number;
+  // gpa !== null && gpa < 2.0 — a confirmed, deliberately narrow product
+  // decision (see Phase 9 Chunk 4 plan). Excludes gpa === null students
+  // ("no data" is not the same as "at risk").
+  studentsAtRiskCount: number;
+  graduationReadyCount: number;
+  // null only if studentCount === 0 — never a bare 0/0 division.
+  graduationReadyPercent: number | null;
+  radar: RadarPoint[];
+  strengths: RadarPoint[];
+  areasForImprovement: RadarPoint[];
+  // null if the curriculum has zero PLOs or none have data.
+  lowestPlo: RadarPoint | null;
+  // ALL CLOs tied at the minimum achievementPercent, not an arbitrary
+  // single pick — ties are common here (every CLO in one course shares
+  // that course's achievementPercent, a documented Phase 8 limitation).
+  // Empty if the curriculum has zero CLOs.
+  lowestClos: LowestCloEntry[];
+  courseAnalytics: CourseAnalyticsEntry[];
+  // One entry per distinct admissionYear among active students, sorted
+  // ascending — doubles as trend data across cohorts.
+  cohortComparison: CohortPloAchievementReport[];
+}
