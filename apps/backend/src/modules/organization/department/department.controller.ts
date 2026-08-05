@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
@@ -46,11 +48,13 @@ export class DepartmentController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('faculty', { from: 'body', key: 'facultyId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a department' })
   @ApiResponse({ status: 201, description: 'Department created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this faculty' })
   @ApiResponse({ status: 404, description: 'Faculty not found or inactive' })
   @ApiResponse({
     status: 409,
@@ -61,11 +65,13 @@ export class DepartmentController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('department', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a department' })
   @ApiResponse({ status: 200, description: 'Department updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this department' })
   @ApiResponse({ status: 404, description: 'Department not found' })
   @ApiResponse({
     status: 409,
@@ -76,11 +82,13 @@ export class DepartmentController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('department', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a department' })
   @ApiResponse({ status: 200, description: 'Department deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this department' })
   @ApiResponse({ status: 404, description: 'Department not found' })
   @ApiResponse({
     status: 409,

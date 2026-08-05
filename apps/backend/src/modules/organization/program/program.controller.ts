@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { ProgramService } from './program.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
@@ -46,11 +48,13 @@ export class ProgramController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('department', { from: 'body', key: 'departmentId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a program' })
   @ApiResponse({ status: 201, description: 'Program created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this department' })
   @ApiResponse({
     status: 404,
     description: 'Department not found or inactive',
@@ -64,11 +68,13 @@ export class ProgramController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('program', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a program' })
   @ApiResponse({ status: 200, description: 'Program updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this program' })
   @ApiResponse({ status: 404, description: 'Program not found' })
   @ApiResponse({
     status: 409,
@@ -79,11 +85,13 @@ export class ProgramController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('program', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a program' })
   @ApiResponse({ status: 200, description: 'Program deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this program' })
   @ApiResponse({ status: 404, description: 'Program not found' })
   @ApiResponse({
     status: 409,
