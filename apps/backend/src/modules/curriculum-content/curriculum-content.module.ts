@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CloAchievementModule } from './clo-achievement/clo-achievement.module';
 import { CloPloMappingModule } from './clo-plo-mapping/clo-plo-mapping.module';
 import { CloModule } from './clo/clo.module';
 import { CourseCategoryModule } from './course-category/course-category.module';
@@ -16,6 +17,7 @@ import { PrerequisiteModule } from './prerequisite/prerequisite.module';
     PloModule,
     CloModule,
     CloPloMappingModule,
+    CloAchievementModule,
   ],
 })
 export class CurriculumContentModule {}

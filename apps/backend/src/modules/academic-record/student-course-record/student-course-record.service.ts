@@ -161,6 +161,30 @@ export class StudentCourseRecordService {
     return latestByCourse;
   }
 
+  // Mirror of getLatestAttemptsPerCourse, grouped the other direction —
+  // per student instead of per course — for CloAchievementService, which
+  // needs every student's latest attempt of ONE course rather than one
+  // student's latest attempt of every course. Same retake policy, same
+  // isLaterAttempt logic reused. No ownership check here either — this
+  // is a Course-scoped aggregate read, not a student-scoped one.
+  async getLatestAttemptsPerStudent(
+    courseId: string,
+  ): Promise<Map<string, LatestCourseAttempt>> {
+    const records = await this.prisma.studentCourseRecord.findMany({
+      where: { courseId },
+      include: { semester: { include: { academicYear: true } } },
+    });
+
+    const latestByStudent = new Map<string, LatestCourseAttempt>();
+    for (const record of records) {
+      const existing = latestByStudent.get(record.studentProfileId);
+      if (!existing || this.isLaterAttempt(record, existing)) {
+        latestByStudent.set(record.studentProfileId, record);
+      }
+    }
+    return latestByStudent;
+  }
+
   private isLaterAttempt(
     candidate: { semester: { term: keyof typeof SEMESTER_TERM_RANK; academicYear: { year: number } } },
     current: { semester: { term: keyof typeof SEMESTER_TERM_RANK; academicYear: { year: number } } },

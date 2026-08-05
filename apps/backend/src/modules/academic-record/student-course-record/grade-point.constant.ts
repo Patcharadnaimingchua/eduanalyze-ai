@@ -36,6 +36,17 @@ export const SEMESTER_TERM_RANK: Record<SemesterTerm, number> = {
 // passed — a withdrawn/incomplete course lands in the same
 // "not yet studied" bucket as a course never attempted, rather than a
 // separate withdrawn/incomplete bucket — also a confirmed decision.
+// CLO Achievement bar (Phase 8, PROJECT_CONTEXT.md §22): "Grade B ขึ้นไป
+// = ผ่านเกณฑ์ Achievement" — a stricter bar than GRADE_STATUS's PASS
+// (which includes C/D-range grades for Phase 7's credit-counting
+// purposes). A separate concept from GRADE_STATUS, hardcoded per §22's
+// example rather than configurable per CLO/course in this phase.
+export const ACHIEVED_GRADES: ReadonlySet<Grade> = new Set<Grade>([
+  'A',
+  'B_PLUS',
+  'B',
+]);
+
 export const GRADE_STATUS: Record<Grade, 'PASS' | 'FAIL' | 'EXCLUDED'> = {
   A: 'PASS',
   B_PLUS: 'PASS',

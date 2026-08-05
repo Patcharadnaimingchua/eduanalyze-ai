@@ -148,9 +148,9 @@ async function main() {
   }
   console.log(
     `Totals: ${CATEGORIES.length} categories, ${COURSES.length} courses ` +
-      `(${COURSES.filter((c) => c.isRequired).length} required, ` +
-      `${COURSES.filter((c) => !c.isRequired).length} elective), ` +
-      `${PREREQUISITES.length} prerequisites`,
+    `(${COURSES.filter((c) => c.isRequired).length} required, ` +
+    `${COURSES.filter((c) => !c.isRequired).length} elective), ` +
+    `${PREREQUISITES.length} prerequisites`,
   );
 
   if (!APPLY) {

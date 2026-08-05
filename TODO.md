@@ -1,5 +1,9 @@
 # TODO / Known Limitations
 
+## Phase 8 — CLO Achievement: ไม่มี CLO-specific grade breakdown ใน schema
+
+CLO Achievement ใช้ grade รวมทั้งวิชาตัดสินทุก CLO เท่ากัน (ไม่มี CLO-specific grade breakdown ใน schema ปัจจุบัน) — ถ้าต้องการความแม่นยำกว่านี้ในอนาคต (เช่น แยกคะแนนต่อ CLO จาก assignment/exam breakdown) ต้องออกแบบ schema ใหม่ (เช่น `CloScore` ผูกกับ `StudentCourseRecord`+`Clo`) เป็นการตัดสินใจ scope ใหม่ ไม่ใช่ Phase 8 ปัจจุบัน
+
 ## Phase 3 — Google OAuth: ยังไม่เคยรัน full end-to-end flow ผ่าน browser จริง
 
 Business logic (`AuthService.handleGoogleCallback`, `completeGoogleRegistration`) ผ่านการทดสอบครบถ้วนแล้วในระดับ unit-level ผ่าน `NestFactory.createApplicationContext` (ไม่ผ่าน HTTP/browser จริง) — ครอบคลุม anti-account-takeover, pending-registration flow, returning-user login, expired token, reused token
