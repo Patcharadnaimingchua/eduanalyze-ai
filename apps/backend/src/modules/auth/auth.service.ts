@@ -15,9 +15,11 @@ import { UserAuthMethodService } from '../users/user-auth-method/user-auth-metho
 import { StudentProfileService } from '../users/student-profile/student-profile.service';
 import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
+import { PendingInvitationService } from './pending-invitation.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { GoogleProfile } from './google-profile.interface';
@@ -47,6 +49,7 @@ export class AuthService {
     private readonly studentProfileService: StudentProfileService,
     private readonly otpService: OtpService,
     private readonly googlePendingRegistrationService: GooglePendingRegistrationService,
+    private readonly pendingInvitationService: PendingInvitationService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -222,6 +225,26 @@ export class AuthService {
     const user = await this.userService.findByEmail(dto.email);
     await this.otpService.verify(user.id, dto.code);
     return this.issueTokenPair(user);
+  }
+
+  // Sets the password for a User created via Module 12 (User Management)
+  // — that flow creates User/UserRole/UserScope immediately with
+  // passwordHash:null, gated behind this invitation token. No auto-login
+  // afterward — same as every other auth entry point, the new user goes
+  // through normal /auth/login + OTP next, not a shortcut.
+  async acceptInvitation(dto: AcceptInvitationDto) {
+    const pending = await this.pendingInvitationService.findValidByToken(
+      dto.token,
+    );
+    const passwordHash = await bcrypt.hash(dto.password, PASSWORD_SALT_ROUNDS);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: pending.userId },
+        data: { passwordHash },
+      });
+      await this.pendingInvitationService.consume(pending.id, tx);
+    });
   }
 
   private async issueTokenPair(user: User) {

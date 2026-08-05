@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PrismaClientOrTx } from '../../../prisma/prisma.types';
@@ -53,5 +53,15 @@ export class UserRoleService {
   ): Promise<Role[]> {
     const userRoles = await tx.userRole.findMany({ where: { userId } });
     return userRoles.map((userRole) => userRole.role);
+  }
+
+  async revokeRole(userId: string, role: Role) {
+    const existing = await this.prisma.userRole.findUnique({
+      where: { userId_role: { userId, role } },
+    });
+    if (!existing) {
+      throw new NotFoundException(`User ${userId} does not have role ${role}`);
+    }
+    return this.prisma.userRole.delete({ where: { id: existing.id } });
   }
 }

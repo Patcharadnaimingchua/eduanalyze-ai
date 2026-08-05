@@ -60,13 +60,7 @@ export class ScopeGuard implements CanActivate {
       user!.userId,
     );
 
-    const covered = effectiveScopes.some(
-      (scope) =>
-        (scope.level === 'FACULTY' && scope.facultyId === target.facultyId) ||
-        (scope.level === 'DEPARTMENT' &&
-          scope.departmentId === target.departmentId) ||
-        (scope.level === 'PROGRAM' && scope.programId === target.programId),
-    );
+    const covered = this.scopeResolverService.isCovered(target, effectiveScopes);
 
     if (!covered) {
       // 403, not 404 — unlike STUDENT self-owned data (CONVENTIONS §3a),

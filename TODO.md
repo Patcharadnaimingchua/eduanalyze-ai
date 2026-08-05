@@ -1,14 +1,14 @@
 # TODO / Known Limitations
 
-## ScopeGuard — global `AllExceptionsFilter` ตาม CONVENTIONS.md §4 ไม่เคยถูกสร้างจริง
+## Module 12 — User Management: invitation email เป็น mock log เหมือน OTP
 
-CONVENTIONS.md §4 อธิบายว่าควรมี global `AllExceptionsFilter` (ใน `src/common/filters/`, reference ใน `app.module.ts`) คอย normalize error ที่ไม่ได้ catch ไว้ (เช่น Prisma error) ให้กลายเป็น HTTP response ที่ถูกต้อง — แต่ตรวจโค้ดจริงแล้วพบว่า `src/common/filters/` เป็นโฟลเดอร์ว่าง ไม่มีไฟล์ filter อยู่เลย และ `main.ts`/`app.module.ts` ไม่มี `useGlobalFilters`/`APP_FILTER` ใดๆ ทั้งสิ้น เป็น gap ที่มีมาตั้งแต่ก่อน Phase นี้ ไม่ใช่สิ่งที่ ScopeGuard สร้างขึ้นใหม่
+`PendingInvitationService.create`/`resend` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[INVITE MOCK] ...')` เท่านั้น เป็น gap เดียวกับที่บันทึกไว้แล้วสำหรับ OTP (`OtpService`) และ Google OAuth credential (ดูหัวข้อด้านล่าง) — ต้องมี real email service ก่อน deploy จริง ไม่ใช่ปัญหาใหม่ที่ต้องแก้แยก แค่ยืนยันว่าเป็น pattern เดียวกันที่ยังไม่ปิด
 
-**พบระหว่างทดสอบ ScopeGuard จริง**: `ScopeResolverService.resolveAncestry` เขียนด้วย `prisma.department.findUniqueOrThrow`/`findUniqueOrThrow` ตอนแรก — เมื่อ id ไม่มีอยู่จริง Prisma โยน error ชนิดของตัวเอง (ไม่ใช่ Nest's `NotFoundException`) และเพราะไม่มี global filter คอยแปลง จึงหลุดออกมาเป็น `500 Internal Server Error` แทนที่จะเป็น `404` (แก้แล้วในไฟล์นี้โดยเปลี่ยนเป็น `findUnique` + null-check + `throw NotFoundException` ให้ตรงกับ pattern ที่ `DepartmentService`/`ProgramService` ใช้อยู่แล้ว)
+## ~~ScopeGuard — global `AllExceptionsFilter`~~ — resolved
 
-**ความเสี่ยงที่เหลืออยู่**: ทุกจุดในระบบที่เผลอใช้ `findUniqueOrThrow`/`findFirstOrThrow` (หรือ Prisma method ที่ throw เองอื่นๆ) โดยไม่ catch จะมีพฤติกรรมเดียวกัน — โยน 500 แทน 404 ที่ควรจะเป็น ยังไม่เคย audit ทั้ง codebase อย่างเป็นระบบว่ามีจุดอื่นแบบนี้อยู่อีกกี่ที่ ก่อนขึ้น phase ถัดไปที่แตะ error path เยอะ (เช่น Module 7 AI Skill Analysis) ควร:
-1. Grep หา `findUniqueOrThrow`/`findFirstOrThrow` ทั้ง codebase แล้วตรวจทีละจุดว่า caller catch ไว้แปลงเป็น `HttpException` ที่ถูกต้องหรือไม่
-2. พิจารณาสร้าง `AllExceptionsFilter` จริงตามที่ CONVENTIONS.md §4 ตั้งใจไว้ (แปลง Prisma `P2025`/other known codes → `NotFoundException`/etc. เป็น safety net ชั้นสุดท้าย) แทนที่จะพึ่ง discipline ของแต่ละ service เพียงอย่างเดียว
+~~CONVENTIONS.md §4 gap~~ — closed: `AllExceptionsFilter` now exists (`src/common/filters/all-exceptions.filter.ts`, registered via `APP_FILTER` in `app.module.ts`), normalizes Prisma `P2025`/`P2002`/`P2003` + unknown errors, passes through existing `HttpException`s unchanged (regression-tested against `FacultyService.remove()`'s `ConflictException`). A full-codebase audit for `findUniqueOrThrow`/`findFirstOrThrow` found exactly one occurrence (`CreditCheckerService.loadCurriculumTree`), already guarded upstream by callers — not a live risk, but not fixed to the `findUnique`+null-check style either; low priority since the filter is now a safety net regardless.
+
+**Not yet audited** (out of scope of that pass): ~32 raw `.update()`/`.delete()` calls (not `updateMany`/`deleteMany`) across the codebase that could theoretically throw `P2025` under a race condition — the new `AllExceptionsFilter` now catches these safely as 404 either way, so this is no longer urgent, just unverified whether each one *also* has its own explicit guard upstream (belt-and-suspenders, not required for correctness anymore).
 
 ## Phase 9 Chunk 4 — Curriculum Analytics: N₂ query ต่อวิชาสำหรับ Course Analytics/Lowest CLO
 

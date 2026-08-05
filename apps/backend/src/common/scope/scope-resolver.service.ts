@@ -23,6 +23,24 @@ export interface EffectiveScope {
 export class ScopeResolverService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private static readonly LEVEL_TO_ENTITY: Record<ScopeLevel, ScopeTargetEntity> = {
+    FACULTY: 'faculty',
+    DEPARTMENT: 'department',
+    PROGRAM: 'program',
+  };
+
+  // Small convenience over resolveAncestry for callers that only have a
+  // ScopeLevel (e.g. UserScope's level column) rather than a statically
+  // known ScopeTargetEntity — avoids the FACULTY/DEPARTMENT/PROGRAM →
+  // faculty/department/program mapping being re-derived in every caller
+  // (Module 12's UserManagementService and UserScopeService both need it).
+  async resolveAncestryForLevel(
+    level: ScopeLevel,
+    id: string,
+  ): Promise<ScopeAncestry> {
+    return this.resolveAncestry(ScopeResolverService.LEVEL_TO_ENTITY[level], id);
+  }
+
   async resolveAncestry(
     entity: ScopeTargetEntity,
     id: string,
@@ -77,5 +95,19 @@ export class ScopeResolverService {
         departmentId: scope.departmentId,
         programId: scope.programId,
       }));
+  }
+
+  // Hierarchical containment check — FACULTY scope covers every child
+  // Department/Program, DEPARTMENT scope covers every child Program.
+  // Shared by ScopeGuard and by Module 12's user-creation/scope-granting
+  // logic so the hierarchy rule lives in exactly one place.
+  isCovered(target: ScopeAncestry, effectiveScopes: EffectiveScope[]): boolean {
+    return effectiveScopes.some(
+      (scope) =>
+        (scope.level === 'FACULTY' && scope.facultyId === target.facultyId) ||
+        (scope.level === 'DEPARTMENT' &&
+          scope.departmentId === target.departmentId) ||
+        (scope.level === 'PROGRAM' && scope.programId === target.programId),
+    );
   }
 }

@@ -6,6 +6,7 @@ import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { UsersModule } from './modules/users/users.module';
+import { UserManagementModule } from './modules/users/user-management/user-management.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CurriculumContentModule } from './modules/curriculum-content/curriculum-content.module';
 import { AcademicRecordModule } from './modules/academic-record/academic-record.module';
@@ -26,6 +27,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     PrismaModule,
     OrganizationModule,
     UsersModule,
+    UserManagementModule,
     AuthModule,
     CurriculumContentModule,
     AcademicRecordModule,

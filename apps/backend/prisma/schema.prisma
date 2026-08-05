@@ -107,11 +107,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  userRoles      UserRole[]
-  scopes         UserScope[]
-  studentProfile StudentProfile?
-  authMethods    UserAuthMethod[]
-  otpCodes       OtpCode[]
+  userRoles         UserRole[]
+  scopes            UserScope[]
+  studentProfile    StudentProfile?
+  authMethods       UserAuthMethod[]
+  otpCodes          OtpCode[]
+  pendingInvitation PendingInvitation?
 
   @@map("users")
 }
@@ -232,6 +233,24 @@ model GooglePendingRegistration {
   createdAt DateTime @default(now())
 
   @@map("google_pending_registrations")
+}
+
+// Gates password-setting for a User created by an ADMIN/SUPER_ADMIN via
+// Module 12 (User Management). Unlike GooglePendingRegistration, the User
+// row (plus its UserRole/UserScope) already exists with passwordHash:null
+// when this is created — this row only proves who's allowed to set it.
+// Consumed (deleted) by AuthService.acceptInvitation.
+model PendingInvitation {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String   @unique
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("pending_invitations")
 }
 
 model CourseCategory {

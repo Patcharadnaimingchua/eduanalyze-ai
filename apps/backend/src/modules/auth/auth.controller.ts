@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 import { GoogleProfile } from './google-profile.interface';
 
@@ -46,6 +47,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid, expired, or already-used OTP' })
   verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
+  }
+
+  @Post('accept-invitation')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Set a password for a user created via User Management (Module 12), consuming the invitation token',
+  })
+  @ApiResponse({ status: 201, description: 'Password set — log in normally next' })
+  @ApiResponse({ status: 401, description: 'Invitation expired or invalid' })
+  acceptInvitation(@Body() dto: AcceptInvitationDto) {
+    return this.authService.acceptInvitation(dto);
   }
 
   @Get('google')

@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
+import { PendingInvitationModule } from './pending-invitation.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 
@@ -17,7 +18,12 @@ import { GoogleStrategy } from './strategies/google.strategy';
   // JWT_ACCESS_SECRET directly (see strategies/jwt.strategy.ts).
   // GoogleStrategy reads GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL directly for
   // the same reason.
-  imports: [UsersModule, PassportModule, JwtModule.register({})],
+  imports: [
+    UsersModule,
+    PassportModule,
+    JwtModule.register({}),
+    PendingInvitationModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
