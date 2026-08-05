@@ -36,4 +36,18 @@ export class PloAchievementController {
       user,
     );
   }
+
+  @Get('course/:courseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'PLO Achievement for a course — weighted rollup of CLO achievement % per PLO (PROJECT_CONTEXT.md §23B)',
+  })
+  @ApiResponse({ status: 200, description: 'Course PLO achievement report' })
+  @ApiResponse({ status: 404, description: 'Course not found or inactive' })
+  calculateForCourse(@Param('courseId') courseId: string) {
+    return this.ploAchievementService.calculateForCourse(courseId);
+  }
 }

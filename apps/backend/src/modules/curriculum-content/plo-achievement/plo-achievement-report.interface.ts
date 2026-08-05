@@ -18,3 +18,18 @@ export interface StudentPloAchievementReport {
   strengths: RadarPoint[];
   areasForImprovement: RadarPoint[];
 }
+
+export interface CoursePloEntry {
+  ploId: string;
+  code: string;
+  name: string;
+  achievementPercent: number;
+  cloBreakdown: { cloId: string; code: string; weight: number }[];
+}
+
+export interface CoursePloAchievementReport {
+  courseId: string;
+  // Pass-through from Phase 8's course-level %.
+  achievementPercent: number;
+  plos: CoursePloEntry[];
+}

@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { StudentCourseRecordModule } from '../../academic-record/student-course-record/student-course-record.module';
 import { StudentProfileModule } from '../../users/student-profile/student-profile.module';
+import { CloAchievementModule } from '../clo-achievement/clo-achievement.module';
 import { PloAchievementController } from './plo-achievement.controller';
 import { PloAchievementService } from './plo-achievement.service';
 
 @Module({
-  imports: [StudentProfileModule, StudentCourseRecordModule],
+  imports: [StudentProfileModule, StudentCourseRecordModule, CloAchievementModule],
   controllers: [PloAchievementController],
   providers: [PloAchievementService],
 })

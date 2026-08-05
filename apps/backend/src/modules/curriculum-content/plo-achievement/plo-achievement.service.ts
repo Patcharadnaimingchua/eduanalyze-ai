@@ -11,7 +11,10 @@ import {
   StudentCourseRecordService,
 } from '../../academic-record/student-course-record/student-course-record.service';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
+import { CloAchievementService } from '../clo-achievement/clo-achievement.service';
 import {
+  CoursePloAchievementReport,
+  CoursePloEntry,
   RadarPoint,
   StudentPloAchievementReport,
 } from './plo-achievement-report.interface';
@@ -32,6 +35,7 @@ export class PloAchievementService {
     private readonly prisma: PrismaService,
     private readonly studentProfileService: StudentProfileService,
     private readonly studentCourseRecordService: StudentCourseRecordService,
+    private readonly cloAchievementService: CloAchievementService,
   ) {}
 
   async calculateForStudent(
@@ -68,6 +72,84 @@ export class PloAchievementService {
       radar,
       strengths,
       areasForImprovement,
+    };
+  }
+
+  // Reuses Phase 8's CloAchievementService rather than duplicating its
+  // course/curriculum/student-record queries (CONVENTIONS.md §6). Also
+  // gets course-existence validation for free (calculateForCourse throws
+  // NotFoundException if the course doesn't exist or is inactive).
+  async calculateForCourse(courseId: string): Promise<CoursePloAchievementReport> {
+    const cloReport = await this.cloAchievementService.calculateForCourse(courseId);
+
+    const mappings = await this.prisma.cloPloMapping.findMany({
+      where: {
+        isActive: true,
+        cloId: { in: cloReport.clos.map((clo) => clo.cloId) },
+      },
+      include: { plo: true },
+    });
+
+    const achievementByClo = new Map(
+      cloReport.clos.map((clo) => [clo.cloId, clo]),
+    );
+
+    const entriesByPlo = new Map<string, CoursePloEntry>();
+    const weightSumByPlo = new Map<string, number>();
+    const weightedScoreSumByPlo = new Map<string, number>();
+
+    for (const mapping of mappings) {
+      const clo = achievementByClo.get(mapping.cloId);
+      if (!clo) {
+        continue; // defensive — shouldn't happen, cloId set comes from cloReport itself
+      }
+
+      let entry = entriesByPlo.get(mapping.ploId);
+      if (!entry) {
+        entry = {
+          ploId: mapping.plo.id,
+          code: mapping.plo.code,
+          name: mapping.plo.name,
+          achievementPercent: 0,
+          cloBreakdown: [],
+        };
+        entriesByPlo.set(mapping.ploId, entry);
+        weightSumByPlo.set(mapping.ploId, 0);
+        weightedScoreSumByPlo.set(mapping.ploId, 0);
+      }
+
+      entry.cloBreakdown.push({
+        cloId: clo.cloId,
+        code: clo.code,
+        weight: mapping.weight,
+      });
+      weightSumByPlo.set(
+        mapping.ploId,
+        weightSumByPlo.get(mapping.ploId)! + mapping.weight,
+      );
+      weightedScoreSumByPlo.set(
+        mapping.ploId,
+        weightedScoreSumByPlo.get(mapping.ploId)! +
+          cloReport.achievementPercent * mapping.weight,
+      );
+    }
+
+    // Weighted average of Phase 8's per-CLO achievementPercent. Every CLO
+    // of this course currently shares the same achievementPercent (Phase
+    // 8 limitation, see TODO.md), so this collapses to that one value
+    // regardless of weight today — the formula is still correct and
+    // becomes meaningful once CLO-specific grades or cross-course PLO
+    // aggregation exist. Don't "simplify" this away.
+    const plos = Array.from(entriesByPlo.values()).map((entry) => ({
+      ...entry,
+      achievementPercent:
+        weightedScoreSumByPlo.get(entry.ploId)! / weightSumByPlo.get(entry.ploId)!,
+    }));
+
+    return {
+      courseId: cloReport.courseId,
+      achievementPercent: cloReport.achievementPercent,
+      plos,
     };
   }
 

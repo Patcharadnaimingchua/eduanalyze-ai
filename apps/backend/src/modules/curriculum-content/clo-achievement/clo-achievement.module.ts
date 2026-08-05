@@ -9,5 +9,6 @@ import { CloAchievementService } from './clo-achievement.service';
   imports: [CourseModule, CurriculumModule, StudentCourseRecordModule],
   controllers: [CloAchievementController],
   providers: [CloAchievementService],
+  exports: [CloAchievementService],
 })
 export class CloAchievementModule {}
