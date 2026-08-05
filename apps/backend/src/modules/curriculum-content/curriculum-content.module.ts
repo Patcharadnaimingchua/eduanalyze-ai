@@ -5,6 +5,7 @@ import { CloModule } from './clo/clo.module';
 import { CourseCategoryModule } from './course-category/course-category.module';
 import { CourseModule } from './course/course.module';
 import { CurriculumRequirementModule } from './curriculum-requirement/curriculum-requirement.module';
+import { PloAchievementModule } from './plo-achievement/plo-achievement.module';
 import { PloModule } from './plo/plo.module';
 import { PrerequisiteModule } from './prerequisite/prerequisite.module';
 
@@ -18,6 +19,7 @@ import { PrerequisiteModule } from './prerequisite/prerequisite.module';
     CloModule,
     CloPloMappingModule,
     CloAchievementModule,
+    PloAchievementModule,
   ],
 })
 export class CurriculumContentModule {}
