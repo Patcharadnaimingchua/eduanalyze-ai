@@ -33,3 +33,17 @@ export interface CoursePloAchievementReport {
   achievementPercent: number;
   plos: CoursePloEntry[];
 }
+
+export interface CohortPloAchievementReport {
+  curriculumId: string;
+  admissionYear: number;
+  studentCount: number;
+  // null = zero students in the cohort have any graded record — never 0.
+  averageGpa: number | null;
+  // Students contributing to averageGpa (excludes null-GPA students).
+  gpaSampleSize: number;
+  // Averaged per PLO, null if zero students have data for that PLO.
+  radar: RadarPoint[];
+  strengths: RadarPoint[];
+  areasForImprovement: RadarPoint[];
+}

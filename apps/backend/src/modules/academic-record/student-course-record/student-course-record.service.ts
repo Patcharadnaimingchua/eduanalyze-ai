@@ -118,7 +118,14 @@ export class StudentCourseRecordService {
     }
 
     const latestByCourse = await this.getLatestAttemptsPerCourse(studentProfileId);
+    return this.calculateGpaFromAttempts(latestByCourse);
+  }
 
+  // Pure/internal — no I/O, no ownership check, takes already-fetched
+  // data. Extracted so CohortAnalytics-style callers (Phase 9 Chunk 3+)
+  // can reuse the exact same GPA math on a Map they already fetched for
+  // PLO scoring too, instead of querying twice per student.
+  calculateGpaFromAttempts(latestByCourse: Map<string, LatestCourseAttempt>) {
     let gradePointSum = 0;
     let creditsCounted = 0;
     for (const record of latestByCourse.values()) {

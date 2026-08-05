@@ -1,4 +1,10 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -49,5 +55,25 @@ export class PloAchievementController {
   @ApiResponse({ status: 404, description: 'Course not found or inactive' })
   calculateForCourse(@Param('courseId') courseId: string) {
     return this.ploAchievementService.calculateForCourse(courseId);
+  }
+
+  @Get('cohort/:curriculumId/:admissionYear')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'PLO Achievement for a cohort (curriculum + admission year) — average GPA, average PLO radar, strengths/weaknesses (PROJECT_CONTEXT.md §23C)',
+  })
+  @ApiResponse({ status: 200, description: 'Cohort PLO achievement report' })
+  @ApiResponse({ status: 404, description: 'Curriculum not found or inactive' })
+  calculateForCohort(
+    @Param('curriculumId') curriculumId: string,
+    @Param('admissionYear', ParseIntPipe) admissionYear: number,
+  ) {
+    return this.ploAchievementService.calculateForCohort(
+      curriculumId,
+      admissionYear,
+    );
   }
 }

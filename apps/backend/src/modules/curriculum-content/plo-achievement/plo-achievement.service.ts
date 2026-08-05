@@ -11,8 +11,10 @@ import {
   StudentCourseRecordService,
 } from '../../academic-record/student-course-record/student-course-record.service';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
+import { CurriculumService } from '../../organization/curriculum/curriculum.service';
 import { CloAchievementService } from '../clo-achievement/clo-achievement.service';
 import {
+  CohortPloAchievementReport,
   CoursePloAchievementReport,
   CoursePloEntry,
   RadarPoint,
@@ -36,6 +38,7 @@ export class PloAchievementService {
     private readonly studentProfileService: StudentProfileService,
     private readonly studentCourseRecordService: StudentCourseRecordService,
     private readonly cloAchievementService: CloAchievementService,
+    private readonly curriculumService: CurriculumService,
   ) {}
 
   async calculateForStudent(
@@ -150,6 +153,86 @@ export class PloAchievementService {
       courseId: cloReport.courseId,
       achievementPercent: cloReport.achievementPercent,
       plos,
+    };
+  }
+
+  // Cohort = (curriculumId, admissionYear) — Plo is Curriculum-scoped, so
+  // averaging across different curricula would average numbers that
+  // don't refer to the same PLO set at all. No self-ownership here
+  // (SUPER_ADMIN-only endpoint, no per-user resolution needed).
+  //
+  // curriculum.plos is fetched ONCE for the whole cohort, not per
+  // student, and getLatestAttemptsPerCourse's result is reused for BOTH
+  // GPA and PLO scoring per student (one query, two calculations) — see
+  // TODO.md for the accepted N-query-per-cohort limitation this still has
+  // (no bulk multi-student attempts query exists yet).
+  async calculateForCohort(
+    curriculumId: string,
+    admissionYear: number,
+  ): Promise<CohortPloAchievementReport> {
+    await this.curriculumService.findActiveByIdOrThrow(curriculumId);
+
+    const plos = await this.prisma.plo.findMany({
+      where: { curriculumId, isActive: true },
+      include: {
+        cloMappings: {
+          where: { isActive: true },
+          include: { clo: { select: { id: true, courseId: true } } },
+        },
+      },
+    });
+
+    const students = await this.prisma.studentProfile.findMany({
+      where: { curriculumId, admissionYear, isActive: true },
+    });
+
+    const gpas: number[] = [];
+    const ploSums = new Map<string, { sum: number; count: number }>();
+
+    for (const student of students) {
+      const attempts = await this.studentCourseRecordService.getLatestAttemptsPerCourse(
+        student.id,
+      );
+
+      const { gpa } = this.studentCourseRecordService.calculateGpaFromAttempts(attempts);
+      if (gpa !== null) {
+        gpas.push(gpa);
+      }
+
+      const radar = this.computeStudentPloScores(plos, attempts);
+      for (const point of radar) {
+        if (point.value === null) {
+          continue; // no data for this student/PLO — excluded, not zero
+        }
+        const entry = ploSums.get(point.ploId) ?? { sum: 0, count: 0 };
+        entry.sum += point.value;
+        entry.count += 1;
+        ploSums.set(point.ploId, entry);
+      }
+    }
+
+    const radar: RadarPoint[] = plos.map((plo) => {
+      const entry = ploSums.get(plo.id);
+      return {
+        ploId: plo.id,
+        code: plo.code,
+        name: plo.name,
+        value: entry ? entry.sum / entry.count : null,
+      };
+    });
+    const { strengths, areasForImprovement } =
+      this.rankStrengthsAndWeaknesses(radar);
+
+    return {
+      curriculumId,
+      admissionYear,
+      studentCount: students.length,
+      averageGpa:
+        gpas.length > 0 ? gpas.reduce((a, b) => a + b, 0) / gpas.length : null,
+      gpaSampleSize: gpas.length,
+      radar,
+      strengths,
+      areasForImprovement,
     };
   }
 
