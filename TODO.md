@@ -1,5 +1,13 @@
 # TODO / Known Limitations
 
+## Module 7 — AI Skill Analysis: ไม่มี caching/persistence, ต้องการ `ANTHROPIC_API_KEY` จริงก่อนใช้งาน
+
+`AiAnalysisService.getStudentAnalysis` เรียก Anthropic API สดทุก request ไม่มี cache หรือ persist ผลลัพธ์ไว้เลย (ตัดสินใจไว้แล้วผ่าน AskUserQuestion — เพื่อลดขอบเขต ไม่เพิ่ม model/migration ใหม่รอบนี้) ผลคือทุก request ที่มีข้อมูลเกรดจริงจะมีค่าใช้จ่าย + latency ของ AI call เต็มจำนวน ไม่ต่างจาก endpoint อื่นที่คำนวณสดฟรี — ถ้า cost/latency กลายเป็นปัญหาจริงใน production ต้องออกแบบ persistence layer (เช่น `AiSkillAnalysisSnapshot` model + invalidate เมื่อข้อมูลอ้างอิงเปลี่ยน) เป็นการตัดสินใจ scope ใหม่ ไม่ใช่รอบนี้
+
+`.env`/`.env.example` มีแค่ placeholder `ANTHROPIC_API_KEY=change_me_anthropic_api_key` — ต้องใส่ key จริงก่อนเรียก endpoint นี้ได้ ไม่งั้นทุก request จะได้ 503 (AI provider ปฏิเสธ key ปลอม)
+
+Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary` (Curriculum Dashboard, §31) ยังคงเป็น `null` โดยตั้งใจ — `DashboardModule` ไม่ได้เรียก `AiAnalysisService` เลยรอบนี้ (ตัดสินใจไว้แล้ว: standalone endpoint เท่านั้น เพื่อให้ Dashboard endpoints ทั้งหมดยังคงเร็ว/ฟรีเหมือนเดิม ไม่มี AI call แฝงอยู่) frontend ต้องเรียก `GET /ai-analysis/student/:id` แยกต่างหาก (เช่น ปุ่ม "วิเคราะห์ด้วย AI") ไม่ใช่ bug ที่ Dashboard ลืมใส่ค่า — และยังไม่มี curriculum-level AI endpoint เลยด้วย (`aiCurriculumSummary` ไม่มีทางเติมได้ในตอนนี้)
+
 ## Learning Path Planner — Free Elective/Gen Ed หมวดที่ไม่มี Course catalog เลย
 
 `วิชาเลือกเสรี` (Free Elective) และ Gen Ed บางกลุ่ม (กลุ่มสาระอยู่ดีมีสุข, กลุ่มสาระศาสตร์แห่งผู้ประกอบการ, กลุ่มสาระภาษากับการสื่อสาร, กลุ่มสาระสุนทรียศาสตร์) ไม่มี `Course` row ผูกอยู่เลยตั้งแต่ Phase 4 (เลือกได้ทั้งมหาวิทยาลัย ข้อมูลเยอะเกินจะ import ครบ — ตัดสินใจไว้แล้ว ไม่ใช่ gap ของ Module 9) — `LearningPathService` รายงานได้แค่ "ยังขาดหน่วยกิต X หน่วยกิต" เป็นตัวเลข (`incompleteElectiveCategories` พร้อม `availableElectivesInCategory: []`) ไม่มีทางแนะนำวิชาเฉพาะเจาะจงในหมวดเหล่านี้ได้ และ `nextSemesterPlan` ก็จะไม่มีวันเสนอวิชาจากหมวดนี้ด้วยเหตุผลเดียวกัน (ไม่มี `Course` ให้เลือก) — ถ้าต้องการแก้จริงต้อง import course catalog กลุ่มนี้เพิ่มก่อน ไม่ใช่การแก้ที่ Module 9
