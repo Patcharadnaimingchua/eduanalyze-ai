@@ -97,16 +97,10 @@ export class CreditCheckerService {
     // First pass: which courses in this curriculum has the student passed?
     // Needed up front so the prerequisite check below doesn't depend on
     // category iteration order.
-    const passedCourseIds = new Set<string>();
-    for (const category of curriculum.categories) {
-      for (const course of category.courses) {
-        const attempt = latestByCourse.get(course.id);
-        const status = attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
-        if (status === 'PASS') {
-          passedCourseIds.add(course.id);
-        }
-      }
-    }
+    const passedCourseIds = this.computePassedCourseIds(
+      curriculum,
+      latestByCourse,
+    );
 
     const passedCourses: CourseSummary[] = [];
     const failedCourses: CourseSummary[] = [];
@@ -150,8 +144,9 @@ export class CreditCheckerService {
         }
 
         if (course.isRequired && status !== 'PASS') {
-          const isPrerequisiteSatisfied = course.prerequisitesRequired.every(
-            (p) => passedCourseIds.has(p.prerequisiteCourseId),
+          const isPrerequisiteSatisfied = this.isCoursePrerequisiteSatisfied(
+            course,
+            passedCourseIds,
           );
           missingRequiredCourses.push({ ...summary, isPrerequisiteSatisfied });
         }
@@ -204,6 +199,39 @@ export class CreditCheckerService {
       categoryProgress,
       graduationReadiness,
     };
+  }
+
+  // Pure/internal — no I/O. Extracted (same reasoning as
+  // loadCurriculumTree/computeCreditCheck in Phase 9 Chunk 4) so
+  // LearningPathService can reuse the exact same "which courses has this
+  // student passed" computation instead of re-deriving it.
+  computePassedCourseIds(
+    curriculum: CreditCheckCurriculumTree,
+    latestByCourse: Map<string, LatestCourseAttempt>,
+  ): Set<string> {
+    const passedCourseIds = new Set<string>();
+    for (const category of curriculum.categories) {
+      for (const course of category.courses) {
+        const attempt = latestByCourse.get(course.id);
+        const status = attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
+        if (status === 'PASS') {
+          passedCourseIds.add(course.id);
+        }
+      }
+    }
+    return passedCourseIds;
+  }
+
+  // Pure/internal — no I/O. Extracted so LearningPathService can check
+  // prerequisite-eligibility for ANY course (required or elective), not
+  // just the required-only subset computeCreditCheck applies this to.
+  isCoursePrerequisiteSatisfied(
+    course: { prerequisitesRequired: { prerequisiteCourseId: string }[] },
+    passedCourseIds: Set<string>,
+  ): boolean {
+    return course.prerequisitesRequired.every((p) =>
+      passedCourseIds.has(p.prerequisiteCourseId),
+    );
   }
 
   private isSelfServiceOnly(user: RequestUser) {

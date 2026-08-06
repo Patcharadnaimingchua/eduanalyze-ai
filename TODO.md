@@ -1,5 +1,9 @@
 # TODO / Known Limitations
 
+## Learning Path Planner — Free Elective/Gen Ed หมวดที่ไม่มี Course catalog เลย
+
+`วิชาเลือกเสรี` (Free Elective) และ Gen Ed บางกลุ่ม (กลุ่มสาระอยู่ดีมีสุข, กลุ่มสาระศาสตร์แห่งผู้ประกอบการ, กลุ่มสาระภาษากับการสื่อสาร, กลุ่มสาระสุนทรียศาสตร์) ไม่มี `Course` row ผูกอยู่เลยตั้งแต่ Phase 4 (เลือกได้ทั้งมหาวิทยาลัย ข้อมูลเยอะเกินจะ import ครบ — ตัดสินใจไว้แล้ว ไม่ใช่ gap ของ Module 9) — `LearningPathService` รายงานได้แค่ "ยังขาดหน่วยกิต X หน่วยกิต" เป็นตัวเลข (`incompleteElectiveCategories` พร้อม `availableElectivesInCategory: []`) ไม่มีทางแนะนำวิชาเฉพาะเจาะจงในหมวดเหล่านี้ได้ และ `nextSemesterPlan` ก็จะไม่มีวันเสนอวิชาจากหมวดนี้ด้วยเหตุผลเดียวกัน (ไม่มี `Course` ให้เลือก) — ถ้าต้องการแก้จริงต้อง import course catalog กลุ่มนี้เพิ่มก่อน ไม่ใช่การแก้ที่ Module 9
+
 ## CourseInstructor — Grade Distribution + per-course student list ยังไม่ได้ทำ
 
 รอบนี้ (CourseInstructor mapping + INSTRUCTOR scope) ทำเฉพาะ permission-wiring: เปิด `GET /clo-achievement/course/:id`, `GET /plo-achievement/course/:id`, และ `GET /courses/my-courses` ให้ INSTRUCTOR ที่ได้รับมอบหมายจริงเท่านั้น (`InstructorGuard`) — ยืนยันแล้วว่าเป็นการตัดสินใจที่ตั้งใจ ไม่ใช่ scope ที่ลืม: §9 ยังต้องการ "Grade Distribution" (A/B/C/D/F breakdown เต็ม — `CloAchievementService` มีแค่ %ผ่าน threshold ไม่มี full breakdown) และ "Student ที่เกี่ยวข้อง" (raw student list ต่อ course — `StudentCourseRecordService.findAll` ไม่มี course filter หรือ INSTRUCTOR branch เลย) ทั้งสองเป็น business logic ใหม่ทั้งหมด ไม่ใช่แค่เปิด permission จึงเก็บไว้เป็นรอบถัดไป

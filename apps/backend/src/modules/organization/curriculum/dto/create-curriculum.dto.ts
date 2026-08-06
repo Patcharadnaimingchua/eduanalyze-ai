@@ -42,4 +42,16 @@ export class CreateCurriculumDto {
   @Min(0)
   @Max(100)
   defaultAchievementThreshold?: number;
+
+  @ApiPropertyOptional({
+    example: 22,
+    default: 22,
+    minimum: 1,
+    description:
+      'Semester Planning credit cap (§28) — 22 is KU Kamphaeng Saen\'s default, override per curriculum for other institutions',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxCreditsPerSemester?: number;
 }

@@ -81,6 +81,11 @@ model Curriculum {
   // may override this via Clo.achievementThreshold; when null there, this
   // value applies.
   defaultAchievementThreshold Int      @default(70)
+  // Semester Planning cap (§28) — default 22 is Kasetsart University
+  // Kamphaeng Saen's rule, NOT a universal constant (§12/§24 require this
+  // system stay generic across institutions) — override per curriculum
+  // via PATCH as needed for other institutions/programs.
+  maxCreditsPerSemester       Int      @default(22)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
