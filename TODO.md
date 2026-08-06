@@ -1,5 +1,9 @@
 # TODO / Known Limitations
 
+## Auth gaps closure — forgot-password email เป็น mock log เหมือน OTP/invitation
+
+`PasswordResetService.create` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[PASSWORD RESET MOCK] ...')` เท่านั้น เป็น pattern เดียวกับ OTP/invitation ที่บันทึกไว้แล้ว ไม่ใช่ gap ใหม่ — ทั้งสามจุด (OTP, invitation, password reset) ต้องรอ real email service ตัวเดียวกันก่อน deploy จริง
+
 ## Module 12 — User Management: invitation email เป็น mock log เหมือน OTP
 
 `PendingInvitationService.create`/`resend` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[INVITE MOCK] ...')` เท่านั้น เป็น gap เดียวกับที่บันทึกไว้แล้วสำหรับ OTP (`OtpService`) และ Google OAuth credential (ดูหัวข้อด้านล่าง) — ต้องมี real email service ก่อน deploy จริง ไม่ใช่ปัญหาใหม่ที่ต้องแก้แยก แค่ยืนยันว่าเป็น pattern เดียวกันที่ยังไม่ปิด

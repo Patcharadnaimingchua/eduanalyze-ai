@@ -16,10 +16,14 @@ import { StudentProfileService } from '../users/student-profile/student-profile.
 import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationService } from './pending-invitation.service';
+import { PasswordResetService } from './password-reset.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { GoogleProfile } from './google-profile.interface';
@@ -50,6 +54,7 @@ export class AuthService {
     private readonly otpService: OtpService,
     private readonly googlePendingRegistrationService: GooglePendingRegistrationService,
     private readonly pendingInvitationService: PendingInvitationService,
+    private readonly passwordResetService: PasswordResetService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -244,6 +249,77 @@ export class AuthService {
         data: { passwordHash },
       });
       await this.pendingInvitationService.consume(pending.id, tx);
+    });
+  }
+
+  async getMe(userId: string) {
+    const user = await this.userService.findById(userId);
+    const roles = await this.userRoleService.findRolesByUserId(userId);
+    return {
+      userId: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      roles,
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.userService.findById(userId);
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        'No password set on this account — sign in with Google, or accept your invitation first',
+      );
+    }
+
+    const oldPasswordMatches = await bcrypt.compare(
+      dto.oldPassword,
+      user.passwordHash,
+    );
+    if (!oldPasswordMatches) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, PASSWORD_SALT_ROUNDS);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  }
+
+  // Always the same response whether or not the email exists — a distinct
+  // "no such account" message would let a client enumerate registered
+  // emails (CONVENTIONS.md §34, same reasoning as login's generic
+  // INVALID_CREDENTIALS_MESSAGE).
+  async forgotPassword(dto: ForgotPasswordDto) {
+    let user: User;
+    try {
+      user = await this.userService.findByEmail(dto.email);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return { message: 'If an account exists, a reset link has been sent' };
+      }
+      throw error;
+    }
+
+    if (user.passwordHash) {
+      const token = await this.passwordResetService.create(user.id);
+      console.warn(`[PASSWORD RESET MOCK] Would send reset token "${token}" to ${user.email}`);
+    }
+    // A Google-only account (passwordHash: null) gets no token — there's
+    // no password to reset. Same generic response either way, so this
+    // doesn't leak which case applied.
+
+    return { message: 'If an account exists, a reset link has been sent' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const pending = await this.passwordResetService.findValidByToken(dto.token);
+    const passwordHash = await bcrypt.hash(dto.newPassword, PASSWORD_SALT_ROUNDS);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: pending.userId },
+        data: { passwordHash },
+      });
+      await this.passwordResetService.consume(pending.id, tx);
     });
   }
 

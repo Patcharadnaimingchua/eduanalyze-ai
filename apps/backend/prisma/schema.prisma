@@ -107,12 +107,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  userRoles         UserRole[]
-  scopes            UserScope[]
-  studentProfile    StudentProfile?
-  authMethods       UserAuthMethod[]
-  otpCodes          OtpCode[]
-  pendingInvitation PendingInvitation?
+  userRoles          UserRole[]
+  scopes             UserScope[]
+  studentProfile     StudentProfile?
+  authMethods        UserAuthMethod[]
+  otpCodes           OtpCode[]
+  pendingInvitation  PendingInvitation?
+  passwordResetToken PasswordResetToken?
 
   @@map("users")
 }
@@ -251,6 +252,22 @@ model PendingInvitation {
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@map("pending_invitations")
+}
+
+// Gates password-reset for an existing User with a password already set —
+// same token-hash+TTL shape as PendingInvitation, one active token per
+// user (delete-then-recreate on repeat /auth/forgot-password calls, same
+// pattern as PendingInvitationService.resend).
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("password_reset_tokens")
 }
 
 model CourseCategory {

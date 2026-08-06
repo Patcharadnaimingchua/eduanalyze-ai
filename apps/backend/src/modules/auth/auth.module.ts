@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationModule } from './pending-invitation.module';
+import { PasswordResetModule } from './password-reset.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 
@@ -23,6 +24,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     PassportModule,
     JwtModule.register({}),
     PendingInvitationModule,
+    PasswordResetModule,
   ],
   controllers: [AuthController],
   providers: [
