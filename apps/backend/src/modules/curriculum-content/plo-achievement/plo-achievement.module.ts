@@ -4,6 +4,7 @@ import { StudentCourseRecordModule } from '../../academic-record/student-course-
 import { CurriculumModule } from '../../organization/curriculum/curriculum.module';
 import { StudentProfileModule } from '../../users/student-profile/student-profile.module';
 import { CloAchievementModule } from '../clo-achievement/clo-achievement.module';
+import { InstructorModule } from '../../../common/scope/instructor.module';
 import { PloAchievementController } from './plo-achievement.controller';
 import { PloAchievementService } from './plo-achievement.service';
 
@@ -14,6 +15,7 @@ import { PloAchievementService } from './plo-achievement.service';
     CloAchievementModule,
     CurriculumModule,
     CreditCheckerModule,
+    InstructorModule,
   ],
   controllers: [PloAchievementController],
   providers: [PloAchievementService],

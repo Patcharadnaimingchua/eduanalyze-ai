@@ -14,11 +14,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { ScopeGuard } from '../../../common/guards/scope.guard';
+import { RequestUser } from '../../auth/request-user.interface';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -35,6 +37,18 @@ export class CourseController {
   @ApiResponse({ status: 200, description: 'List of active courses' })
   findAll() {
     return this.courseService.findAll();
+  }
+
+  // Declared before ':id' — otherwise NestJS would match 'my-courses' as
+  // an :id param value.
+  @Get('my-courses')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List courses the current INSTRUCTOR is assigned to' })
+  @ApiResponse({ status: 200, description: 'List of assigned courses' })
+  findMyCourses(@CurrentUser() user: RequestUser) {
+    return this.courseService.findMyCourses(user.userId);
   }
 
   @Get(':id')

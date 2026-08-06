@@ -114,6 +114,7 @@ model User {
   otpCodes           OtpCode[]
   pendingInvitation  PendingInvitation?
   passwordResetToken PasswordResetToken?
+  courseInstructor   CourseInstructor[]
 
   @@map("users")
 }
@@ -311,6 +312,7 @@ model Course {
   prerequisiteFor       Prerequisite[] @relation("PrerequisiteForCourses")
   clos                  Clo[]
   studentRecords        StudentCourseRecord[]
+  instructors           CourseInstructor[]
 
   @@unique([curriculumId, code])
   @@map("courses")
@@ -351,6 +353,24 @@ model Prerequisite {
 
   @@unique([courseId, prerequisiteCourseId])
   @@map("prerequisites")
+}
+
+// Assigns a User (INSTRUCTOR role) to a Course — many-to-many, co-teaching
+// supported. Hard-delete: a pure assignment gate with no accumulated
+// calculation value, same CONVENTIONS.md §7 reasoning as Prerequisite,
+// unlike Course/CloPloMapping which are soft-delete because they
+// parameterize reproducible calculations.
+model CourseInstructor {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@map("course_instructors")
 }
 
 // Program Learning Outcome — scoped to Curriculum (not Program), since a

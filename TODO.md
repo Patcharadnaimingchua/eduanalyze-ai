@@ -1,5 +1,9 @@
 # TODO / Known Limitations
 
+## CourseInstructor — Grade Distribution + per-course student list ยังไม่ได้ทำ
+
+รอบนี้ (CourseInstructor mapping + INSTRUCTOR scope) ทำเฉพาะ permission-wiring: เปิด `GET /clo-achievement/course/:id`, `GET /plo-achievement/course/:id`, และ `GET /courses/my-courses` ให้ INSTRUCTOR ที่ได้รับมอบหมายจริงเท่านั้น (`InstructorGuard`) — ยืนยันแล้วว่าเป็นการตัดสินใจที่ตั้งใจ ไม่ใช่ scope ที่ลืม: §9 ยังต้องการ "Grade Distribution" (A/B/C/D/F breakdown เต็ม — `CloAchievementService` มีแค่ %ผ่าน threshold ไม่มี full breakdown) และ "Student ที่เกี่ยวข้อง" (raw student list ต่อ course — `StudentCourseRecordService.findAll` ไม่มี course filter หรือ INSTRUCTOR branch เลย) ทั้งสองเป็น business logic ใหม่ทั้งหมด ไม่ใช่แค่เปิด permission จึงเก็บไว้เป็นรอบถัดไป
+
 ## Auth gaps closure — forgot-password email เป็น mock log เหมือน OTP/invitation
 
 `PasswordResetService.create` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[PASSWORD RESET MOCK] ...')` เท่านั้น เป็น pattern เดียวกับ OTP/invitation ที่บันทึกไว้แล้ว ไม่ใช่ gap ใหม่ — ทั้งสามจุด (OTP, invitation, password reset) ต้องรอ real email service ตัวเดียวกันก่อน deploy จริง

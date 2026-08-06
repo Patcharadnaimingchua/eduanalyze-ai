@@ -41,6 +41,16 @@ export class CourseService {
     return this.prisma.course.findMany({ where: { isActive: true } });
   }
 
+  // For INSTRUCTOR self-service — "Course ที่ตัวเองรับผิดชอบ" (PROJECT_CONTEXT.md
+  // §9). Query-level filter via the CourseInstructor join, same
+  // never-fetch-all-then-filter shape as StudentCourseRecordService's
+  // self-service branch (CONVENTIONS §3a).
+  findMyCourses(userId: string) {
+    return this.prisma.course.findMany({
+      where: { isActive: true, instructors: { some: { userId } } },
+    });
+  }
+
   async findOne(id: string) {
     const course = await this.prisma.course.findUnique({ where: { id } });
     if (!course) {
