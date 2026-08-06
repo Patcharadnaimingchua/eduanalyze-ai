@@ -164,6 +164,7 @@ model StudentProfile {
   curriculum Curriculum @relation(fields: [programId, curriculumId], references: [programId, id], onDelete: Restrict)
 
   courseRecords StudentCourseRecord[]
+  assessments   CourseAssessment[]
 
   @@map("student_profiles")
 }
@@ -313,6 +314,7 @@ model Course {
   clos                  Clo[]
   studentRecords        StudentCourseRecord[]
   instructors           CourseInstructor[]
+  assessments           CourseAssessment[]
 
   @@unique([curriculumId, code])
   @@map("courses")
@@ -411,6 +413,7 @@ model Clo {
   course               Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
   ploMappings          CloPloMapping[]
+  assessmentScores     CourseAssessmentCloScore[]
 
   @@unique([courseId, code])
   @@map("clos")
@@ -436,6 +439,47 @@ model CloPloMapping {
 
   @@unique([cloId, ploId])
   @@map("clo_plo_mappings")
+}
+
+// Student self-assessment against a Course's CLOs (1-5 scale), separate
+// from Grade-based Achievement — PROJECT_CONTEXT.md §27 is explicit these
+// must stay distinct (Objective/Academic Indicator = Grade-based,
+// Perception/Self Assessment = this). One submission per
+// (studentProfileId, courseId), editable afterward — not a history table.
+model CourseAssessment {
+  id        String   @id @default(uuid())
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  cloScores CourseAssessmentCloScore[]
+
+  @@unique([studentProfileId, courseId])
+  @@map("course_assessments")
+}
+
+// Cascade-deleted with its parent CourseAssessment — unlike every other
+// onDelete:Restrict relation in this schema, these rows have no
+// independent existence or value outside their submission; PATCH replaces
+// the whole set in one transaction (delete all + recreate), not per-CLO.
+model CourseAssessmentCloScore {
+  id    String @id @default(uuid())
+  score Int // 1-5, enforced by DTO @Min(1)/@Max(5) — no DB-level CHECK constraint used elsewhere in this schema
+
+  courseAssessmentId String
+  courseAssessment   CourseAssessment @relation(fields: [courseAssessmentId], references: [id], onDelete: Cascade)
+
+  cloId String
+  clo   Clo @relation(fields: [cloId], references: [id], onDelete: Restrict)
+
+  @@unique([courseAssessmentId, cloId])
+  @@map("course_assessment_clo_scores")
 }
 
 // Global master data (not scoped to Program/Curriculum) — shared across
