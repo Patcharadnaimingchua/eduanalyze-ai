@@ -60,18 +60,113 @@ export class ScopeResolverService {
       return { facultyId: department.facultyId, departmentId: id, programId: null };
     }
 
-    const program = await this.prisma.program.findUnique({
-      where: { id },
-      include: { department: { select: { facultyId: true } } },
-    });
-    if (!program) {
-      throw new NotFoundException(`Program ${id} not found`);
+    if (entity === 'program') {
+      const program = await this.prisma.program.findUnique({
+        where: { id },
+        include: { department: { select: { facultyId: true } } },
+      });
+      if (!program) {
+        throw new NotFoundException(`Program ${id} not found`);
+      }
+      return {
+        facultyId: program.department.facultyId,
+        departmentId: program.departmentId,
+        programId: id,
+      };
     }
-    return {
-      facultyId: program.department.facultyId,
-      departmentId: program.departmentId,
-      programId: id,
-    };
+
+    // Everything below Program delegates to the 'program' branch above for
+    // the Department/Faculty walk-up, after one query to find its own
+    // programId — reuse over duplicating the walk-up logic (CONVENTIONS
+    // §6), at the cost of one extra query per resolution (single-row
+    // mutation-time lookups, not a list endpoint, so this is cheap).
+
+    if (entity === 'curriculum') {
+      const curriculum = await this.prisma.curriculum.findUnique({
+        where: { id },
+        select: { programId: true },
+      });
+      if (!curriculum) {
+        throw new NotFoundException(`Curriculum ${id} not found`);
+      }
+      return this.resolveAncestry('program', curriculum.programId);
+    }
+
+    if (entity === 'course') {
+      const course = await this.prisma.course.findUnique({
+        where: { id },
+        select: { curriculum: { select: { programId: true } } },
+      });
+      if (!course) {
+        throw new NotFoundException(`Course ${id} not found`);
+      }
+      return this.resolveAncestry('program', course.curriculum.programId);
+    }
+
+    if (entity === 'plo') {
+      const plo = await this.prisma.plo.findUnique({
+        where: { id },
+        select: { curriculum: { select: { programId: true } } },
+      });
+      if (!plo) {
+        throw new NotFoundException(`Plo ${id} not found`);
+      }
+      return this.resolveAncestry('program', plo.curriculum.programId);
+    }
+
+    if (entity === 'clo') {
+      const clo = await this.prisma.clo.findUnique({
+        where: { id },
+        select: { course: { select: { curriculum: { select: { programId: true } } } } },
+      });
+      if (!clo) {
+        throw new NotFoundException(`Clo ${id} not found`);
+      }
+      return this.resolveAncestry('program', clo.course.curriculum.programId);
+    }
+
+    if (entity === 'cloPloMapping') {
+      const mapping = await this.prisma.cloPloMapping.findUnique({
+        where: { id },
+        select: { plo: { select: { curriculum: { select: { programId: true } } } } },
+      });
+      if (!mapping) {
+        throw new NotFoundException(`CloPloMapping ${id} not found`);
+      }
+      return this.resolveAncestry('program', mapping.plo.curriculum.programId);
+    }
+
+    if (entity === 'courseCategory') {
+      const category = await this.prisma.courseCategory.findUnique({
+        where: { id },
+        select: { curriculum: { select: { programId: true } } },
+      });
+      if (!category) {
+        throw new NotFoundException(`CourseCategory ${id} not found`);
+      }
+      return this.resolveAncestry('program', category.curriculum.programId);
+    }
+
+    if (entity === 'curriculumRequirement') {
+      const requirement = await this.prisma.curriculumRequirement.findUnique({
+        where: { id },
+        select: { curriculum: { select: { programId: true } } },
+      });
+      if (!requirement) {
+        throw new NotFoundException(`CurriculumRequirement ${id} not found`);
+      }
+      return this.resolveAncestry('program', requirement.curriculum.programId);
+    }
+
+    // entity === 'prerequisite'
+    const prerequisite = await this.prisma.prerequisite.findUnique({
+      where: { id },
+      select: { course: { select: { curriculum: { select: { programId: true } } } } },
+    });
+    if (!prerequisite) {
+      throw new NotFoundException(`Prerequisite ${id} not found`);
+    }
+    return this.resolveAncestry('program', prerequisite.course.curriculum.programId);
   }
 
   // Resolves scope live per CONVENTIONS.md §8 — a UserScope row pointing

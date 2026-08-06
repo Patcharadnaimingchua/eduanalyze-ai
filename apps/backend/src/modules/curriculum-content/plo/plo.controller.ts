@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { PloService } from './plo.service';
 import { CreatePloDto } from './dto/create-plo.dto';
 import { UpdatePloDto } from './dto/update-plo.dto';
@@ -46,11 +48,13 @@ export class PloController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculum', { from: 'body', key: 'curriculumId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a PLO' })
   @ApiResponse({ status: 201, description: 'PLO created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum' })
   @ApiResponse({ status: 404, description: 'Curriculum not found or inactive' })
   @ApiResponse({
     status: 409,
@@ -61,11 +65,13 @@ export class PloController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('plo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a PLO' })
   @ApiResponse({ status: 200, description: 'PLO updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this PLO' })
   @ApiResponse({ status: 404, description: 'PLO not found' })
   @ApiResponse({
     status: 409,
@@ -76,11 +82,13 @@ export class PloController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('plo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a PLO' })
   @ApiResponse({ status: 200, description: 'PLO deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this PLO' })
   @ApiResponse({ status: 404, description: 'PLO not found' })
   @ApiResponse({
     status: 409,

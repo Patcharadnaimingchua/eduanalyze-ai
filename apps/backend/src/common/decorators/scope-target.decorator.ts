@@ -1,6 +1,17 @@
 import { SetMetadata } from '@nestjs/common';
 
-export type ScopeTargetEntity = 'faculty' | 'department' | 'program';
+export type ScopeTargetEntity =
+  | 'faculty'
+  | 'department'
+  | 'program'
+  | 'curriculum'
+  | 'course'
+  | 'plo'
+  | 'clo'
+  | 'cloPloMapping'
+  | 'courseCategory'
+  | 'curriculumRequirement'
+  | 'prerequisite';
 
 export interface ScopeTargetSource {
   from: 'param' | 'body';

@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -46,11 +48,13 @@ export class CourseController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculum', { from: 'body', key: 'curriculumId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a course' })
   @ApiResponse({ status: 201, description: 'Course created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum' })
   @ApiResponse({
     status: 404,
     description: 'Curriculum or course category not found or inactive',
@@ -64,11 +68,13 @@ export class CourseController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('course', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a course' })
   @ApiResponse({ status: 200, description: 'Course updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this course' })
   @ApiResponse({ status: 404, description: 'Course not found' })
   @ApiResponse({
     status: 409,
@@ -79,11 +85,13 @@ export class CourseController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('course', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a course' })
   @ApiResponse({ status: 200, description: 'Course deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this course' })
   @ApiResponse({ status: 404, description: 'Course not found' })
   @ApiResponse({
     status: 409,

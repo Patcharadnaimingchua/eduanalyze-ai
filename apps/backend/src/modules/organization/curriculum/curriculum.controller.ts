@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { CurriculumService } from './curriculum.service';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
@@ -46,11 +48,13 @@ export class CurriculumController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('program', { from: 'body', key: 'programId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a curriculum' })
   @ApiResponse({ status: 201, description: 'Curriculum created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this program' })
   @ApiResponse({ status: 404, description: 'Program not found or inactive' })
   @ApiResponse({
     status: 409,
@@ -61,11 +65,13 @@ export class CurriculumController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculum', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a curriculum' })
   @ApiResponse({ status: 200, description: 'Curriculum updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum' })
   @ApiResponse({ status: 404, description: 'Curriculum not found' })
   @ApiResponse({
     status: 409,
@@ -76,11 +82,13 @@ export class CurriculumController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculum', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a curriculum' })
   @ApiResponse({ status: 200, description: 'Curriculum deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum' })
   @ApiResponse({ status: 404, description: 'Curriculum not found' })
   remove(@Param('id') id: string) {
     return this.curriculumService.remove(id);

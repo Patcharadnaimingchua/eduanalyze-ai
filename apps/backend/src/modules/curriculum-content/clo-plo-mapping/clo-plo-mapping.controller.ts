@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { CloPloMappingService } from './clo-plo-mapping.service';
 import { CreateCloPloMappingDto } from './dto/create-clo-plo-mapping.dto';
 import { UpdateCloPloMappingDto } from './dto/update-clo-plo-mapping.dto';
@@ -46,12 +48,14 @@ export class CloPloMappingController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('plo', { from: 'body', key: 'ploId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a CLO-PLO mapping' })
   @ApiResponse({ status: 201, description: 'CLO-PLO mapping created' })
   @ApiResponse({ status: 400, description: 'CLO and PLO do not belong to the same curriculum' })
+  @ApiResponse({ status: 403, description: 'No scope covering this PLO' })
   @ApiResponse({ status: 404, description: 'CLO or PLO not found or inactive' })
   @ApiResponse({ status: 409, description: 'CLO-PLO mapping already exists' })
   create(@Body() dto: CreateCloPloMappingDto) {
@@ -59,22 +63,26 @@ export class CloPloMappingController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('cloPloMapping', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a CLO-PLO mapping (weight only)' })
   @ApiResponse({ status: 200, description: 'CLO-PLO mapping updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this CLO-PLO mapping' })
   @ApiResponse({ status: 404, description: 'CLO-PLO mapping not found' })
   update(@Param('id') id: string, @Body() dto: UpdateCloPloMappingDto) {
     return this.cloPloMappingService.update(id, dto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('cloPloMapping', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a CLO-PLO mapping' })
   @ApiResponse({ status: 200, description: 'CLO-PLO mapping deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this CLO-PLO mapping' })
   @ApiResponse({ status: 404, description: 'CLO-PLO mapping not found' })
   remove(@Param('id') id: string) {
     return this.cloPloMappingService.remove(id);

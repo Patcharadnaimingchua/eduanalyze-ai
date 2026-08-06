@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { CloService } from './clo.service';
 import { CreateCloDto } from './dto/create-clo.dto';
 import { UpdateCloDto } from './dto/update-clo.dto';
@@ -46,11 +48,13 @@ export class CloController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('course', { from: 'body', key: 'courseId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a CLO' })
   @ApiResponse({ status: 201, description: 'CLO created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this course' })
   @ApiResponse({ status: 404, description: 'Course not found or inactive' })
   @ApiResponse({
     status: 409,
@@ -61,11 +65,13 @@ export class CloController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('clo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a CLO' })
   @ApiResponse({ status: 200, description: 'CLO updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this CLO' })
   @ApiResponse({ status: 404, description: 'CLO not found' })
   @ApiResponse({
     status: 409,
@@ -76,11 +82,13 @@ export class CloController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('clo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a CLO' })
   @ApiResponse({ status: 200, description: 'CLO deactivated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this CLO' })
   @ApiResponse({ status: 404, description: 'CLO not found' })
   @ApiResponse({
     status: 409,

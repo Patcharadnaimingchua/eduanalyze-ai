@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { ScopeTarget } from '../../../common/decorators/scope-target.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { ScopeGuard } from '../../../common/guards/scope.guard';
 import { CurriculumRequirementService } from './curriculum-requirement.service';
 import { CreateCurriculumRequirementDto } from './dto/create-curriculum-requirement.dto';
 import { UpdateCurriculumRequirementDto } from './dto/update-curriculum-requirement.dto';
@@ -48,11 +50,13 @@ export class CurriculumRequirementController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculum', { from: 'body', key: 'curriculumId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a curriculum requirement' })
   @ApiResponse({ status: 201, description: 'Curriculum requirement created' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum' })
   @ApiResponse({
     status: 404,
     description: 'Curriculum or course category not found or inactive',
@@ -66,11 +70,13 @@ export class CurriculumRequirementController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculumRequirement', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a curriculum requirement' })
   @ApiResponse({ status: 200, description: 'Curriculum requirement updated' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum requirement' })
   @ApiResponse({ status: 404, description: 'Curriculum requirement not found' })
   @ApiResponse({
     status: 409,
@@ -84,11 +90,13 @@ export class CurriculumRequirementController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN')
+  @ScopeTarget('curriculumRequirement', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete a curriculum requirement' })
   @ApiResponse({ status: 200, description: 'Curriculum requirement deleted' })
+  @ApiResponse({ status: 403, description: 'No scope covering this curriculum requirement' })
   @ApiResponse({ status: 404, description: 'Curriculum requirement not found' })
   remove(@Param('id') id: string) {
     return this.curriculumRequirementService.remove(id);
