@@ -19,5 +19,6 @@ import { PloAchievementService } from './plo-achievement.service';
   ],
   controllers: [PloAchievementController],
   providers: [PloAchievementService],
+  exports: [PloAchievementService],
 })
 export class PloAchievementModule {}

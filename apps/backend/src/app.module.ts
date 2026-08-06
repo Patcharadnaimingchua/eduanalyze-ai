@@ -10,6 +10,7 @@ import { UserManagementModule } from './modules/users/user-management/user-manag
 import { AuthModule } from './modules/auth/auth.module';
 import { CurriculumContentModule } from './modules/curriculum-content/curriculum-content.module';
 import { AcademicRecordModule } from './modules/academic-record/academic-record.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
@@ -31,6 +32,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     AuthModule,
     CurriculumContentModule,
     AcademicRecordModule,
+    DashboardModule,
     // Further feature modules are registered here one phase at a time.
   ],
   controllers: [],

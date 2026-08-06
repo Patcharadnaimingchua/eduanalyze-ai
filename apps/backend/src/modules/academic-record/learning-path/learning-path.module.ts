@@ -8,5 +8,6 @@ import { LearningPathService } from './learning-path.service';
   imports: [CreditCheckerModule, StudentCourseRecordModule],
   controllers: [LearningPathController],
   providers: [LearningPathService],
+  exports: [LearningPathService],
 })
 export class LearningPathModule {}
