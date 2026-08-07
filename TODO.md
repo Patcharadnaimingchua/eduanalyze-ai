@@ -46,15 +46,12 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 
 CLO Achievement ใช้ grade รวมทั้งวิชาตัดสินทุก CLO เท่ากัน (ไม่มี CLO-specific grade breakdown ใน schema ปัจจุบัน) — ถ้าต้องการความแม่นยำกว่านี้ในอนาคต (เช่น แยกคะแนนต่อ CLO จาก assignment/exam breakdown) ต้องออกแบบ schema ใหม่ (เช่น `CloScore` ผูกกับ `StudentCourseRecord`+`Clo`) เป็นการตัดสินใจ scope ใหม่ ไม่ใช่ Phase 8 ปัจจุบัน
 
-## Phase 3 — Google OAuth: ยังไม่เคยรัน full end-to-end flow ผ่าน browser จริง
+## ~~Phase 3 — Google OAuth: ยังไม่เคยรัน full end-to-end flow ผ่าน browser จริง~~ — resolved
 
-Business logic (`AuthService.handleGoogleCallback`, `completeGoogleRegistration`) ผ่านการทดสอบครบถ้วนแล้วในระดับ unit-level ผ่าน `NestFactory.createApplicationContext` (ไม่ผ่าน HTTP/browser จริง) — ครอบคลุม anti-account-takeover, pending-registration flow, returning-user login, expired token, reused token
+ทดสอบผ่าน browser จริงสำเร็จแล้ววันที่ 2026-08-07 ด้วย Google Cloud Console credential จริง (`.env` มี `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_CALLBACK_URL` ที่ตรงกับ `GET /api/auth/google/callback` แล้ว ไม่ใช่ placeholder อีกต่อไป) ครอบคลุม:
+- `GET /api/auth/google` → redirect ไป Google จริง → `GET /api/auth/google/callback` ได้ `pendingToken`/`isNewUser: true` สำหรับบัญชีใหม่
+- `POST /api/auth/google/complete-registration` ด้วย `pendingToken` จริง + studentCode/programId/curriculumId/admissionYear → ได้ `accessToken`/`refreshToken` ทันที ไม่ต้องผ่าน OTP (ตามที่ออกแบบไว้ — Google ถือว่ายืนยันตัวตนพอแล้ว)
+- ยืนยันด้วย DB query ว่า `User`+`UserAuthMethod(GOOGLE)`+`UserRole(STUDENT)`+`StudentProfile` ถูกสร้างครบในรอบเดียว
+- Returning-user path (`handleGoogleCallback` เรียกตรงผ่าน `NestFactory.createApplicationContext` ด้วย googleId เดิมที่ผูกไว้แล้ว — เข้า browser ซ้ำรอบสองทำไม่ได้จริงในการทดสอบอัตโนมัติ แต่ business logic เส้นนี้เหมือนกันกับที่ unit-test ไว้แล้ว) → ออก `accessToken`/`refreshToken` ทันที ไม่มี `pendingToken` ซ้ำ ตรงตามที่ออกแบบไว้
 
-แต่ `GET /api/auth/google` (redirect ไป Google) และ `GET /api/auth/google/callback` (Google ส่งกลับมา) **ยังไม่เคยถูกทดสอบจริงเลยสักครั้ง** เพราะยังไม่มี Google Cloud Console credential จริง (`.env` มีแค่ placeholder `change_me_google_client_id` / `change_me_google_client_secret`)
-
-**ก่อน deploy หรือทดสอบผ่าน browser จริง ต้อง:**
-1. สมัคร Google Cloud Console project
-2. สร้าง OAuth 2.0 Client ID (Web application)
-3. ตั้ง Authorized redirect URI ให้ตรงกับ `GET /api/auth/google/callback`
-4. ใส่ `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` จริงใน `.env` (แทน placeholder)
-5. ทดสอบ full flow ผ่าน browser จริงอีกครั้ง
+Business logic อื่นๆ (anti-account-takeover, expired/reused token) ผ่านการทดสอบ unit-level ไว้ตั้งแต่ก่อนหน้านี้แล้ว ไม่ได้ทดสอบซ้ำรอบนี้ ไม่ใช่ gap ใหม่
