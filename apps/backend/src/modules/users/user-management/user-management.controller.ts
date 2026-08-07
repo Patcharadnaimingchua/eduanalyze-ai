@@ -37,9 +37,9 @@ export class UserManagementController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary:
-      'Create an ADMIN/STAFF/INSTRUCTOR account (SUPER_ADMIN: any of these; ADMIN: STAFF only, scope required, must be within their own scope). Sends an invitation token — the new user sets their own password via POST /auth/accept-invitation.',
+      'Create an ADMIN/STAFF/INSTRUCTOR account (SUPER_ADMIN: any of these; ADMIN: STAFF only, scope required, must be within their own scope). Returns a system-generated temporary password once — relay it to the new user out-of-band; they should change it via PATCH /auth/change-password.',
   })
-  @ApiResponse({ status: 201, description: 'User created, invitation issued' })
+  @ApiResponse({ status: 201, description: 'User created, temporary password returned' })
   @ApiResponse({ status: 400, description: 'role:STUDENT rejected, or scope missing for ADMIN' })
   @ApiResponse({ status: 403, description: 'Role or scope outside what the requester may grant' })
   @ApiResponse({ status: 409, description: 'Email already in use' })

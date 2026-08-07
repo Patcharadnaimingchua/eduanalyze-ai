@@ -6,6 +6,10 @@ import {
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ScopeResolverService } from '../../../common/scope/scope-resolver.service';
+import {
+  generateTempPassword,
+  hashPassword,
+} from '../../../common/util/password.util';
 import { RequestUser } from '../../auth/request-user.interface';
 import { PendingInvitationService } from '../../auth/pending-invitation.service';
 import { UserService } from '../user/user.service';
@@ -60,10 +64,17 @@ export class UserManagementService {
       }
     }
 
-    const { user, token } = await this.prisma.$transaction(async (tx) => {
+    // No email service (see TODO.md) — the requester sets a usable
+    // password directly rather than issuing an invitation the new user
+    // would need email access to redeem. Generated before the transaction
+    // since it doesn't depend on anything created inside it.
+    const tempPassword = generateTempPassword();
+    const passwordHash = await hashPassword(tempPassword);
+
+    const user = await this.prisma.$transaction(async (tx) => {
       const createdUser = await this.userService.create(
         dto.email,
-        null,
+        passwordHash,
         dto.fullName,
         tx,
       );
@@ -76,20 +87,10 @@ export class UserManagementService {
           tx,
         );
       }
-      const invitationToken = await this.pendingInvitationService.create(
-        createdUser.id,
-        createdUser.email,
-        tx,
-      );
-      return { user: createdUser, token: invitationToken };
+      return createdUser;
     });
 
-    // Mirrors OtpService's mock-send style — outside the transaction since
-    // it's a side effect with nothing to roll back, and only fires once
-    // the DB state is durably committed.
-    console.warn(`[INVITE MOCK] Would send invitation token "${token}" to ${user.email}`);
-
-    return user;
+    return { ...user, tempPassword };
   }
 
   async listUsers(requester: RequestUser) {

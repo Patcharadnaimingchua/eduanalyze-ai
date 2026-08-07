@@ -65,9 +65,17 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 
 `PasswordResetService.create` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[PASSWORD RESET MOCK] ...')` เท่านั้น เป็น pattern เดียวกับ OTP/invitation ที่บันทึกไว้แล้ว ไม่ใช่ gap ใหม่ — ทั้งสามจุด (OTP, invitation, password reset) ต้องรอ real email service ตัวเดียวกันก่อน deploy จริง
 
-## Module 12 — User Management: invitation email เป็น mock log เหมือน OTP
+## Module 12 — User Management: `POST /users` เปลี่ยนจาก invitation-token เป็น temp password ตรงๆ แล้ว
 
-`PendingInvitationService.create`/`resend` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[INVITE MOCK] ...')` เท่านั้น เป็น gap เดียวกับที่บันทึกไว้แล้วสำหรับ OTP (`OtpService`) และ Google OAuth credential (ดูหัวข้อด้านล่าง) — ต้องมี real email service ก่อน deploy จริง ไม่ใช่ปัญหาใหม่ที่ต้องแก้แยก แค่ยืนยันว่าเป็น pattern เดียวกันที่ยังไม่ปิด
+`UserManagementService.createStaffOrAdmin` **ไม่เรียก `PendingInvitationService.create` อีกต่อไป** (2026-08-08) — เปลี่ยนเป็น generate temp password แบบสุ่ม (`generateTempPassword()`, `apps/backend/src/common/util/password.util.ts`) hash แล้วตั้งให้ user ทันทีในทรานแซกชันเดียวกับที่สร้าง `User`+`UserRole`+`UserScope` คืนค่า `tempPassword` ใน response ครั้งเดียวให้ ADMIN/SUPER_ADMIN คัดลอกไปแจ้งเจ้าของบัญชีนอกระบบเอง (ไม่ต้องพึ่ง email service ที่ยังเป็น mock อยู่)
+
+**`PendingInvitationService`/`POST /auth/accept-invitation`/`POST /users/:id/resend-invitation` ยังอยู่ครบ ไม่ได้ลบ** — แค่ไม่มีจุดเรียกใช้จาก `createStaffOrAdmin` แล้ว เพราะฉะนั้น `resend-invitation` จะ 404 ("no pending invitation") เสมอสำหรับ user ที่สร้างหลังการเปลี่ยนนี้ ซึ่งถูกต้องตามพฤติกรรมใหม่ ไม่ใช่ bug — เก็บโค้ดไว้เผื่อกลับมาใช้ invitation-based flow อีกครั้งถ้ามี email service จริงในอนาคต
+
+`PasswordResetService`/`OtpService`'s mock-email gap (OTP, forgot-password) ยังคงเปิดอยู่เหมือนเดิม ไม่เกี่ยวกับการเปลี่ยนแปลงนี้
+
+## ไม่มี `mustChangePassword` flag บังคับเปลี่ยนรหัสผ่านครั้งแรก
+
+Module 12's temp password (ด้านบน) กับ `PATCH /auth/change-password` (มีอยู่แล้ว — ตรวจ `oldPassword` แล้ว hash รหัสใหม่) รวมกันทำให้ผู้ใช้ *สามารถ* เปลี่ยนรหัสผ่านได้เองหลัง login ครั้งแรก แต่ไม่มีอะไร **บังคับ** ให้ทำ — ผู้ใช้ที่ได้ temp password จาก ADMIN สามารถใช้มันต่อไปได้เรื่อยๆ โดยไม่เปลี่ยนก็ได้ ถ้าต้องการบังคับจริงต้องเพิ่ม `User.mustChangePassword Boolean @default(false)` ในสคีมา (migration ใหม่) + set เป็น `true` ตอนสร้างบัญชีด้วย temp password + เช็คตอน login/ที่ frontend เพื่อบังคับ redirect ไปหน้าเปลี่ยนรหัสผ่านก่อนใช้งานอย่างอื่น — ตัดสินใจแล้วว่ายังไม่ทำรอบนี้ (schema change ใหม่ ไม่ใช่แค่ swap logic)
 
 ## ~~ScopeGuard — global `AllExceptionsFilter`~~ — resolved
 

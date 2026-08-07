@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { AuthProvider, Prisma, Role, User } from '@prisma/client';
+import { hashPassword } from '../../common/util/password.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserService } from '../users/user/user.service';
 import { UserRoleService } from '../users/user-role/user-role.service';
@@ -28,7 +29,6 @@ import { CompleteGoogleRegistrationDto } from './dto/complete-google-registratio
 import { JwtPayload } from './jwt-payload.interface';
 import { GoogleProfile } from './google-profile.interface';
 
-const PASSWORD_SALT_ROUNDS = 10;
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
 
 // ============================================================================
@@ -72,7 +72,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const passwordHash = await bcrypt.hash(dto.password, PASSWORD_SALT_ROUNDS);
+    const passwordHash = await hashPassword(dto.password);
 
     const user = await this.createStudentAccount({
       email: dto.email,
@@ -261,7 +261,7 @@ export class AuthService {
     const pending = await this.pendingInvitationService.findValidByToken(
       dto.token,
     );
-    const passwordHash = await bcrypt.hash(dto.password, PASSWORD_SALT_ROUNDS);
+    const passwordHash = await hashPassword(dto.password);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
@@ -300,7 +300,7 @@ export class AuthService {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
-    const passwordHash = await bcrypt.hash(dto.newPassword, PASSWORD_SALT_ROUNDS);
+    const passwordHash = await hashPassword(dto.newPassword);
     await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
   }
 
@@ -332,7 +332,7 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     const pending = await this.passwordResetService.findValidByToken(dto.token);
-    const passwordHash = await bcrypt.hash(dto.newPassword, PASSWORD_SALT_ROUNDS);
+    const passwordHash = await hashPassword(dto.newPassword);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
