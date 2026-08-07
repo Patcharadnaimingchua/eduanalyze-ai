@@ -1,5 +1,16 @@
 # TODO / Known Limitations
 
+## ~~ScopeGuard — Curriculum Content~~ — verified end-to-end
+
+`5b35a6b ScopeGuard: Curriculum Content` (รอบก่อนหน้า) ต่อ `ScopeGuard`/`ScopeResolverService.resolveAncestry` เข้า `Curriculum`/`Course`/`Clo`/`Plo`/`CourseCategory`/`CurriculumRequirement`/`Prerequisite`/`CloPloMapping` ครบแล้ว แต่ไม่เคยมีการทดสอบ end-to-end ด้วยข้อมูลจริงมาก่อน — ทดสอบวันที่ 2026-08-07 ด้วยข้อมูล ICT จริง (program `เทคโนโลยีสารสนเทศและการสื่อสาร`, curriculum 2564, course `01999111`, สร้าง CLO/PLO ทดสอบชั่วคราวแล้วลบทิ้ง) ผ่าน HTTP จริงกับ dev server (ไม่ใช่เรียก service ตรง):
+
+- SUPER_ADMIN bypass ผ่าน (200)
+- ADMIN scope ระดับ FACULTY เข้าถึง curriculum/course/clo/plo ที่อยู่ลึกลงไปหลายชั้นใต้ faculty เดียวกันได้ครบ (hierarchical inheritance ทำงานถูกต้อง — ทดสอบผ่าน HTTP จริง ไม่ใช่แค่ unit test)
+- ADMIN scope ระดับ PROGRAM ที่ผูกกับ program อื่น (การตลาด) ถูกปฏิเสธครบทั้ง 4 endpoint (403)
+- STAFF scope ระดับ FACULTY เข้าถึง course ได้ (200) แต่ถูกบล็อก clo/plo (403) — ยืนยันว่าเป็นการบล็อกจาก `RolesGuard` (role ไม่อยู่ใน `@Roles`) ไม่ใช่จาก scope ไม่ครอบคลุม ตรงตามที่ตั้งใจออกแบบไว้
+
+ไม่มีจุดใดต้องแก้โค้ด — ยืนยันว่า implementation ที่มีอยู่ถูกต้องครบถ้วน
+
 ## ⚠️ OTP verification ถูกปิดชั่วคราวทั้งระบบ (register + login) — ต้องเปิดกลับก่อนใช้งานจริง
 
 `AuthService` (`apps/backend/src/modules/auth/auth.service.ts`) มี constant `SKIP_OTP_VERIFICATION = true` อยู่ด้านบนไฟล์ (เดิมชื่อ `SKIP_REGISTRATION_OTP`, เปลี่ยนชื่อ+ขยายขอบเขตแล้ว) — ตอนนี้ทั้ง `POST /auth/register` **และ** `POST /auth/login` จะออก token ทันที (`accessToken`/`refreshToken` cookie) แทนที่จะส่ง OTP ไปยืนยันอีเมลก่อนเหมือนที่ออกแบบไว้เดิม เพื่อให้คนอื่นทดลองใช้งานระบบได้ง่ายขึ้นโดยไม่ต้องเข้าถึงอีเมลจริง
