@@ -31,6 +31,18 @@ import { GoogleProfile } from './google-profile.interface';
 const PASSWORD_SALT_ROUNDS = 10;
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
 
+// ============================================================================
+// TEMPORARY — see TODO.md "OTP verification ถูกปิดชั่วคราวทั้งระบบ". While
+// true, both POST /auth/register and POST /auth/login skip OtpService
+// entirely and issue tokens immediately (no email ownership check at all,
+// anywhere in the system). This is a convenience toggle for letting
+// people try the system without needing real email access — it is NOT
+// safe for real student data. Flip back to `false` before this system is
+// used with real students. OtpService/OtpCode are untouched — this only
+// short-circuits the two call sites in register()/login().
+// ============================================================================
+const SKIP_OTP_VERIFICATION = true;
+
 interface CreateStudentAccountParams {
   email: string;
   passwordHash: string | null;
@@ -73,6 +85,10 @@ export class AuthService {
       curriculumId: dto.curriculumId,
       admissionYear: dto.admissionYear,
     });
+
+    if (SKIP_OTP_VERIFICATION) {
+      return this.issueTokenPair(user);
+    }
 
     // OTP creation/delivery happens outside the transaction: if it fails,
     // the account still exists and the user can request the OTP again —
@@ -221,6 +237,10 @@ export class AuthService {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
+    if (SKIP_OTP_VERIFICATION) {
+      return this.issueTokenPair(user);
+    }
+
     await this.otpService.createAndSend(user.id, user.email);
 
     return { userId: user.id, email: user.email };
@@ -323,19 +343,37 @@ export class AuthService {
     });
   }
 
-  private async issueTokenPair(user: User) {
+  private async buildJwtPayload(user: User): Promise<JwtPayload> {
     const roles = await this.userRoleService.findRolesByUserId(user.id);
-    const payload: JwtPayload = { sub: user.id, email: user.email, roles };
+    return { sub: user.id, email: user.email, roles };
+  }
 
-    const accessToken = this.jwtService.sign(payload, {
+  private signAccessToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.accessSecret'),
       expiresIn: this.configService.get<string>('jwt.accessExpiresIn'),
     });
+  }
+
+  private async issueTokenPair(user: User) {
+    const payload = await this.buildJwtPayload(user);
+
+    const accessToken = this.signAccessToken(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('jwt.refreshSecret'),
       expiresIn: this.configService.get<string>('jwt.refreshExpiresIn'),
     });
 
     return { accessToken, refreshToken };
+  }
+
+  // Backs POST /auth/refresh — reissues only a new access token. The
+  // refresh token itself is never rotated: there's no server-side
+  // revocation table for it to matter against (see the fully-stateless
+  // note on logout()), so rotation without a blacklist buys nothing.
+  async refreshAccessToken(userId: string): Promise<{ accessToken: string }> {
+    const user = await this.userService.findById(userId);
+    const payload = await this.buildJwtPayload(user);
+    return { accessToken: this.signAccessToken(payload) };
   }
 }

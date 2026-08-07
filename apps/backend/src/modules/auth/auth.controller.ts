@@ -1,9 +1,12 @@
-import { Controller, Get, Patch, Post, UseGuards, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Post, UseGuards, Body, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { JwtRefreshGuard } from '../../common/guards/jwt-refresh.guard';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -16,42 +19,88 @@ import { CompleteGoogleRegistrationDto } from './dto/complete-google-registratio
 import { GoogleProfile } from './google-profile.interface';
 import { RequestUser } from './request-user.interface';
 
+const REFRESH_COOKIE_NAME = 'refreshToken';
+// Keep in sync with JWT_REFRESH_EXPIRES_IN's default (7d) — the cookie's
+// own expiry is just a client-side hint anyway, the JWT's own `exp` claim
+// is what JwtRefreshStrategy actually enforces.
+const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('register')
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({
-    summary: 'Register a new student account (email + password + OTP)',
+    summary:
+      'Register a new student account. NOTE: OTP is temporarily skipped (see TODO.md) — currently logs the account in immediately instead of sending an OTP.',
   })
   @ApiResponse({
     status: 201,
-    description: 'Account created, OTP sent to complete login',
+    description:
+      'Either { userId, email } (OTP sent, normal flow) or { accessToken } + refresh cookie (OTP currently skipped)',
   })
   @ApiResponse({ status: 400, description: 'Invalid or mismatched program/curriculum' })
   @ApiResponse({ status: 409, description: 'Email or student code already in use' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.register(dto);
+    return this.respondWithTokenOrOtpPending(result, response);
   }
 
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Verify email + password, send a new login OTP' })
-  @ApiResponse({ status: 201, description: 'OTP sent to complete login' })
+  @ApiOperation({
+    summary:
+      'Verify email + password. NOTE: OTP is temporarily skipped (see TODO.md) — currently issues tokens immediately instead of sending an OTP.',
+  })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Either { userId, email } (OTP sent, normal flow) or { accessToken } + refresh cookie (OTP currently skipped)',
+  })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    return this.respondWithTokenOrOtpPending(result, response);
   }
 
   @Post('verify-otp')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Verify a login OTP and issue an access/refresh token pair' })
-  @ApiResponse({ status: 201, description: 'Access and refresh tokens issued' })
+  @ApiOperation({
+    summary:
+      'Verify a login OTP — sets the refresh token as an httpOnly cookie and returns the access token in the body',
+  })
+  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
   @ApiResponse({ status: 401, description: 'Invalid, expired, or already-used OTP' })
-  verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto);
+  async verifyOtp(
+    @Body() dto: VerifyOtpDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken } = await this.authService.verifyOtp(dto);
+    this.setRefreshCookie(response, refreshToken);
+    return { accessToken };
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtRefreshGuard)
+  @ApiOperation({
+    summary:
+      'Exchange the httpOnly refresh cookie for a new access token — the refresh token itself is not rotated',
+  })
+  @ApiResponse({ status: 201, description: 'New access token issued' })
+  @ApiResponse({ status: 401, description: 'Refresh cookie missing, invalid, or expired' })
+  refresh(@CurrentUser() user: RequestUser) {
+    return this.authService.refreshAccessToken(user.userId);
   }
 
   @Post('accept-invitation')
@@ -71,10 +120,11 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary:
-      'Logout — client-side only. JWT here is fully stateless (no server-side session/refresh-token table), so there is nothing to revoke; this endpoint exists for API symmetry. The client is responsible for discarding its tokens.',
+      'Logout — clears the refresh cookie. The access token itself is stateless and short-lived (never persisted client-side beyond memory), so there is nothing else to revoke.',
   })
-  @ApiResponse({ status: 201, description: 'Logged out (client should discard tokens)' })
-  logout() {
+  @ApiResponse({ status: 201, description: 'Logged out, refresh cookie cleared' })
+  logout(@Res({ passthrough: true }) response: Response) {
+    this.clearRefreshCookie(response);
     return { message: 'Logged out' };
   }
 
@@ -127,30 +177,80 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Google OAuth callback' })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Either { accessToken, refreshToken } (returning user) or { pendingToken, isNewUser: true } (new user, must call complete-registration)',
+  @ApiOperation({
+    summary:
+      'Google OAuth callback — a top-level browser redirect target, not a fetch call, so it can\'t return JSON. Sets the refresh cookie (returning user) then redirects into the frontend.',
   })
-  @ApiResponse({
-    status: 409,
-    description: 'Email already registered via a different sign-in method',
-  })
-  googleAuthCallback(@CurrentUser() profile: GoogleProfile) {
-    return this.authService.handleGoogleCallback(profile);
+  async googleAuthCallback(
+    @CurrentUser() profile: GoogleProfile,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.handleGoogleCallback(profile);
+    const frontendUrl = this.configService.get<string>('frontendUrl');
+
+    if ('pendingToken' in result) {
+      response.redirect(
+        `${frontendUrl}/register/google?pendingToken=${encodeURIComponent(result.pendingToken)}`,
+      );
+      return;
+    }
+
+    this.setRefreshCookie(response, result.refreshToken);
+    response.redirect(frontendUrl!);
   }
 
   @Post('google/complete-registration')
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({
-    summary: 'Finish Google sign-up by supplying the remaining student fields',
+    summary:
+      'Finish Google sign-up by supplying the remaining student fields — sets the refresh token as an httpOnly cookie and returns the access token in the body',
   })
-  @ApiResponse({ status: 201, description: 'Access and refresh tokens issued' })
+  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
   @ApiResponse({ status: 401, description: 'Pending registration session expired or invalid' })
   @ApiResponse({ status: 400, description: 'Invalid or mismatched program/curriculum' })
   @ApiResponse({ status: 409, description: 'Student code already in use' })
-  completeGoogleRegistration(@Body() dto: CompleteGoogleRegistrationDto) {
-    return this.authService.completeGoogleRegistration(dto);
+  async completeGoogleRegistration(
+    @Body() dto: CompleteGoogleRegistrationDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken } =
+      await this.authService.completeGoogleRegistration(dto);
+    this.setRefreshCookie(response, refreshToken);
+    return { accessToken };
+  }
+
+  // Shared by register()/login() — both now have the same two possible
+  // shapes depending on SKIP_OTP_VERIFICATION (see auth.service.ts):
+  // { userId, email } when OTP is actually sent, or a real token pair
+  // when it's skipped. Never duplicated at two call sites (CONVENTIONS
+  // §6) even though this branch only exists because of a temporary flag.
+  private respondWithTokenOrOtpPending(
+    result: { userId: string; email: string } | { accessToken: string; refreshToken: string },
+    response: Response,
+  ) {
+    if ('accessToken' in result) {
+      this.setRefreshCookie(response, result.refreshToken);
+      return { accessToken: result.accessToken };
+    }
+    return result;
+  }
+
+  private setRefreshCookie(response: Response, refreshToken: string) {
+    response.cookie(REFRESH_COOKIE_NAME, refreshToken, {
+      httpOnly: true,
+      secure: this.configService.get<string>('nodeEnv') === 'production',
+      sameSite: 'lax',
+      path: '/api/auth',
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
+    });
+  }
+
+  private clearRefreshCookie(response: Response) {
+    response.clearCookie(REFRESH_COOKIE_NAME, {
+      httpOnly: true,
+      secure: this.configService.get<string>('nodeEnv') === 'production',
+      sameSite: 'lax',
+      path: '/api/auth',
+    });
   }
 }

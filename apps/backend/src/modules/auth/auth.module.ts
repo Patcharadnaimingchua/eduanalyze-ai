@@ -9,14 +9,17 @@ import { GooglePendingRegistrationService } from './google-pending-registration.
 import { PendingInvitationModule } from './pending-invitation.module';
 import { PasswordResetModule } from './password-reset.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   // No default secret/expiry on JwtModule — access and refresh tokens use
   // two different secrets, passed explicitly on each jwtService.sign()
   // call in AuthService instead of a single module-wide default.
-  // JwtStrategy verifies incoming access tokens; it reads
-  // JWT_ACCESS_SECRET directly (see strategies/jwt.strategy.ts).
+  // JwtStrategy verifies incoming access tokens (Authorization header); it
+  // reads JWT_ACCESS_SECRET directly (see strategies/jwt.strategy.ts).
+  // JwtRefreshStrategy is its sibling for the refresh cookie — reads
+  // JWT_REFRESH_SECRET, see strategies/jwt-refresh.strategy.ts.
   // GoogleStrategy reads GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL directly for
   // the same reason.
   imports: [
@@ -32,6 +35,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     OtpService,
     GooglePendingRegistrationService,
     JwtStrategy,
+    JwtRefreshStrategy,
     GoogleStrategy,
   ],
 })

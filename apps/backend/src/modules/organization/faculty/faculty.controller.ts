@@ -26,9 +26,10 @@ import { UpdateFacultyDto } from './dto/update-faculty.dto';
 export class FacultyController {
   constructor(private readonly facultyService: FacultyService) {}
 
+  // Public — university org structure (faculty/department/program/
+  // curriculum catalog) is publicly-knowable information in the real
+  // world, and Register needs it before the user has an account at all.
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active faculties' })
   @ApiResponse({ status: 200, description: 'List of active faculties' })
   findAll() {
@@ -36,8 +37,6 @@ export class FacultyController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a faculty by id' })
   @ApiResponse({ status: 200, description: 'Faculty found' })
   @ApiResponse({ status: 404, description: 'Faculty not found' })

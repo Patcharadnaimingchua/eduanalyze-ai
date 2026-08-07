@@ -1,7 +1,41 @@
+'use client';
+
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/button';
+
 export default function Home() {
+  const { user, status, logout } = useAuth();
+
   return (
-    <main>
-      <h1>EduAnalyzeAI</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
+      <h1 className="text-3xl font-bold">EduAnalyzeAI</h1>
+
+      {status === 'loading' && (
+        <p className="text-muted-foreground">กำลังโหลด...</p>
+      )}
+
+      {status === 'authenticated' && user && (
+        <div className="flex flex-col items-center gap-3">
+          <p>
+            เข้าสู่ระบบในชื่อ <span className="font-medium">{user.fullName}</span> ({user.email})
+          </p>
+          <Button variant="outline" onClick={() => logout()}>
+            ออกจากระบบ
+          </Button>
+        </div>
+      )}
+
+      {status === 'unauthenticated' && (
+        <div className="flex gap-3">
+          <Link href="/login">
+            <Button>เข้าสู่ระบบ</Button>
+          </Link>
+          <Link href="/register">
+            <Button variant="outline">สมัครสมาชิก</Button>
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

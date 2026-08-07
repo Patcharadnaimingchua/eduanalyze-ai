@@ -1,5 +1,19 @@
 # TODO / Known Limitations
 
+## ⚠️ OTP verification ถูกปิดชั่วคราวทั้งระบบ (register + login) — ต้องเปิดกลับก่อนใช้งานจริง
+
+`AuthService` (`apps/backend/src/modules/auth/auth.service.ts`) มี constant `SKIP_OTP_VERIFICATION = true` อยู่ด้านบนไฟล์ (เดิมชื่อ `SKIP_REGISTRATION_OTP`, เปลี่ยนชื่อ+ขยายขอบเขตแล้ว) — ตอนนี้ทั้ง `POST /auth/register` **และ** `POST /auth/login` จะออก token ทันที (`accessToken`/`refreshToken` cookie) แทนที่จะส่ง OTP ไปยืนยันอีเมลก่อนเหมือนที่ออกแบบไว้เดิม เพื่อให้คนอื่นทดลองใช้งานระบบได้ง่ายขึ้นโดยไม่ต้องเข้าถึงอีเมลจริง
+
+**ไม่ได้ลบ `OtpService`/`OtpCode` model ทิ้ง** — แค่ short-circuit 2 จุดเรียกใช้ใน `register()`/`login()` (`verify-otp` endpoint ยังอยู่ครบ เผื่อเปิดกลับ) เปิดกลับมาได้ทันทีด้วยการเปลี่ยน `SKIP_OTP_VERIFICATION` เป็น `false` — ไม่ต้องแก้ที่อื่นเลยทั้ง backend/frontend เพราะทั้งคู่เช็ค response shape (`'accessToken' in data`) รองรับทั้ง 2 สถานะของ flag อยู่แล้ว
+
+**ความเสี่ยงขณะเปิด flag นี้ไว้**: ใครก็ได้สามารถสมัครสมาชิกหรือ login ด้วยอีเมลที่ตัวเองไม่ได้เป็นเจ้าของ แล้วเข้าใช้งานได้ทันทีโดยไม่มีการพิสูจน์ความเป็นเจ้าของอีเมลเลยทั้งระบบ (ไม่ใช่แค่ตอนสมัครสมาชิกอีกต่อไป) — **ต้องเปิด OTP กลับมาก่อนใช้งานจริงกับข้อมูลนักศึกษาจริงเด็ดขาด**
+
+## Curriculum.isOpenForRegistration — field มีอยู่ใน schema แต่ไม่ถูก enforce ที่ไหนเลย
+
+`Curriculum.isOpenForRegistration` มีอยู่ในสคีมาตั้งแต่ Phase 4 (มี logic `unsetOtherOpenCurricula` ตอน create/update เพื่อกันไม่ให้มีมากกว่า 1 หลักสูตรเปิดพร้อมกันต่อ program) แต่ตรวจสอบแล้วว่า **ไม่มีจุดไหนอ่านค่านี้เพื่อบังคับใช้จริงเลย** ทั้งฝั่ง backend (`AuthService.register`/`StudentProfileService` ไม่เช็คเลยตอนสมัครสมาชิก) และ frontend (เคยลองกรอง dropdown ด้วย field นี้ใน `DependentOrgSelect` ตอน Frontend F1 แล้วพบว่าใช้งานไม่ได้จริง — ข้อมูลจริงทุกแถว (16 หลักสูตร) เป็น `false` หมด ทำให้ dropdown ว่างเปล่าเสมอ จึงเอา filter ออกแล้ว หันไปกรองด้วย `isActive`+`programId` แทน ซึ่งตรงกับสิ่งที่ backend ยอมรับจริง)
+
+**ต้องตัดสินใจ**: จะ implement การ enforce จริง (เช่น backend เช็คตอน register ว่า curriculum ที่เลือกต้อง `isOpenForRegistration: true`, มี endpoint ให้ ADMIN เปิด/ปิดรอบรับสมัครต่อหลักสูตร) หรือถือว่าเป็น field ที่ยังไม่ได้ใช้งานจริงในตอนนี้ (มีไว้เผื่ออนาคต ไม่ใช่ bug ที่ต้องรีบแก้) — ยังไม่ได้ตัดสินใจ
+
 ## StudentCourseRecord audit trail — soft-delete ไม่รู้จัก unique constraint
 
 เพิ่ม `isActive`/`enteredByUserId`/`enteredByRole` เข้า `StudentCourseRecord` (ตามหลัง STAFF write access round) — ADMIN/STAFF ลบ record ของนักศึกษาคนอื่นเป็น soft-delete (`isActive: false`), STUDENT ลบของตัวเอง/SUPER_ADMIN ยังเป็น hard-delete เหมือนเดิม

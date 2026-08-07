@@ -28,9 +28,8 @@ import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 export class CurriculumController {
   constructor(private readonly curriculumService: CurriculumService) {}
 
+  // Public — see FacultyController's findAll for the reasoning.
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active curricula' })
   @ApiResponse({ status: 200, description: 'List of active curricula' })
   findAll() {
@@ -38,8 +37,6 @@ export class CurriculumController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a curriculum by id' })
   @ApiResponse({ status: 200, description: 'Curriculum found' })
   @ApiResponse({ status: 404, description: 'Curriculum not found' })

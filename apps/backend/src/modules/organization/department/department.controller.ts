@@ -28,9 +28,8 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
+  // Public — see FacultyController's findAll for the reasoning.
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active departments' })
   @ApiResponse({ status: 200, description: 'List of active departments' })
   findAll() {
@@ -38,8 +37,6 @@ export class DepartmentController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a department by id' })
   @ApiResponse({ status: 200, description: 'Department found' })
   @ApiResponse({ status: 404, description: 'Department not found' })

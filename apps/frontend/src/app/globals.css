@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    /* Brand palette (login/register redesign) — primary/ring now match it
+       directly since nothing else in the app had an established brand
+       color yet; brand/brand-light are kept as separate named tokens for
+       the accent-blue and pale-panel uses that don't map to primary. */
+    --primary: 210 91% 17%; /* #042C53 */
+    --primary-foreground: 210 40% 98%;
+    --brand: 210 75% 37%; /* #185FA5 */
+    --brand-foreground: 210 40% 98%;
+    --brand-light: 219 100% 95%; /* #E5EEFF */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 210 75% 37%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

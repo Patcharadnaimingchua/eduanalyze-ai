@@ -28,9 +28,8 @@ import { UpdateProgramDto } from './dto/update-program.dto';
 export class ProgramController {
   constructor(private readonly programService: ProgramService) {}
 
+  // Public — see FacultyController's findAll for the reasoning.
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active programs' })
   @ApiResponse({ status: 200, description: 'List of active programs' })
   findAll() {
@@ -38,8 +37,6 @@ export class ProgramController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a program by id' })
   @ApiResponse({ status: 200, description: 'Program found' })
   @ApiResponse({ status: 404, description: 'Program not found' })

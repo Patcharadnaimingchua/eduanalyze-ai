@@ -1,0 +1,18 @@
+import { z } from 'zod';
+
+export const completeGoogleRegistrationSchema = z.object({
+  studentCode: z.string().min(1, 'กรุณากรอกรหัสนิสิต/นักศึกษา'),
+  facultyId: z.string().uuid('กรุณาเลือกคณะ'),
+  departmentId: z.string().uuid('กรุณาเลือกภาควิชา'),
+  programId: z.string().uuid('กรุณาเลือกหลักสูตร'),
+  curriculumId: z.string().uuid('กรุณาเลือกฉบับหลักสูตร'),
+  admissionYear: z.coerce
+    .number()
+    .int()
+    .min(2400, 'ปีการศึกษาไม่ถูกต้อง')
+    .max(2700, 'ปีการศึกษาไม่ถูกต้อง'),
+});
+
+export type CompleteGoogleRegistrationFormValues = z.infer<
+  typeof completeGoogleRegistrationSchema
+>;
