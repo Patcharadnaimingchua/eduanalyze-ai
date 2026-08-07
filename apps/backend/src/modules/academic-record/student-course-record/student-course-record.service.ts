@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Grade, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RequestUser } from '../../auth/request-user.interface';
 import { CourseService } from '../../curriculum-content/course/course.service';
@@ -142,6 +142,22 @@ export class StudentCourseRecordService {
       creditsCounted,
       courseCount: latestByCourse.size,
     };
+  }
+
+  // Pure/internal — same shape as calculateGpaFromAttempts above, operates
+  // on an already-fetched Map. Full distribution over all 12 Grade values
+  // (including W/I/S/U) — a raw tally, not pre-filtered like
+  // CloAchievementService's own PASS/FAIL-only totalStudents.
+  tallyGradeDistribution(
+    latestAttempts: Map<string, LatestCourseAttempt>,
+  ): Record<Grade, number> {
+    const distribution = Object.fromEntries(
+      Object.keys(GRADE_POINTS).map((grade) => [grade, 0]),
+    ) as Record<Grade, number>;
+    for (const record of latestAttempts.values()) {
+      distribution[record.grade] += 1;
+    }
+    return distribution;
   }
 
   // Retake policy (confirmed in Phase 6): the latest attempt replaces

@@ -135,6 +135,14 @@ export class DashboardService {
         );
         const courseAssessment =
           await this.courseAssessmentService.getAggregateForCourse(course.id);
+        const latestAttempts =
+          await this.studentCourseRecordService.getLatestAttemptsPerStudent(
+            course.id,
+          );
+        const gradeDistribution =
+          this.studentCourseRecordService.tallyGradeDistribution(
+            latestAttempts,
+          );
 
         return {
           courseId: course.id,
@@ -142,6 +150,7 @@ export class DashboardService {
           name: course.name,
           studentCount: cloReport.totalStudents,
           achievementPercent: cloReport.achievementPercent,
+          gradeDistribution,
           clos: cloReport.clos,
           plos: ploReport.plos,
           courseAssessment,

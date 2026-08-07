@@ -45,6 +45,9 @@ export interface InstructorCourseSummary {
   studentCount: number;
   // "% B ขึ้นไป" per §30 — pass-through of Phase 8's course-level %.
   achievementPercent: number;
+  // Full A-F (+W/I/S/U) tally per §30's "Grade Distribution" — raw counts,
+  // not pre-filtered like achievementPercent above.
+  gradeDistribution: Record<Grade, number>;
   clos: CourseCloAchievementReport['clos'];
   plos: CoursePloAchievementReport['plos'];
   courseAssessment: Awaited<
