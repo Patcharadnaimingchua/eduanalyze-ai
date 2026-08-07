@@ -15,6 +15,13 @@ export type LatestCourseAttempt = Prisma.StudentCourseRecordGetPayload<{
   include: { semester: { include: { academicYear: true } } };
 }>;
 
+export interface StudentRosterEntry {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  grade: Grade;
+}
+
 @Injectable()
 export class StudentCourseRecordService {
   constructor(
@@ -206,6 +213,36 @@ export class StudentCourseRecordService {
       }
     }
     return latestByStudent;
+  }
+
+  // §9: INSTRUCTOR can view "Student ที่เกี่ยวข้องกับ Course ที่ตัวเองรับผิดชอบ".
+  // Reuses getLatestAttemptsPerStudent (same Map already powering Grade
+  // Distribution) — no duplicate retake-collapsing logic. Minimal fields
+  // only (no email/contact info) — an instructor needs to identify and
+  // grade students, not contact them outside the platform.
+  async getStudentRosterForCourse(
+    courseId: string,
+  ): Promise<StudentRosterEntry[]> {
+    await this.courseService.findActiveByIdOrThrow(courseId);
+    const latestAttempts = await this.getLatestAttemptsPerStudent(courseId);
+
+    const profiles = await this.prisma.studentProfile.findMany({
+      where: { id: { in: [...latestAttempts.keys()] } },
+      include: { user: { select: { fullName: true } } },
+    });
+    const profileById = new Map(profiles.map((p) => [p.id, p]));
+
+    return [...latestAttempts.entries()]
+      .map(([studentProfileId, attempt]) => {
+        const profile = profileById.get(studentProfileId)!;
+        return {
+          studentProfileId,
+          studentCode: profile.studentCode,
+          fullName: profile.user.fullName,
+          grade: attempt.grade,
+        };
+      })
+      .sort((a, b) => a.studentCode.localeCompare(b.studentCode));
   }
 
   private isLaterAttempt(
