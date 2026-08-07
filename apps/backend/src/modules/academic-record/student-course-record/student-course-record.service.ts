@@ -1,9 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Grade, Prisma } from '@prisma/client';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Grade, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RequestUser } from '../../auth/request-user.interface';
 import { CourseService } from '../../curriculum-content/course/course.service';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
+import { ScopeResolverService } from '../../../common/scope/scope-resolver.service';
 import { SemesterService } from '../semester/semester.service';
 import { CreateStudentCourseRecordDto } from './dto/create-student-course-record.dto';
 import { UpdateStudentCourseRecordDto } from './dto/update-student-course-record.dto';
@@ -29,6 +35,7 @@ export class StudentCourseRecordService {
     private readonly studentProfileService: StudentProfileService,
     private readonly courseService: CourseService,
     private readonly semesterService: SemesterService,
+    private readonly scopeResolverService: ScopeResolverService,
   ) {}
 
   async create(dto: CreateStudentCourseRecordDto, user: RequestUser) {
@@ -50,6 +57,8 @@ export class StudentCourseRecordService {
           // Snapshot, not a live join — see schema.prisma comment on
           // StudentCourseRecord.credits.
           credits: course.credits,
+          enteredByUserId: user.userId,
+          enteredByRole: this.resolveActingRole(user),
         },
       });
     } catch (error) {
@@ -67,18 +76,33 @@ export class StudentCourseRecordService {
 
   // Per CONVENTIONS.md §3a: STUDENT sees only their own rows, filtered at
   // the query level — never fetched in full and filtered in memory.
+  // ADMIN/STAFF (§10): scoped to students in programs their scope covers,
+  // same query-level discipline via getCoveredProgramIds.
   async findAll(user: RequestUser) {
     if (this.isSelfServiceOnly(user)) {
       const own = await this.studentProfileService.findByUserId(user.userId);
       return this.prisma.studentCourseRecord.findMany({
-        where: { studentProfileId: own.id },
+        where: { studentProfileId: own.id, isActive: true },
       });
     }
-    return this.prisma.studentCourseRecord.findMany();
+    if (this.isStaffTier(user)) {
+      const programIds = await this.scopeResolverService.getCoveredProgramIds(
+        user.userId,
+      );
+      return this.prisma.studentCourseRecord.findMany({
+        where: {
+          studentProfile: { programId: { in: programIds } },
+          isActive: true,
+        },
+      });
+    }
+    return this.prisma.studentCourseRecord.findMany({
+      where: { isActive: true },
+    });
   }
 
   async findOne(id: string, user: RequestUser) {
-    const where: Prisma.StudentCourseRecordWhereInput = { id };
+    const where: Prisma.StudentCourseRecordWhereInput = { id, isActive: true };
     if (this.isSelfServiceOnly(user)) {
       const own = await this.studentProfileService.findByUserId(user.userId);
       where.studentProfileId = own.id;
@@ -90,6 +114,12 @@ export class StudentCourseRecordService {
       // see CONVENTIONS.md §3a on avoiding a 403 information leak.
       throw new NotFoundException(`Student course record ${id} not found`);
     }
+    if (this.isStaffTier(user)) {
+      // Distinct from the 404 above — this is a staff role hitting its
+      // scope boundary, not a STUDENT peer probing another student's
+      // data, so ScopeGuard's usual 403 convention applies here instead.
+      await this.assertStaffScopeCovers(record.studentProfileId, user);
+    }
     return record;
   }
 
@@ -97,14 +127,30 @@ export class StudentCourseRecordService {
     await this.findOne(id, user);
     return this.prisma.studentCourseRecord.update({
       where: { id },
-      data: dto,
+      data: {
+        ...dto,
+        // Last-writer, not first: overwritten on every update, so this
+        // always answers "who is responsible for the current grade value"
+        // — see schema.prisma comment on enteredByUserId.
+        enteredByUserId: user.userId,
+        enteredByRole: this.resolveActingRole(user),
+      },
     });
   }
 
-  // Hard-delete — PROJECT_CONTEXT.md §16 frames this as the student
-  // correcting a mis-entered row, not something requiring an audit trail.
+  // STUDENT deleting their own mis-entered row, or SUPER_ADMIN: hard
+  // delete, unchanged (PROJECT_CONTEXT.md §16's original framing still
+  // holds for self-correction). ADMIN/STAFF deleting a record that isn't
+  // theirs: soft delete — higher risk than correcting your own row, so it
+  // stays recoverable/auditable rather than gone outright.
   async remove(id: string, user: RequestUser) {
     await this.findOne(id, user);
+    if (this.isStaffTier(user)) {
+      return this.prisma.studentCourseRecord.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
     return this.prisma.studentCourseRecord.delete({ where: { id } });
   }
 
@@ -122,6 +168,9 @@ export class StudentCourseRecordService {
       }
     } else {
       await this.studentProfileService.findActiveByIdOrThrow(studentProfileId);
+      if (this.isStaffTier(user)) {
+        await this.assertStaffScopeCovers(studentProfileId, user);
+      }
     }
 
     const latestByCourse = await this.getLatestAttemptsPerCourse(studentProfileId);
@@ -177,7 +226,7 @@ export class StudentCourseRecordService {
     studentProfileId: string,
   ): Promise<Map<string, LatestCourseAttempt>> {
     const records = await this.prisma.studentCourseRecord.findMany({
-      where: { studentProfileId },
+      where: { studentProfileId, isActive: true },
       include: { semester: { include: { academicYear: true } } },
     });
 
@@ -201,7 +250,7 @@ export class StudentCourseRecordService {
     courseId: string,
   ): Promise<Map<string, LatestCourseAttempt>> {
     const records = await this.prisma.studentCourseRecord.findMany({
-      where: { courseId },
+      where: { courseId, isActive: true },
       include: { semester: { include: { academicYear: true } } },
     });
 
@@ -259,10 +308,52 @@ export class StudentCourseRecordService {
     return user.roles.includes('STUDENT') && !user.roles.includes('SUPER_ADMIN');
   }
 
+  // §10: ADMIN/STAFF get scoped write access alongside STUDENT's unchanged
+  // self-service and SUPER_ADMIN's unchanged unrestricted access — a
+  // student never has ADMIN/STAFF too (registration only ever assigns
+  // STUDENT, per PROJECT_CONTEXT.md §33), so this and isSelfServiceOnly
+  // are mutually exclusive in practice.
+  private isStaffTier(user: RequestUser) {
+    return (
+      (user.roles.includes('ADMIN') || user.roles.includes('STAFF')) &&
+      !user.roles.includes('SUPER_ADMIN')
+    );
+  }
+
+  // Audit-trail snapshot for enteredByRole — most-privileged role wins if
+  // a user somehow holds more than one (STUDENT never co-occurs with
+  // ADMIN/STAFF/SUPER_ADMIN in practice, per §33, so this is unambiguous).
+  private resolveActingRole(user: RequestUser): Role {
+    if (user.roles.includes('SUPER_ADMIN')) return Role.SUPER_ADMIN;
+    if (user.roles.includes('ADMIN')) return Role.ADMIN;
+    if (user.roles.includes('STAFF')) return Role.STAFF;
+    return Role.STUDENT;
+  }
+
+  private async assertStaffScopeCovers(
+    studentProfileId: string,
+    user: RequestUser,
+  ) {
+    const ancestry = await this.scopeResolverService.resolveAncestry(
+      'studentProfile',
+      studentProfileId,
+    );
+    const effectiveScopes = await this.scopeResolverService.getEffectiveScopes(
+      user.userId,
+    );
+    if (!this.scopeResolverService.isCovered(ancestry, effectiveScopes)) {
+      throw new ForbiddenException(
+        'You do not have scope covering this student',
+      );
+    }
+  }
+
   // STUDENT: always their own profile, resolved server-side — the
   // client-supplied studentProfileId is ignored so a student can never
   // create/read a record under someone else's profile.
   // SUPER_ADMIN: uses the client-supplied studentProfileId, validated.
+  // ADMIN/STAFF: uses the client-supplied studentProfileId, validated and
+  // scope-checked.
   private async resolveOwnStudentProfileIdOrValidate(
     suppliedStudentProfileId: string,
     user: RequestUser,
@@ -274,6 +365,9 @@ export class StudentCourseRecordService {
     const profile = await this.studentProfileService.findActiveByIdOrThrow(
       suppliedStudentProfileId,
     );
+    if (this.isStaffTier(user)) {
+      await this.assertStaffScopeCovers(profile.id, user);
+    }
     return profile.id;
   }
 }

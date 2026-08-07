@@ -1,5 +1,21 @@
 # TODO / Known Limitations
 
+## StudentCourseRecord audit trail — soft-delete ไม่รู้จัก unique constraint
+
+เพิ่ม `isActive`/`enteredByUserId`/`enteredByRole` เข้า `StudentCourseRecord` (ตามหลัง STAFF write access round) — ADMIN/STAFF ลบ record ของนักศึกษาคนอื่นเป็น soft-delete (`isActive: false`), STUDENT ลบของตัวเอง/SUPER_ADMIN ยังเป็น hard-delete เหมือนเดิม
+
+**ข้อจำกัดที่ยอมรับไว้**: `@@unique([studentProfileId, courseId, semesterId])` ไม่รู้จัก `isActive` — แถวที่ถูก soft-delete ยังคงครอบครอง slot ของ unique key นั้นอยู่ ถ้า ADMIN/STAFF soft-delete แถวผิดพลาดแล้วพยายามสร้างแถวใหม่สำหรับนักศึกษา+วิชา+เทอมเดียวกัน จะเจอ 409 Conflict จนกว่าจะจัดการแถวเดิมจริงๆ (ไม่มี endpoint สำหรับ hard-delete/restore แถวที่ soft-delete แล้วในตอนนี้) — ไม่ใช่ปัญหาสำหรับกรณีทั่วไป "เกรดผิด แก้เกรด" เพราะใช้ `PATCH` ได้ตรงๆ ไม่ต้องลบ+สร้างใหม่ กระทบเฉพาะกรณี "ทั้ง registration ผิด" ซึ่งพบไม่บ่อย ถ้าต้องแก้จริงต้องออกแบบ unique constraint ใหม่ (เช่น partial unique index ที่กรอง `isActive: true`) เป็นการตัดสินใจ scope ใหม่
+
+## STAFF role (§10) — "Course Offering" ไม่มี model, CLO/PLO ยืนยันว่าตั้งใจไม่ให้ STAFF เข้าถึง
+
+รอบนี้เปิด STAFF permission ครบตาม §10 เท่าที่มี endpoint จริงรองรับ: Student data (`GET /student-profiles`, `GET /student-profiles/:id` — endpoint ใหม่, scoped), Grades (`StudentCourseRecord` ทั้ง 6 route — เพิ่ม ADMIN/STAFF-with-scope, STUDENT self-write เดิมไม่แตะ), Course master data (`Course`/`CourseCategory`/`CurriculumRequirement`/`Prerequisite`), Instructor Assignment (`CourseInstructor`)
+
+**"Course Offering" ไม่มี model**: §10 พูดถึง "Course Offering" เป็นความรับผิดชอบของ STAFF แต่ไม่มี concept/model นี้อยู่ในระบบเลย (ไม่ใช่ gap ของรอบนี้ — เหมือน Learning Path's Free Elective gap ที่ตัดสินใจไว้แล้วว่าไม่ใช่ปัญหา permission) ตัวที่ใกล้เคียงที่สุดที่มีอยู่คือ `StudentCourseRecord` (course+semester ผูกกันโดยนัยผ่านการลงทะเบียนแต่ละคน) กับ `CourseInstructor` (การมอบหมายแบบถาวร ไม่ผูกเทอม) — ถ้าต้องการ "Course Offering" จริงต้องออกแบบ model ใหม่ เป็นการตัดสินใจ scope ใหม่
+
+**CLO/PLO/CloPloMapping ยืนยันว่าไม่เปิดให้ STAFF**: §10 ระบุชัดว่า "STAFF ไม่ควรมีสิทธิ์แก้ CLO/PLO เพียงเพราะเป็น STAFF" — ตรวจสอบแล้วว่า `Clo`/`Plo`/`CloPloMapping` controller ยังคงเป็น `@Roles('SUPER_ADMIN', 'ADMIN')` เท่านั้น ไม่ถูกแตะในรอบนี้ ตรงตาม requirement
+
+`AcademicYear`/`Semester`: GET เปิดให้ทุก role ที่ login แล้วอยู่ก่อนแล้ว (ไม่มี `@Roles` เลยบน route GET) จึง STAFF อ่านได้อยู่แล้วโดยไม่ต้องแก้โค้ด — POST/PATCH/DELETE ยังคง SUPER_ADMIN-only ตามที่ตัดสินใจไว้ (global master data ไม่มี scope ให้จำกัด STAFF)
+
 ## Module 7 — AI Skill Analysis: ไม่มี caching/persistence, ต้องการ `ANTHROPIC_API_KEY` จริงก่อนใช้งาน
 
 `AiAnalysisService.getStudentAnalysis` เรียก Anthropic API สดทุก request ไม่มี cache หรือ persist ผลลัพธ์ไว้เลย (ตัดสินใจไว้แล้วผ่าน AskUserQuestion — เพื่อลดขอบเขต ไม่เพิ่ม model/migration ใหม่รอบนี้) ผลคือทุก request ที่มีข้อมูลเกรดจริงจะมีค่าใช้จ่าย + latency ของ AI call เต็มจำนวน ไม่ต่างจาก endpoint อื่นที่คำนวณสดฟรี — ถ้า cost/latency กลายเป็นปัญหาจริงใน production ต้องออกแบบ persistence layer (เช่น `AiSkillAnalysisSnapshot` model + invalidate เมื่อข้อมูลอ้างอิงเปลี่ยน) เป็นการตัดสินใจ scope ใหม่ ไม่ใช่รอบนี้

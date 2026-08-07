@@ -11,7 +11,8 @@ export type ScopeTargetEntity =
   | 'cloPloMapping'
   | 'courseCategory'
   | 'curriculumRequirement'
-  | 'prerequisite';
+  | 'prerequisite'
+  | 'studentProfile';
 
 export interface ScopeTargetSource {
   from: 'param' | 'body';

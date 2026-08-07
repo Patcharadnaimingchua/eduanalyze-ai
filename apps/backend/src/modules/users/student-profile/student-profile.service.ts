@@ -10,6 +10,8 @@ import { PrismaClientOrTx } from '../../../prisma/prisma.types';
 import { ProgramService } from '../../organization/program/program.service';
 import { CurriculumService } from '../../organization/curriculum/curriculum.service';
 import { UserRoleService } from '../user-role/user-role.service';
+import { ScopeResolverService } from '../../../common/scope/scope-resolver.service';
+import { RequestUser } from '../../auth/request-user.interface';
 
 @Injectable()
 export class StudentProfileService {
@@ -18,6 +20,7 @@ export class StudentProfileService {
     private readonly userRoleService: UserRoleService,
     private readonly programService: ProgramService,
     private readonly curriculumService: CurriculumService,
+    private readonly scopeResolverService: ScopeResolverService,
   ) {}
 
   async create(
@@ -95,5 +98,20 @@ export class StudentProfileService {
       throw new NotFoundException(`Active student profile ${id} not found`);
     }
     return profile;
+  }
+
+  // §10: SUPER_ADMIN sees every student; ADMIN/STAFF see only students in
+  // programs their scope covers — query-level filtered (CONVENTIONS §3a),
+  // never fetch-all-then-filter-in-memory.
+  async findAllScoped(user: RequestUser) {
+    if (user.roles.includes('SUPER_ADMIN')) {
+      return this.prisma.studentProfile.findMany();
+    }
+    const programIds = await this.scopeResolverService.getCoveredProgramIds(
+      user.userId,
+    );
+    return this.prisma.studentProfile.findMany({
+      where: { programId: { in: programIds } },
+    });
   }
 }

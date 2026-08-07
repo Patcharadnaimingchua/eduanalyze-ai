@@ -51,7 +51,7 @@ export class CurriculumRequirementController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('curriculum', { from: 'body', key: 'curriculumId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a curriculum requirement' })
@@ -71,7 +71,7 @@ export class CurriculumRequirementController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('curriculumRequirement', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a curriculum requirement' })
@@ -91,7 +91,7 @@ export class CurriculumRequirementController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('curriculumRequirement', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete a curriculum requirement' })

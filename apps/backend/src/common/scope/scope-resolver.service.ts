@@ -158,15 +158,27 @@ export class ScopeResolverService {
       return this.resolveAncestry('program', requirement.curriculum.programId);
     }
 
-    // entity === 'prerequisite'
-    const prerequisite = await this.prisma.prerequisite.findUnique({
-      where: { id },
-      select: { course: { select: { curriculum: { select: { programId: true } } } } },
-    });
-    if (!prerequisite) {
-      throw new NotFoundException(`Prerequisite ${id} not found`);
+    if (entity === 'prerequisite') {
+      const prerequisite = await this.prisma.prerequisite.findUnique({
+        where: { id },
+        select: { course: { select: { curriculum: { select: { programId: true } } } } },
+      });
+      if (!prerequisite) {
+        throw new NotFoundException(`Prerequisite ${id} not found`);
+      }
+      return this.resolveAncestry('program', prerequisite.course.curriculum.programId);
     }
-    return this.resolveAncestry('program', prerequisite.course.curriculum.programId);
+
+    // entity === 'studentProfile' — StudentProfile has a direct programId
+    // column (no curriculum hop needed), unlike every branch above.
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { id },
+      select: { programId: true },
+    });
+    if (!profile) {
+      throw new NotFoundException(`Student profile ${id} not found`);
+    }
+    return this.resolveAncestry('program', profile.programId);
   }
 
   // Resolves scope live per CONVENTIONS.md §8 — a UserScope row pointing
@@ -204,5 +216,34 @@ export class ScopeResolverService {
           scope.departmentId === target.departmentId) ||
         (scope.level === 'PROGRAM' && scope.programId === target.programId),
     );
+  }
+
+  // For query-level list filtering (CONVENTIONS §3a: never fetch-all-then-
+  // filter-in-memory) — expands effective scopes down to concrete Program
+  // ids, since a FACULTY/DEPARTMENT-level scope covers every Program under
+  // it, not just a literal programId column.
+  async getCoveredProgramIds(userId: string): Promise<string[]> {
+    const effectiveScopes = await this.getEffectiveScopes(userId);
+    const programIds = new Set<string>();
+
+    for (const scope of effectiveScopes) {
+      if (scope.level === 'PROGRAM') {
+        programIds.add(scope.programId!);
+      } else if (scope.level === 'DEPARTMENT') {
+        const programs = await this.prisma.program.findMany({
+          where: { departmentId: scope.departmentId!, isActive: true },
+          select: { id: true },
+        });
+        programs.forEach((p) => programIds.add(p.id));
+      } else if (scope.level === 'FACULTY') {
+        const programs = await this.prisma.program.findMany({
+          where: { department: { facultyId: scope.facultyId! }, isActive: true },
+          select: { id: true },
+        });
+        programs.forEach((p) => programIds.add(p.id));
+      }
+    }
+
+    return [...programIds];
   }
 }

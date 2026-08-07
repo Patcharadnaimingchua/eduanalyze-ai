@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { UserRoleModule } from '../user-role/user-role.module';
 import { ProgramModule } from '../../organization/program/program.module';
 import { CurriculumModule } from '../../organization/curriculum/curriculum.module';
-import { StudentProfileController } from './student-profile.controller';
+import { ScopeModule } from '../../../common/scope/scope.module';
+import { StudentProfilesController } from './student-profiles.controller';
 import { StudentProfileService } from './student-profile.service';
 
 @Module({
-  imports: [UserRoleModule, ProgramModule, CurriculumModule],
-  controllers: [StudentProfileController],
+  imports: [UserRoleModule, ProgramModule, CurriculumModule, ScopeModule],
+  controllers: [StudentProfilesController],
   providers: [StudentProfileService],
   exports: [StudentProfileService],
 })

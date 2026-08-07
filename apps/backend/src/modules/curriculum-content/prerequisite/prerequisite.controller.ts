@@ -49,7 +49,7 @@ export class PrerequisiteController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('course', { from: 'body', key: 'courseId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a prerequisite' })
@@ -64,7 +64,7 @@ export class PrerequisiteController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('prerequisite', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a prerequisite (groupId only)' })
@@ -77,7 +77,7 @@ export class PrerequisiteController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
   @ScopeTarget('prerequisite', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete a prerequisite' })
