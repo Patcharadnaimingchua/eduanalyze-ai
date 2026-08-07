@@ -112,14 +112,15 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  userRoles          UserRole[]
-  scopes             UserScope[]
-  studentProfile     StudentProfile?
-  authMethods        UserAuthMethod[]
-  otpCodes           OtpCode[]
-  pendingInvitation  PendingInvitation?
-  passwordResetToken PasswordResetToken?
-  courseInstructor   CourseInstructor[]
+  userRoles            UserRole[]
+  scopes               UserScope[]
+  studentProfile       StudentProfile?
+  authMethods          UserAuthMethod[]
+  otpCodes             OtpCode[]
+  pendingInvitation    PendingInvitation?
+  passwordResetToken   PasswordResetToken?
+  courseInstructor     CourseInstructor[]
+  enteredCourseRecords StudentCourseRecord[]
 
   @@map("users")
 }
@@ -553,8 +554,25 @@ model StudentCourseRecord {
   id               String   @id @default(uuid())
   grade            Grade
   credits          Int
+  // Soft-delete only applies to ADMIN/STAFF removing a record that isn't
+  // theirs (higher risk than a student correcting their own mis-entry) —
+  // see StudentCourseRecordService.remove(). STUDENT-self/SUPER_ADMIN
+  // deletes stay hard, unchanged.
+  isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Audit trail (§10 STAFF write access made this necessary) — last
+  // writer, not first: overwritten on both create and update, answering
+  // "who is responsible for the record's current state." Nullable
+  // because existing rows predate this field — NULL honestly means
+  // "unknown/legacy", never backfilled with a guessed value. New rows are
+  // always populated by the service layer.
+  enteredByUserId  String?
+  enteredBy        User?    @relation(fields: [enteredByUserId], references: [id], onDelete: Restrict)
+  // Reuses the existing Role enum rather than a parallel STUDENT_SELF/
+  // STAFF_ON_BEHALF concept — Role.STUDENT here already means self-entry.
+  enteredByRole    Role?
 
   studentProfileId String
   studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
