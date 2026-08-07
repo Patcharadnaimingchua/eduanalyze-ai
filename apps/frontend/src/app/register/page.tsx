@@ -33,6 +33,7 @@ export default function RegisterPage() {
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
       fullName: '',
       studentCode: '',
       facultyId: '',
@@ -128,6 +129,19 @@ export default function RegisterPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>รหัสผ่าน</FormLabel>
+                <FormControl>
+                  <Input type="password" autoComplete="new-password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ยืนยันรหัสผ่านอีกครั้ง</FormLabel>
                 <FormControl>
                   <Input type="password" autoComplete="new-password" {...field} />
                 </FormControl>

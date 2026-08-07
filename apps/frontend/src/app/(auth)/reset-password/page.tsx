@@ -45,13 +45,13 @@ function ResetPasswordForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { newPassword: '' },
+    defaultValues: { newPassword: '', confirmNewPassword: '' },
   });
 
   async function onSubmit(values: ResetPasswordFormValues) {
     setServerError(null);
     try {
-      await apiClient.post('/auth/reset-password', { token, ...values });
+      await apiClient.post('/auth/reset-password', { token, newPassword: values.newPassword });
       router.push('/login');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
@@ -94,6 +94,19 @@ function ResetPasswordForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>รหัสผ่านใหม่</FormLabel>
+                  <FormControl>
+                    <Input type="password" autoComplete="new-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmNewPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ยืนยันรหัสผ่านใหม่อีกครั้ง</FormLabel>
                   <FormControl>
                     <Input type="password" autoComplete="new-password" {...field} />
                   </FormControl>

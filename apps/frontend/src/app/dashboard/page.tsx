@@ -22,9 +22,16 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user } = useAuth();
 
+  // Guard before firing any dashboard queries — a non-STUDENT hitting this
+  // page (e.g. an instructor testing the pilot) would otherwise get a
+  // generic "failed to load" error from fetchOwnStudentProfile() 404ing,
+  // which reads as a broken page rather than "wrong page for your role."
+  const isStudent = !!user?.roles.includes('STUDENT');
+
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
     queryFn: fetchOwnStudentProfile,
+    enabled: isStudent,
   });
 
   const dashboardQuery = useQuery({
@@ -33,7 +40,23 @@ function DashboardContent() {
     enabled: !!profileQuery.data?.id,
   });
 
-  if (profileQuery.isLoading || dashboardQuery.isLoading || !user) {
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
+
+  if (!isStudent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
+      </div>
+    );
+  }
+
+  if (profileQuery.isLoading || dashboardQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
