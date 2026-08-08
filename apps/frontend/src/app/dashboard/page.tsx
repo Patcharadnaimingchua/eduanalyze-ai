@@ -9,7 +9,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PloProgressTable } from '@/components/dashboard/plo-progress-table';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
-import { AiRadarPlaceholder } from '@/components/dashboard/ai-radar-placeholder';
+import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 
 export default function DashboardPage() {
   return (
@@ -109,7 +109,7 @@ function DashboardContent() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <AiRadarPlaceholder />
+        <PloRadarCard radar={dashboard.radar} />
         <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
       </div>
 

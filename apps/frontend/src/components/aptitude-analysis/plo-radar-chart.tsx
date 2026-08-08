@@ -1,17 +1,8 @@
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const SIZE = 320;
-const CENTER = SIZE / 2;
-const MAX_RADIUS = 110;
-const LABEL_RADIUS = 140;
+const DEFAULT_SIZE = 320;
 const RING_FRACTIONS = [0.25, 0.5, 0.75, 1];
-
-function pointOnAxis(index: number, total: number, radius: number) {
-  const angle = -90 + (360 / total) * index;
-  const rad = (angle * Math.PI) / 180;
-  return { x: CENTER + radius * Math.cos(rad), y: CENTER + radius * Math.sin(rad) };
-}
 
 // No chart library in this project — hand-built SVG, same no-dependency
 // approach as overall-achievement-card.tsx's ring. Null-valued PLOs (no
@@ -20,14 +11,35 @@ function pointOnAxis(index: number, total: number, radius: number) {
 // shows "ไม่มีข้อมูล" instead, so a missing axis never reads as a
 // confirmed zero score (PROJECT_CONTEXT.md §25's "never fabricate/imply
 // evidence that isn't there").
-export function PloRadarChart({ radar }: { radar: RadarPoint[] }) {
+//
+// `size` scales the whole chart proportionally — the Dashboard's compact
+// card and the full /aptitude-analysis page share this one component,
+// just at different sizes, rather than duplicating the SVG geometry.
+export function PloRadarChart({
+  radar,
+  size = DEFAULT_SIZE,
+  title = 'Radar ความสำเร็จตาม PLO',
+}: {
+  radar: RadarPoint[];
+  size?: number;
+  title?: string;
+}) {
   const total = radar.length;
+  const center = size / 2;
+  const maxRadius = size * (110 / DEFAULT_SIZE);
+  const labelRadius = size * (140 / DEFAULT_SIZE);
+
+  function pointOnAxis(index: number, radius: number) {
+    const angle = -90 + (360 / total) * index;
+    const rad = (angle * Math.PI) / 180;
+    return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
+  }
 
   if (total === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Radar ความสำเร็จตาม PLO</CardTitle>
+          <CardTitle className="text-base">{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground">ยังไม่มีข้อมูล PLO สำหรับหลักสูตรนี้</p>
@@ -37,21 +49,21 @@ export function PloRadarChart({ radar }: { radar: RadarPoint[] }) {
   }
 
   const dataPoints = radar.map((plo, i) =>
-    pointOnAxis(i, total, MAX_RADIUS * (plo.value !== null ? Math.max(0, Math.min(100, plo.value)) / 100 : 0)),
+    pointOnAxis(i, maxRadius * (plo.value !== null ? Math.max(0, Math.min(100, plo.value)) / 100 : 0)),
   );
   const polygonPoints = dataPoints.map((p) => `${p.x},${p.y}`).join(' ');
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Radar ความสำเร็จตาม PLO</CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center">
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           {/* Background rings */}
           {RING_FRACTIONS.map((fraction) => {
             const ringPoints = Array.from({ length: total }, (_, i) =>
-              pointOnAxis(i, total, MAX_RADIUS * fraction),
+              pointOnAxis(i, maxRadius * fraction),
             )
               .map((p) => `${p.x},${p.y}`)
               .join(' ');
@@ -67,12 +79,12 @@ export function PloRadarChart({ radar }: { radar: RadarPoint[] }) {
 
           {/* Axis lines */}
           {radar.map((_, i) => {
-            const outer = pointOnAxis(i, total, MAX_RADIUS);
+            const outer = pointOnAxis(i, maxRadius);
             return (
               <line
                 key={i}
-                x1={CENTER}
-                y1={CENTER}
+                x1={center}
+                y1={center}
                 x2={outer.x}
                 y2={outer.y}
                 className="stroke-slate-100"
@@ -98,7 +110,7 @@ export function PloRadarChart({ radar }: { radar: RadarPoint[] }) {
 
           {/* Labels */}
           {radar.map((plo, i) => {
-            const labelPos = pointOnAxis(i, total, LABEL_RADIUS);
+            const labelPos = pointOnAxis(i, labelRadius);
             return (
               <text
                 key={plo.ploId}
