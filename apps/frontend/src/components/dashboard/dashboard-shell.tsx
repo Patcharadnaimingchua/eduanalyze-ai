@@ -124,10 +124,10 @@ export function DashboardShell({
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
             <span className="text-muted-foreground">{studentCode}</span>
             <span className="font-medium text-primary">{fullName}</span>
-          </div>
+          </Link>
         </header>
 
         <main className="flex-1 space-y-6 p-8">{children}</main>
