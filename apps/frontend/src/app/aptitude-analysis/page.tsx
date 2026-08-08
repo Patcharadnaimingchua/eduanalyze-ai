@@ -2,13 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
-import { fetchStudentPloAchievement } from '@/lib/api/plo-achievement';
-import { fetchAiSkillAnalysis } from '@/lib/api/ai-analysis';
+import { fetchStudentPloAchievement, fetchCurriculum } from '@/lib/api/plo-achievement';
+import { interpretPloRadar } from '@/lib/interpret-plo-radar';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
-import { AiInterpretationCard } from '@/components/aptitude-analysis/ai-interpretation-card';
+import { PloInterpretationCard } from '@/components/aptitude-analysis/plo-interpretation-card';
 
 export default function AptitudeAnalysisPage() {
   return (
@@ -28,6 +28,7 @@ function AptitudeAnalysisContent() {
     enabled: isStudent,
   });
   const studentProfileId = profileQuery.data?.id;
+  const curriculumId = profileQuery.data?.curriculumId;
 
   const ploQuery = useQuery({
     queryKey: ['student-plo-achievement', studentProfileId],
@@ -35,15 +36,10 @@ function AptitudeAnalysisContent() {
     enabled: !!studentProfileId,
   });
 
-  // Independent from ploQuery on purpose — the AI call (ANTHROPIC_API_KEY-
-  // dependent, may 503) must never block or blank out the real PLO chart
-  // above it. retry: false since a 503 here is a service-unavailable
-  // state, not a transient network blip worth retrying automatically.
-  const aiQuery = useQuery({
-    queryKey: ['ai-skill-analysis', studentProfileId],
-    queryFn: () => fetchAiSkillAnalysis(studentProfileId!),
-    enabled: !!studentProfileId,
-    retry: false,
+  const curriculumQuery = useQuery({
+    queryKey: ['curriculum', curriculumId],
+    queryFn: () => fetchCurriculum(curriculumId!),
+    enabled: !!curriculumId,
   });
 
   if (!user) {
@@ -62,7 +58,7 @@ function AptitudeAnalysisContent() {
     );
   }
 
-  if (profileQuery.isLoading || ploQuery.isLoading) {
+  if (profileQuery.isLoading || ploQuery.isLoading || curriculumQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
@@ -70,7 +66,14 @@ function AptitudeAnalysisContent() {
     );
   }
 
-  if (profileQuery.isError || ploQuery.isError || !profileQuery.data || !ploQuery.data) {
+  if (
+    profileQuery.isError ||
+    ploQuery.isError ||
+    curriculumQuery.isError ||
+    !profileQuery.data ||
+    !ploQuery.data ||
+    !curriculumQuery.data
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
@@ -78,22 +81,23 @@ function AptitudeAnalysisContent() {
     );
   }
 
+  const interpretation = interpretPloRadar(
+    ploQuery.data.radar,
+    curriculumQuery.data.defaultAchievementThreshold,
+  );
+
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
       <div>
         <h1 className="text-2xl font-semibold text-primary">วัดความถนัด</h1>
         <p className="text-sm text-muted-foreground">
-          ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมการตีความโดย AI
+          ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมสรุปผลตามเกณฑ์ที่กำหนด
         </p>
       </div>
 
       <PloRadarChart radar={ploQuery.data.radar} />
 
-      <AiInterpretationCard
-        report={aiQuery.data}
-        isLoading={aiQuery.isLoading}
-        isError={aiQuery.isError}
-      />
+      <PloInterpretationCard report={interpretation} />
     </DashboardShell>
   );
 }

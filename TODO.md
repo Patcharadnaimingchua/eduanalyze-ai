@@ -1,5 +1,11 @@
 # TODO / Known Limitations
 
+## /aptitude-analysis ใช้ข้อความสรุปแบบ rule-based แทน AI จริง (ตัดสินใจแล้ว 2026-08-08)
+
+หน้า `วัดความถนัด` (`apps/frontend/src/app/aptitude-analysis/page.tsx`) **ไม่เรียก `GET /ai-analysis/student/:id` อีกต่อไป** — เปลี่ยนเป็นสร้างข้อความสรุป (`summary`/`strengths`/`weaknesses`/`recommendations`) แบบ deterministic 100% จากตัวเลข PLO จริงที่มีอยู่แล้ว (`apps/frontend/src/lib/interpret-plo-radar.ts`) เพื่อไม่ต้องเสียค่าใช้จ่ายเรียก Anthropic ทุกครั้งที่เปิดหน้า
+
+**Backend `AiAnalysisService`/`GET /ai-analysis/student/:id` ยังอยู่ครบ ไม่ได้แตะ** — ยังเรียกตรงได้ผ่าน Swagger เหมือนเดิมถ้าต้องการ ส่วน `apps/frontend/src/lib/api/ai-analysis.ts` (`fetchAiSkillAnalysis`) ก็ยังอยู่ในโค้ดแต่ไม่มีจุดไหนเรียกใช้แล้ว — **ถ้าจะเปิดกลับมาใช้ AI จริงในอนาคต** (เช่น มี `ANTHROPIC_API_KEY` จริงแล้วและยอมรับค่าใช้จ่าย): แก้ `app/aptitude-analysis/page.tsx` ให้กลับไปเรียก `fetchAiSkillAnalysis` แทน `interpretPloRadar` (import `PloInterpretationCard`'s เดิมที่ชื่อ `AiInterpretationCard` ถูกลบไปแล้ว ต้องสร้าง/ปรับ component ให้รองรับ async state อีกครั้งหรือ mix ทั้งสองแบบก็ได้)
+
 ## Credit Checker — `isPrerequisiteSatisfied` เป็นแค่ boolean ไม่บอกว่าวิชาไหนที่ยังขาด
 
 `GET /credit-checker/:studentProfileId`'s `missingRequiredCourses[].isPrerequisiteSatisfied` (`CreditCheckerService.isCoursePrerequisiteSatisfied`, `apps/backend/src/modules/academic-record/credit-checker/credit-checker.service.ts`) คำนวณจาก `.every()` วน `course.prerequisitesRequired` ภายในแล้วคืนแค่ `boolean` เดี่ยวๆ — **ไม่มี field ไหนบอกว่าวิชา prerequisite ตัวไหนที่ยังไม่ผ่าน** ทั้งที่ curriculum tree ที่โหลดมาภายใน service มีรายชื่อ prerequisite ครบอยู่แล้ว (ผ่าน `include: { prerequisitesRequired: true }`) แค่ไม่ได้ map ออกมาใน response
