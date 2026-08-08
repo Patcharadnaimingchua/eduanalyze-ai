@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 import type { MissingRequiredCourse } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,9 +50,11 @@ export function CreditCheckerPanel({ courses }: { courses: MissingRequiredCourse
           ))}
         </div>
 
-        <Button type="button" variant="outline" className="w-full" disabled>
-          ดูแผนเส้นทางทั้งหมด
-        </Button>
+        <Link href="/credit-checker">
+          <Button type="button" variant="outline" className="w-full">
+            ดูแผนเส้นทางทั้งหมด
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );

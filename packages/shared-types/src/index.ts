@@ -224,6 +224,49 @@ export interface PloListItem {
   curriculumId: string;
 }
 
+// ---- Smart Credit Checker (GET /credit-checker/:studentProfileId) ----
+// Mirrors apps/backend's CreditCheckReport exactly, including its real
+// quirks: creditsAccumulated is an exact alias of creditsPassed (not a
+// separate calc), and missingRequiredCourses intentionally overlaps with
+// failedCourses/notYetStudiedCourses (a required course not yet passed
+// appears in both its status bucket and this list).
+
+export interface CourseSummary {
+  courseId: string;
+  code: string;
+  name: string;
+  credits: number;
+  grade?: Grade;
+}
+
+export interface CategoryProgress {
+  categoryId: string;
+  name: string;
+  minCredits: number;
+  minCourses: number | null;
+  creditsEarned: number;
+  coursesPassedCount: number;
+  isComplete: boolean;
+}
+
+export interface CreditCheckReport {
+  studentProfileId: string;
+  curriculumId: string;
+  totalCreditsRequired: number;
+  creditsStudied: number;
+  creditsPassed: number;
+  creditsAccumulated: number;
+  creditsRemaining: number;
+  passedCourses: CourseSummary[];
+  failedCourses: CourseSummary[];
+  notYetStudiedCourses: CourseSummary[];
+  // isPrerequisiteSatisfied is a bare boolean server-side — no field
+  // anywhere identifies WHICH prerequisite is missing (see TODO.md).
+  missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
+  categoryProgress: CategoryProgress[];
+  graduationReadiness: GraduationReadiness;
+}
+
 // ---- My Academic Record (GET/POST/PATCH/DELETE /student-course-records) ----
 // Mirrors apps/backend's StudentCourseRecord Prisma model — raw rows, no
 // denormalized course/semester name (frontend joins client-side against

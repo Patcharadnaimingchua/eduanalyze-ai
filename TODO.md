@@ -1,5 +1,11 @@
 # TODO / Known Limitations
 
+## Credit Checker — `isPrerequisiteSatisfied` เป็นแค่ boolean ไม่บอกว่าวิชาไหนที่ยังขาด
+
+`GET /credit-checker/:studentProfileId`'s `missingRequiredCourses[].isPrerequisiteSatisfied` (`CreditCheckerService.isCoursePrerequisiteSatisfied`, `apps/backend/src/modules/academic-record/credit-checker/credit-checker.service.ts`) คำนวณจาก `.every()` วน `course.prerequisitesRequired` ภายในแล้วคืนแค่ `boolean` เดี่ยวๆ — **ไม่มี field ไหนบอกว่าวิชา prerequisite ตัวไหนที่ยังไม่ผ่าน** ทั้งที่ curriculum tree ที่โหลดมาภายใน service มีรายชื่อ prerequisite ครบอยู่แล้ว (ผ่าน `include: { prerequisitesRequired: true }`) แค่ไม่ได้ map ออกมาใน response
+
+หน้า `/credit-checker` (frontend, 2026-08-08) จึงแสดงได้แค่ข้อความทั่วไป "ยังไม่ผ่านวิชาที่ต้องเรียนก่อน" เมื่อ `isPrerequisiteSatisfied: false` โดยตั้งใจไม่เดาว่าเป็นวิชาไหน — ถ้าต้องการแสดงรายชื่อ prerequisite ที่ขาดจริงๆ ต้องเพิ่ม field ใหม่ (เช่น `missingPrerequisiteCourses: CourseSummary[]`) ที่ backend ก่อน เป็นการตัดสินใจ scope ใหม่ ไม่ใช่การแก้ frontend เพียงอย่างเดียว
+
 ## ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester
 
 Backend endpoint สำหรับ CRUD `AcademicYear`/`Semester` มีอยู่ครบ (`apps/backend/src/modules/academic-record/academic-year/`, `.../semester/`) แต่**ไม่มี frontend UI ให้ ADMIN/SUPER_ADMIN จัดการเลย** — ตอนนี้ข้อมูลที่มีอยู่ (ปีการศึกษา 2567/2568/2569 ครบ 3 ภาคเรียนต่อปี: FIRST/SECOND/SUMMER) ถูกใส่ตรงผ่าน Prisma โดย dev เอง (2026-08-08) ไม่ได้ผ่าน UI เพื่อให้หน้า `/academic-record` (My Academic Record, STUDENT role) ใช้งานได้จริงตอน pilot
