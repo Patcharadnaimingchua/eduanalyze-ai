@@ -216,6 +216,22 @@ export interface StudentPloAchievementResponse {
   areasForImprovement: RadarPoint[];
 }
 
+// ---- AI Skill Analysis (GET /ai-analysis/student/:studentProfileId) ----
+// Qualitative-only by construction (PROJECT_CONTEXT.md §25/26) — the
+// Anthropic tool schema backing this has zero numeric fields, so there is
+// no per-axis score here. The radar/hexagon chart on the Aptitude
+// Analysis page is driven entirely by StudentPloAchievementResponse
+// above (real, deterministic) — this type is prose-only interpretation
+// shown alongside it, never a source of chart data.
+export interface AiSkillAnalysisReport {
+  studentProfileId: string;
+  generatedAt: string;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+}
+
 export interface PloListItem {
   id: string;
   code: string;

@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/dashboard' },
   { label: 'การติดตามผลการเรียน', icon: LineChart, href: '/academic-record' },
   { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
-  { label: 'วัดความถนัด', icon: Target },
+  { label: 'วัดความถนัด', icon: Target, href: '/aptitude-analysis' },
   { label: 'แผนการเรียน', icon: CalendarRange },
   { label: 'หลักสูตร', icon: BookOpen },
 ];
