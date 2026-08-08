@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   BookOpen,
   CalendarRange,
@@ -18,16 +20,15 @@ import { useAuth } from '@/lib/auth-context';
 interface NavItem {
   label: string;
   icon: LucideIcon;
-  active?: boolean;
+  href?: string;
 }
 
-// Only "แดชบอร์ด" has a real page this round — the rest are shown per the
-// design (so the shell reads as complete) but disabled/unclickable since
-// there's nowhere for them to go yet.
+// Items without an `href` have no page behind them yet — shown per the
+// design (so the shell reads as complete) but disabled/unclickable.
 const NAV_ITEMS: NavItem[] = [
-  { label: 'แดชบอร์ด', icon: LayoutGrid, active: true },
-  { label: 'การติดตามผลการเรียน', icon: LineChart },
-  { label: 'การวิเคราะห์ CLO/PLO', icon: Network },
+  { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/dashboard' },
+  { label: 'การติดตามผลการเรียน', icon: LineChart, href: '/academic-record' },
+  { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
   { label: 'วัดความถนัด', icon: Target },
   { label: 'แผนการเรียน', icon: CalendarRange },
   { label: 'หลักสูตร', icon: BookOpen },
@@ -43,6 +44,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const { logout } = useAuth();
+  const pathname = usePathname();
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -58,24 +60,39 @@ export function DashboardShell({
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV_ITEMS.map(({ label, icon: Icon, active }) => (
-            <button
-              key={label}
-              type="button"
-              disabled={!active}
-              aria-disabled={!active}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
-                active
-                  ? 'bg-brand-light text-brand'
-                  : 'cursor-not-allowed text-slate-400',
-              )}
-            >
-              <Icon size={16} />
-              {label}
-            </button>
-          ))}
+          {NAV_ITEMS.map(({ label, icon: Icon, href }) => {
+            const active = !!href && pathname === href;
+
+            if (href) {
+              return (
+                <Link
+                  key={label}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
+                    active ? 'bg-brand-light text-brand' : 'text-slate-600 hover:bg-slate-50',
+                  )}
+                >
+                  <Icon size={16} />
+                  {label}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={label}
+                type="button"
+                disabled
+                aria-disabled
+                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-400 transition"
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">

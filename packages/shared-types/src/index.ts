@@ -103,6 +103,11 @@ export interface CurriculumListItem {
   totalCredits: number;
   isActive: boolean;
   isOpenForRegistration: boolean;
+  // CLO-oriented threshold (Clo.achievementThreshold falls back to this),
+  // reused client-side by the CLO/PLO Analysis page as a stand-in PLO
+  // cutoff since no PLO-specific threshold exists in the backend — not a
+  // PLO-specific number, see that page's code comment.
+  defaultAchievementThreshold: number;
   programId: string;
 }
 
@@ -195,4 +200,91 @@ export interface StudentDashboardResponse {
   // Module 7 exists as a standalone endpoint but the Dashboard doesn't
   // call it (kept fast/free) — always null here, by design, not a bug.
   aiSummary: null;
+}
+
+// ---- Detailed CLO/PLO Analysis (GET /plo-achievement/student/:studentProfileId) ----
+// Same RadarPoint shape the Dashboard's `radar` field already uses (this
+// endpoint and Dashboard's report share the identical interface
+// server-side) — no status/description/threshold fields, joined
+// client-side from GET /plos and the student's own curriculum.
+
+export interface StudentPloAchievementResponse {
+  studentProfileId: string;
+  curriculumId: string;
+  radar: RadarPoint[];
+  strengths: RadarPoint[];
+  areasForImprovement: RadarPoint[];
+}
+
+export interface PloListItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  curriculumId: string;
+}
+
+// ---- My Academic Record (GET/POST/PATCH/DELETE /student-course-records) ----
+// Mirrors apps/backend's StudentCourseRecord Prisma model — raw rows, no
+// denormalized course/semester name (frontend joins client-side against
+// GET /courses and GET /semesters, same as CreditCheckerService does
+// server-side for its own reports).
+
+export interface StudentCourseRecord {
+  id: string;
+  grade: Grade;
+  credits: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  studentProfileId: string;
+  courseId: string;
+  semesterId: string;
+}
+
+export interface CreateStudentCourseRecordRequest {
+  // Required by the DTO but ignored server-side for STUDENT (resolved from
+  // the JWT instead) — sent anyway to satisfy validation, per
+  // student-course-record.service.ts's resolveOwnStudentProfileIdOrValidate.
+  studentProfileId: string;
+  courseId: string;
+  semesterId: string;
+  grade: Grade;
+}
+
+export interface UpdateStudentCourseRecordRequest {
+  grade: Grade;
+}
+
+export interface GpaSummary {
+  gpa: number | null;
+  creditsCounted: number;
+  courseCount: number;
+}
+
+export interface CourseListItem {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string | null;
+  credits: number;
+  isRequired: boolean;
+  isActive: boolean;
+  curriculumId: string;
+  categoryId: string;
+}
+
+export type SemesterTerm = 'FIRST' | 'SECOND' | 'SUMMER';
+
+export interface AcademicYear {
+  id: string;
+  year: number;
+  isActive: boolean;
+}
+
+export interface Semester {
+  id: string;
+  term: SemesterTerm;
+  isActive: boolean;
+  academicYearId: string;
 }

@@ -1,5 +1,11 @@
 # TODO / Known Limitations
 
+## ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester
+
+Backend endpoint สำหรับ CRUD `AcademicYear`/`Semester` มีอยู่ครบ (`apps/backend/src/modules/academic-record/academic-year/`, `.../semester/`) แต่**ไม่มี frontend UI ให้ ADMIN/SUPER_ADMIN จัดการเลย** — ตอนนี้ข้อมูลที่มีอยู่ (ปีการศึกษา 2567/2568/2569 ครบ 3 ภาคเรียนต่อปี: FIRST/SECOND/SUMMER) ถูกใส่ตรงผ่าน Prisma โดย dev เอง (2026-08-08) ไม่ได้ผ่าน UI เพื่อให้หน้า `/academic-record` (My Academic Record, STUDENT role) ใช้งานได้จริงตอน pilot
+
+**ผลกระทบ**: ถ้าต้องเพิ่มปีการศึกษาใหม่ (เช่น 2570) หรือแก้ไข/ปิดภาคเรียนในอนาคต ต้องให้ dev เข้าไปรันสคริปต์ใส่ตรงในฐานข้อมูลให้ทุกครั้ง ไม่มีทางให้ ADMIN ทำเองผ่านหน้าเว็บ — ควรสร้างหน้า ADMIN CRUD ธรรมดา (คล้าย pattern ของ Faculty/Department/Program ที่มีอยู่แล้วฝั่ง backend) เป็นรอบถัดไปที่ควรพิจารณา ไม่เร่งด่วนสำหรับ pilot รอบนี้เพราะข้อมูลที่ใส่ไว้ครอบคลุมพอแล้ว
+
 ## ~~ScopeGuard — Curriculum Content~~ — verified end-to-end
 
 `5b35a6b ScopeGuard: Curriculum Content` (รอบก่อนหน้า) ต่อ `ScopeGuard`/`ScopeResolverService.resolveAncestry` เข้า `Curriculum`/`Course`/`Clo`/`Plo`/`CourseCategory`/`CurriculumRequirement`/`Prerequisite`/`CloPloMapping` ครบแล้ว แต่ไม่เคยมีการทดสอบ end-to-end ด้วยข้อมูลจริงมาก่อน — ทดสอบวันที่ 2026-08-07 ด้วยข้อมูล ICT จริง (program `เทคโนโลยีสารสนเทศและการสื่อสาร`, curriculum 2564, course `01999111`, สร้าง CLO/PLO ทดสอบชั่วคราวแล้วลบทิ้ง) ผ่าน HTTP จริงกับ dev server (ไม่ใช่เรียก service ตรง):
@@ -52,6 +58,10 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 ## Learning Path Planner — Free Elective/Gen Ed หมวดที่ไม่มี Course catalog เลย
 
 `วิชาเลือกเสรี` (Free Elective) และ Gen Ed บางกลุ่ม (กลุ่มสาระอยู่ดีมีสุข, กลุ่มสาระศาสตร์แห่งผู้ประกอบการ, กลุ่มสาระภาษากับการสื่อสาร, กลุ่มสาระสุนทรียศาสตร์) ไม่มี `Course` row ผูกอยู่เลยตั้งแต่ Phase 4 (เลือกได้ทั้งมหาวิทยาลัย ข้อมูลเยอะเกินจะ import ครบ — ตัดสินใจไว้แล้ว ไม่ใช่ gap ของ Module 9) — `LearningPathService` รายงานได้แค่ "ยังขาดหน่วยกิต X หน่วยกิต" เป็นตัวเลข (`incompleteElectiveCategories` พร้อม `availableElectivesInCategory: []`) ไม่มีทางแนะนำวิชาเฉพาะเจาะจงในหมวดเหล่านี้ได้ และ `nextSemesterPlan` ก็จะไม่มีวันเสนอวิชาจากหมวดนี้ด้วยเหตุผลเดียวกัน (ไม่มี `Course` ให้เลือก) — ถ้าต้องการแก้จริงต้อง import course catalog กลุ่มนี้เพิ่มก่อน ไม่ใช่การแก้ที่ Module 9
+
+**เช็คจริง (2026-08-08)**: coverage ของหมวด Gen Ed/เลือกเสรีใน ICT 2564 อยู่ที่ ~5.6% (2/36 หน่วยกิต), ICT 2569 ~6.7% (2/30 หน่วยกิต) — และมีแค่ 2 จาก 16 หลักสูตรทั้งระบบ (ICT 2 เวอร์ชัน) ที่มี `Course`/`CourseCategory` อยู่เลยแม้แต่แถวเดียว หลักสูตรอื่นทั้งหมดยังไม่ได้ import วิชาเลย ถือเป็น gap ใหญ่ ไม่ใช่จุดเล็กที่แก้ทันได้
+
+**Frontend**: ยังไม่มีหน้า Learning Path Planner เลย (มีแค่ backend endpoint `GET /learning-path/:studentProfileId` — sidebar เมนู "แผนการเรียน" ใน Dashboard เป็น disabled placeholder) เมื่อสร้างหน้านี้ในอนาคต ให้ใส่ empty-state copy "ยังไม่มีข้อมูลวิชาแนะนำในหมวดนี้" สำหรับหมวดที่ `availableElectivesInCategory` ว่างเปล่า แทนที่จะปล่อย list ว่างเฉยๆ (ตัดสินใจไว้แล้วเมื่อ 2026-08-08 ว่าจะรอสร้างหน้าทั้งหน้าก่อน ไม่ทำเป็น patch เล็กๆ ตอนนี้)
 
 ## ~~CourseInstructor — Grade Distribution + per-course student list~~ — resolved
 
