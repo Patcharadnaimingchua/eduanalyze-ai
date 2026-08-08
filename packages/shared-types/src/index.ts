@@ -108,6 +108,10 @@ export interface CurriculumListItem {
   // cutoff since no PLO-specific threshold exists in the backend — not a
   // PLO-specific number, see that page's code comment.
   defaultAchievementThreshold: number;
+  // Semester Planning cap (§28) — used by the Learning Path page to show
+  // "X / maxCreditsPerSemester หน่วยกิต" against nextSemesterPlan's total.
+  // Institution-specific default (22), not a universal constant.
+  maxCreditsPerSemester: number;
   programId: string;
 }
 
@@ -181,6 +185,13 @@ export interface IncompleteElectiveCategory {
   creditsEarned: number;
   minCredits: number;
   creditsShort: number;
+  // Present on the real response (pass-through from LearningPathReport —
+  // Dashboard's incompleteElectiveCategories is the same backend data,
+  // not a separately-computed subset) but unused until the Learning Path
+  // page needed it — CourseSummary is declared further down this file,
+  // referencing it here is fine since TS type declarations aren't
+  // order-sensitive.
+  availableElectivesInCategory: CourseSummary[];
 }
 
 export interface StudentDashboardResponse {
@@ -325,6 +336,26 @@ export interface CreditCheckReport {
   missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
   categoryProgress: CategoryProgress[];
   graduationReadiness: GraduationReadiness;
+}
+
+// ---- Learning Path Planner (GET /learning-path/:studentProfileId) ----
+// nextSemesterPlan/availableCourses are prerequisite-satisfied-only,
+// credit-capped-at-maxCreditsPerSemester subsets — no pacing/AI-insight
+// data exists anywhere backing this (confirmed against the service
+// directly); the page must not fabricate either.
+
+export interface AvailableCourse extends CourseSummary {
+  isRequired: boolean;
+}
+
+export interface LearningPathReport {
+  studentProfileId: string;
+  curriculumId: string;
+  availableCourses: AvailableCourse[];
+  missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
+  incompleteElectiveCategories: IncompleteElectiveCategory[];
+  graduationReadiness: GraduationReadiness;
+  nextSemesterPlan: AvailableCourse[];
 }
 
 // ---- My Academic Record (GET/POST/PATCH/DELETE /student-course-records) ----
