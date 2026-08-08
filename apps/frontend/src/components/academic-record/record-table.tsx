@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { CourseListItem, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
@@ -125,14 +126,21 @@ export function RecordTable({
                           </Button>
                         </div>
                       ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setConfirmingId(record.id)}
-                        >
-                          ลบ
-                        </Button>
+                        <div className="flex gap-2">
+                          <Link href={`/course-assessment/${record.courseId}`}>
+                            <Button type="button" variant="outline" size="sm">
+                              ประเมินวิชานี้
+                            </Button>
+                          </Link>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setConfirmingId(record.id)}
+                          >
+                            ลบ
+                          </Button>
+                        </div>
                       )}
                     </td>
                   </tr>

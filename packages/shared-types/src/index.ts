@@ -224,6 +224,50 @@ export interface PloListItem {
   curriculumId: string;
 }
 
+// ---- Course Assessment (POST/PATCH/DELETE /course-assessments, GET .../course/:courseId/me) ----
+// GET /clos — unfiltered, client-side filter by courseId, same pattern as
+// GET /courses. CourseAssessmentResponse.cloScores is a plain Prisma
+// `include`, not a join — raw rows with only cloId, no embedded CLO
+// code/description (confirmed against course-assessment.service.ts).
+
+export interface CloListItem {
+  id: string;
+  code: string;
+  description: string;
+  courseId: string;
+}
+
+export interface CloScoreInput {
+  cloId: string;
+  score: number; // 1-5
+}
+
+export interface CourseAssessmentCloScoreRow {
+  id: string;
+  score: number;
+  courseAssessmentId: string;
+  cloId: string;
+}
+
+export interface CourseAssessmentResponse {
+  id: string;
+  courseId: string;
+  studentProfileId: string;
+  comment: string | null;
+  cloScores: CourseAssessmentCloScoreRow[];
+}
+
+export interface CreateCourseAssessmentRequest {
+  courseId: string;
+  cloScores: CloScoreInput[];
+  comment?: string;
+}
+
+export interface UpdateCourseAssessmentRequest {
+  cloScores: CloScoreInput[];
+  comment?: string;
+}
+
 // ---- Smart Credit Checker (GET /credit-checker/:studentProfileId) ----
 // Mirrors apps/backend's CreditCheckReport exactly, including its real
 // quirks: creditsAccumulated is an exact alias of creditsPassed (not a
