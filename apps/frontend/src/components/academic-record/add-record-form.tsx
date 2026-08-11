@@ -23,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 
 interface SemesterOption {
   id: string;
@@ -51,6 +52,12 @@ export function AddRecordForm({
     resolver: zodResolver(courseRecordSchema),
     defaultValues: { courseId: '', semesterId: '', grade: undefined },
   });
+
+  const courseOptions: ComboboxOption[] = courses.map((c) => ({
+    value: c.id,
+    label: `${c.code} — ${c.name} (${c.credits} หน่วยกิต)`,
+    searchText: `${c.code} ${c.name}`,
+  }));
 
   async function onSubmit(values: CourseRecordFormValues) {
     setServerError(null);
@@ -114,20 +121,16 @@ export function AddRecordForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>วิชา</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกวิชา" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {courses.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {`${c.code} — ${c.name} (${c.credits} หน่วยกิต)`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={courseOptions}
+                        value={field.value || undefined}
+                        onValueChange={field.onChange}
+                        placeholder="เลือกวิชา"
+                        searchPlaceholder="ค้นหารหัสวิชาหรือชื่อวิชา..."
+                        emptyText="ไม่พบวิชาที่ตรงกับคำค้นหา"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

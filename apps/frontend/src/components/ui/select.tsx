@@ -29,7 +29,19 @@ SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
+>(
+  (
+    {
+      className,
+      children,
+      position = 'popper',
+      side = 'bottom',
+      sideOffset = 4,
+      avoidCollisions = false,
+      ...props
+    },
+    ref,
+  ) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
@@ -39,12 +51,16 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
+      side={side}
+      sideOffset={sideOffset}
+      avoidCollisions={avoidCollisions}
       {...props}
     >
       <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
-));
+  ),
+);
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectItem = React.forwardRef<

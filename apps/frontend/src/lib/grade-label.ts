@@ -21,8 +21,8 @@ export const GRADE_LABELS: Record<Grade, string> = {
 export const GRADE_OPTIONS = Object.keys(GRADE_LABELS) as Grade[];
 
 const SEMESTER_TERM_LABELS: Record<string, string> = {
-  FIRST: 'ภาคเรียนที่ 1',
-  SECOND: 'ภาคเรียนที่ 2',
+  FIRST: 'ภาคต้น',
+  SECOND: 'ภาคปลาย',
   SUMMER: 'ภาคฤดูร้อน',
 };
 
