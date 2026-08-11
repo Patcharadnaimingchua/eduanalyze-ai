@@ -1,5 +1,15 @@
 # TODO / Known Limitations
 
+## PLO/CLO/CloPloMapping — sample data ครอบคลุมแค่ 24/96 วิชา (สร้าง 2026-08-11)
+
+`apps/backend/prisma/seed-plo-clo.ts` (สคริปต์ถาวร, รันซ้ำได้แบบ idempotent ผ่าน `npm run prisma:seed:plo-clo --workspace=apps/backend`) สร้าง PLO 6 ด้าน × 2 curriculum (ICT 2564 + 2569) = 12 แถวจริงตาม PROJECT_CONTEXT.md §20 ตรงตัว — **ส่วนนี้เป็นข้อมูลจริง**
+
+แต่ **CLO (26 ข้อ/curriculum, รวม 52) และ CloPloMapping (~40-41/curriculum, รวม 81) เป็น sample/demo data** ที่แต่งขึ้นเองจากชื่อวิชาเท่านั้น ไม่ใช่ CLO จริงที่ผ่านการอนุมัติจากหลักสูตร — เหตุผล: `Course.description` เป็น `NULL` ทุกแถวทั้ง 96 วิชา (Phase 4 import ไม่เคยพา description มาด้วย) จึงไม่มีเอกสารต้นทางให้อิงเหมือนตอน import Course
+
+ครอบคลุมแค่ **12 วิชาบังคับต่อ curriculum (รวม 24/96 วิชา)** ที่กระจายครบ 5 หมวดหลัก (พื้นฐาน/ประเด็นองค์การ/เทคโนโลยีประยุกต์/ซอฟต์แวร์/โครงสร้างพื้นฐาน) — วิชาที่เหลืออีก ~72 วิชา (รวมวิชาเลือกทั้งหมดและ gen-ed) **ยังไม่มี CLO เลย** ฝั่ง frontend (Course Assessment, PLO radar) ต้อง handle กรณีไม่มี CLO อยู่แล้วตามที่ทดสอบไว้
+
+**ถ้าจะขยายให้ครบทุกวิชาในอนาคต**: เพิ่ม `CourseCloSeed` entry ใหม่ใน `seed-plo-clo.ts` ตาม pattern เดิม (2-3 CLO ต่อวิชา, weight 1-5 ตามเกณฑ์ในไฟล์) หรือแทนที่ด้วย CLO จริงจากเอกสารหลักสูตรถ้ามี — แนะนำให้ replace เป็นชุดจริงทันทีที่มีเอกสารอนุมัติจริง เพราะ Achievement/PLO radar/Course Assessment ทั้งระบบพึ่งข้อมูลชุดนี้โดยตรง
+
 ## /aptitude-analysis ใช้ข้อความสรุปแบบ rule-based แทน AI จริง (ตัดสินใจแล้ว 2026-08-08)
 
 หน้า `วัดความถนัด` (`apps/frontend/src/app/aptitude-analysis/page.tsx`) **ไม่เรียก `GET /ai-analysis/student/:id` อีกต่อไป** — เปลี่ยนเป็นสร้างข้อความสรุป (`summary`/`strengths`/`weaknesses`/`recommendations`) แบบ deterministic 100% จากตัวเลข PLO จริงที่มีอยู่แล้ว (`apps/frontend/src/lib/interpret-plo-radar.ts`) เพื่อไม่ต้องเสียค่าใช้จ่ายเรียก Anthropic ทุกครั้งที่เปิดหน้า
