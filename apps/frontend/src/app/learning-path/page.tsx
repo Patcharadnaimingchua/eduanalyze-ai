@@ -12,7 +12,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
-import { NextSemesterPlan } from '@/components/learning-path/next-semester-plan';
+import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
 import { ElectiveCategoryList } from '@/components/learning-path/elective-category-list';
 
 export default function LearningPathPage() {
@@ -127,8 +127,9 @@ function LearningPathContent() {
         />
       </div>
 
-      <NextSemesterPlan
-        courses={path.nextSemesterPlan}
+      <DragDropPlanner
+        availableCourses={path.availableCourses}
+        nextSemesterPlan={path.nextSemesterPlan}
         maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
       />
       <MissingCoursesList courses={path.missingRequiredCourses} />

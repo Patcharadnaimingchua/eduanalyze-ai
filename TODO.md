@@ -1,5 +1,11 @@
 # TODO / Known Limitations
 
+## Learning Path Planner — รองรับ touch/มือถือผ่านปุ่ม tap ไม่ใช่การลาก (สร้าง 2026-08-12)
+
+`/learning-path`'s `DragDropPlanner` (`apps/frontend/src/components/learning-path/drag-drop-planner.tsx`, `course-drag-card.tsx`) ใช้ native HTML5 Drag and Drop API เป็นหลัก (ไม่มี dnd library ใน dependency) — **native drag ไม่ทำงานบน touch device เลย** (ข้อจำกัดจริงของ spec) แต่ทุกการ์ดมีปุ่ม "ย้ายเข้าแผน"/"เอาออกจากแผน" แสดงตลอดเวลา (ไม่ใช่แค่ตอน detect touch เพราะ detect ผิดพลาดได้) ที่เรียก state setter (`moveToPlan`/`moveToOthers`) ตัวเดียวกับที่ drop event ใช้ — **ใช้งานได้ครบทุก device ผ่านปุ่มนี้แม้ลากไม่ได้เลย** ไม่ต้อง duplicate state
+
+Persistence เป็น client-side state ล้วน (`useState`, reset เมื่อ reload) ตามเจตนาที่ตั้งใจ ("ลองวางแผนดูก่อนตัดสินใจ") — backend ไม่มี endpoint บันทึกแผนที่ปรับเอง ปุ่ม "รีเซ็ตเป็นแผนที่แนะนำ" แทนที่คำว่า "Commit" เดิม เพราะไม่มี REG integration/backend save จริง
+
 ## PLO/CLO/CloPloMapping — sample data ครอบคลุมแค่ 24/96 วิชา (สร้าง 2026-08-11)
 
 `apps/backend/prisma/seed-plo-clo.ts` (สคริปต์ถาวร, รันซ้ำได้แบบ idempotent ผ่าน `npm run prisma:seed:plo-clo --workspace=apps/backend`) สร้าง PLO 6 ด้าน × 2 curriculum (ICT 2564 + 2569) = 12 แถวจริงตาม PROJECT_CONTEXT.md §20 ตรงตัว — **ส่วนนี้เป็นข้อมูลจริง**
