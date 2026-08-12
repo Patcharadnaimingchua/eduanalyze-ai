@@ -20,6 +20,8 @@
 
 **แก้แล้ว**: `CourseSummary` (backend + shared-types) เพิ่ม `prerequisiteCourseIds: string[]` (raw edge, ทุกวิชา ไม่ใช่แค่ `missingRequiredCourses`) คู่กับ `isPrerequisiteSatisfied` — ตอนนี้ frontend เดารายชื่อ prerequisite ที่ขาดได้จริงจาก `prerequisiteCourseIds` โดยไม่ต้อง fetch เพิ่ม (ใช้ใน Prerequisite Flow Chart, `/credit-checker`) ไม่ต้องแก้ backend เพิ่มสำหรับ use case นี้แล้ว
 
+**สี node ทั้ง 4 สถานะ (เขียว/ฟ้า/เทา/ส้ม) ยืนยันแล้วว่าแสดงผลถูกต้องจริงในเบราว์เซอร์ (2026-08-12)** — ตอน implement มีรอบ debug ว่าสีไม่ขึ้นเลย ตรวจ source/CSS/build ครบไม่พบบั๊กในโค้ด (ทุก class ถูก generate ถูกต้องใน `layout.css`) สรุปว่าเป็น browser cache ค้าง ไม่ใช่บั๊ก — ผู้ใช้ยืนยันแล้วว่า hard refresh แก้ปัญหาได้จริง
+
 ## ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester
 
 Backend endpoint สำหรับ CRUD `AcademicYear`/`Semester` มีอยู่ครบ (`apps/backend/src/modules/academic-record/academic-year/`, `.../semester/`) แต่**ไม่มี frontend UI ให้ ADMIN/SUPER_ADMIN จัดการเลย** — ตอนนี้ข้อมูลที่มีอยู่ (ปีการศึกษา 2567/2568/2569 ครบ 3 ภาคเรียนต่อปี: FIRST/SECOND/SUMMER) ถูกใส่ตรงผ่าน Prisma โดย dev เอง (2026-08-08) ไม่ได้ผ่าน UI เพื่อให้หน้า `/academic-record` (My Academic Record, STUDENT role) ใช้งานได้จริงตอน pilot
