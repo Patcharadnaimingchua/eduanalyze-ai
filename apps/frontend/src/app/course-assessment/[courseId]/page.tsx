@@ -18,11 +18,11 @@ import {
   courseAssessmentSchema,
   type CourseAssessmentFormValues,
 } from '@/lib/validation/course-assessment.schema';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,26 +183,26 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
               const currentScore = form.watch(`cloScores.${index}.score`);
               return (
                 <div key={field.id} className="space-y-2">
-                  <div>
-                    <p className="text-sm font-medium text-primary">{clo.code}</p>
-                    <p className="text-sm text-muted-foreground">{clo.description}</p>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium text-primary">{clo.code}</p>
+                      <p className="text-sm text-muted-foreground">{clo.description}</p>
+                    </div>
+                    <span className="shrink-0 text-lg font-semibold text-brand">{currentScore}</span>
                   </div>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((score) => (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() => form.setValue(`cloScores.${index}.score`, score)}
-                        className={cn(
-                          'flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition',
-                          currentScore === score
-                            ? 'border-brand bg-brand text-brand-foreground'
-                            : 'border-input text-muted-foreground hover:bg-slate-50',
-                        )}
-                      >
-                        {score}
-                      </button>
-                    ))}
+                  <Slider
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={currentScore}
+                    onValueChange={(score) => form.setValue(`cloScores.${index}.score`, score)}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
                   </div>
                 </div>
               );
