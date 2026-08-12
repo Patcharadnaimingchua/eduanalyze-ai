@@ -12,6 +12,7 @@ import {
   fetchSemesters,
 } from '@/lib/api/academic-record';
 import { formatSemesterLabel } from '@/lib/grade-label';
+import { gpaColorClassName } from '@/lib/gpa-color';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -95,6 +96,8 @@ function AcademicRecordContent() {
       });
   }, [semestersQuery.data, yearById]);
 
+  const gpa = gpaQuery.data;
+
   function refetchAll() {
     queryClient.invalidateQueries({ queryKey: ['my-course-records'] });
     queryClient.invalidateQueries({ queryKey: ['my-gpa', studentProfileId] });
@@ -148,8 +151,6 @@ function AcademicRecordContent() {
     );
   }
 
-  const gpa = gpaQuery.data;
-
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
       <div>
@@ -158,14 +159,35 @@ function AcademicRecordContent() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard
-          icon={Star}
-          label="เกรดเฉลี่ยสะสม"
-          value={gpa?.gpa != null ? gpa.gpa.toFixed(2) : '—'}
-          suffix="/ 4.0"
-        />
-        <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={gpa?.creditsCounted ?? 0} />
-        <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={gpa?.courseCount ?? 0} />
+        <div
+          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '75ms', animationFillMode: 'both' }}
+        >
+          <StatCard
+            icon={Star}
+            label="เกรดเฉลี่ยสะสม"
+            value={
+              gpa?.gpa != null ? (
+                <span className={gpaColorClassName(gpa.gpa)}>{gpa.gpa.toFixed(2)}</span>
+              ) : (
+                '—'
+              )
+            }
+            suffix="/ 4.0"
+          />
+        </div>
+        <div
+          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '150ms', animationFillMode: 'both' }}
+        >
+          <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={gpa?.creditsCounted ?? 0} />
+        </div>
+        <div
+          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+          style={{ animationDelay: '225ms', animationFillMode: 'both' }}
+        >
+          <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={gpa?.courseCount ?? 0} />
+        </div>
       </div>
 
       <AddRecordForm
