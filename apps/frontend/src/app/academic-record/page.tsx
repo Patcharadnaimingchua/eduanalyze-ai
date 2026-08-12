@@ -18,7 +18,6 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
 import { RecordTimeline } from '@/components/academic-record/record-timeline';
-import { GpaTrendChart } from '@/components/academic-record/gpa-trend-chart';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
 
@@ -175,8 +174,6 @@ function AcademicRecordContent() {
         semesterOptions={joinedSemesters}
         onCreated={refetchAll}
       />
-
-      <GpaTrendChart semesters={joinedSemesters} gpaBySemester={gpa?.bySemester ?? []} />
 
       <RecordTimeline
         records={recordsQuery.data ?? []}
