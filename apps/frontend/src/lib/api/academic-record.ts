@@ -2,7 +2,7 @@ import type {
   AcademicYear,
   CourseListItem,
   CreateStudentCourseRecordRequest,
-  GpaSummary,
+  GpaResult,
   Semester,
   StudentCourseRecord,
   UpdateStudentCourseRecordRequest,
@@ -16,7 +16,7 @@ export async function fetchMyCourseRecords() {
 }
 
 export async function fetchMyGpa(studentProfileId: string) {
-  const { data } = await apiClient.get<GpaSummary>(
+  const { data } = await apiClient.get<GpaResult>(
     `/student-course-records/gpa/${studentProfileId}`,
   );
   return data;

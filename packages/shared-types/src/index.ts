@@ -400,6 +400,19 @@ export interface GpaSummary {
   courseCount: number;
 }
 
+export interface SemesterGpa extends GpaSummary {
+  semesterId: string;
+}
+
+// GET /student-course-records/gpa/:studentProfileId — cumulative GpaSummary
+// fields plus a per-semester breakdown. bySemester is grouped from RAW
+// records (not retake-deduped like the cumulative gpa above), so a course
+// later retaken elsewhere still counts in the semester it was first
+// attempted.
+export interface GpaResult extends GpaSummary {
+  bySemester: SemesterGpa[];
+}
+
 export interface CourseListItem {
   id: string;
   code: string;

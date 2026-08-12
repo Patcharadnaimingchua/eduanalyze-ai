@@ -28,6 +28,26 @@ export interface StudentRosterEntry {
   grade: Grade;
 }
 
+export interface GpaSummary {
+  gpa: number | null;
+  creditsCounted: number;
+  courseCount: number;
+}
+
+export interface SemesterGpa extends GpaSummary {
+  semesterId: string;
+}
+
+export interface GpaResult extends GpaSummary {
+  // Per-semester breakdown — grouped from RAW records (not the
+  // retake-deduped latest-attempt map used for the cumulative gpa above),
+  // since a semester's own GPA must reflect what was actually graded that
+  // semester, including a course later retaken elsewhere. See the
+  // Timeline redesign plan note on why this can't reuse
+  // getLatestAttemptsPerCourse.
+  bySemester: SemesterGpa[];
+}
+
 @Injectable()
 export class StudentCourseRecordService {
   constructor(
@@ -158,7 +178,22 @@ export class StudentCourseRecordService {
   // CONVENTIONS.md §6 and the same "always resolve live" reasoning as
   // §8's scope resolution rule: a cached GPA would need invalidation on
   // every grade write, which is a failure mode this avoids entirely.
-  async calculateGpa(studentProfileId: string, user: RequestUser) {
+  async calculateGpa(
+    studentProfileId: string,
+    user: RequestUser,
+  ): Promise<GpaResult> {
+    await this.assertGpaAccess(studentProfileId, user);
+
+    const latestByCourse = await this.getLatestAttemptsPerCourse(studentProfileId);
+    const cumulative = this.calculateGpaFromAttempts(latestByCourse);
+    const bySemester = await this.calculateGpaBySemester(studentProfileId);
+
+    return { ...cumulative, bySemester };
+  }
+
+  // Shared by calculateGpa/calculateGpaBySemester — same self-vs-staff
+  // ownership rule, extracted so it isn't duplicated across both.
+  private async assertGpaAccess(studentProfileId: string, user: RequestUser) {
     if (this.isSelfServiceOnly(user)) {
       const own = await this.studentProfileService.findByUserId(user.userId);
       if (own.id !== studentProfileId) {
@@ -172,19 +207,54 @@ export class StudentCourseRecordService {
         await this.assertStaffScopeCovers(studentProfileId, user);
       }
     }
-
-    const latestByCourse = await this.getLatestAttemptsPerCourse(studentProfileId);
-    return this.calculateGpaFromAttempts(latestByCourse);
   }
 
   // Pure/internal — no I/O, no ownership check, takes already-fetched
   // data. Extracted so CohortAnalytics-style callers (Phase 9 Chunk 3+)
   // can reuse the exact same GPA math on a Map they already fetched for
   // PLO scoring too, instead of querying twice per student.
-  calculateGpaFromAttempts(latestByCourse: Map<string, LatestCourseAttempt>) {
+  calculateGpaFromAttempts(
+    latestByCourse: Map<string, LatestCourseAttempt>,
+  ): GpaSummary {
+    return this.summarizeGpa(Array.from(latestByCourse.values()));
+  }
+
+  // Per-semester GPA — deliberately does NOT go through
+  // getLatestAttemptsPerCourse's retake dedup (that map only keeps the
+  // most recent attempt of each course across the WHOLE transcript, so a
+  // course later retaken would silently disappear from the semester it
+  // was first attempted in). Groups raw active records by semesterId
+  // instead — each semester's GPA reflects exactly what was graded that
+  // semester.
+  private async calculateGpaBySemester(
+    studentProfileId: string,
+  ): Promise<SemesterGpa[]> {
+    const records = await this.prisma.studentCourseRecord.findMany({
+      where: { studentProfileId, isActive: true },
+    });
+
+    const bySemesterId = new Map<string, { grade: Grade; credits: number }[]>();
+    for (const record of records) {
+      const group = bySemesterId.get(record.semesterId) ?? [];
+      group.push(record);
+      bySemesterId.set(record.semesterId, group);
+    }
+
+    return Array.from(bySemesterId.entries()).map(([semesterId, group]) => ({
+      semesterId,
+      ...this.summarizeGpa(group),
+    }));
+  }
+
+  // Pure/internal — the weighted-average math shared by the cumulative
+  // (retake-deduped) and per-semester (raw) GPA calculations above; only
+  // the input array differs between the two callers.
+  private summarizeGpa(
+    records: { grade: Grade; credits: number }[],
+  ): GpaSummary {
     let gradePointSum = 0;
     let creditsCounted = 0;
-    for (const record of latestByCourse.values()) {
+    for (const record of records) {
       const gradePoint = GRADE_POINTS[record.grade];
       if (gradePoint === null) {
         continue; // W/I/S/U — excluded from both numerator and denominator
@@ -196,7 +266,7 @@ export class StudentCourseRecordService {
     return {
       gpa: creditsCounted > 0 ? gradePointSum / creditsCounted : null,
       creditsCounted,
-      courseCount: latestByCourse.size,
+      courseCount: records.length,
     };
   }
 

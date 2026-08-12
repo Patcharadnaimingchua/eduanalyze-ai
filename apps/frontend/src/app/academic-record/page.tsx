@@ -17,7 +17,8 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
-import { RecordTable } from '@/components/academic-record/record-table';
+import { RecordTimeline } from '@/components/academic-record/record-timeline';
+import { GpaTrendChart } from '@/components/academic-record/gpa-trend-chart';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
 
@@ -94,11 +95,6 @@ function AcademicRecordContent() {
         return TERM_ORDER[b.term] - TERM_ORDER[a.term];
       });
   }, [semestersQuery.data, yearById]);
-
-  const semesterMap = useMemo(
-    () => new Map(joinedSemesters.map((s) => [s.id, { label: s.label }])),
-    [joinedSemesters],
-  );
 
   function refetchAll() {
     queryClient.invalidateQueries({ queryKey: ['my-course-records'] });
@@ -180,10 +176,13 @@ function AcademicRecordContent() {
         onCreated={refetchAll}
       />
 
-      <RecordTable
+      <GpaTrendChart semesters={joinedSemesters} gpaBySemester={gpa?.bySemester ?? []} />
+
+      <RecordTimeline
         records={recordsQuery.data ?? []}
         courseMap={courseMap}
-        semesterMap={semesterMap}
+        semesters={joinedSemesters}
+        gpaBySemester={gpa?.bySemester ?? []}
         onChanged={refetchAll}
       />
     </DashboardShell>
