@@ -1,8 +1,8 @@
 import { CourseSummary, CreditCheckReport } from '../credit-checker/credit-checker-report.interface';
 
-export interface AvailableCourse extends CourseSummary {
-  isRequired: boolean;
-}
+// isRequired now lives on CourseSummary itself (added for the Prerequisite
+// Flow Chart) — AvailableCourse no longer needs to re-declare it.
+export type AvailableCourse = CourseSummary;
 
 export interface IncompleteElectiveCategory {
   categoryId: string;

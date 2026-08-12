@@ -11,6 +11,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { CategoryProgressList } from '@/components/credit-checker/category-progress-list';
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { FailedCoursesList } from '@/components/credit-checker/failed-courses-list';
+import { PrerequisiteFlowChart } from '@/components/credit-checker/prerequisite-flow-chart';
 
 export default function CreditCheckerPage() {
   return (
@@ -104,6 +105,7 @@ function CreditCheckerContent() {
       <CategoryProgressList categories={report.categoryProgress} />
       <MissingCoursesList courses={report.missingRequiredCourses} />
       <FailedCoursesList courses={report.failedCourses} />
+      <PrerequisiteFlowChart report={report} />
     </DashboardShell>
   );
 }

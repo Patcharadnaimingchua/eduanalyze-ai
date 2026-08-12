@@ -308,6 +308,13 @@ export interface CourseSummary {
   name: string;
   credits: number;
   grade?: Grade;
+  isRequired: boolean;
+  categoryId: string;
+  // Raw prerequisite edges + the derived boolean, computed for EVERY
+  // course (not just required-and-not-passed) — added for the
+  // Prerequisite Flow Chart (F3), which needs the full graph.
+  prerequisiteCourseIds: string[];
+  isPrerequisiteSatisfied: boolean;
 }
 
 export interface CategoryProgress {
@@ -331,9 +338,7 @@ export interface CreditCheckReport {
   passedCourses: CourseSummary[];
   failedCourses: CourseSummary[];
   notYetStudiedCourses: CourseSummary[];
-  // isPrerequisiteSatisfied is a bare boolean server-side — no field
-  // anywhere identifies WHICH prerequisite is missing (see TODO.md).
-  missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
+  missingRequiredCourses: CourseSummary[];
   categoryProgress: CategoryProgress[];
   graduationReadiness: GraduationReadiness;
 }
@@ -344,15 +349,14 @@ export interface CreditCheckReport {
 // data exists anywhere backing this (confirmed against the service
 // directly); the page must not fabricate either.
 
-export interface AvailableCourse extends CourseSummary {
-  isRequired: boolean;
-}
+// isRequired now lives on CourseSummary itself.
+export type AvailableCourse = CourseSummary;
 
 export interface LearningPathReport {
   studentProfileId: string;
   curriculumId: string;
   availableCourses: AvailableCourse[];
-  missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
+  missingRequiredCourses: CourseSummary[];
   incompleteElectiveCategories: IncompleteElectiveCategory[];
   graduationReadiness: GraduationReadiness;
   nextSemesterPlan: AvailableCourse[];

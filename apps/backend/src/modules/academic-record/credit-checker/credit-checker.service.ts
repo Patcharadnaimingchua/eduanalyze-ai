@@ -120,12 +120,26 @@ export class CreditCheckerService {
       for (const course of category.courses) {
         const attempt = latestByCourse.get(course.id);
         const status = attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
+        // Computed for every course (not just required-and-not-passed) —
+        // the Prerequisite Flow Chart needs this for every node, and it's
+        // free: prerequisitesRequired/passedCourseIds are already in
+        // memory from loadCurriculumTree/computePassedCourseIds above.
+        const isPrerequisiteSatisfied = this.isCoursePrerequisiteSatisfied(
+          course,
+          passedCourseIds,
+        );
         const summary: CourseSummary = {
           courseId: course.id,
           code: course.code,
           name: course.name,
           credits: course.credits,
           grade: attempt?.grade,
+          isRequired: course.isRequired,
+          categoryId: category.id,
+          prerequisiteCourseIds: course.prerequisitesRequired.map(
+            (p) => p.prerequisiteCourseId,
+          ),
+          isPrerequisiteSatisfied,
         };
 
         if (status === 'PASS') {
@@ -144,11 +158,7 @@ export class CreditCheckerService {
         }
 
         if (course.isRequired && status !== 'PASS') {
-          const isPrerequisiteSatisfied = this.isCoursePrerequisiteSatisfied(
-            course,
-            passedCourseIds,
-          );
-          missingRequiredCourses.push({ ...summary, isPrerequisiteSatisfied });
+          missingRequiredCourses.push(summary);
         }
       }
 

@@ -16,11 +16,9 @@
 
 **Backend `AiAnalysisService`/`GET /ai-analysis/student/:id` ยังอยู่ครบ ไม่ได้แตะ** — ยังเรียกตรงได้ผ่าน Swagger เหมือนเดิมถ้าต้องการ ส่วน `apps/frontend/src/lib/api/ai-analysis.ts` (`fetchAiSkillAnalysis`) ก็ยังอยู่ในโค้ดแต่ไม่มีจุดไหนเรียกใช้แล้ว — **ถ้าจะเปิดกลับมาใช้ AI จริงในอนาคต** (เช่น มี `ANTHROPIC_API_KEY` จริงแล้วและยอมรับค่าใช้จ่าย): แก้ `app/aptitude-analysis/page.tsx` ให้กลับไปเรียก `fetchAiSkillAnalysis` แทน `interpretPloRadar` (import `PloInterpretationCard`'s เดิมที่ชื่อ `AiInterpretationCard` ถูกลบไปแล้ว ต้องสร้าง/ปรับ component ให้รองรับ async state อีกครั้งหรือ mix ทั้งสองแบบก็ได้)
 
-## Credit Checker — `isPrerequisiteSatisfied` เป็นแค่ boolean ไม่บอกว่าวิชาไหนที่ยังขาด
+## Credit Checker — `isPrerequisiteSatisfied` เคยเป็นแค่ boolean (แก้แล้ว 2026-08-12)
 
-`GET /credit-checker/:studentProfileId`'s `missingRequiredCourses[].isPrerequisiteSatisfied` (`CreditCheckerService.isCoursePrerequisiteSatisfied`, `apps/backend/src/modules/academic-record/credit-checker/credit-checker.service.ts`) คำนวณจาก `.every()` วน `course.prerequisitesRequired` ภายในแล้วคืนแค่ `boolean` เดี่ยวๆ — **ไม่มี field ไหนบอกว่าวิชา prerequisite ตัวไหนที่ยังไม่ผ่าน** ทั้งที่ curriculum tree ที่โหลดมาภายใน service มีรายชื่อ prerequisite ครบอยู่แล้ว (ผ่าน `include: { prerequisitesRequired: true }`) แค่ไม่ได้ map ออกมาใน response
-
-หน้า `/credit-checker` (frontend, 2026-08-08) จึงแสดงได้แค่ข้อความทั่วไป "ยังไม่ผ่านวิชาที่ต้องเรียนก่อน" เมื่อ `isPrerequisiteSatisfied: false` โดยตั้งใจไม่เดาว่าเป็นวิชาไหน — ถ้าต้องการแสดงรายชื่อ prerequisite ที่ขาดจริงๆ ต้องเพิ่ม field ใหม่ (เช่น `missingPrerequisiteCourses: CourseSummary[]`) ที่ backend ก่อน เป็นการตัดสินใจ scope ใหม่ ไม่ใช่การแก้ frontend เพียงอย่างเดียว
+**แก้แล้ว**: `CourseSummary` (backend + shared-types) เพิ่ม `prerequisiteCourseIds: string[]` (raw edge, ทุกวิชา ไม่ใช่แค่ `missingRequiredCourses`) คู่กับ `isPrerequisiteSatisfied` — ตอนนี้ frontend เดารายชื่อ prerequisite ที่ขาดได้จริงจาก `prerequisiteCourseIds` โดยไม่ต้อง fetch เพิ่ม (ใช้ใน Prerequisite Flow Chart, `/credit-checker`) ไม่ต้องแก้ backend เพิ่มสำหรับ use case นี้แล้ว
 
 ## ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester
 

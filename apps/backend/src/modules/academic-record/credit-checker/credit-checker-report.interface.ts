@@ -6,6 +6,14 @@ export interface CourseSummary {
   name: string;
   credits: number;
   grade?: Grade;
+  isRequired: boolean;
+  categoryId: string;
+  // Raw prerequisite edges + the derived boolean, computed for EVERY
+  // course (not just required-and-not-passed) — needed by the
+  // Prerequisite Flow Chart (F3) to render the full graph, not just the
+  // missing-required subset.
+  prerequisiteCourseIds: string[];
+  isPrerequisiteSatisfied: boolean;
 }
 
 export interface CategoryProgress {
@@ -44,7 +52,7 @@ export interface CreditCheckReport {
   // Includes courses with no record at all AND courses whose latest
   // attempt graded W/I (EXCLUDED) — see grade-point.constant.ts.
   notYetStudiedCourses: CourseSummary[];
-  missingRequiredCourses: (CourseSummary & { isPrerequisiteSatisfied: boolean })[];
+  missingRequiredCourses: CourseSummary[];
   categoryProgress: CategoryProgress[];
   graduationReadiness: GraduationReadiness;
 }

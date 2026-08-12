@@ -67,6 +67,13 @@ export class LearningPathService {
           credits: course.credits,
           grade: latestByCourse.get(course.id)?.grade,
           isRequired: course.isRequired,
+          categoryId: category.id,
+          prerequisiteCourseIds: course.prerequisitesRequired.map(
+            (p) => p.prerequisiteCourseId,
+          ),
+          // Always true here — the `continue` above already filters out
+          // courses whose prerequisites aren't satisfied.
+          isPrerequisiteSatisfied: true,
         };
         availableCourses.push(available);
         if (!course.isRequired) {
