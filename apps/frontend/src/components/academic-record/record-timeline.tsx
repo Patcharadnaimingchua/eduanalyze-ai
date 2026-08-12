@@ -125,10 +125,24 @@ export function RecordTimeline({
         )}
 
         <div className="space-y-8">
-          {semestersWithRecords.map((semester) => {
+          {semestersWithRecords.map((semester, index) => {
             const semesterRecords = recordsBySemesterId.get(semester.id) ?? [];
             const semesterGpa = gpaBySemesterId.get(semester.id);
             const isExpanded = expandedSemesterIds.has(semester.id);
+
+            // "Previous" = chronologically earlier = further along this
+            // newest-first array (index+1, not index-1). Walk past any
+            // term whose gpa is null (WISU-only, nothing to compare)
+            // instead of stopping there, so a single gap-term doesn't
+            // hide a real comparison against the term before it.
+            let previousGpa: number | null = null;
+            for (let i = index + 1; i < semestersWithRecords.length; i++) {
+              const candidate = gpaBySemesterId.get(semestersWithRecords[i].id)?.gpa;
+              if (candidate != null) {
+                previousGpa = candidate;
+                break;
+              }
+            }
 
             return (
               <div key={semester.id} className="relative border-l-2 border-slate-100 pl-6">
@@ -137,6 +151,7 @@ export function RecordTimeline({
                 <SemesterGroupHeader
                   label={semester.label}
                   gpa={semesterGpa?.gpa ?? null}
+                  previousGpa={previousGpa}
                   creditsCounted={semesterGpa?.creditsCounted ?? 0}
                   isExpanded={isExpanded}
                   onToggle={() => toggleSemester(semester.id)}
