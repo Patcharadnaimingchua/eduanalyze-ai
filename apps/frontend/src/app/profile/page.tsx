@@ -10,7 +10,6 @@ import {
   Landmark,
   Mail,
   type LucideIcon,
-  UserRound,
 } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import {
@@ -43,44 +42,15 @@ function ProfileItem({
   value: string;
 }) {
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-lg bg-slate-50/80 p-3.5 transition-colors hover:bg-brand-light/60">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-light text-brand">
+    <div className="flex min-w-0 items-start gap-3 py-1">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
         <Icon size={17} aria-hidden="true" />
       </div>
-      <div className="min-w-0 space-y-0.5">
+      <div className="min-w-0 space-y-0.5 pt-0.5">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="truncate text-sm font-semibold text-primary" title={value}>
-          {value}
-        </p>
+        <p className="break-words text-sm font-semibold leading-5 text-primary">{value}</p>
       </div>
     </div>
-  );
-}
-
-function ProfileSection({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="h-full border-slate-200/80 shadow-sm">
-      <CardHeader className="space-y-2 pb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-light text-brand">
-          <Icon size={20} aria-hidden="true" />
-        </div>
-        <div>
-          <CardTitle className="text-lg text-primary">{title}</CardTitle>
-          <CardDescription className="mt-1">{description}</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2">{children}</CardContent>
-    </Card>
   );
 }
 
@@ -153,13 +123,7 @@ function ProfileContent() {
   const department = program ? departmentsQuery.data!.find((d) => d.id === program.departmentId) : undefined;
   const faculty = department ? facultiesQuery.data!.find((f) => f.id === department.facultyId) : undefined;
   const curriculum = curriculaQuery.data!.find((c) => c.id === profile.curriculumId);
-  const initials = user.fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((name) => name.charAt(0))
-    .join('')
-    .toUpperCase();
+  const initial = user.fullName.trim().charAt(0).toUpperCase();
 
   return (
     <DashboardShell studentCode={profile.studentCode} fullName={user.fullName}>
@@ -167,52 +131,57 @@ function ProfileContent() {
         className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
         style={{ animationFillMode: 'both' }}
       >
-        <Card className="relative overflow-hidden border-brand-light bg-gradient-to-br from-brand-light via-white to-white shadow-sm">
-          <div className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-brand/5" aria-hidden="true" />
-          <CardContent className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-7">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-brand text-2xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-white sm:h-24 sm:w-24 sm:text-3xl">
-              {initials}
+        <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-white to-white shadow-sm">
+          <CardContent className="flex flex-col gap-5 p-5 sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-white sm:h-20 sm:w-20 sm:text-2xl">
+                {initial}
+              </div>
+              <div className="min-w-0">
+                <p className="mb-1 text-sm font-medium text-brand">ข้อมูลส่วนตัว</p>
+                <h1 className="break-words text-2xl font-semibold tracking-tight text-primary sm:text-3xl">
+                  {user.fullName}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-foreground">
+                    <GraduationCap size={14} aria-hidden="true" />
+                    นักศึกษา
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-600">
+                    <Hash size={13} aria-hidden="true" />
+                    {profile.studentCode}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="mb-1 text-sm font-medium text-brand">โปรไฟล์ของฉัน</p>
-              <h1 className="truncate text-2xl font-semibold tracking-tight text-primary sm:text-3xl" title={user.fullName}>
-                {user.fullName}
-              </h1>
-              <p className="mt-1 truncate text-sm text-muted-foreground" title={user.email}>
-                {user.email}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-foreground">
-                  <GraduationCap size={14} aria-hidden="true" />
-                  นักศึกษา
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600">
-                  <Hash size={13} aria-hidden="true" />
-                  {profile.studentCode}
-                </span>
+            <div className="flex min-w-0 items-start gap-3 rounded-lg bg-white/70 px-4 py-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-light text-brand">
+                <Mail size={16} aria-hidden="true" />
+              </div>
+              <div className="min-w-0 pt-0.5">
+                <p className="text-xs font-medium text-muted-foreground">อีเมล</p>
+                <p className="break-all text-sm font-medium leading-5 text-primary">{user.email}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '100ms', animationFillMode: 'both' }}
-        >
-          <ProfileSection icon={UserRound} title="ข้อมูลส่วนตัว" description="รายละเอียดบัญชีและข้อมูลสำหรับติดต่อ">
-            <ProfileItem icon={UserRound} label="ชื่อ-นามสกุล" value={user.fullName} />
-            <ProfileItem icon={Mail} label="อีเมล" value={user.email} />
-            <ProfileItem icon={Hash} label="รหัสนิสิต/นักศึกษา" value={profile.studentCode} />
-          </ProfileSection>
-        </div>
-
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '175ms', animationFillMode: 'both' }}
-        >
-          <ProfileSection icon={GraduationCap} title="ข้อมูลการศึกษา" description="หลักสูตรและหน่วยงานการศึกษาปัจจุบัน">
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+      >
+        <Card className="border-slate-200/80 shadow-sm">
+          <CardHeader className="flex-row items-center gap-3 space-y-0 pb-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <GraduationCap size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <CardTitle className="text-lg text-primary">ข้อมูลการศึกษา</CardTitle>
+              <CardDescription className="mt-1">หลักสูตรและหน่วยงานการศึกษาปัจจุบัน</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
             <ProfileItem icon={Landmark} label="คณะ" value={faculty?.name ?? '—'} />
             <ProfileItem icon={Building2} label="ภาควิชา" value={department?.name ?? '—'} />
             <ProfileItem icon={GraduationCap} label="สาขา" value={program?.name ?? '—'} />
@@ -222,8 +191,8 @@ function ProfileContent() {
               value={curriculum ? `${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})` : '—'}
             />
             <ProfileItem icon={CalendarDays} label="ปีที่เข้าศึกษา" value={`${profile.admissionYear}`} />
-          </ProfileSection>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardShell>
   );
