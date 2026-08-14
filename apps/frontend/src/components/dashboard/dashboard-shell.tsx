@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BookOpen,
   CalendarRange,
   GraduationCap,
   HelpCircle,
@@ -31,7 +30,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
   { label: 'วัดความถนัด', icon: Target, href: '/aptitude-analysis' },
   { label: 'แผนการเรียน', icon: CalendarRange, href: '/learning-path' },
-  { label: 'หลักสูตร', icon: BookOpen },
 ];
 
 export function DashboardShell({
