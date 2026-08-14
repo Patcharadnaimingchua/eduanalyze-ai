@@ -9,6 +9,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
 import { PloInterpretationCard } from '@/components/aptitude-analysis/plo-interpretation-card';
+import { AptitudeAnalysisSkeleton } from '@/components/aptitude-analysis/aptitude-analysis-skeleton';
 
 export default function AptitudeAnalysisPage() {
   return (
@@ -60,9 +61,9 @@ function AptitudeAnalysisContent() {
 
   if (profileQuery.isLoading || ploQuery.isLoading || curriculumQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <AptitudeAnalysisSkeleton />
+      </DashboardShell>
     );
   }
 
@@ -95,9 +96,20 @@ function AptitudeAnalysisContent() {
         </p>
       </div>
 
-      <PloRadarChart radar={ploQuery.data.radar} />
-
-      <PloInterpretationCard report={interpretation} />
+      <div
+        className="grid grid-cols-1 gap-6 lg:grid-cols-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
+      >
+        <div className="lg:col-span-2">
+          <PloRadarChart
+            radar={ploQuery.data.radar}
+            threshold={curriculumQuery.data.defaultAchievementThreshold}
+          />
+        </div>
+        <div className="lg:col-span-3">
+          <PloInterpretationCard report={interpretation} />
+        </div>
+      </div>
     </DashboardShell>
   );
 }

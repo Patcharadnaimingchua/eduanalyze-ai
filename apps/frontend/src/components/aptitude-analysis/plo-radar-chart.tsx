@@ -1,3 +1,4 @@
+import { Radar } from 'lucide-react';
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -19,10 +20,17 @@ export function PloRadarChart({
   radar,
   size = DEFAULT_SIZE,
   title = 'Radar ความสำเร็จตาม PLO',
+  threshold,
 }: {
   radar: RadarPoint[];
   size?: number;
   title?: string;
+  // Optional — draws a dashed reference ring at this level so it's
+  // visually obvious which axes clear the curriculum's pass bar, tying
+  // this chart to the same threshold concept /clo-plo-analysis uses.
+  // Omitted entirely on the Dashboard's compact card (not worth the
+  // visual noise at that size).
+  threshold?: number;
 }) {
   const total = radar.length;
   const center = size / 2;
@@ -41,12 +49,22 @@ export function PloRadarChart({
         <CardHeader>
           <CardTitle className="text-base">{title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-center text-muted-foreground">ยังไม่มีข้อมูล PLO สำหรับหลักสูตรนี้</p>
+        <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
+          <Radar size={28} className="text-slate-300" />
+          <p className="text-muted-foreground">ยังไม่มีข้อมูล PLO สำหรับหลักสูตรนี้</p>
         </CardContent>
       </Card>
     );
   }
+
+  const thresholdRingPoints =
+    threshold != null
+      ? Array.from({ length: total }, (_, i) =>
+          pointOnAxis(i, maxRadius * (Math.max(0, Math.min(100, threshold)) / 100)),
+        )
+          .map((p) => `${p.x},${p.y}`)
+          .join(' ')
+      : null;
 
   const dataPoints = radar.map((plo, i) =>
     pointOnAxis(i, maxRadius * (plo.value !== null ? Math.max(0, Math.min(100, plo.value)) / 100 : 0)),
@@ -76,6 +94,17 @@ export function PloRadarChart({
               />
             );
           })}
+
+          {/* Threshold reference ring — dashed so it reads as "the bar to
+              clear" rather than another data ring. */}
+          {thresholdRingPoints && (
+            <polygon
+              points={thresholdRingPoints}
+              className="fill-none stroke-amber-400"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+          )}
 
           {/* Axis lines */}
           {radar.map((_, i) => {

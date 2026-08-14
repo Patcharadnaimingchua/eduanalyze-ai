@@ -13,8 +13,10 @@ export interface PloInterpretation {
 
 // Same fallback text AiAnalysisService uses for hasNoGradedData, kept
 // verbatim so the "no data yet" experience is identical to the real
-// endpoint's.
-const NO_DATA_SUMMARY = 'ยังไม่มีข้อมูลผลการเรียนเพียงพอสำหรับการวิเคราะห์';
+// endpoint's. Exported so callers (PloInterpretationCard) can detect the
+// no-data case and render a dedicated empty state instead of the bullet
+// list layout.
+export const NO_DATA_SUMMARY = 'ยังไม่มีข้อมูลผลการเรียนเพียงพอสำหรับการวิเคราะห์';
 
 const SUMMARY_TEMPLATES: Record<'excellent' | 'good' | 'average' | 'needsWork', string[]> = {
   excellent: [
