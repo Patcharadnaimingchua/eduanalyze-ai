@@ -7,10 +7,30 @@ export interface RadarPoint {
   value: number | null;
 }
 
+// Per-CLO detail nested under a PLO — exposes scoreForClo's already-computed
+// intermediate value (previously discarded after weighting into RadarPoint.value)
+// so the CLO/PLO Analysis page can show a "why" behind each PLO number.
+export interface StudentPloCloBreakdownEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  // Same 0-100 scale and null semantics as RadarPoint.value.
+  score: number | null;
+  // score !== null && score >= (Clo.achievementThreshold ?? Curriculum.defaultAchievementThreshold)
+  isAchieved: boolean;
+}
+
+export interface StudentPloRadarPoint extends RadarPoint {
+  cloBreakdown: StudentPloCloBreakdownEntry[];
+}
+
 export interface StudentPloAchievementReport {
   studentProfileId: string;
   curriculumId: string;
-  radar: RadarPoint[];
+  radar: StudentPloRadarPoint[];
   // Convenience derived fields — rank-based top/bottom-2 of PLOs with
   // non-null data only, never overlapping. The `radar` array above is the
   // source of truth; these are just a UI shortcut (PROJECT_CONTEXT.md §25:

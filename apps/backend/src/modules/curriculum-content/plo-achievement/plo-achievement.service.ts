@@ -23,6 +23,8 @@ import {
   LowestCloEntry,
   RadarPoint,
   StudentPloAchievementReport,
+  StudentPloCloBreakdownEntry,
+  StudentPloRadarPoint,
 } from './plo-achievement-report.interface';
 
 const AT_RISK_GPA_THRESHOLD = 2.0;
@@ -31,6 +33,28 @@ type PloWithMappings = Prisma.PloGetPayload<{
   include: {
     cloMappings: {
       include: { clo: { select: { id: true; courseId: true } } };
+    };
+  };
+}>;
+
+// Richer variant used only by calculateForStudent, which (unlike the
+// Cohort/Curriculum/Course paths) needs enough per-CLO detail to render a
+// breakdown — the other call sites keep the lean PloWithMappings query.
+type PloWithMappingsAndCloDetail = Prisma.PloGetPayload<{
+  include: {
+    cloMappings: {
+      include: {
+        clo: {
+          select: {
+            id: true;
+            code: true;
+            description: true;
+            achievementThreshold: true;
+            courseId: true;
+            course: { select: { code: true; name: true } };
+          };
+        };
+      };
     };
   };
 }>;
@@ -57,12 +81,27 @@ export class PloAchievementService {
       user,
     );
 
-    const plos = await this.prisma.plo.findMany({
+    const curriculum = await this.curriculumService.findActiveByIdOrThrow(
+      profile.curriculumId,
+    );
+
+    const plos: PloWithMappingsAndCloDetail[] = await this.prisma.plo.findMany({
       where: { curriculumId: profile.curriculumId, isActive: true },
       include: {
         cloMappings: {
           where: { isActive: true },
-          include: { clo: { select: { id: true, courseId: true } } },
+          include: {
+            clo: {
+              select: {
+                id: true,
+                code: true,
+                description: true,
+                achievementThreshold: true,
+                courseId: true,
+                course: { select: { code: true, name: true } },
+              },
+            },
+          },
         },
       },
     });
@@ -72,7 +111,11 @@ export class PloAchievementService {
         profile.id,
       );
 
-    const radar = this.computeStudentPloScores(plos, latestAttemptsByCourse);
+    const radar = this.computeStudentPloScoresWithBreakdown(
+      plos,
+      latestAttemptsByCourse,
+      curriculum.defaultAchievementThreshold,
+    );
     const { strengths, areasForImprovement } =
       this.rankStrengthsAndWeaknesses(radar);
 
@@ -500,6 +543,56 @@ export class PloAchievementService {
         code: plo.code,
         name: plo.name,
         value: weightSum > 0 ? weightedScoreSum / weightSum : null,
+      };
+    });
+  }
+
+  // Same math as computeStudentPloScores, but for the single-student report
+  // — also keeps the per-CLO scoreForClo result (normally discarded once
+  // weighted into the PLO average) so the page can render a "why" behind
+  // each PLO number. Kept as its own method rather than adding an optional
+  // param to computeStudentPloScores so the 3 lean call sites (Cohort/
+  // Curriculum/Course, which query the thinner PloWithMappings shape) stay
+  // untouched.
+  private computeStudentPloScoresWithBreakdown(
+    plos: PloWithMappingsAndCloDetail[],
+    latestAttemptsByCourse: Map<string, LatestCourseAttempt>,
+    defaultThreshold: number,
+  ): StudentPloRadarPoint[] {
+    return plos.map((plo) => {
+      let weightedScoreSum = 0;
+      let weightSum = 0;
+      const cloBreakdown: StudentPloCloBreakdownEntry[] = [];
+
+      for (const mapping of plo.cloMappings) {
+        const score = this.scoreForClo(
+          mapping.clo.courseId,
+          latestAttemptsByCourse,
+        );
+        if (score !== null) {
+          weightedScoreSum += score * mapping.weight;
+          weightSum += mapping.weight;
+        }
+
+        const threshold = mapping.clo.achievementThreshold ?? defaultThreshold;
+        cloBreakdown.push({
+          cloId: mapping.clo.id,
+          code: mapping.clo.code,
+          description: mapping.clo.description,
+          courseId: mapping.clo.courseId,
+          courseCode: mapping.clo.course.code,
+          courseName: mapping.clo.course.name,
+          score,
+          isAchieved: score !== null && score >= threshold,
+        });
+      }
+
+      return {
+        ploId: plo.id,
+        code: plo.code,
+        name: plo.name,
+        value: weightSum > 0 ? weightedScoreSum / weightSum : null,
+        cloBreakdown,
       };
     });
   }

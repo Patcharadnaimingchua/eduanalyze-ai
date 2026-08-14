@@ -53,6 +53,20 @@ function CloPloAnalysisContent() {
 
   const threshold = curriculumQuery.data?.defaultAchievementThreshold ?? null;
 
+  // Lowest achievement first — surfaces what needs work before what's
+  // already fine. PLOs with no data (null) go last: "no data" isn't the
+  // same signal as "needs improvement", so it shouldn't compete for the
+  // top of the list.
+  const sortedRadar = useMemo(() => {
+    const radar = achievementQuery.data?.radar ?? [];
+    return [...radar].sort((a, b) => {
+      if (a.value === null && b.value === null) return 0;
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      return a.value - b.value;
+    });
+  }, [achievementQuery.data]);
+
   const overallPercent = useMemo(() => {
     const values = (achievementQuery.data?.radar ?? [])
       .map((p) => p.value)
@@ -114,17 +128,24 @@ function CloPloAnalysisContent() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div
+        className="grid grid-cols-1 gap-6 lg:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
+      >
         <OverallAchievementCard percent={overallPercent} isAchieved={overallAchieved} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {achievementQuery.data.radar.map((plo) => (
+      <div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '150ms', animationFillMode: 'both' }}
+      >
+        {sortedRadar.map((plo) => (
           <PloCard
             key={plo.ploId}
             plo={plo}
             description={descriptionByPloId.get(plo.ploId) ?? null}
             isAchieved={threshold !== null && plo.value !== null && plo.value >= threshold}
+            threshold={threshold}
           />
         ))}
       </div>

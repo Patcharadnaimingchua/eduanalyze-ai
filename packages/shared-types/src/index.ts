@@ -219,10 +219,27 @@ export interface StudentDashboardResponse {
 // server-side) — no status/description/threshold fields, joined
 // client-side from GET /plos and the student's own curriculum.
 
+// Per-CLO detail nested under a PLO — lets the CLO/PLO Analysis page show
+// which courses/CLOs make up a PLO's number, not just the averaged value.
+export interface StudentPloCloBreakdownEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  score: number | null;
+  isAchieved: boolean;
+}
+
+export interface StudentPloRadarPoint extends RadarPoint {
+  cloBreakdown: StudentPloCloBreakdownEntry[];
+}
+
 export interface StudentPloAchievementResponse {
   studentProfileId: string;
   curriculumId: string;
-  radar: RadarPoint[];
+  radar: StudentPloRadarPoint[];
   strengths: RadarPoint[];
   areasForImprovement: RadarPoint[];
 }
