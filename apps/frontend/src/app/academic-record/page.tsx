@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GraduationCap, FileCheck2, Star } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/api/academic-record';
 import { formatSemesterLabel } from '@/lib/grade-label';
 import { gpaColorClassName } from '@/lib/gpa-color';
+import { useCountUp } from '@/lib/use-count-up';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -98,9 +99,35 @@ function AcademicRecordContent() {
 
   const gpa = gpaQuery.data;
 
+  // Called unconditionally (before the loading/error early-returns below)
+  // so Rules of Hooks holds — target defaults to 0 while gpa hasn't
+  // loaded yet, then flips to the real number once gpaQuery resolves,
+  // which is exactly what triggers the 0→target count-up (same pattern
+  // Dashboard F2 uses, just without needing a separate child component
+  // here since this page's StatCard trio is fixed, not looped).
+  const animatedGpa = useCountUp(gpa?.gpa ?? 0, { duration: 900, decimals: 2 });
+  const animatedCredits = useCountUp(gpa?.creditsCounted ?? 0, { duration: 900, decimals: 0 });
+  const animatedCourseCount = useCountUp(gpa?.courseCount ?? 0, { duration: 900, decimals: 0 });
+
   function refetchAll() {
     queryClient.invalidateQueries({ queryKey: ['my-course-records'] });
     queryClient.invalidateQueries({ queryKey: ['my-gpa', studentProfileId] });
+  }
+
+  // Highlight the just-added record for a moment — cleared automatically
+  // so the caller never has to remember to reset it. 2000ms hold before
+  // the transition-colors duration-500 fade starts (same duration unit
+  // as every other animation on this page).
+  const [highlightRecordId, setHighlightRecordId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!highlightRecordId) return;
+    const timer = setTimeout(() => setHighlightRecordId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightRecordId]);
+
+  function handleRecordCreated(newRecordId: string) {
+    refetchAll();
+    setHighlightRecordId(newRecordId);
   }
 
   if (!user) {
@@ -168,7 +195,7 @@ function AcademicRecordContent() {
             label="เกรดเฉลี่ยสะสม"
             value={
               gpa?.gpa != null ? (
-                <span className={gpaColorClassName(gpa.gpa)}>{gpa.gpa.toFixed(2)}</span>
+                <span className={gpaColorClassName(gpa.gpa)}>{animatedGpa.toFixed(2)}</span>
               ) : (
                 '—'
               )
@@ -180,30 +207,41 @@ function AcademicRecordContent() {
           className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
           style={{ animationDelay: '150ms', animationFillMode: 'both' }}
         >
-          <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={gpa?.creditsCounted ?? 0} />
+          <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={Math.round(animatedCredits)} />
         </div>
         <div
           className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
           style={{ animationDelay: '225ms', animationFillMode: 'both' }}
         >
-          <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={gpa?.courseCount ?? 0} />
+          <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={Math.round(animatedCourseCount)} />
         </div>
       </div>
 
-      <AddRecordForm
-        studentProfileId={profileQuery.data.id}
-        courses={filteredCourses}
-        semesterOptions={joinedSemesters}
-        onCreated={refetchAll}
-      />
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+      >
+        <AddRecordForm
+          studentProfileId={profileQuery.data.id}
+          courses={filteredCourses}
+          semesterOptions={joinedSemesters}
+          onCreated={handleRecordCreated}
+        />
+      </div>
 
-      <RecordTimeline
-        records={recordsQuery.data ?? []}
-        courseMap={courseMap}
-        semesters={joinedSemesters}
-        gpaBySemester={gpa?.bySemester ?? []}
-        onChanged={refetchAll}
-      />
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '375ms', animationFillMode: 'both' }}
+      >
+        <RecordTimeline
+          records={recordsQuery.data ?? []}
+          courseMap={courseMap}
+          semesters={joinedSemesters}
+          gpaBySemester={gpa?.bySemester ?? []}
+          highlightRecordId={highlightRecordId}
+          onChanged={refetchAll}
+        />
+      </div>
     </DashboardShell>
   );
 }

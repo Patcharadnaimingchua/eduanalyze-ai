@@ -39,7 +39,7 @@ export function AddRecordForm({
   studentProfileId: string;
   courses: CourseListItem[];
   semesterOptions: SemesterOption[];
-  onCreated: () => void;
+  onCreated: (newRecordId: string) => void;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
   // Bumped on every successful submit to force the <Select>s to fully
@@ -62,10 +62,10 @@ export function AddRecordForm({
   async function onSubmit(values: CourseRecordFormValues) {
     setServerError(null);
     try {
-      await createCourseRecord({ studentProfileId, ...values });
+      const record = await createCourseRecord({ studentProfileId, ...values });
       form.reset({ courseId: '', semesterId: '', grade: undefined });
       setFormKey((key) => key + 1);
-      onCreated();
+      onCreated(record.id);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('มีการบันทึกวิชานี้ในภาคเรียนนี้ไว้แล้ว');

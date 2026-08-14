@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { CourseListItem, Grade, SemesterGpa, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
@@ -27,6 +27,7 @@ export function RecordTimeline({
   courseMap,
   semesters,
   gpaBySemester,
+  highlightRecordId,
   onChanged,
 }: {
   records: StudentCourseRecord[];
@@ -35,10 +36,16 @@ export function RecordTimeline({
   // and the add-record form's semester dropdown.
   semesters: SemesterGroup[];
   gpaBySemester: SemesterGpa[];
+  // Record to flash green briefly (just created) — parent owns the timer
+  // that clears this back to null.
+  highlightRecordId?: string | null;
   onChanged: () => void;
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Set while a row plays its exit animation, before the delete call
+  // actually fires — see the effect below.
+  const [exitingRecordId, setExitingRecordId] = useState<string | null>(null);
 
   const gpaBySemesterId = new Map(gpaBySemester.map((s) => [s.semesterId, s]));
   const recordsBySemesterId = new Map<string, StudentCourseRecord[]>();
@@ -66,6 +73,22 @@ export function RecordTimeline({
       return next;
     });
   }
+
+  // If the just-created record landed in a semester that's still
+  // collapsed (anything other than the most recent term), force it open
+  // — otherwise the highlight flash would happen on a hidden row and the
+  // user would never see it.
+  useEffect(() => {
+    if (!highlightRecordId) return;
+    const record = records.find((r) => r.id === highlightRecordId);
+    if (!record) return;
+    setExpandedSemesterIds((prev) => {
+      if (prev.has(record.semesterId)) return prev;
+      const next = new Set(prev);
+      next.add(record.semesterId);
+      return next;
+    });
+  }, [highlightRecordId, records]);
 
   // Retake detection — no backend field for this; a retake is simply a
   // courseId appearing in more than one record (the unique constraint is
@@ -103,16 +126,32 @@ export function RecordTimeline({
     }
   }
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
-    try {
-      await deleteCourseRecord(id);
-      setConfirmingId(null);
-      onChanged();
-    } finally {
-      setBusyId(null);
-    }
+  function handleDelete(id: string) {
+    // Play the exit animation first — the actual delete + onChanged()
+    // (which invalidates the query and would otherwise make the row
+    // vanish instantly) happens after the animation finishes, in the
+    // effect below.
+    setConfirmingId(null);
+    setExitingRecordId(id);
   }
+
+  useEffect(() => {
+    if (!exitingRecordId) return;
+    const id = exitingRecordId;
+    // Matches duration-500 above — the row's slide/fade-out class.
+    const timer = setTimeout(async () => {
+      setBusyId(id);
+      try {
+        await deleteCourseRecord(id);
+        onChanged();
+      } finally {
+        setBusyId(null);
+        setExitingRecordId(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitingRecordId]);
 
   return (
     <Card>
@@ -163,11 +202,17 @@ export function RecordTimeline({
                       const course = courseMap.get(record.courseId);
                       const isBusy = busyId === record.id;
                       const retake = retakeInfoByRecordId.get(record.id);
+                      const isExiting = exitingRecordId === record.id;
+                      const isHighlighted = highlightRecordId === record.id;
 
                       return (
                         <div
                           key={record.id}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3"
+                          className={cn(
+                            'flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3 transition-colors duration-500',
+                            isExiting && 'animate-out fade-out-0 slide-out-to-top-4 duration-500',
+                            isHighlighted && 'bg-emerald-50',
+                          )}
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-primary">
