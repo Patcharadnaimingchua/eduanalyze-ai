@@ -14,6 +14,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
 import { ElectiveCategoryList } from '@/components/learning-path/elective-category-list';
+import { LearningPathSkeleton } from '@/components/learning-path/learning-path-skeleton';
 
 export default function LearningPathPage() {
   return (
@@ -80,9 +81,9 @@ function LearningPathContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <LearningPathSkeleton />
+      </DashboardShell>
     );
   }
 
@@ -113,7 +114,10 @@ function LearningPathContent() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div
+        className="grid grid-cols-1 gap-4 md:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
+      >
         <StatCard
           icon={GraduationCap}
           label="วิชาบังคับที่ยังขาด"
@@ -127,11 +131,16 @@ function LearningPathContent() {
         />
       </div>
 
-      <DragDropPlanner
-        availableCourses={path.availableCourses}
-        nextSemesterPlan={path.nextSemesterPlan}
-        maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
-      />
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '150ms', animationFillMode: 'both' }}
+      >
+        <DragDropPlanner
+          availableCourses={path.availableCourses}
+          nextSemesterPlan={path.nextSemesterPlan}
+          maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
+        />
+      </div>
       <MissingCoursesList courses={path.missingRequiredCourses} />
       <ElectiveCategoryList
         categories={path.incompleteElectiveCategories}
