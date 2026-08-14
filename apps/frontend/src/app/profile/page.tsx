@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 
 export default function ProfilePage() {
   return (
@@ -73,9 +74,9 @@ function ProfileContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <ProfileSkeleton />
+      </DashboardShell>
     );
   }
 
@@ -107,24 +108,29 @@ function ProfileContent() {
         <p className="text-sm text-muted-foreground">ข้อมูลนิสิต/นักศึกษาของคุณ</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">ข้อมูลส่วนตัว</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProfileRow label="ชื่อ-นามสกุล" value={user.fullName} />
-          <ProfileRow label="อีเมล" value={user.email} />
-          <ProfileRow label="รหัสนิสิต/นักศึกษา" value={profile.studentCode} />
-          <ProfileRow label="คณะ" value={faculty?.name ?? '—'} />
-          <ProfileRow label="ภาควิชา" value={department?.name ?? '—'} />
-          <ProfileRow label="สาขา" value={program?.name ?? '—'} />
-          <ProfileRow
-            label="หลักสูตร"
-            value={curriculum ? `${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})` : '—'}
-          />
-          <ProfileRow label="ปีที่เข้าศึกษา" value={`${profile.admissionYear}`} />
-        </CardContent>
-      </Card>
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">ข้อมูลส่วนตัว</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProfileRow label="ชื่อ-นามสกุล" value={user.fullName} />
+            <ProfileRow label="อีเมล" value={user.email} />
+            <ProfileRow label="รหัสนิสิต/นักศึกษา" value={profile.studentCode} />
+            <ProfileRow label="คณะ" value={faculty?.name ?? '—'} />
+            <ProfileRow label="ภาควิชา" value={department?.name ?? '—'} />
+            <ProfileRow label="สาขา" value={program?.name ?? '—'} />
+            <ProfileRow
+              label="หลักสูตร"
+              value={curriculum ? `${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})` : '—'}
+            />
+            <ProfileRow label="ปีที่เข้าศึกษา" value={`${profile.admissionYear}`} />
+          </CardContent>
+        </Card>
+      </div>
     </DashboardShell>
   );
 }
