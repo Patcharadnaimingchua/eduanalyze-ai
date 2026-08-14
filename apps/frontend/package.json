@@ -5,9 +5,10 @@
   "description": "EduAnalyzeAI frontend (Next.js)",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "build": "NEXT_BUILD_MODE=production next build",
+    "start": "NEXT_BUILD_MODE=production next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@eduanalyze-ai/shared-types": "*",
