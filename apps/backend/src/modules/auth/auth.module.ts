@@ -4,7 +4,6 @@ import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationModule } from './pending-invitation.module';
 import { PasswordResetModule } from './password-reset.module';
@@ -32,7 +31,6 @@ import { GoogleStrategy } from './strategies/google.strategy';
   controllers: [AuthController],
   providers: [
     AuthService,
-    OtpService,
     GooglePendingRegistrationService,
     JwtStrategy,
     JwtRefreshStrategy,

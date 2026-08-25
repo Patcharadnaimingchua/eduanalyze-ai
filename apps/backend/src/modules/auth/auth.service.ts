@@ -14,13 +14,11 @@ import { UserService } from '../users/user/user.service';
 import { UserRoleService } from '../users/user-role/user-role.service';
 import { UserAuthMethodService } from '../users/user-auth-method/user-auth-method.service';
 import { StudentProfileService } from '../users/student-profile/student-profile.service';
-import { OtpService } from './otp.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationService } from './pending-invitation.service';
 import { PasswordResetService } from './password-reset.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -30,18 +28,6 @@ import { JwtPayload } from './jwt-payload.interface';
 import { GoogleProfile } from './google-profile.interface';
 
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
-
-// ============================================================================
-// TEMPORARY — see TODO.md "OTP verification ถูกปิดชั่วคราวทั้งระบบ". While
-// true, both POST /auth/register and POST /auth/login skip OtpService
-// entirely and issue tokens immediately (no email ownership check at all,
-// anywhere in the system). This is a convenience toggle for letting
-// people try the system without needing real email access — it is NOT
-// safe for real student data. Flip back to `false` before this system is
-// used with real students. OtpService/OtpCode are untouched — this only
-// short-circuits the two call sites in register()/login().
-// ============================================================================
-const SKIP_OTP_VERIFICATION = true;
 
 interface CreateStudentAccountParams {
   email: string;
@@ -63,7 +49,6 @@ export class AuthService {
     private readonly userRoleService: UserRoleService,
     private readonly userAuthMethodService: UserAuthMethodService,
     private readonly studentProfileService: StudentProfileService,
-    private readonly otpService: OtpService,
     private readonly googlePendingRegistrationService: GooglePendingRegistrationService,
     private readonly pendingInvitationService: PendingInvitationService,
     private readonly passwordResetService: PasswordResetService,
@@ -86,16 +71,7 @@ export class AuthService {
       admissionYear: dto.admissionYear,
     });
 
-    if (SKIP_OTP_VERIFICATION) {
-      return this.issueTokenPair(user);
-    }
-
-    // OTP creation/delivery happens outside the transaction: if it fails,
-    // the account still exists and the user can request the OTP again —
-    // it should not roll back the whole registration.
-    await this.otpService.createAndSend(user.id, user.email);
-
-    return { userId: user.id, email: user.email };
+    return this.issueTokenPair(user);
   }
 
   async handleGoogleCallback(profile: GoogleProfile) {
@@ -159,9 +135,8 @@ export class AuthService {
       (tx) => tx.googlePendingRegistration.delete({ where: { id: pending.id } }),
     );
 
-    // Google already verified this identity — no OTP step, per Phase 3
-    // design (an extra in-app OTP on top of Google's own auth would add
-    // friction without adding real security).
+    // Google already verified this identity — issue tokens immediately,
+    // same as register()/login().
     return this.issueTokenPair(user);
   }
 
@@ -237,18 +212,6 @@ export class AuthService {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    if (SKIP_OTP_VERIFICATION) {
-      return this.issueTokenPair(user);
-    }
-
-    await this.otpService.createAndSend(user.id, user.email);
-
-    return { userId: user.id, email: user.email };
-  }
-
-  async verifyOtp(dto: VerifyOtpDto) {
-    const user = await this.userService.findByEmail(dto.email);
-    await this.otpService.verify(user.id, dto.code);
     return this.issueTokenPair(user);
   }
 
@@ -256,7 +219,7 @@ export class AuthService {
   // — that flow creates User/UserRole/UserScope immediately with
   // passwordHash:null, gated behind this invitation token. No auto-login
   // afterward — same as every other auth entry point, the new user goes
-  // through normal /auth/login + OTP next, not a shortcut.
+  // through normal /auth/login next, not a shortcut.
   async acceptInvitation(dto: AcceptInvitationDto) {
     const pending = await this.pendingInvitationService.findValidByToken(
       dto.token,

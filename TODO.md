@@ -45,13 +45,13 @@ Persistence เป็น client-side state ล้วน (`useState`, reset เ�
 
 ไม่มีจุดใดต้องแก้โค้ด — ยืนยันว่า implementation ที่มีอยู่ถูกต้องครบถ้วน
 
-## ⚠️ OTP verification ถูกปิดชั่วคราวทั้งระบบ (register + login) — ต้องเปิดกลับก่อนใช้งานจริง
+## ~~OTP verification ถูกปิดชั่วคราวทั้งระบบ~~ — ลบ OTP ออกจากระบบทั้งหมดแล้ว (2026-08-25)
 
-`AuthService` (`apps/backend/src/modules/auth/auth.service.ts`) มี constant `SKIP_OTP_VERIFICATION = true` อยู่ด้านบนไฟล์ (เดิมชื่อ `SKIP_REGISTRATION_OTP`, เปลี่ยนชื่อ+ขยายขอบเขตแล้ว) — ตอนนี้ทั้ง `POST /auth/register` **และ** `POST /auth/login` จะออก token ทันที (`accessToken`/`refreshToken` cookie) แทนที่จะส่ง OTP ไปยืนยันอีเมลก่อนเหมือนที่ออกแบบไว้เดิม เพื่อให้คนอื่นทดลองใช้งานระบบได้ง่ายขึ้นโดยไม่ต้องเข้าถึงอีเมลจริง
+**ตัดสินใจแล้ว**: ระบบเปลี่ยนจาก 2-factor (email+password+OTP) เป็น 1-factor (email+password เท่านั้น) อย่างถาวร — ไม่ใช่แค่ปิด flag อีกต่อไป
 
-**ไม่ได้ลบ `OtpService`/`OtpCode` model ทิ้ง** — แค่ short-circuit 2 จุดเรียกใช้ใน `register()`/`login()` (`verify-otp` endpoint ยังอยู่ครบ เผื่อเปิดกลับ) เปิดกลับมาได้ทันทีด้วยการเปลี่ยน `SKIP_OTP_VERIFICATION` เป็น `false` — ไม่ต้องแก้ที่อื่นเลยทั้ง backend/frontend เพราะทั้งคู่เช็ค response shape (`'accessToken' in data`) รองรับทั้ง 2 สถานะของ flag อยู่แล้ว
+ลบออกจริง: `SKIP_OTP_VERIFICATION` constant, `OtpService`, `dto/verify-otp.dto.ts`, `POST /auth/verify-otp` endpoint, `OtpCode` model + `OtpPurpose` enum (migration `20260825150029_remove_otp_verification` DROP table จริง), หน้า frontend `/verify-otp`, `otpCodeSchema` — `register()`/`login()` ตอนนี้ออก token ทันทีเสมอ ไม่มี branch แยกอีกแล้ว
 
-**ความเสี่ยงขณะเปิด flag นี้ไว้**: ใครก็ได้สามารถสมัครสมาชิกหรือ login ด้วยอีเมลที่ตัวเองไม่ได้เป็นเจ้าของ แล้วเข้าใช้งานได้ทันทีโดยไม่มีการพิสูจน์ความเป็นเจ้าของอีเมลเลยทั้งระบบ (ไม่ใช่แค่ตอนสมัครสมาชิกอีกต่อไป) — **ต้องเปิด OTP กลับมาก่อนใช้งานจริงกับข้อมูลนักศึกษาจริงเด็ดขาด**
+**ไม่กระทบ**: Google OAuth (ไม่เคยผ่าน OTP อยู่แล้วตั้งแต่ Phase 3), `PasswordResetToken`/forgot-password flow (คนละ table กับ `OtpCode` โดยสิ้นเชิง)
 
 ## Curriculum.isOpenForRegistration — field มีอยู่ใน schema แต่ไม่ถูก enforce ที่ไหนเลย
 

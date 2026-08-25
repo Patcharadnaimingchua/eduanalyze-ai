@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import type { AccessTokenResponse, OtpPendingResponse } from '@eduanalyze-ai/shared-types';
+import type { AccessTokenResponse } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
@@ -38,19 +38,9 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setServerError(null);
     try {
-      const { data } = await apiClient.post<AccessTokenResponse | OtpPendingResponse>(
-        '/auth/login',
-        values,
-      );
-      if ('accessToken' in data) {
-        // TEMPORARY: backend currently skips OTP (see TODO.md) and issues
-        // tokens immediately — handled here so the frontend behaves
-        // correctly whichever way that flag is set.
-        await login(data.accessToken);
-        router.push('/dashboard');
-      } else {
-        router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
-      }
+      const { data } = await apiClient.post<AccessTokenResponse>('/auth/login', values);
+      await login(data.accessToken);
+      router.push('/dashboard');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');

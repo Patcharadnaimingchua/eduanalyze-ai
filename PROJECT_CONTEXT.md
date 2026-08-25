@@ -221,12 +221,13 @@ Student Profile ต้องถูกสร้างตั้งแต่ Regist
 ต้องมี: Register, Login, Logout, Current User, Change Password, Forgot Password,
 Reset Password, Role/Permission, JWT/session security
 
-ต้องการ Login แบบ 2 ขั้นตอน มี 2 แนวทางที่กำลังพิจารณา:
-A. Password + Email OTP — Email/Username + Password → Password ถูกต้อง → ส่ง OTP 6 หลักไป
-   Email → Verify OTP → ออก Access Token
-B. Google Authentication — อาจใช้ Google Sign-In/OAuth แทนหรือใช้ร่วมกับ Email OTP
+รองรับ 2 วิธียืนยันตัวตน:
+A. Email + Password (1-factor) — Email + Password ถูกต้อง → ออก Access Token ทันที
+B. Google Authentication — Google Sign-In/OAuth (ถือว่า Google ยืนยันตัวตนพอแล้ว)
 
-[อัปเดตหลังตัดสินใจแล้ว: ระบบรองรับทั้งสองแบบ — Email+Password+OTP และ Google OAuth]
+[อัปเดต 2026-08-25: เดิมออกแบบให้ A เป็น 2-factor (Password + Email OTP) แต่ตัดสินใจ
+ถอด OTP ออกจากระบบทั้งหมดแล้ว (ไม่ใช่แค่ปิด flag) เหลือ Email+Password ล้วนสำหรับ
+วิธี A — Google OAuth (วิธี B) ไม่เปลี่ยนแปลง ไม่เคยผ่าน OTP อยู่แล้ว]
 
 ==================================================
 16. MY ACADEMIC RECORD

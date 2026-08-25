@@ -13,7 +13,7 @@ type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 interface AuthContextValue {
   user: CurrentUserResponse | null;
   status: AuthStatus;
-  // Called after a call that issued a fresh access token (verify-otp,
+  // Called after a call that issued a fresh access token (login, register,
   // google/complete-registration) — stores it in memory and loads /me.
   login: (accessToken: string) => Promise<void>;
   logout: () => Promise<void>;

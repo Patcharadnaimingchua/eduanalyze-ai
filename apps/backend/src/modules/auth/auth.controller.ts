@@ -10,7 +10,6 @@ import { JwtRefreshGuard } from '../../common/guards/jwt-refresh.guard';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -37,56 +36,33 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({
     summary:
-      'Register a new student account. NOTE: OTP is temporarily skipped (see TODO.md) — currently logs the account in immediately instead of sending an OTP.',
+      'Register a new student account — sets the refresh token as an httpOnly cookie and returns the access token in the body',
   })
-  @ApiResponse({
-    status: 201,
-    description:
-      'Either { userId, email } (OTP sent, normal flow) or { accessToken } + refresh cookie (OTP currently skipped)',
-  })
+  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
   @ApiResponse({ status: 400, description: 'Invalid or mismatched program/curriculum' })
   @ApiResponse({ status: 409, description: 'Email or student code already in use' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.register(dto);
-    return this.respondWithTokenOrOtpPending(result, response);
+    const { accessToken, refreshToken } = await this.authService.register(dto);
+    this.setRefreshCookie(response, refreshToken);
+    return { accessToken };
   }
 
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary:
-      'Verify email + password. NOTE: OTP is temporarily skipped (see TODO.md) — currently issues tokens immediately instead of sending an OTP.',
+      'Verify email + password — sets the refresh token as an httpOnly cookie and returns the access token in the body',
   })
-  @ApiResponse({
-    status: 201,
-    description:
-      'Either { userId, email } (OTP sent, normal flow) or { accessToken } + refresh cookie (OTP currently skipped)',
-  })
+  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.login(dto);
-    return this.respondWithTokenOrOtpPending(result, response);
-  }
-
-  @Post('verify-otp')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({
-    summary:
-      'Verify a login OTP — sets the refresh token as an httpOnly cookie and returns the access token in the body',
-  })
-  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
-  @ApiResponse({ status: 401, description: 'Invalid, expired, or already-used OTP' })
-  async verifyOtp(
-    @Body() dto: VerifyOtpDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    const { accessToken, refreshToken } = await this.authService.verifyOtp(dto);
+    const { accessToken, refreshToken } = await this.authService.login(dto);
     this.setRefreshCookie(response, refreshToken);
     return { accessToken };
   }
@@ -217,22 +193,6 @@ export class AuthController {
       await this.authService.completeGoogleRegistration(dto);
     this.setRefreshCookie(response, refreshToken);
     return { accessToken };
-  }
-
-  // Shared by register()/login() — both now have the same two possible
-  // shapes depending on SKIP_OTP_VERIFICATION (see auth.service.ts):
-  // { userId, email } when OTP is actually sent, or a real token pair
-  // when it's skipped. Never duplicated at two call sites (CONVENTIONS
-  // §6) even though this branch only exists because of a temporary flag.
-  private respondWithTokenOrOtpPending(
-    result: { userId: string; email: string } | { accessToken: string; refreshToken: string },
-    response: Response,
-  ) {
-    if ('accessToken' in result) {
-      this.setRefreshCookie(response, result.refreshToken);
-      return { accessToken: result.accessToken };
-    }
-    return result;
   }
 
   private setRefreshCookie(response: Response, refreshToken: string) {

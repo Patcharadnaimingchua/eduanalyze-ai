@@ -10,12 +10,11 @@
 | Path | สรุป |
 |---|---|
 | `app/page.tsx` | Landing, auth-aware redirect |
-| `app/login/page.tsx` | Login form (RHF+zod), รองรับ OTP-pending |
-| `app/register/page.tsx` | Register form + org/curriculum select |
+| `app/login/page.tsx` | Login form (RHF+zod) — 1-factor email+password, ได้ token ทันที |
+| `app/register/page.tsx` | Register form + org/curriculum select — 1-factor, ได้ token ทันที |
 | `app/register/google/page.tsx` | Complete Google OAuth signup |
 | `app/(auth)/forgot-password/page.tsx` | ขอ reset password (email เป็น mock) |
 | `app/(auth)/reset-password/page.tsx` | Reset password ด้วย token |
-| `app/(auth)/verify-otp/page.tsx` | OTP form (OTP ถูก disable ฝั่ง server อยู่) |
 | `app/dashboard/page.tsx` | Dashboard: stat cards + entrance animation |
 | `app/academic-record/page.tsx` | Transcript timeline, entrance + removal animation |
 | `app/aptitude-analysis/page.tsx` | PLO radar chart + rule-based interpretation (ไม่ใช้ AI live) |
@@ -73,9 +72,8 @@ shadcn-style, hand-rolled (ไม่ใช้ Radix):
 
 ## 5. Backlog (เต็มดูที่ root `TODO.md`)
 
-- OTP verification ถูก skip ทั้งระบบ (`SKIP_OTP_VERIFICATION = true`) — ต้อง revert ก่อนขึ้น production จริง (security risk)
 - Learning Path ไม่มี backend persistence — state หายเมื่อ reload
-- Email (forgot-password/OTP/invite) เป็น mock (console.warn เท่านั้น)
+- Email (forgot-password/invite) เป็น mock (console.warn เท่านั้น)
 - PLO/CLO seed data ครอบคลุมแค่ 24/96 วิชา ที่เหลือเป็น demo data
 - AI Skill Analysis ไม่มี caching/persistence, ต้องใช้ ANTHROPIC_API_KEY จริง
 - ไม่มี admin UI สำหรับ AcademicYear/Semester CRUD

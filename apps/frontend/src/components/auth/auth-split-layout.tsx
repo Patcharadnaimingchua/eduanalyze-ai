@@ -2,7 +2,7 @@ import { GraduationCap } from 'lucide-react';
 
 // Shared shell for /login and /register — a wider two-panel layout
 // (brand panel + form), distinct from the (auth) route group's narrow
-// single-card layout used by verify-otp/forgot-password/reset-password.
+// single-card layout used by forgot-password/reset-password.
 export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white p-4">

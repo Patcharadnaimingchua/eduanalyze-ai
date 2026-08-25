@@ -2,9 +2,11 @@
 // Models are added incrementally, one phase at a time, per the project roadmap.
 // Phase 1: Organization Structure (Faculty -> Department -> Program -> Curriculum).
 // Phase 2: User, Role, Scope Model (no auth logic yet — Phase 3).
-// Phase 3: Authentication (Email+Password+OTP, Google OAuth). Password
+// Phase 3: Authentication (Email+Password, Google OAuth). Password
 // reset uses a separate token mechanism, added in its own later phase —
-// not part of this schema.
+// not part of this schema. OTP (email verification) was part of the
+// original design but removed later — see the migration that drops
+// otp_codes for context.
 // Phase 4: Curriculum Content (Course, Course Category, Curriculum
 // Requirement, Prerequisite). CLO/PLO/Mapping/Achievement Threshold are
 // out of scope — deferred to Phase 5.
@@ -116,7 +118,6 @@ model User {
   scopes               UserScope[]
   studentProfile       StudentProfile?
   authMethods          UserAuthMethod[]
-  otpCodes             OtpCode[]
   pendingInvitation    PendingInvitation?
   passwordResetToken   PasswordResetToken?
   courseInstructor     CourseInstructor[]
@@ -203,28 +204,9 @@ model UserAuthMethod {
   @@map("user_auth_methods")
 }
 
-model OtpCode {
-  id           String     @id @default(uuid())
-  userId       String
-  codeHash     String
-  purpose      OtpPurpose @default(LOGIN)
-  expiresAt    DateTime
-  isUsed       Boolean    @default(false)
-  attemptCount Int        @default(0)
-  createdAt    DateTime   @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-
-  @@map("otp_codes")
-}
-
 enum AuthProvider {
   PASSWORD
   GOOGLE
-}
-
-enum OtpPurpose {
-  LOGIN
 }
 
 // Holds a not-yet-a-User Google identity while the client collects the

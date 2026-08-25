@@ -20,11 +20,6 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface VerifyOtpRequest {
-  email: string;
-  code: string;
-}
-
 export interface ForgotPasswordRequest {
   email: string;
 }
@@ -49,13 +44,7 @@ export interface CompleteGoogleRegistrationRequest {
 
 // ---- Auth responses ----
 
-// register/login: OTP sent, no token yet
-export interface OtpPendingResponse {
-  userId: string;
-  email: string;
-}
-
-// verify-otp / google/complete-registration / refresh: refresh token is
+// register/login/google/complete-registration/refresh: refresh token is
 // an httpOnly cookie the browser handles automatically — never present in
 // a JSON body, only the access token is.
 export interface AccessTokenResponse {

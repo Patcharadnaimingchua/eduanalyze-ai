@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
-import type { AccessTokenResponse, OtpPendingResponse, RegisterRequest } from '@eduanalyze-ai/shared-types';
+import type { AccessTokenResponse, RegisterRequest } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { registerSchema, type RegisterFormValues } from '@/lib/validation/register.schema';
@@ -59,19 +59,9 @@ export default function RegisterPage() {
       admissionYear: values.admissionYear,
     };
     try {
-      const { data } = await apiClient.post<AccessTokenResponse | OtpPendingResponse>(
-        '/auth/register',
-        payload,
-      );
-      if ('accessToken' in data) {
-        // TEMPORARY: backend currently skips OTP after register (see
-        // TODO.md) and logs the account in immediately — handled here so
-        // the frontend behaves correctly whichever way that flag is set.
-        await login(data.accessToken);
-        router.push('/dashboard');
-      } else {
-        router.push(`/verify-otp?email=${encodeURIComponent(values.email)}`);
-      }
+      const { data } = await apiClient.post<AccessTokenResponse>('/auth/register', payload);
+      await login(data.accessToken);
+      router.push('/dashboard');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('อีเมลหรือรหัสนิสิต/นักศึกษานี้ถูกใช้งานแล้ว');
