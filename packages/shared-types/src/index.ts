@@ -456,3 +456,61 @@ export interface Semester {
   isActive: boolean;
   academicYearId: string;
 }
+
+// ---- Instructor course roster (GET /courses/:courseId/students) ----
+// No email field — the roster intentionally does not expose it.
+export interface StudentRosterEntry {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  grade: Grade;
+}
+
+// ---- Instructor dashboard (GET /dashboard/instructor) and course-level
+// CLO achievement (GET /clo-achievement/course/:courseId) share this shape.
+export interface CloAchievementEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  threshold: number;
+  isAchieved: boolean;
+}
+
+export interface CoursePloEntry {
+  ploId: string;
+  code: string;
+  name: string;
+  achievementPercent: number;
+  cloBreakdown: { cloId: string; code: string; weight: number }[];
+}
+
+export interface InstructorCourseSummary {
+  courseId: string;
+  code: string;
+  name: string;
+  studentCount: number; // excludes W/I
+  achievementPercent: number; // % graded B or above
+  gradeDistribution: Record<Grade, number>; // full raw tally incl. W/I/S/U
+  clos: CloAchievementEntry[];
+  plos: CoursePloEntry[];
+  courseAssessment: {
+    courseId: string;
+    submissionCount: number;
+    clos: { cloId: string; code: string; averageScore: number | null; scoreCount: number }[];
+  };
+}
+
+export interface InstructorDashboardReport {
+  courses: InstructorCourseSummary[];
+}
+
+// clos here shares one course-level achievementPercent across every entry
+// (a backend/schema limitation, not a frontend bug) — do not try to derive
+// per-CLO percentages from it.
+export interface CourseCloAchievementReport {
+  courseId: string;
+  totalStudents: number;
+  achievedStudents: number;
+  achievementPercent: number;
+  clos: CloAchievementEntry[];
+}

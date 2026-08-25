@@ -1,9 +1,11 @@
-# Frontend Status (สรุปสถานะ ณ 2026-08-14)
+# Frontend Status (สรุปสถานะ ณ 2026-08-25)
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง เพื่อไม่ต้อง re-explore โค้ด
 > ดู backlog เต็มที่ root `TODO.md`
 
 ## 1. หน้าที่เสร็จแล้ว (ทุกหน้า functional, ต่อ API จริงผ่าน react-query)
+
+### STUDENT
 
 | Path | สรุป |
 |---|---|
@@ -23,6 +25,16 @@
 | `app/learning-path/page.tsx` | Drag-and-drop planner (client-only, ไม่มี persist) |
 | `app/profile/page.tsx` | Profile/org info |
 
+### INSTRUCTOR
+
+| Path | สรุป |
+|---|---|
+| `app/instructor/dashboard/page.tsx` | Course card grid + detail panel (3 tab: Grade Distribution / CLO Achievement / Student Roster), state ขับเคลื่อนด้วย `?courseId=&tab=` query param ล้วนๆ (ไม่มี useState คู่ขนาน) |
+
+ดึงข้อมูลจาก `GET /dashboard/instructor` เป็นหลัก (course grid + grade distribution + CLO/PLO list มาในก้อนเดียว) ส่วน `GET /clo-achievement/course/:id` และ `GET /courses/:id/students` ยิงแบบ lazy เฉพาะตอนเปิด tab นั้นจริง — ดู `src/components/instructor/instructor-detail-panel.tsx` สำหรับ query lifecycle ทั้งหมด (อยู่ที่ parent เดียว ลูกเป็น presentational ล้วน)
+
+ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้ว (2026-08-25, Playwright) — ดูรายละเอียดการ setup test account ผ่าน flow จริง (POST /users, POST /course-instructors, POST /student-course-records) ใน conversation history หรือถามให้สรุปซ้ำได้
+
 ไม่มีหน้า stub — ทุกหน้าดึงข้อมูลจริงผ่าน `lib/api/*`.
 
 ## 2. Animation patterns
@@ -39,7 +51,9 @@
 ## 3. Reusable UI components (`src/components/ui/`)
 
 shadcn-style, hand-rolled (ไม่ใช้ Radix):
-`alert.tsx`, `button.tsx`, `card.tsx` (Card/CardHeader/CardContent/CardTitle), `combobox.tsx`, `form.tsx` (RHF wrapper), `input.tsx`, `label.tsx`, `progress.tsx`, `select.tsx`, `slider.tsx`, `textarea.tsx`
+`alert.tsx`, `badge.tsx` (tone-based: green/amber/red/gray — เพิ่ม 2026-08-25 แทน `<span>+cn()` inline ที่เคยซ้ำอยู่หลายจุด), `button.tsx`, `card.tsx` (Card/CardHeader/CardContent/CardTitle), `combobox.tsx`, `form.tsx` (RHF wrapper), `input.tsx`, `label.tsx`, `progress.tsx`, `select.tsx`, `slider.tsx`, `textarea.tsx`
+
+`DashboardShell` (`src/components/dashboard/dashboard-shell.tsx`) เป็น role-aware แล้ว (nav items ตาม `role` prop, default `'STUDENT'` — 9 หน้า STUDENT เดิมเรียกแบบไม่ใส่ `role` ได้เหมือนเดิม ไม่ต้องแก้) ส่วน role-gate ใช้ `src/components/auth/require-role.tsx` (`<RequireRole role="INSTRUCTOR">`) — หน้า STUDENT เดิมยังใช้ inline `isStudent` check เดิมอยู่ ยังไม่ได้ retro-fit ให้ใช้ `RequireRole` ร่วม
 
 ## 4. Convention ที่ตกลงกันไว้
 
@@ -58,3 +72,7 @@ shadcn-style, hand-rolled (ไม่ใช้ Radix):
 - AI Skill Analysis ไม่มี caching/persistence, ต้องใช้ ANTHROPIC_API_KEY จริง
 - ไม่มี admin UI สำหรับ AcademicYear/Semester CRUD
 - ไม่มี enforcement ของ `mustChangePassword`
+
+## 6. Dev environment gotcha (พบ 2026-08-25)
+
+เคยมี backend process เก่าค้าง (รันมาจาก path `/Users/patcharadnai/Downloads/eduanalyze-ai/` ที่ไม่มี `Projects/` — น่าจะเป็นซากจากตอนย้ายโปรเจกต์) ครอง port 3001 อยู่นานหลายวัน ทำให้ backend ตัวจริงจาก `Projects/eduanalyze-ai` (ที่ `nest start --watch` เอง) bind port ไม่ได้เงียบๆ — API calls ทั้งหมดไปโดน process เก่าโดยไม่รู้ตัว ก่อนเริ่มงาน backend ครั้งต่อไป ควรเช็คว่า `lsof -iTCP:3001 -sTCP:LISTEN -P -n` คืน cwd ตรงกับ `Projects/eduanalyze-ai/apps/backend` จริง

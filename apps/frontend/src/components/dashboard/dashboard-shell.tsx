@@ -13,6 +13,7 @@ import {
   Target,
   type LucideIcon,
 } from 'lucide-react';
+import type { Role } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 
@@ -24,7 +25,7 @@ interface NavItem {
 
 // Items without an `href` have no page behind them yet — shown per the
 // design (so the shell reads as complete) but disabled/unclickable.
-const NAV_ITEMS: NavItem[] = [
+const STUDENT_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/dashboard' },
   { label: 'การติดตามผลการเรียน', icon: LineChart, href: '/academic-record' },
   { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
@@ -32,17 +33,29 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'แผนการเรียน', icon: CalendarRange, href: '/learning-path' },
 ];
 
+const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
+  { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/instructor/dashboard' },
+];
+
 export function DashboardShell({
   studentCode,
+  identityLabel,
   fullName,
+  role = 'STUDENT',
   children,
 }: {
-  studentCode: string;
+  studentCode?: string;
+  // Generic identity label shown next to fullName in the header — use this
+  // for roles that have no student-code equivalent (e.g. instructor email).
+  identityLabel?: string;
   fullName: string;
+  role?: Role;
   children: React.ReactNode;
 }) {
   const { logout } = useAuth();
   const pathname = usePathname();
+  const navItems = role === 'INSTRUCTOR' ? INSTRUCTOR_NAV_ITEMS : STUDENT_NAV_ITEMS;
+  const shownIdentity = identityLabel ?? studentCode;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -58,7 +71,7 @@ export function DashboardShell({
         </div>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV_ITEMS.map(({ label, icon: Icon, href }) => {
+          {navItems.map(({ label, icon: Icon, href }) => {
             const active = !!href && pathname === href;
 
             if (href) {
@@ -123,7 +136,7 @@ export function DashboardShell({
             ))}
           </div>
           <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
-            <span className="text-muted-foreground">{studentCode}</span>
+            {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
             <span className="font-medium text-primary">{fullName}</span>
           </Link>
         </header>
