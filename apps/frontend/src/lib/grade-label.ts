@@ -20,7 +20,7 @@ export const GRADE_LABELS: Record<Grade, string> = {
 
 export const GRADE_OPTIONS = Object.keys(GRADE_LABELS) as Grade[];
 
-const SEMESTER_TERM_LABELS: Record<string, string> = {
+export const SEMESTER_TERM_LABELS: Record<string, string> = {
   FIRST: 'ภาคต้น',
   SECOND: 'ภาคปลาย',
   SUMMER: 'ภาคฤดูร้อน',

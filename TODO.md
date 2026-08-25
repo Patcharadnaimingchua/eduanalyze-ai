@@ -28,11 +28,11 @@ Persistence เป็น client-side state ล้วน (`useState`, reset เ�
 
 **สี node ทั้ง 4 สถานะ (เขียว/ฟ้า/เทา/ส้ม) ยืนยันแล้วว่าแสดงผลถูกต้องจริงในเบราว์เซอร์ (2026-08-12)** — ตอน implement มีรอบ debug ว่าสีไม่ขึ้นเลย ตรวจ source/CSS/build ครบไม่พบบั๊กในโค้ด (ทุก class ถูก generate ถูกต้องใน `layout.css`) สรุปว่าเป็น browser cache ค้าง ไม่ใช่บั๊ก — ผู้ใช้ยืนยันแล้วว่า hard refresh แก้ปัญหาได้จริง
 
-## ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester
+## ~~ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester~~ — แก้แล้ว (2026-08-25)
 
-Backend endpoint สำหรับ CRUD `AcademicYear`/`Semester` มีอยู่ครบ (`apps/backend/src/modules/academic-record/academic-year/`, `.../semester/`) แต่**ไม่มี frontend UI ให้ ADMIN/SUPER_ADMIN จัดการเลย** — ตอนนี้ข้อมูลที่มีอยู่ (ปีการศึกษา 2567/2568/2569 ครบ 3 ภาคเรียนต่อปี: FIRST/SECOND/SUMMER) ถูกใส่ตรงผ่าน Prisma โดย dev เอง (2026-08-08) ไม่ได้ผ่าน UI เพื่อให้หน้า `/academic-record` (My Academic Record, STUDENT role) ใช้งานได้จริงตอน pilot
+**แก้แล้ว**: `apps/frontend/src/app/admin/academic-years/page.tsx` (SUPER_ADMIN only) — create+soft-delete ทั้งปีการศึกษาและภาคเรียนผ่าน UI จริงแล้ว ทดสอบ end-to-end ผ่านเบราว์เซอร์แล้ว (create, duplicate-year 409, add/delete semester, delete year, role-block) ดูรายละเอียดที่ `apps/frontend/FRONTEND_STATUS.md` หมวด ADMIN
 
-**ผลกระทบ**: ถ้าต้องเพิ่มปีการศึกษาใหม่ (เช่น 2570) หรือแก้ไข/ปิดภาคเรียนในอนาคต ต้องให้ dev เข้าไปรันสคริปต์ใส่ตรงในฐานข้อมูลให้ทุกครั้ง ไม่มีทางให้ ADMIN ทำเองผ่านหน้าเว็บ — ควรสร้างหน้า ADMIN CRUD ธรรมดา (คล้าย pattern ของ Faculty/Department/Program ที่มีอยู่แล้วฝั่ง backend) เป็นรอบถัดไปที่ควรพิจารณา ไม่เร่งด่วนสำหรับ pilot รอบนี้เพราะข้อมูลที่ใส่ไว้ครอบคลุมพอแล้ว
+ยังไม่มี UI สำหรับแก้ไข (edit) ปี/เทอมที่มีอยู่แล้ว (แค่ create+delete) — backend มี PATCH endpoint รองรับอยู่แล้ว เพิ่ม UI ทีหลังได้ถ้าจำเป็นจริง ไม่ใช่ blocker สำหรับ pilot รอบนี้
 
 ## ~~ScopeGuard — Curriculum Content~~ — verified end-to-end
 

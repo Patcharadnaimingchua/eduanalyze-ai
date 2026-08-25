@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  CalendarClock,
   CalendarRange,
   GraduationCap,
   HelpCircle,
@@ -37,6 +38,16 @@ const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/instructor/dashboard' },
 ];
 
+const ADMIN_NAV_ITEMS: NavItem[] = [
+  { label: 'ปีการศึกษา', icon: CalendarClock, href: '/admin/academic-years' },
+];
+
+function navItemsForRole(role: Role): NavItem[] {
+  if (role === 'INSTRUCTOR') return INSTRUCTOR_NAV_ITEMS;
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return ADMIN_NAV_ITEMS;
+  return STUDENT_NAV_ITEMS;
+}
+
 export function DashboardShell({
   studentCode,
   identityLabel,
@@ -54,7 +65,7 @@ export function DashboardShell({
 }) {
   const { logout } = useAuth();
   const pathname = usePathname();
-  const navItems = role === 'INSTRUCTOR' ? INSTRUCTOR_NAV_ITEMS : STUDENT_NAV_ITEMS;
+  const navItems = navItemsForRole(role);
   const shownIdentity = identityLabel ?? studentCode;
 
   return (

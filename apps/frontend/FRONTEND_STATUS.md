@@ -35,6 +35,14 @@
 
 ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้ว (2026-08-25, Playwright) — ดูรายละเอียดการ setup test account ผ่าน flow จริง (POST /users, POST /course-instructors, POST /student-course-records) ใน conversation history หรือถามให้สรุปซ้ำได้
 
+### ADMIN (SUPER_ADMIN only)
+
+| Path | สรุป |
+|---|---|
+| `app/admin/academic-years/page.tsx` | CRUD ปีการศึกษา+ภาคเรียน (create/soft-delete ทั้งคู่, semester ผูกกับปีที่เลือก, ป้องกันเพิ่มภาคเรียนซ้ำ term เดิมในปีเดียวกันฝั่ง UI ด้วยการกรอง `availableTerms`) |
+
+ไม่มี edit ปี/เทอมในตัว (แค่ create+delete) — backend มี PATCH ให้แล้วแต่ยังไม่ได้ทำ UI แก้ไข (เพิ่มทีหลังได้ถ้าจำเป็น) `RequireRole role="SUPER_ADMIN"` เท่านั้น (ตรงกับ backend guard ของ mutating endpoint — GET เปิดกว้างกว่านั้นแต่หน้านี้ทั้งหน้าเป็นหน้า manage จึงจำกัดทั้งหน้า) ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้ว (2026-08-25): create, duplicate-year 409, add/delete semester, delete year, role-block ครบ
+
 ไม่มีหน้า stub — ทุกหน้าดึงข้อมูลจริงผ่าน `lib/api/*`.
 
 ## 2. Animation patterns

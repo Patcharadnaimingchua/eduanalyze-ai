@@ -457,6 +457,22 @@ export interface Semester {
   academicYearId: string;
 }
 
+// ---- Admin CRUD for AcademicYear/Semester (SUPER_ADMIN only) ----
+export interface CreateAcademicYearRequest {
+  year: number;
+}
+
+export type UpdateAcademicYearRequest = Partial<CreateAcademicYearRequest>;
+
+export interface CreateSemesterRequest {
+  term: SemesterTerm;
+  academicYearId: string;
+}
+
+export interface UpdateSemesterRequest {
+  term?: SemesterTerm;
+}
+
 // ---- Instructor course roster (GET /courses/:courseId/students) ----
 // No email field — the roster intentionally does not expose it.
 export interface StudentRosterEntry {
