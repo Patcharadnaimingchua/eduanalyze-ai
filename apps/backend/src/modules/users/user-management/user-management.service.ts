@@ -90,7 +90,15 @@ export class UserManagementService {
       return createdUser;
     });
 
-    return { ...user, tempPassword };
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      tempPassword,
+    };
   }
 
   async listUsers(requester: RequestUser) {
