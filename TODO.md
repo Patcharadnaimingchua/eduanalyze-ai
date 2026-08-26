@@ -150,3 +150,11 @@ CLO Achievement ใช้ grade รวมทั้งวิชาตัดสิ
 - Returning-user path (`handleGoogleCallback` เรียกตรงผ่าน `NestFactory.createApplicationContext` ด้วย googleId เดิมที่ผูกไว้แล้ว — เข้า browser ซ้ำรอบสองทำไม่ได้จริงในการทดสอบอัตโนมัติ แต่ business logic เส้นนี้เหมือนกันกับที่ unit-test ไว้แล้ว) → ออก `accessToken`/`refreshToken` ทันที ไม่มี `pendingToken` ซ้ำ ตรงตามที่ออกแบบไว้
 
 Business logic อื่นๆ (anti-account-takeover, expired/reused token) ผ่านการทดสอบ unit-level ไว้ตั้งแต่ก่อนหน้านี้แล้ว ไม่ได้ทดสอบซ้ำรอบนี้ ไม่ใช่ gap ใหม่
+
+## Module 12 — UserScope self-modification guard เพิ่มแล้ว (2026-08-26)
+
+พบระหว่างวางแผน ADMIN role UI ว่า `POST /users/:userId/scopes` (`grantScope`) และ `DELETE /users/:userId/scopes/:scopeId` (`revoke`) มีอยู่แล้วจริง (`UserScopeController`/`UserScopeService`, `apps/backend/src/modules/users/user-scope/`) — ไม่ใช่ gap ที่ต้องสร้าง endpoint ใหม่ตามที่เข้าใจผิดไปตอนแรก แต่ทั้งสอง method ไม่กัน ADMIN แก้/ลบ scope **ของตัวเอง** เลย (self-scope-elevation risk)
+
+**แก้แล้ว**: เพิ่ม self-target check ใน `grantScope`/`revoke` (ซ้อนอยู่ใน `if (!requester.roles.includes('SUPER_ADMIN'))` เดิม — SUPER_ADMIN ยกเว้นเพราะ access ของตัวเองไม่ได้ผูกกับ scope) throw `ForbiddenException('Cannot modify your own scope')` ทดสอบยืนยันแล้วผ่าน curl จริง: self-grant/self-revoke โดน 403, grant/revoke user อื่นในสโคปยังทำงานปกติ (regression-safe)
+
+**ยังไม่มี** (นอกขอบเขตรอบนี้): frontend UI สำหรับ Module 12 ทั้งหมด (สร้าง user, list, active-status, assign/revoke role, manage scope) — ต้องสร้างใหม่ทั้งหมด ไม่มี `lib/api/*` wrapper หรือ shared-types ใดๆ อยู่เลย
