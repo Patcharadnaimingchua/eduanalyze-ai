@@ -17,6 +17,10 @@ interface AuthContextValue {
   // google/complete-registration) — stores it in memory and loads /me.
   login: (accessToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  // Re-fetches /auth/me without touching the access token — used after a
+  // password change so `user.mustChangePassword` reflects reality without
+  // a full page reload.
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -76,7 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, status, login, logout, refreshUser: loadCurrentUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

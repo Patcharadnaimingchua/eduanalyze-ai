@@ -22,7 +22,7 @@
 | `app/course-assessment/[courseId]/page.tsx` | Self-assessment form ต่อ course |
 | `app/credit-checker/page.tsx` | Credit check + prerequisite flow chart (hand-rolled) |
 | `app/learning-path/page.tsx` | Drag-and-drop planner (client-only, ไม่มี persist) |
-| `app/profile/page.tsx` | Profile/org info |
+| `app/profile/page.tsx` | Profile/org info + เปลี่ยนรหัสผ่าน — **เปิดให้ทุก role แล้ว** (เดิม STUDENT-only), non-STUDENT เห็นแค่ identity card + role badge + change-password (ไม่มี "ข้อมูลการศึกษา") |
 
 ### INSTRUCTOR
 
@@ -43,6 +43,10 @@
 ไม่มี edit ปี/เทอมในตัว (แค่ create+delete) — backend มี PATCH ให้แล้วแต่ยังไม่ได้ทำ UI แก้ไข (เพิ่มทีหลังได้ถ้าจำเป็น) `RequireRole role="SUPER_ADMIN"` เท่านั้น (ตรงกับ backend guard ของ mutating endpoint — GET เปิดกว้างกว่านั้นแต่หน้านี้ทั้งหน้าเป็นหน้า manage จึงจำกัดทั้งหน้า) ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้ว (2026-08-25): create, duplicate-year 409, add/delete semester, delete year, role-block ครบ
 
 ไม่มีหน้า stub — ทุกหน้าดึงข้อมูลจริงผ่าน `lib/api/*`.
+
+### Cross-cutting: บังคับเปลี่ยนรหัสผ่านครั้งแรก (2026-08-25)
+
+`ProtectedRoute` (`src/components/auth/protected-route.tsx`) เช็ค `user.mustChangePassword` เป็น choke point เดียว — ถ้า true จะ render `ChangePasswordForm` (`src/components/auth/change-password-form.tsx`, ใช้ `AuthSplitLayout`) แทน children ของทุกหน้า ไม่มี route/redirect แยก ครอบทุก deep-link/reload อัตโนมัติ ฟอร์มเดียวกันถูก reuse เป็นปุ่มเปลี่ยนรหัสผ่านแบบสมัครใจใน `/profile` ด้วย (ต่าง context กันแค่ผ่าน `onSuccess` callback prop) enforcement จริงอยู่ฝั่ง backend (`JwtAuthGuard`) — ฝั่งนี้แค่ให้ UX ดีกว่าเห็น API พังเปล่าๆ
 
 ## 2. Animation patterns
 

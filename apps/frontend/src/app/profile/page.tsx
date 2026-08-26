@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
@@ -11,6 +12,14 @@ import {
   Mail,
   type LucideIcon,
 } from 'lucide-react';
+import type {
+  CurriculumListItem,
+  DepartmentListItem,
+  FacultyListItem,
+  ProgramListItem,
+  Role,
+  StudentProfileMeResponse,
+} from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import {
   fetchCurricula,
@@ -20,7 +29,10 @@ import {
 } from '@/lib/api/organization';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { ChangePasswordForm } from '@/components/auth/change-password-form';
+import { ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 
@@ -30,6 +42,14 @@ export default function ProfilePage() {
       <ProfileContent />
     </ProtectedRoute>
   );
+}
+
+function primaryRoleFor(roles: Role[]): Role {
+  if (roles.includes('SUPER_ADMIN')) return 'SUPER_ADMIN';
+  if (roles.includes('ADMIN')) return 'ADMIN';
+  if (roles.includes('INSTRUCTOR')) return 'INSTRUCTOR';
+  if (roles.includes('STAFF')) return 'STAFF';
+  return 'STUDENT';
 }
 
 function ProfileItem({
@@ -54,9 +74,54 @@ function ProfileItem({
   );
 }
 
+function ProfileEducationCard({
+  profile,
+  faculties,
+  departments,
+  programs,
+  curricula,
+}: {
+  profile: StudentProfileMeResponse;
+  faculties: FacultyListItem[];
+  departments: DepartmentListItem[];
+  programs: ProgramListItem[];
+  curricula: CurriculumListItem[];
+}) {
+  const program = programs.find((p) => p.id === profile.programId);
+  const department = program ? departments.find((d) => d.id === program.departmentId) : undefined;
+  const faculty = department ? faculties.find((f) => f.id === department.facultyId) : undefined;
+  const curriculum = curricula.find((c) => c.id === profile.curriculumId);
+
+  return (
+    <Card className="border-slate-200/80 shadow-sm">
+      <CardHeader className="flex-row items-center gap-3 space-y-0 pb-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+          <GraduationCap size={20} aria-hidden="true" />
+        </div>
+        <div>
+          <CardTitle className="text-lg text-primary">ข้อมูลการศึกษา</CardTitle>
+          <CardDescription className="mt-1">หลักสูตรและหน่วยงานการศึกษาปัจจุบัน</CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ProfileItem icon={Landmark} label="คณะ" value={faculty?.name ?? '—'} />
+        <ProfileItem icon={Building2} label="ภาควิชา" value={department?.name ?? '—'} />
+        <ProfileItem icon={GraduationCap} label="สาขา" value={program?.name ?? '—'} />
+        <ProfileItem
+          icon={BookOpen}
+          label="หลักสูตร"
+          value={curriculum ? `${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})` : '—'}
+        />
+        <ProfileItem icon={CalendarDays} label="ปีที่เข้าศึกษา" value={`${profile.admissionYear}`} />
+      </CardContent>
+    </Card>
+  );
+}
+
 function ProfileContent() {
   const { user } = useAuth();
   const isStudent = !!user?.roles.includes('STUDENT');
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
@@ -80,37 +145,34 @@ function ProfileContent() {
     );
   }
 
-  if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
-  }
+  const primaryRole = primaryRoleFor(user.roles);
 
   const isLoading =
-    profileQuery.isLoading ||
-    facultiesQuery.isLoading ||
-    departmentsQuery.isLoading ||
-    programsQuery.isLoading ||
-    curriculaQuery.isLoading;
+    isStudent &&
+    (profileQuery.isLoading ||
+      facultiesQuery.isLoading ||
+      departmentsQuery.isLoading ||
+      programsQuery.isLoading ||
+      curriculaQuery.isLoading);
 
   if (isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+      <DashboardShell role={primaryRole} identityLabel={user.email} fullName={user.fullName}>
         <ProfileSkeleton />
       </DashboardShell>
     );
   }
 
-  if (
-    profileQuery.isError ||
-    facultiesQuery.isError ||
-    departmentsQuery.isError ||
-    programsQuery.isError ||
-    curriculaQuery.isError ||
-    !profileQuery.data
-  ) {
+  const hasError =
+    isStudent &&
+    (profileQuery.isError ||
+      facultiesQuery.isError ||
+      departmentsQuery.isError ||
+      programsQuery.isError ||
+      curriculaQuery.isError ||
+      !profileQuery.data);
+
+  if (hasError) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
@@ -118,15 +180,11 @@ function ProfileContent() {
     );
   }
 
-  const profile = profileQuery.data;
-  const program = programsQuery.data!.find((p) => p.id === profile.programId);
-  const department = program ? departmentsQuery.data!.find((d) => d.id === program.departmentId) : undefined;
-  const faculty = department ? facultiesQuery.data!.find((f) => f.id === department.facultyId) : undefined;
-  const curriculum = curriculaQuery.data!.find((c) => c.id === profile.curriculumId);
   const initial = user.fullName.trim().charAt(0).toUpperCase();
+  const identityLabel = isStudent ? profileQuery.data?.studentCode : user.email;
 
   return (
-    <DashboardShell studentCode={profile.studentCode} fullName={user.fullName}>
+    <DashboardShell role={primaryRole} identityLabel={identityLabel} fullName={user.fullName}>
       <div
         className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
         style={{ animationFillMode: 'both' }}
@@ -145,12 +203,14 @@ function ProfileContent() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-foreground">
                     <GraduationCap size={14} aria-hidden="true" />
-                    นักศึกษา
+                    {ROLE_LABEL_TH[primaryRole]}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-600">
-                    <Hash size={13} aria-hidden="true" />
-                    {profile.studentCode}
-                  </span>
+                  {isStudent && profileQuery.data && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-600">
+                      <Hash size={13} aria-hidden="true" />
+                      {profileQuery.data.studentCode}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -167,32 +227,36 @@ function ProfileContent() {
         </Card>
       </div>
 
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '100ms', animationFillMode: 'both' }}
-      >
-        <Card className="border-slate-200/80 shadow-sm">
-          <CardHeader className="flex-row items-center gap-3 space-y-0 pb-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
-              <GraduationCap size={20} aria-hidden="true" />
-            </div>
-            <div>
-              <CardTitle className="text-lg text-primary">ข้อมูลการศึกษา</CardTitle>
-              <CardDescription className="mt-1">หลักสูตรและหน่วยงานการศึกษาปัจจุบัน</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-            <ProfileItem icon={Landmark} label="คณะ" value={faculty?.name ?? '—'} />
-            <ProfileItem icon={Building2} label="ภาควิชา" value={department?.name ?? '—'} />
-            <ProfileItem icon={GraduationCap} label="สาขา" value={program?.name ?? '—'} />
-            <ProfileItem
-              icon={BookOpen}
-              label="หลักสูตร"
-              value={curriculum ? `${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})` : '—'}
+      {isStudent &&
+        profileQuery.data &&
+        facultiesQuery.data &&
+        departmentsQuery.data &&
+        programsQuery.data &&
+        curriculaQuery.data && (
+          <div
+            className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+            style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+          >
+            <ProfileEducationCard
+              profile={profileQuery.data}
+              faculties={facultiesQuery.data}
+              departments={departmentsQuery.data}
+              programs={programsQuery.data}
+              curricula={curriculaQuery.data}
             />
-            <ProfileItem icon={CalendarDays} label="ปีที่เข้าศึกษา" value={`${profile.admissionYear}`} />
-          </CardContent>
-        </Card>
+          </div>
+        )}
+
+      <div
+        className="animate-in fade-in-0 slide-in-from-bottom-4 space-y-3 duration-500"
+        style={{ animationDelay: '200ms', animationFillMode: 'both' }}
+      >
+        {passwordChanged && (
+          <Alert>
+            <AlertDescription>เปลี่ยนรหัสผ่านสำเร็จ</AlertDescription>
+          </Alert>
+        )}
+        <ChangePasswordForm onSuccess={() => setPasswordChanged(true)} />
       </div>
     </DashboardShell>
   );

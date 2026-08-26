@@ -3,7 +3,7 @@
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { useAuth } from '@/lib/auth-context';
 
-const ROLE_LABEL_TH: Record<Role, string> = {
+export const ROLE_LABEL_TH: Record<Role, string> = {
   STUDENT: 'นักศึกษา',
   INSTRUCTOR: 'อาจารย์',
   STAFF: 'เจ้าหน้าที่',

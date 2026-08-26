@@ -111,9 +111,15 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 
 `PasswordResetService`/`OtpService`'s mock-email gap (OTP, forgot-password) ยังคงเปิดอยู่เหมือนเดิม ไม่เกี่ยวกับการเปลี่ยนแปลงนี้
 
-## ไม่มี `mustChangePassword` flag บังคับเปลี่ยนรหัสผ่านครั้งแรก
+## ~~ไม่มี `mustChangePassword` flag บังคับเปลี่ยนรหัสผ่านครั้งแรก~~ — แก้แล้ว (2026-08-25)
 
-Module 12's temp password (ด้านบน) กับ `PATCH /auth/change-password` (มีอยู่แล้ว — ตรวจ `oldPassword` แล้ว hash รหัสใหม่) รวมกันทำให้ผู้ใช้ *สามารถ* เปลี่ยนรหัสผ่านได้เองหลัง login ครั้งแรก แต่ไม่มีอะไร **บังคับ** ให้ทำ — ผู้ใช้ที่ได้ temp password จาก ADMIN สามารถใช้มันต่อไปได้เรื่อยๆ โดยไม่เปลี่ยนก็ได้ ถ้าต้องการบังคับจริงต้องเพิ่ม `User.mustChangePassword Boolean @default(false)` ในสคีมา (migration ใหม่) + set เป็น `true` ตอนสร้างบัญชีด้วย temp password + เช็คตอน login/ที่ frontend เพื่อบังคับ redirect ไปหน้าเปลี่ยนรหัสผ่านก่อนใช้งานอย่างอื่น — ตัดสินใจแล้วว่ายังไม่ทำรอบนี้ (schema change ใหม่ ไม่ใช่แค่ swap logic)
+**แก้แล้ว**: `User.mustChangePassword Boolean @default(false)` เพิ่มแล้ว (migration `20260825152549_add_must_change_password`) — set เป็น `true` ตอน `POST /users` สร้างบัญชีด้วย temp password, clear เป็น `false` ใน `PATCH /auth/change-password`
+
+**Enforcement เป็น backend จริง ไม่ใช่แค่ frontend hint** — `JwtAuthGuard` (ทุก route ที่ protected ผ่านตัวนี้อยู่แล้ว) override `handleRequest()` เช็ค flag แล้ว throw 403 ถ้ายังไม่เปลี่ยน ยกเว้น route ที่ติด `@SkipPasswordChangeCheck()` (`GET /auth/me`, `PATCH /auth/change-password`, `POST /auth/logout`) อ่านค่าสดจาก DB ทุก request ผ่าน `JwtStrategy.validate()` เดียวกับที่เช็ค `isActive` อยู่แล้ว (ไม่ได้ฝังใน JWT payload เพื่อกัน staleness)
+
+**Frontend**: `ProtectedRoute` เป็น choke point เดียว render ฟอร์มเปลี่ยนรหัสผ่านแทน children เมื่อ `user.mustChangePassword` — ไม่มี route/redirect แยก ครอบทุกหน้ารวม deep-link/reload อัตโนมัติ ฟอร์มเดียวกัน (`ChangePasswordForm`) ถูกเอาไปใช้ใน `/profile` เป็นปุ่มเปลี่ยนรหัสผ่านแบบสมัครใจด้วย (ก่อนหน้านี้ frontend ไม่มี UI เปลี่ยนรหัสผ่านเลย) — `/profile` เปิดให้ทุก role เข้าได้แล้ว (เดิม STUDENT-only)
+
+ทดสอบ end-to-end ผ่านทั้ง curl (backend enforcement) และเบราว์เซอร์จริงแล้ว ดู `apps/frontend/FRONTEND_STATUS.md`
 
 ## ~~ScopeGuard — global `AllExceptionsFilter`~~ — resolved
 

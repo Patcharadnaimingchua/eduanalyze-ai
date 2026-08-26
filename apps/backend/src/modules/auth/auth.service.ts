@@ -243,6 +243,7 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       roles,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 
@@ -264,7 +265,10 @@ export class AuthService {
     }
 
     const passwordHash = await hashPassword(dto.newPassword);
-    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, mustChangePassword: false },
+    });
   }
 
   // Always the same response whether or not the email exists — a distinct

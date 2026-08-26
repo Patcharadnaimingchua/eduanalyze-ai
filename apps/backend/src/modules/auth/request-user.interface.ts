@@ -6,4 +6,5 @@ export interface RequestUser {
   userId: string;
   email: string;
   roles: Role[];
+  mustChangePassword: boolean;
 }

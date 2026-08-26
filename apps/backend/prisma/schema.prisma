@@ -21,12 +21,12 @@ datasource db {
 }
 
 model Faculty {
-  id          String   @id @default(uuid())
-  name        String
-  code        String   @unique
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   departments Department[]
   userScopes  UserScope[]
@@ -35,36 +35,36 @@ model Faculty {
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  name        String
-  code        String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  facultyId   String
-  faculty     Faculty  @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
 
-  programs    Program[]
-  userScopes  UserScope[]
+  programs   Program[]
+  userScopes UserScope[]
 
   @@unique([facultyId, code])
   @@map("departments")
 }
 
 model Program {
-  id           String   @id @default(uuid())
-  name         String
-  code         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
 
-  curricula      Curriculum[]
-  userScopes     UserScope[]
+  curricula       Curriculum[]
+  userScopes      UserScope[]
   studentProfiles StudentProfile[]
 
   @@unique([departmentId, name])
@@ -91,14 +91,14 @@ model Curriculum {
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
-  programId                   String
-  program                     Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Restrict)
 
-  studentProfiles             StudentProfile[]
-  categories                  CourseCategory[]
-  courses                     Course[]
-  requirements                CurriculumRequirement[]
-  plos                        Plo[]
+  studentProfiles StudentProfile[]
+  categories      CourseCategory[]
+  courses         Course[]
+  requirements    CurriculumRequirement[]
+  plos            Plo[]
 
   @@unique([programId, version])
   @@unique([programId, id])
@@ -106,13 +106,14 @@ model Curriculum {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String?
-  fullName     String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String?
+  fullName           String
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   userRoles            UserRole[]
   scopes               UserScope[]
@@ -297,8 +298,8 @@ model Course {
   categoryId String
   category   CourseCategory @relation(fields: [curriculumId, categoryId], references: [curriculumId, id], onDelete: Restrict)
 
-  prerequisitesRequired Prerequisite[] @relation("CoursePrerequisites")
-  prerequisiteFor       Prerequisite[] @relation("PrerequisiteForCourses")
+  prerequisitesRequired Prerequisite[]        @relation("CoursePrerequisites")
+  prerequisiteFor       Prerequisite[]        @relation("PrerequisiteForCourses")
   clos                  Clo[]
   studentRecords        StudentCourseRecord[]
   instructors           CourseInstructor[]
@@ -368,18 +369,18 @@ model CourseInstructor {
 // the count/detail of PLOs is program-specific (IT currently has 6) and
 // must never be hardcoded.
 model Plo {
-  id           String   @id @default(uuid())
-  code         String
-  name         String
-  description  String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(uuid())
+  code        String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   curriculumId String
   curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
 
-  cloMappings  CloPloMapping[]
+  cloMappings CloPloMapping[]
 
   @@unique([curriculumId, code])
   @@map("plos")
@@ -397,11 +398,11 @@ model Clo {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  courseId             String
-  course               Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
-  ploMappings          CloPloMapping[]
-  assessmentScores     CourseAssessmentCloScore[]
+  ploMappings      CloPloMapping[]
+  assessmentScores CourseAssessmentCloScore[]
 
   @@unique([courseId, code])
   @@map("clos")
@@ -419,11 +420,11 @@ model CloPloMapping {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cloId     String
-  clo       Clo @relation(fields: [cloId], references: [id], onDelete: Restrict)
+  cloId String
+  clo   Clo    @relation(fields: [cloId], references: [id], onDelete: Restrict)
 
-  ploId     String
-  plo       Plo @relation(fields: [ploId], references: [id], onDelete: Restrict)
+  ploId String
+  plo   Plo    @relation(fields: [ploId], references: [id], onDelete: Restrict)
 
   @@unique([cloId, ploId])
   @@map("clo_plo_mappings")
@@ -464,7 +465,7 @@ model CourseAssessmentCloScore {
   courseAssessment   CourseAssessment @relation(fields: [courseAssessmentId], references: [id], onDelete: Cascade)
 
   cloId String
-  clo   Clo @relation(fields: [cloId], references: [id], onDelete: Restrict)
+  clo   Clo    @relation(fields: [cloId], references: [id], onDelete: Restrict)
 
   @@unique([courseAssessmentId, cloId])
   @@map("course_assessment_clo_scores")
@@ -492,16 +493,16 @@ enum SemesterTerm {
 }
 
 model Semester {
-  id             String       @id @default(uuid())
-  term           SemesterTerm
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id        String       @id @default(uuid())
+  term      SemesterTerm
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   academicYearId String
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
 
-  records        StudentCourseRecord[]
+  records StudentCourseRecord[]
 
   @@unique([academicYearId, term])
   @@map("semesters")
@@ -533,16 +534,16 @@ enum Grade {
 // course catalog. Hard-delete: §16 frames removal as the student
 // correcting a mis-entered row, not something requiring an audit trail.
 model StudentCourseRecord {
-  id               String   @id @default(uuid())
-  grade            Grade
-  credits          Int
+  id        String   @id @default(uuid())
+  grade     Grade
+  credits   Int
   // Soft-delete only applies to ADMIN/STAFF removing a record that isn't
   // theirs (higher risk than a student correcting their own mis-entry) —
   // see StudentCourseRecordService.remove(). STUDENT-self/SUPER_ADMIN
   // deletes stay hard, unchanged.
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Audit trail (§10 STAFF write access made this necessary) — last
   // writer, not first: overwritten on both create and update, answering
@@ -550,20 +551,20 @@ model StudentCourseRecord {
   // because existing rows predate this field — NULL honestly means
   // "unknown/legacy", never backfilled with a guessed value. New rows are
   // always populated by the service layer.
-  enteredByUserId  String?
-  enteredBy        User?    @relation(fields: [enteredByUserId], references: [id], onDelete: Restrict)
+  enteredByUserId String?
+  enteredBy       User?   @relation(fields: [enteredByUserId], references: [id], onDelete: Restrict)
   // Reuses the existing Role enum rather than a parallel STUDENT_SELF/
   // STAFF_ON_BEHALF concept — Role.STUDENT here already means self-entry.
-  enteredByRole    Role?
+  enteredByRole   Role?
 
   studentProfileId String
   studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
 
-  courseId         String
-  course           Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
-  semesterId       String
-  semester         Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
 
   @@unique([studentProfileId, courseId, semesterId])
   @@map("student_course_records")

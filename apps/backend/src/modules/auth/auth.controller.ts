@@ -5,6 +5,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SkipPasswordChangeCheck } from '../../common/decorators/skip-password-change-check.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../../common/guards/jwt-refresh.guard';
 import { AuthService } from './auth.service';
@@ -93,6 +94,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary:
@@ -106,6 +108,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get the current authenticated user' })
   @ApiResponse({ status: 200, description: 'Current user' })
@@ -115,6 +118,7 @@ export class AuthController {
 
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Change the current user’s password' })
   @ApiResponse({ status: 200, description: 'Password changed' })

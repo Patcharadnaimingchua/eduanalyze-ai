@@ -77,6 +77,7 @@ export class UserManagementService {
         passwordHash,
         dto.fullName,
         tx,
+        true, // mustChangePassword — server-generated temp password, must be changed on first use
       );
       await this.userRoleService.assignRole(createdUser.id, dto.role, tx);
       if (dto.scope) {

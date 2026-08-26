@@ -12,13 +12,14 @@ export class UserService {
     passwordHash: string | null,
     fullName: string,
     tx: PrismaClientOrTx = this.prisma,
+    mustChangePassword = false,
   ) {
     const existing = await tx.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException(`Email "${email}" is already in use`);
     }
     return tx.user.create({
-      data: { email, passwordHash, fullName },
+      data: { email, passwordHash, fullName, mustChangePassword },
     });
   }
 

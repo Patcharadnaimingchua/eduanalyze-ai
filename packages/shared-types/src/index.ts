@@ -58,6 +58,7 @@ export interface CurrentUserResponse {
   email: string;
   fullName: string;
   roles: Role[];
+  mustChangePassword: boolean;
 }
 
 // ---- Organization structure (public, unauthenticated GETs) ----

@@ -42,6 +42,11 @@ export class JwtRefreshStrategy extends PassportStrategy(
     if (!user.isActive) {
       throw new UnauthorizedException('Account is deactivated');
     }
-    return { userId: payload.sub, email: payload.email, roles: payload.roles };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      roles: payload.roles,
+      mustChangePassword: user.mustChangePassword,
+    };
   }
 }
