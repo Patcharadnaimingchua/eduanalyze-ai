@@ -566,6 +566,13 @@ model StudentCourseRecord {
   semesterId String
   semester   Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
 
-  @@unique([studentProfileId, courseId, semesterId])
+  // No @@unique here on purpose — Prisma has no schema-level syntax for a
+  // filtered/partial unique index. The real constraint enforced in
+  // Postgres is a partial unique index on (studentProfileId, courseId,
+  // semesterId) WHERE isActive = true (see migration
+  // add_student_course_record_partial_unique_index) — soft-deleted rows
+  // no longer occupy the slot. `prisma migrate dev` cannot see this index
+  // since it isn't declared here, and may propose dropping it as drift —
+  // always review with --create-only, never auto-accept.
   @@map("student_course_records")
 }

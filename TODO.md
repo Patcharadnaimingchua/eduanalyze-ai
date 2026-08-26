@@ -59,11 +59,13 @@ Persistence เป็น client-side state ล้วน (`useState`, reset เ�
 
 **ต้องตัดสินใจ**: จะ implement การ enforce จริง (เช่น backend เช็คตอน register ว่า curriculum ที่เลือกต้อง `isOpenForRegistration: true`, มี endpoint ให้ ADMIN เปิด/ปิดรอบรับสมัครต่อหลักสูตร) หรือถือว่าเป็น field ที่ยังไม่ได้ใช้งานจริงในตอนนี้ (มีไว้เผื่ออนาคต ไม่ใช่ bug ที่ต้องรีบแก้) — ยังไม่ได้ตัดสินใจ
 
-## StudentCourseRecord audit trail — soft-delete ไม่รู้จัก unique constraint
+## ~~StudentCourseRecord audit trail — soft-delete ไม่รู้จัก unique constraint~~ — แก้แล้ว (2026-08-26)
 
 เพิ่ม `isActive`/`enteredByUserId`/`enteredByRole` เข้า `StudentCourseRecord` (ตามหลัง STAFF write access round) — ADMIN/STAFF ลบ record ของนักศึกษาคนอื่นเป็น soft-delete (`isActive: false`), STUDENT ลบของตัวเอง/SUPER_ADMIN ยังเป็น hard-delete เหมือนเดิม
 
-**ข้อจำกัดที่ยอมรับไว้**: `@@unique([studentProfileId, courseId, semesterId])` ไม่รู้จัก `isActive` — แถวที่ถูก soft-delete ยังคงครอบครอง slot ของ unique key นั้นอยู่ ถ้า ADMIN/STAFF soft-delete แถวผิดพลาดแล้วพยายามสร้างแถวใหม่สำหรับนักศึกษา+วิชา+เทอมเดียวกัน จะเจอ 409 Conflict จนกว่าจะจัดการแถวเดิมจริงๆ (ไม่มี endpoint สำหรับ hard-delete/restore แถวที่ soft-delete แล้วในตอนนี้) — ไม่ใช่ปัญหาสำหรับกรณีทั่วไป "เกรดผิด แก้เกรด" เพราะใช้ `PATCH` ได้ตรงๆ ไม่ต้องลบ+สร้างใหม่ กระทบเฉพาะกรณี "ทั้ง registration ผิด" ซึ่งพบไม่บ่อย ถ้าต้องแก้จริงต้องออกแบบ unique constraint ใหม่ (เช่น partial unique index ที่กรอง `isActive: true`) เป็นการตัดสินใจ scope ใหม่
+**แก้แล้ว**: เปลี่ยน `@@unique([studentProfileId, courseId, semesterId])` (Prisma schema-level, ไม่รู้จัก `isActive`) เป็น partial unique index จริงใน Postgres (`CREATE UNIQUE INDEX ... WHERE "isActive" = true`, migration `20260826042955_add_student_course_record_partial_unique_index`) — Prisma ไม่มี syntax แบบ schema-level สำหรับ filtered unique index จึงต้องเขียน raw SQL เอง และลบ `@@unique(...)` ออกจาก `schema.prisma` (มี comment อธิบายไว้ในไฟล์ว่าทำไม + เตือนว่า `prisma migrate dev` รอบถัดไปจะไม่เห็น index นี้และอาจเสนอ DROP เป็น drift — ต้อง review ด้วย `--create-only` เสมอ) Service layer (`create()`'s P2002 → 409 catch) ไม่ต้องแก้อะไรเลย เพราะ Postgres ยัง raise unique-violation error code เดิมไม่ว่า index จะเป็น partial หรือไม่ ทดสอบ reproduce บั๊กจริงก่อนแก้ (soft-delete แล้วสร้างใหม่ → 409) แล้วยืนยันหลังแก้ว่าสำเร็จ (201) พร้อมยืนยันว่า duplicate จริงยังโดนบล็อกเหมือนเดิม (409)
+
+**พบเพิ่มระหว่างสำรวจ (ยังไม่แก้ นอกขอบเขตรอบนี้)**: pattern `isActive` + `@@unique` แบบเดียวกันเป๊ะๆ มีอยู่ใน 9 model อื่นด้วย — `Faculty.code`, `Department`, `Program`, `Curriculum`, `CourseCategory`, `Course`, `Plo`, `Clo`, `Semester` — ทุกตัวมีบั๊กแบบเดียวกันในทางทฤษฎี (soft-delete แล้ว re-create ด้วยค่าเดิมจะชน 409) แต่เป็น org-structure ADMIN-only CRUD ที่ soft-delete+re-create ซ้ำชื่อเดิมเป็น edge case ที่เกิดน้อยกว่ามาก ไม่มีใคร flag ไว้มาก่อน ถ้าจะแก้ต้องเป็นงานแยกทีละ scope
 
 ## STAFF role (§10) — "Course Offering" ไม่มี model, CLO/PLO ยืนยันว่าตั้งใจไม่ให้ STAFF เข้าถึง
 
