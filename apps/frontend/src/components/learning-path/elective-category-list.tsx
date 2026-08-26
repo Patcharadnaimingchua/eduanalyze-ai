@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import type { IncompleteElectiveCategory } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -43,12 +44,24 @@ export function ElectiveCategoryList({
                     </div>
                   ))}
                 </div>
-              ) : (
+              ) : hasCatalog ? (
                 <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-muted-foreground">
-                  {hasCatalog
-                    ? 'มีวิชาในหมวดนี้ แต่ยังไม่มีวิชาที่ลงทะเบียนได้ในขณะนี้'
-                    : 'ยังไม่มีข้อมูลวิชาแนะนำในหมวดนี้'}
+                  มีวิชาในหมวดนี้ แต่ยังไม่มีวิชาที่ลงทะเบียนได้ในขณะนี้
                 </p>
+              ) : (
+                // Free Elective / some Gen Ed groups are university-wide by
+                // design (PROJECT_CONTEXT.md's "generic across programs"
+                // principle) — too many courses across every faculty to
+                // import into this system, decided at Phase 4. This is
+                // expected, not missing data, so the copy explains why
+                // instead of reading like a broken/incomplete page.
+                <div className="flex items-start gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-muted-foreground">
+                  <Info size={16} className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                  <p>
+                    หมวดนี้ยังขาดอีก {category.creditsShort} หน่วยกิต — เลือกได้จากทุกคณะทั่วมหาวิทยาลัย
+                    ระบบยังไม่มีรายชื่อวิชาให้แนะนำในหมวดนี้ ติดต่อฝ่ายทะเบียนหรือเลือกจากรายวิชาเปิดสอนในระบบทะเบียนกลาง
+                  </p>
+                </div>
               )}
             </div>
           );

@@ -91,7 +91,7 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 
 **เช็คจริง (2026-08-08)**: coverage ของหมวด Gen Ed/เลือกเสรีใน ICT 2564 อยู่ที่ ~5.6% (2/36 หน่วยกิต), ICT 2569 ~6.7% (2/30 หน่วยกิต) — และมีแค่ 2 จาก 16 หลักสูตรทั้งระบบ (ICT 2 เวอร์ชัน) ที่มี `Course`/`CourseCategory` อยู่เลยแม้แต่แถวเดียว หลักสูตรอื่นทั้งหมดยังไม่ได้ import วิชาเลย ถือเป็น gap ใหญ่ ไม่ใช่จุดเล็กที่แก้ทันได้
 
-**Frontend**: ยังไม่มีหน้า Learning Path Planner เลย (มีแค่ backend endpoint `GET /learning-path/:studentProfileId` — sidebar เมนู "แผนการเรียน" ใน Dashboard เป็น disabled placeholder) เมื่อสร้างหน้านี้ในอนาคต ให้ใส่ empty-state copy "ยังไม่มีข้อมูลวิชาแนะนำในหมวดนี้" สำหรับหมวดที่ `availableElectivesInCategory` ว่างเปล่า แทนที่จะปล่อย list ว่างเฉยๆ (ตัดสินใจไว้แล้วเมื่อ 2026-08-08 ว่าจะรอสร้างหน้าทั้งหน้าก่อน ไม่ทำเป็น patch เล็กๆ ตอนนี้)
+**Frontend — แก้แล้ว (2026-08-26)**: หน้า `/learning-path` สร้างเสร็จไปแล้วก่อนหน้านี้ (`ElectiveCategoryList`) เดิม empty-state copy ตอนไม่มี catalog เลยเขียนว่า "ยังไม่มีข้อมูลวิชาแนะนำในหมวดนี้" เฉยๆ ดูเหมือนบั๊ก/ข้อมูลขาด — ปรับเป็นข้อความอธิบายเหตุผล+ทางออกชัดเจน: "หมวดนี้ยังขาดอีก X หน่วยกิต — เลือกได้จากทุกคณะทั่วมหาวิทยาลัย ระบบยังไม่มีรายชื่อวิชาให้แนะนำในหมวดนี้ ติดต่อฝ่ายทะเบียนหรือเลือกจากรายวิชาเปิดสอนในระบบทะเบียนกลาง" พร้อม icon แยกจาก state อื่น (`src/components/learning-path/elective-category-list.tsx`) กรณี "มี catalog แต่ไม่มีวิชาลงได้ตอนนี้" (`hasCatalog` true) ข้อความเดิมยังคงอยู่ ไม่เปลี่ยน
 
 ## ~~CourseInstructor — Grade Distribution + per-course student list~~ — resolved
 
