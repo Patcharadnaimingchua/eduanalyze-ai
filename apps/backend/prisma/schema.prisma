@@ -24,7 +24,14 @@ datasource db {
 model Faculty {
   id        String   @id @default(uuid())
   name      String
-  code      String   @unique
+  // No @unique here on purpose — same reason as StudentCourseRecord: Prisma
+  // has no schema-level syntax for a filtered/partial unique index. The
+  // real constraint is a partial unique index on (code) WHERE isActive =
+  // true (see migration add_soft_delete_partial_unique_indexes) — a
+  // soft-deleted faculty's code can be reused. `prisma migrate dev` cannot
+  // see this index since it isn't declared here — always review with
+  // --create-only, never auto-accept.
+  code      String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -49,7 +56,9 @@ model Department {
   programs   Program[]
   userScopes UserScope[]
 
-  @@unique([facultyId, code])
+  // No @@unique([facultyId, code]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (facultyId,
+  // code) WHERE isActive = true.
   @@map("departments")
 }
 
@@ -68,8 +77,9 @@ model Program {
   userScopes      UserScope[]
   studentProfiles StudentProfile[]
 
-  @@unique([departmentId, name])
-  @@unique([departmentId, code])
+  // No @@unique([departmentId, name])/@@unique([departmentId, code]) here
+  // on purpose — see Faculty.code comment above. Real constraints: two
+  // partial unique indexes, both WHERE isActive = true.
   @@map("programs")
 }
 
@@ -101,7 +111,13 @@ model Curriculum {
   requirements    CurriculumRequirement[]
   plos            Plo[]
 
-  @@unique([programId, version])
+  // No @@unique([programId, version]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (programId,
+  // version) WHERE isActive = true.
+  // @@unique([programId, id]) IS kept below — unlike the version
+  // constraint, this one exists solely to support StudentProfile's
+  // compound FK (references: [programId, id]), not soft-delete/natural-key
+  // uniqueness. Do not remove it.
   @@unique([programId, id])
   @@map("curricula")
 }
@@ -276,7 +292,13 @@ model CourseCategory {
   courses     Course[]
   requirement CurriculumRequirement?
 
-  @@unique([curriculumId, name])
+  // No @@unique([curriculumId, name]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (curriculumId,
+  // name) WHERE isActive = true.
+  // @@unique([curriculumId, id]) IS kept below — unlike the name
+  // constraint, this one exists solely to support Course's compound FK
+  // (references: [curriculumId, id]), not soft-delete/natural-key
+  // uniqueness. Do not remove it.
   @@unique([curriculumId, id])
   @@map("course_categories")
 }
@@ -306,7 +328,9 @@ model Course {
   instructors           CourseInstructor[]
   assessments           CourseAssessment[]
 
-  @@unique([curriculumId, code])
+  // No @@unique([curriculumId, code]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (curriculumId,
+  // code) WHERE isActive = true.
   @@map("courses")
 }
 
@@ -383,7 +407,9 @@ model Plo {
 
   cloMappings CloPloMapping[]
 
-  @@unique([curriculumId, code])
+  // No @@unique([curriculumId, code]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (curriculumId,
+  // code) WHERE isActive = true.
   @@map("plos")
 }
 
@@ -405,7 +431,9 @@ model Clo {
   ploMappings      CloPloMapping[]
   assessmentScores CourseAssessmentCloScore[]
 
-  @@unique([courseId, code])
+  // No @@unique([courseId, code]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on (courseId,
+  // code) WHERE isActive = true.
   @@map("clos")
 }
 
@@ -505,7 +533,9 @@ model Semester {
 
   records StudentCourseRecord[]
 
-  @@unique([academicYearId, term])
+  // No @@unique([academicYearId, term]) here on purpose — see Faculty.code
+  // comment above. Real constraint: partial unique index on
+  // (academicYearId, term) WHERE isActive = true.
   @@map("semesters")
 }
 

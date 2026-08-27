@@ -86,8 +86,8 @@ export class ProgramService {
     name: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.program.findUnique({
-      where: { departmentId_name: { departmentId, name } },
+    const existing = await this.prisma.program.findFirst({
+      where: { departmentId, name, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(
@@ -101,8 +101,8 @@ export class ProgramService {
     code: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.program.findUnique({
-      where: { departmentId_code: { departmentId, code } },
+    const existing = await this.prisma.program.findFirst({
+      where: { departmentId, code, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(

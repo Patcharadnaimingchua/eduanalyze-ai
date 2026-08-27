@@ -85,8 +85,8 @@ export class CourseCategoryService {
     name: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.courseCategory.findUnique({
-      where: { curriculumId_name: { curriculumId, name } },
+    const existing = await this.prisma.courseCategory.findFirst({
+      where: { curriculumId, name, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(

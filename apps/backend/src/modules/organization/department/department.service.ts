@@ -83,8 +83,8 @@ export class DepartmentService {
     code: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.department.findUnique({
-      where: { facultyId_code: { facultyId, code } },
+    const existing = await this.prisma.department.findFirst({
+      where: { facultyId, code, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(

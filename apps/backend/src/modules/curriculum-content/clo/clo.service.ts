@@ -78,8 +78,8 @@ export class CloService {
     code: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.clo.findUnique({
-      where: { courseId_code: { courseId, code } },
+    const existing = await this.prisma.clo.findFirst({
+      where: { courseId, code, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(

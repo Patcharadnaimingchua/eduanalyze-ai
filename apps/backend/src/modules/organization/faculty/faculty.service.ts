@@ -66,8 +66,8 @@ export class FacultyService {
   }
 
   private async assertCodeAvailable(code: string, excludeId?: string) {
-    const existing = await this.prisma.faculty.findUnique({
-      where: { code },
+    const existing = await this.prisma.faculty.findFirst({
+      where: { code, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(`Faculty code "${code}" is already in use`);

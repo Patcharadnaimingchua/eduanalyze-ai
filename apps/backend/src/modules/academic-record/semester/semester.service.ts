@@ -83,8 +83,8 @@ export class SemesterService {
     term: CreateSemesterDto['term'],
     excludeId?: string,
   ) {
-    const existing = await this.prisma.semester.findUnique({
-      where: { academicYearId_term: { academicYearId, term } },
+    const existing = await this.prisma.semester.findFirst({
+      where: { academicYearId, term, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(

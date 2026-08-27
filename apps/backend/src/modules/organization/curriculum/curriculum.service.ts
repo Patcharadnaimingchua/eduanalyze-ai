@@ -92,8 +92,8 @@ export class CurriculumService {
     version: string,
     excludeId?: string,
   ) {
-    const existing = await this.prisma.curriculum.findUnique({
-      where: { programId_version: { programId, version } },
+    const existing = await this.prisma.curriculum.findFirst({
+      where: { programId, version, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(
