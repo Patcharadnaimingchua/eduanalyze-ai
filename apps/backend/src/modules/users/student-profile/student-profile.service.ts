@@ -89,11 +89,16 @@ export class StudentProfileService {
 
   // Used by StudentCourseRecordService to validate a dependent
   // relationship when a SUPER_ADMIN supplies a studentProfileId directly.
+  // `include: { user }` added for the STAFF Student Directory UI, which
+  // needs a name to show — not just a bare studentCode.
   async findActiveByIdOrThrow(
     id: string,
     tx: PrismaClientOrTx = this.prisma,
   ) {
-    const profile = await tx.studentProfile.findUnique({ where: { id } });
+    const profile = await tx.studentProfile.findUnique({
+      where: { id },
+      include: { user: { select: { fullName: true, email: true } } },
+    });
     if (!profile || !profile.isActive) {
       throw new NotFoundException(`Active student profile ${id} not found`);
     }
@@ -105,13 +110,16 @@ export class StudentProfileService {
   // never fetch-all-then-filter-in-memory.
   async findAllScoped(user: RequestUser) {
     if (user.roles.includes('SUPER_ADMIN')) {
-      return this.prisma.studentProfile.findMany();
+      return this.prisma.studentProfile.findMany({
+        include: { user: { select: { fullName: true, email: true } } },
+      });
     }
     const programIds = await this.scopeResolverService.getCoveredProgramIds(
       user.userId,
     );
     return this.prisma.studentProfile.findMany({
       where: { programId: { in: programIds } },
+      include: { user: { select: { fullName: true, email: true } } },
     });
   }
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BookOpen,
   CalendarClock,
   CalendarRange,
   GraduationCap,
@@ -51,10 +52,17 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
 ];
 
+const STAFF_NAV_ITEMS: NavItem[] = [
+  { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/staff/dashboard' },
+  { label: 'ทำเนียบนักศึกษา', icon: Users, href: '/staff/students' },
+  { label: 'ข้อมูลหลักสูตร', icon: BookOpen, href: '/staff/curriculum' },
+];
+
 function navItemsForRole(role: Role): NavItem[] {
   if (role === 'INSTRUCTOR') return INSTRUCTOR_NAV_ITEMS;
   if (role === 'SUPER_ADMIN') return SUPER_ADMIN_NAV_ITEMS;
   if (role === 'ADMIN') return ADMIN_NAV_ITEMS;
+  if (role === 'STAFF') return STAFF_NAV_ITEMS;
   return STUDENT_NAV_ITEMS;
 }
 

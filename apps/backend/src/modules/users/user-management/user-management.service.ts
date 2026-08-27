@@ -117,6 +117,29 @@ export class UserManagementService {
     return users.map((user) => this.toSummary(user));
   }
 
+  // Narrow, STAFF-reachable alternative to GET /users (which stays
+  // ADMIN/SUPER_ADMIN-only) — STAFF needs *some* way to find an
+  // INSTRUCTOR's userId to assign them to a CourseInstructor, but must not
+  // browse the full user list or see role/scope details of other accounts.
+  //
+  // Not scope-filtered by UserScope, unlike listUsers: INSTRUCTOR access is
+  // modeled per-course via CourseInstructor, not via org-hierarchy
+  // UserScope like ADMIN/STAFF — an instructor usually has no UserScope
+  // row at all, so filtering on it would incorrectly return empty for
+  // every non-SUPER_ADMIN caller. The actual scope check for who STAFF can
+  // assign to which course still happens where it matters: ScopeGuard on
+  // POST /course-instructors's `courseId`.
+  async listInstructors() {
+    const users = await this.userService.findAll({
+      userRoles: { some: { role: 'INSTRUCTOR' } },
+    });
+    return users.map((user) => this.toInstructorListItem(user));
+  }
+
+  private toInstructorListItem(user: { id: string; fullName: string; email: string }) {
+    return { id: user.id, fullName: user.fullName, email: user.email };
+  }
+
   async findOne(id: string, requester: RequestUser) {
     if (requester.roles.includes('SUPER_ADMIN')) {
       const user = await this.userService.findOneWhere({ id });

@@ -591,3 +591,120 @@ export interface CreateUserScopeRequest {
   level: ScopeLevel;
   targetId: string;
 }
+
+// ---- STAFF: Student Directory ----
+
+export interface StudentProfileSummary {
+  id: string;
+  userId: string;
+  studentCode: string;
+  programId: string;
+  curriculumId: string;
+  admissionYear: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: { fullName: string; email: string };
+}
+
+// ---- STAFF: picking an instructor for CourseInstructor ----
+
+export interface InstructorListItem {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+// ---- Curriculum content: Course Category ----
+
+export interface CourseCategory {
+  id: string;
+  name: string;
+  code: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  curriculumId: string;
+}
+
+export interface CreateCourseCategoryRequest {
+  name: string;
+  code?: string;
+  curriculumId: string;
+}
+
+export type UpdateCourseCategoryRequest = Partial<
+  Pick<CreateCourseCategoryRequest, 'name' | 'code'>
+>;
+
+// ---- Curriculum content: Curriculum Requirement (1:1 with CourseCategory) ----
+
+export interface CurriculumRequirement {
+  id: string;
+  minCredits: number;
+  minCourses: number | null;
+  createdAt: string;
+  updatedAt: string;
+  curriculumId: string;
+  categoryId: string;
+}
+
+export interface CreateCurriculumRequirementRequest {
+  curriculumId: string;
+  categoryId: string;
+  minCredits: number;
+  minCourses?: number;
+}
+
+export type UpdateCurriculumRequirementRequest = Partial<
+  Pick<CreateCurriculumRequirementRequest, 'minCredits' | 'minCourses'>
+>;
+
+// ---- Curriculum content: Prerequisite ----
+
+export interface Prerequisite {
+  id: string;
+  courseId: string;
+  prerequisiteCourseId: string;
+  groupId: string | null;
+  createdAt: string;
+}
+
+export interface CreatePrerequisiteRequest {
+  courseId: string;
+  prerequisiteCourseId: string;
+  groupId?: string;
+}
+
+export interface UpdatePrerequisiteRequest {
+  groupId?: string;
+}
+
+// ---- Curriculum content: Course Instructor (assignment) ----
+
+export interface CourseInstructor {
+  id: string;
+  userId: string;
+  courseId: string;
+  createdAt: string;
+}
+
+export interface CreateCourseInstructorRequest {
+  userId: string;
+  courseId: string;
+}
+
+// ---- Curriculum content: Course create/update (STAFF course management) ----
+
+export interface CreateCourseRequest {
+  code: string;
+  name: string;
+  nameEn?: string;
+  credits: number;
+  description?: string;
+  isRequired?: boolean;
+  curriculumId: string;
+  categoryId: string;
+}
+
+export type UpdateCourseRequest = Partial<CreateCourseRequest>;

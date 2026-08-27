@@ -60,6 +60,19 @@ export class UserManagementController {
     return this.userManagementService.listUsers(user);
   }
 
+  @Get('instructors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'List INSTRUCTOR-role users within the requester scope (STAFF-reachable, unlike GET /users) — for picking an instructor to assign to a course. Returns id/fullName/email only.',
+  })
+  @ApiResponse({ status: 200, description: 'List of instructors' })
+  findInstructors() {
+    return this.userManagementService.listInstructors();
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')

@@ -28,8 +28,12 @@ import { UpdatePloDto } from './dto/update-plo.dto';
 export class PloController {
   constructor(private readonly ploService: PloService) {}
 
+  // STAFF/INSTRUCTOR must not view CLO/PLO/CloPloMapping at all
+  // (PROJECT_CONTEXT.md §10/§9) — @Roles closes this at the API level,
+  // not just by omission in the frontend.
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STUDENT')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active PLOs' })
   @ApiResponse({ status: 200, description: 'List of active PLOs' })
@@ -38,7 +42,8 @@ export class PloController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STUDENT')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a PLO by id' })
   @ApiResponse({ status: 200, description: 'PLO found' })

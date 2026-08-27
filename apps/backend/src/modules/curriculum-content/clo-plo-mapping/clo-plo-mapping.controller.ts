@@ -28,8 +28,12 @@ import { UpdateCloPloMappingDto } from './dto/update-clo-plo-mapping.dto';
 export class CloPloMappingController {
   constructor(private readonly cloPloMappingService: CloPloMappingService) {}
 
+  // STAFF/INSTRUCTOR must not view CLO/PLO/CloPloMapping at all
+  // (PROJECT_CONTEXT.md §10/§9) — @Roles closes this at the API level,
+  // not just by omission in the frontend.
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STUDENT')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List active CLO-PLO mappings' })
   @ApiResponse({ status: 200, description: 'List of active CLO-PLO mappings' })
@@ -38,7 +42,8 @@ export class CloPloMappingController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'STUDENT')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get a CLO-PLO mapping by id' })
   @ApiResponse({ status: 200, description: 'CLO-PLO mapping found' })
