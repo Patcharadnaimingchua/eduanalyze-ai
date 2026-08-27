@@ -520,3 +520,74 @@ export interface CourseCloAchievementReport {
   achievementPercent: number;
   clos: CloAchievementEntry[];
 }
+
+// ---- Module 12: User Management (SUPER_ADMIN/ADMIN) ----
+// Mirrors UserManagementService.toSummary's mapped shape — roles is a
+// flat Role[] (from the UserRole relation), scopes is the raw UserScope[]
+// relation as-is (no joined faculty/department/program name; the
+// frontend resolves names client-side from the already-cached
+// GET /faculties, /departments, /programs lists, same as everywhere else
+// in this app).
+
+export type ScopeLevel = 'FACULTY' | 'DEPARTMENT' | 'PROGRAM';
+
+export interface UserScope {
+  id: string;
+  userId: string;
+  level: ScopeLevel;
+  facultyId: string | null;
+  departmentId: string | null;
+  programId: string | null;
+  createdAt: string;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+  roles: Role[];
+  scopes: UserScope[];
+}
+
+export interface InitialScope {
+  level: ScopeLevel;
+  targetId: string;
+}
+
+// role:STUDENT is never accepted here — enforced server-side (CreateUserDto
+// mirrors this exactly, minus the runtime rejection).
+export interface CreateUserRequest {
+  email: string;
+  fullName: string;
+  role: Role;
+  scope?: InitialScope;
+}
+
+// tempPassword is shown exactly once — there is no way to retrieve or
+// regenerate it later (resend-invitation is dead code, see TODO.md).
+export interface CreateUserResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  tempPassword: string;
+}
+
+export interface UpdateUserActiveStatusRequest {
+  isActive: boolean;
+}
+
+export interface AssignRoleRequest {
+  role: Role;
+}
+
+export interface CreateUserScopeRequest {
+  level: ScopeLevel;
+  targetId: string;
+}

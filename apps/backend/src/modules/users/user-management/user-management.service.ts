@@ -104,26 +104,45 @@ export class UserManagementService {
 
   async listUsers(requester: RequestUser) {
     if (requester.roles.includes('SUPER_ADMIN')) {
-      return this.userService.findAll({
+      const users = await this.userService.findAll({
         userRoles: { none: { role: 'STUDENT' } },
       });
+      return users.map((user) => this.toSummary(user));
     }
 
-    return this.userService.findAll({
+    const users = await this.userService.findAll({
       userRoles: { none: { role: 'STUDENT' } },
       scopes: { some: { OR: await this.buildScopeOrFilter(requester.userId) } },
     });
+    return users.map((user) => this.toSummary(user));
   }
 
   async findOne(id: string, requester: RequestUser) {
     if (requester.roles.includes('SUPER_ADMIN')) {
-      return this.userService.findOneWhere({ id });
+      const user = await this.userService.findOneWhere({ id });
+      return this.toSummary(user);
     }
 
-    return this.userService.findOneWhere({
+    const user = await this.userService.findOneWhere({
       id,
       scopes: { some: { OR: await this.buildScopeOrFilter(requester.userId) } },
     });
+    return this.toSummary(user);
+  }
+
+  // Flattens the userRoles relation into roles: Role[], matching the
+  // convention AuthService.getMe's CurrentUserResponse already uses —
+  // scopes passes through as-is (raw UserScope[] rows, no joined names;
+  // the frontend resolves faculty/department/program names client-side
+  // from the org-structure lists it already fetches everywhere else).
+  private toSummary(
+    user: Prisma.UserGetPayload<{
+      omit: { passwordHash: true };
+      include: { userRoles: true; scopes: true };
+    }>,
+  ) {
+    const { userRoles, ...rest } = user;
+    return { ...rest, roles: userRoles.map((userRole) => userRole.role) };
   }
 
   async updateActiveStatus(id: string, isActive: boolean, requester: RequestUser) {

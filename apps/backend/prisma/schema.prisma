@@ -12,7 +12,8 @@
 // out of scope — deferred to Phase 5.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {

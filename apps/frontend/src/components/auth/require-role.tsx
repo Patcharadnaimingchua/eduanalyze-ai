@@ -14,8 +14,18 @@ export const ROLE_LABEL_TH: Record<Role, string> = {
 // Reproduces the inline-message role gate pattern copy-pasted across every
 // STUDENT page (e.g. app/dashboard/page.tsx's `isStudent` check) as a
 // shared component, for pages restricted to a role other than STUDENT.
-export function RequireRole({ role, children }: { role: Role; children: React.ReactNode }) {
+// `role` accepts either one role or several (any-of) — e.g. /admin/users
+// is reachable by both SUPER_ADMIN and ADMIN, unlike /admin/academic-years
+// which is SUPER_ADMIN-only.
+export function RequireRole({
+  role,
+  children,
+}: {
+  role: Role | Role[];
+  children: React.ReactNode;
+}) {
   const { user } = useAuth();
+  const allowedRoles = Array.isArray(role) ? role : [role];
 
   if (!user) {
     return (
@@ -25,10 +35,12 @@ export function RequireRole({ role, children }: { role: Role; children: React.Re
     );
   }
 
-  if (!user.roles.includes(role)) {
+  if (!allowedRoles.some((allowedRole) => user.roles.includes(allowedRole))) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับ{ROLE_LABEL_TH[role]}เท่านั้น</p>
+        <p className="text-muted-foreground">
+          หน้านี้สำหรับ{allowedRoles.map((allowedRole) => ROLE_LABEL_TH[allowedRole]).join('หรือ')}เท่านั้น
+        </p>
       </div>
     );
   }

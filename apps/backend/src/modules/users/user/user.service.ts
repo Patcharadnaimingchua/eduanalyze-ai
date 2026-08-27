@@ -41,16 +41,28 @@ export class UserService {
 
   // Generic passthrough — the caller (UserManagementService) builds the
   // `where` clause, including any scope-containment filter, so this stays
-  // a thin single-entity service per CONVENTIONS.md §6.
+  // a thin single-entity service per CONVENTIONS.md §6. `omit`/`include`
+  // are here (not left to the caller) because every caller of this method
+  // is Module 12's admin-facing listing — passwordHash must never leave
+  // this layer, and roles/scopes are what the admin UI needs to render a
+  // row without an extra request per user.
   async findAll(where: Prisma.UserWhereInput) {
-    return this.prisma.user.findMany({ where });
+    return this.prisma.user.findMany({
+      where,
+      omit: { passwordHash: true },
+      include: { userRoles: true, scopes: true },
+    });
   }
 
   // Same query-level filter contract as findAll — used by UserManagementService
   // to enforce "exists but outside your scope" as a 404, not a 403 (§3a:
   // User is personal data, unlike Faculty/Department).
   async findOneWhere(where: Prisma.UserWhereInput) {
-    const user = await this.prisma.user.findFirst({ where });
+    const user = await this.prisma.user.findFirst({
+      where,
+      omit: { passwordHash: true },
+      include: { userRoles: true, scopes: true },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -59,6 +71,10 @@ export class UserService {
 
   async setActiveStatus(id: string, isActive: boolean) {
     await this.findById(id);
-    return this.prisma.user.update({ where: { id }, data: { isActive } });
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive },
+      omit: { passwordHash: true },
+    });
   }
 }

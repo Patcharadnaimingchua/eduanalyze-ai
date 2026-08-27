@@ -12,6 +12,7 @@ import {
   LogOut,
   Network,
   Target,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 import type { Role } from '@eduanalyze-ai/shared-types';
@@ -38,13 +39,22 @@ const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/instructor/dashboard' },
 ];
 
-const ADMIN_NAV_ITEMS: NavItem[] = [
+// SUPER_ADMIN-only pages (e.g. academic-years) don't belong in plain
+// ADMIN's nav — the two used to be lumped into one array, which would have
+// shown ADMIN a link into a page RequireRole immediately blocks them from.
+const SUPER_ADMIN_NAV_ITEMS: NavItem[] = [
   { label: 'ปีการศึกษา', icon: CalendarClock, href: '/admin/academic-years' },
+  { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
+];
+
+const ADMIN_NAV_ITEMS: NavItem[] = [
+  { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
 ];
 
 function navItemsForRole(role: Role): NavItem[] {
   if (role === 'INSTRUCTOR') return INSTRUCTOR_NAV_ITEMS;
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return ADMIN_NAV_ITEMS;
+  if (role === 'SUPER_ADMIN') return SUPER_ADMIN_NAV_ITEMS;
+  if (role === 'ADMIN') return ADMIN_NAV_ITEMS;
   return STUDENT_NAV_ITEMS;
 }
 
