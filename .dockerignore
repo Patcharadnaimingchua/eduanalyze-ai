@@ -1,0 +1,20 @@
+# Single root .dockerignore — both apps/backend/Dockerfile and
+# apps/frontend/Dockerfile build with context "." (repo root), which is
+# the only place Docker actually reads a .dockerignore from by default.
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+**/.next
+.next-build
+**/.next-build
+coverage
+**/coverage
+.env
+.env.local
+.env.*.local
+apps/backend/.backups
+.git
+*.log
+.DS_Store

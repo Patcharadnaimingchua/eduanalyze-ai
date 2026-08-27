@@ -38,6 +38,9 @@ Thumbs.db
 apps/backend/prisma/dev.db
 apps/backend/prisma/*.js
 apps/backend/prisma/*.js.map
+
+# Database backups (pg_dump output — contains real user data, never commit)
+apps/backend/.backups/
 apps/backend/prisma/*.d.ts
 
 # One-off test/verification scripts (ts-node compiled byproducts)

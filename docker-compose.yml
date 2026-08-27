@@ -1,0 +1,63 @@
+# Daily dev only needs the postgres service:
+#   docker compose up -d postgres
+# backend/frontend keep running natively (npm run start:dev / npm run dev)
+# against it on host port 5433.
+#
+# The full stack (all 3 services, backend+frontend built as images) is for
+# testing an actual containerized deploy, not the everyday dev loop:
+#   docker compose up --build
+#
+# Postgres is published on host port 5433, never 5432 — a pre-existing
+# Homebrew Postgres install may already be using 5432, and this project's
+# real data was migrated out of it via pg_dump/pg_restore, not by
+# stopping/replacing that install. Keeping 5433 permanent (not just during
+# migration) means falling back to Homebrew Postgres is always just
+# pointing DATABASE_URL at 5432 again, no container changes needed.
+services:
+  postgres:
+    image: postgres:16
+    env_file:
+      - apps/backend/.env
+    environment:
+      POSTGRES_DB: eduanalyze_ai
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d eduanalyze_ai']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - apps/backend/.env
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        # Must be a browser-reachable URL (see apps/frontend/Dockerfile
+        # comment) — the backend's host-published port, not the
+        # Docker-internal "backend" hostname.
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  # Never run `docker compose down -v` without meaning to delete all
+  # database data — this volume is the only thing making it persistent
+  # across container restarts.
+  postgres_data:
