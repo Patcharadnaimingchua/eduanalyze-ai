@@ -10,6 +10,7 @@ import { CurriculumRequirementModule } from './curriculum-requirement/curriculum
 import { PloAchievementModule } from './plo-achievement/plo-achievement.module';
 import { PloModule } from './plo/plo.module';
 import { PrerequisiteModule } from './prerequisite/prerequisite.module';
+import { AssessmentEvidenceModule } from './assessment-evidence/assessment-evidence.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PrerequisiteModule } from './prerequisite/prerequisite.module';
     CloPloMappingModule,
     CloAchievementModule,
     PloAchievementModule,
+    AssessmentEvidenceModule,
   ],
 })
 export class CurriculumContentModule {}
