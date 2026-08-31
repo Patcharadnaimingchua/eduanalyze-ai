@@ -1,5 +1,6 @@
 import { Radar } from 'lucide-react';
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
+import { formatFiveScale } from '@/lib/five-scale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DEFAULT_SIZE = 320;
@@ -153,7 +154,7 @@ export function PloRadarChart({
                   {plo.code}
                 </tspan>
                 <tspan x={labelPos.x} dy="1.2em">
-                  {plo.value === null ? 'ไม่มีข้อมูล' : `${Math.round(plo.value)}%`}
+                  {formatFiveScale(plo.value, 'ไม่มีข้อมูล')}
                 </tspan>
               </text>
             );

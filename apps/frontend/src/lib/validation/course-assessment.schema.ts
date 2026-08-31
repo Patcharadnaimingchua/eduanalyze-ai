@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
-// Mirrors CreateCourseAssessmentDto/UpdateCourseAssessmentDto — cloScores
-// keyed by real cloId (never free text, options come from GET /clos),
-// score 1-5, comment optional.
+// Mirrors CreateCourseAssessmentDto/UpdateCourseAssessmentDto. The form,
+// API, and database all use the same discrete 1-5 self-assessment score.
 export const courseAssessmentSchema = z.object({
   cloScores: z
     .array(

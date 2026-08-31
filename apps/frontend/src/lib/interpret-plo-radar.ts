@@ -1,4 +1,5 @@
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
+import { percentToFiveScale } from './five-scale';
 
 // Fully deterministic, rule-based replacement for the real AI call
 // (GET /ai-analysis/student/:id) — no network, no cost, same output shape
@@ -20,33 +21,33 @@ export const NO_DATA_SUMMARY = 'ยังไม่มีข้อมูลผล
 
 const SUMMARY_TEMPLATES: Record<'excellent' | 'good' | 'average' | 'needsWork', string[]> = {
   excellent: [
-    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในระดับโดดเด่นที่ {avg}% จาก PLO ทั้งหมด {count} ด้าน',
-    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์ในระดับสูงมาก เฉลี่ย {avg}% จาก PLO ทั้งหมด {count} ด้าน',
+    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในระดับโดดเด่นที่ {avg} จาก PLO ทั้งหมด {count} ด้าน',
+    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์ในระดับสูงมาก เฉลี่ย {avg} จาก PLO ทั้งหมด {count} ด้าน',
   ],
   good: [
-    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในเกณฑ์ดีที่ {avg}% จาก PLO ทั้งหมด {count} ด้าน',
-    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์อยู่ในเกณฑ์ดี เฉลี่ย {avg}% จาก PLO ทั้งหมด {count} ด้าน',
+    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในเกณฑ์ดีที่ {avg} จาก PLO ทั้งหมด {count} ด้าน',
+    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์อยู่ในเกณฑ์ดี เฉลี่ย {avg} จาก PLO ทั้งหมด {count} ด้าน',
   ],
   average: [
-    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในระดับปานกลางที่ {avg}% จาก PLO ทั้งหมด {count} ด้าน',
-    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์ในระดับปานกลาง เฉลี่ย {avg}% จาก PLO ทั้งหมด {count} ด้าน',
+    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ในระดับปานกลางที่ {avg} จาก PLO ทั้งหมด {count} ด้าน',
+    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์ในระดับปานกลาง เฉลี่ย {avg} จาก PLO ทั้งหมด {count} ด้าน',
   ],
   needsWork: [
-    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ที่ {avg}% จาก PLO ทั้งหมด {count} ด้าน ซึ่งมีแนวโน้มว่าควรพัฒนาเพิ่มเติม',
-    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์เฉลี่ย {avg}% จาก PLO ทั้งหมด {count} ด้าน อยู่ในระดับที่ควรพัฒนาต่อไป',
+    'จากผลการเรียนในภาพรวม นักศึกษามีผลสัมฤทธิ์เฉลี่ยอยู่ที่ {avg} จาก PLO ทั้งหมด {count} ด้าน ซึ่งมีแนวโน้มว่าควรพัฒนาเพิ่มเติม',
+    'ข้อมูลผลการเรียนที่ผ่านมาบ่งชี้ว่านักศึกษามีผลสัมฤทธิ์เฉลี่ย {avg} จาก PLO ทั้งหมด {count} ด้าน อยู่ในระดับที่ควรพัฒนาต่อไป',
   ],
 };
 
 const STRENGTH_TEMPLATES = [
-  'จากข้อมูลผลการเรียนที่เกี่ยวข้องกับ {name} นักศึกษามีผลสัมฤทธิ์อยู่ในระดับสูง ({value}%)',
-  'ผลสัมฤทธิ์ในด้าน {name} อยู่ในระดับที่น่าพอใจ ({value}%) จาก CLO ที่เกี่ยวข้อง',
-  '{name} เป็นจุดแข็งที่บ่งชี้จากผลการเรียน โดยมีผลสัมฤทธิ์ {value}%',
+  'จากข้อมูลผลการเรียนที่เกี่ยวข้องกับ {name} นักศึกษามีผลสัมฤทธิ์อยู่ในระดับสูง ({value})',
+  'ผลสัมฤทธิ์ในด้าน {name} อยู่ในระดับที่น่าพอใจ ({value}) จาก CLO ที่เกี่ยวข้อง',
+  '{name} เป็นจุดแข็งที่บ่งชี้จากผลการเรียน โดยมีผลสัมฤทธิ์ {value}',
 ];
 
 const WEAKNESS_TEMPLATES = [
-  'ผลสัมฤทธิ์ในด้าน {name} อยู่ในระดับ {value}% ซึ่งต่ำกว่าเกณฑ์ที่กำหนด',
-  'จาก CLO ที่เกี่ยวข้องกับ {name} พบว่าผลสัมฤทธิ์อยู่ที่ {value}% ยังไม่ถึงเกณฑ์',
-  'มีแนวโน้มว่า {name} เป็นด้านที่ควรพัฒนาเพิ่มเติม อยู่ในระดับ {value}%',
+  'ผลสัมฤทธิ์ในด้าน {name} อยู่ในระดับ {value} ซึ่งต่ำกว่าเกณฑ์ที่กำหนด',
+  'จาก CLO ที่เกี่ยวข้องกับ {name} พบว่าผลสัมฤทธิ์อยู่ที่ {value} ยังไม่ถึงเกณฑ์',
+  'มีแนวโน้มว่า {name} เป็นด้านที่ควรพัฒนาเพิ่มเติม อยู่ในระดับ {value}',
 ];
 
 const NO_DATA_WEAKNESS = 'ยังไม่มีข้อมูลเพียงพอสำหรับ {name}';
@@ -75,10 +76,13 @@ export function interpretPloRadar(radar: RadarPoint[], threshold: number): PloIn
     return { summary: NO_DATA_SUMMARY, strengths: [], weaknesses: [], recommendations: [] };
   }
 
+  // Band selection and strong/weak filtering compare against the raw
+  // percent threshold — unchanged, internal logic only. Only the numbers
+  // actually filled into the sentence templates convert to the 1-5 scale.
   const avg = graded.reduce((sum, p) => sum + p.value, 0) / graded.length;
   const band = avg >= threshold + 15 ? 'excellent' : avg >= threshold ? 'good' : avg >= 40 ? 'average' : 'needsWork';
   const summary = fill(pick(SUMMARY_TEMPLATES[band], 0), {
-    avg: Math.round(avg).toString(),
+    avg: percentToFiveScale(avg).toFixed(1),
     count: radar.length.toString(),
   });
 
@@ -88,14 +92,14 @@ export function interpretPloRadar(radar: RadarPoint[], threshold: number): PloIn
   const weak = [...weakGraded, ...ungraded].slice(0, 4);
 
   const strengths = strong.map((p, i) =>
-    fill(pick(STRENGTH_TEMPLATES, i), { name: p.name, value: Math.round(p.value).toString() }),
+    fill(pick(STRENGTH_TEMPLATES, i), { name: p.name, value: percentToFiveScale(p.value).toFixed(1) }),
   );
 
   const weaknesses = weak.map((p, i) => {
     if (p.value === null) {
       return fill(NO_DATA_WEAKNESS, { name: p.name });
     }
-    return fill(pick(WEAKNESS_TEMPLATES, i), { name: p.name, value: Math.round(p.value).toString() });
+    return fill(pick(WEAKNESS_TEMPLATES, i), { name: p.name, value: percentToFiveScale(p.value).toFixed(1) });
   });
 
   const recommendations = weakGraded

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import {
@@ -13,6 +13,21 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { OverallAchievementCard } from '@/components/clo-plo-analysis/overall-achievement-card';
 import { PloCard } from '@/components/clo-plo-analysis/plo-card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type SortMode = 'lowest' | 'highest' | 'code';
+
+const SCORE_BANDS = [
+  { key: 'excellent', label: 'ยอดเยี่ยม', minimum: 80, indicatorClassName: 'bg-emerald-600' },
+  { key: 'good', label: 'ดี', minimum: 60, indicatorClassName: 'bg-emerald-500' },
+  { key: 'fair', label: 'พอใช้', minimum: 40, indicatorClassName: 'bg-amber-500' },
+  { key: 'needsWork', label: 'ควรพัฒนา', minimum: 0, indicatorClassName: 'bg-rose-500' },
+] as const;
+
+function scoreBandKey(value: number) {
+  return SCORE_BANDS.find((band) => value >= band.minimum)!.key;
+}
 
 export default function CloPloAnalysisPage() {
   return (
@@ -25,6 +40,7 @@ export default function CloPloAnalysisPage() {
 function CloPloAnalysisContent() {
   const { user } = useAuth();
   const isStudent = !!user?.roles.includes('STUDENT');
+  const [sortMode, setSortMode] = useState<SortMode>('lowest');
 
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
@@ -63,9 +79,11 @@ function CloPloAnalysisContent() {
       if (a.value === null && b.value === null) return 0;
       if (a.value === null) return 1;
       if (b.value === null) return -1;
+      if (sortMode === 'highest') return b.value - a.value;
+      if (sortMode === 'code') return a.code.localeCompare(b.code);
       return a.value - b.value;
     });
-  }, [achievementQuery.data]);
+  }, [achievementQuery.data, sortMode]);
 
   const overallPercent = useMemo(() => {
     const values = (achievementQuery.data?.radar ?? [])
@@ -73,6 +91,24 @@ function CloPloAnalysisContent() {
       .filter((v): v is number => v !== null);
     if (values.length === 0) return null;
     return values.reduce((sum, v) => sum + v, 0) / values.length;
+  }, [achievementQuery.data]);
+
+  // Display-only grouping for the summary card. Raw achievement values,
+  // curriculum threshold, and achieved/not-achieved logic remain unchanged.
+  const statusCounts = useMemo(() => {
+    const counts = Object.fromEntries(SCORE_BANDS.map((band) => [band.key, 0])) as Record<
+      (typeof SCORE_BANDS)[number]['key'],
+      number
+    >;
+    let noDataCount = 0;
+    for (const plo of achievementQuery.data?.radar ?? []) {
+      if (plo.value === null) {
+        noDataCount += 1;
+      } else {
+        counts[scoreBandKey(plo.value)] += 1;
+      }
+    }
+    return { counts, noDataCount };
   }, [achievementQuery.data]);
 
   if (!user) {
@@ -128,27 +164,60 @@ function CloPloAnalysisContent() {
         </p>
       </div>
 
-      <div
-        className="grid grid-cols-1 gap-6 lg:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
-      >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <OverallAchievementCard percent={overallPercent} isAchieved={overallAchieved} />
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">สรุปตามสถานะ</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            {SCORE_BANDS.map((band) => (
+              <div key={band.key} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <span className={`h-2 w-2 rounded-full ${band.indicatorClassName}`} aria-hidden="true" />
+                  {band.label}
+                </span>
+                <span className="font-medium text-primary">{statusCounts.counts[band.key]} PLO</span>
+              </div>
+            ))}
+            {statusCounts.noDataCount > 0 && (
+              <p className="border-t border-slate-100 pt-3 text-xs text-muted-foreground">
+                ไม่มีข้อมูล {statusCounts.noDataCount} PLO
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <div
-        className="grid grid-cols-1 gap-4 md:grid-cols-2 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '150ms', animationFillMode: 'both' }}
-      >
-        {sortedRadar.map((plo) => (
-          <PloCard
-            key={plo.ploId}
-            plo={plo}
-            description={descriptionByPloId.get(plo.ploId) ?? null}
-            isAchieved={threshold !== null && plo.value !== null && plo.value >= threshold}
-            threshold={threshold}
-          />
-        ))}
-      </div>
+      <section className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">ผลการวิเคราะห์ราย PLO</h2>
+            <p className="text-sm text-muted-foreground">คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง</p>
+          </div>
+          <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+            <SelectTrigger aria-label="เรียงลำดับ PLO" className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lowest">เรียง: ต้องพัฒนาก่อน</SelectItem>
+              <SelectItem value="highest">เรียง: คะแนนสูงสุด</SelectItem>
+              <SelectItem value="code">เรียงตาม PLO</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {sortedRadar.map((plo) => (
+            <PloCard
+              key={plo.ploId}
+              plo={plo}
+              description={descriptionByPloId.get(plo.ploId) ?? null}
+              isAchieved={threshold !== null && plo.value !== null && plo.value >= threshold}
+              threshold={threshold}
+            />
+          ))}
+        </div>
+      </section>
     </DashboardShell>
   );
 }

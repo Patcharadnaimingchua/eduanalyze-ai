@@ -5,6 +5,8 @@ import { ChevronDown } from 'lucide-react';
 import type { StudentPloRadarPoint } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
+import { formatFiveScale } from '@/lib/five-scale';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
@@ -22,14 +24,15 @@ export function PloCard({
   const hasValue = plo.value !== null;
   const [isExpanded, setIsExpanded] = useState(false);
   const hasBreakdown = plo.cloBreakdown.length > 0;
+  const breakdownId = `plo-${plo.ploId}-clo-details`;
 
   return (
-    <Card>
-      <CardContent className="space-y-3 pt-6">
+    <Card className="border-slate-100 shadow-sm">
+      <CardContent className="space-y-4 pt-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{plo.code}</p>
-            <p className="font-medium text-primary">{plo.name}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-primary">{plo.code}</p>
+            <p className="mt-1 text-base font-medium text-primary">{plo.name}</p>
           </div>
           <span
             className={cn(
@@ -45,35 +48,42 @@ export function PloCard({
           </span>
         </div>
 
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="min-h-10 text-sm leading-5 text-muted-foreground">{description}</p>}
 
-        <div className="flex items-center gap-3">
+        <div className="space-y-2 rounded-md bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">ความสำเร็จ</span>
+            <span className="font-semibold text-primary">
+              {plo.value === null ? '—' : `${formatFiveScale(plo.value)} / 5.0`}
+            </span>
+          </div>
           <Progress
             value={plo.value ?? 0}
-            className="flex-1"
+            className="w-full"
             barClassName={ploProgressBarColorClassName(plo.value, threshold)}
           />
-          <span className="w-12 text-right text-sm font-medium text-primary">
-            {hasValue ? `${Math.round(plo.value!)}%` : '—'}
-          </span>
         </div>
 
         {hasBreakdown && (
-          <button
+          <Button
             type="button"
             onClick={() => setIsExpanded((v) => !v)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium text-muted-foreground hover:bg-slate-50 hover:text-primary"
+            aria-expanded={isExpanded}
+            aria-controls={breakdownId}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center gap-1.5 text-muted-foreground"
           >
             {isExpanded ? 'ซ่อนรายละเอียด CLO' : `ดูรายละเอียด CLO (${plo.cloBreakdown.length})`}
             <ChevronDown
               size={14}
               className={cn('transition-transform', isExpanded && 'rotate-180')}
             />
-          </button>
+          </Button>
         )}
 
         {isExpanded && hasBreakdown && (
-          <div className="animate-in fade-in-0 duration-300 space-y-2 border-t border-slate-100 pt-3">
+          <div id={breakdownId} className="space-y-2 border-t border-slate-100 pt-3">
             {plo.cloBreakdown.map((clo) => (
               <div
                 key={clo.cloId}
@@ -95,7 +105,7 @@ export function PloCard({
                         : 'bg-amber-50 text-amber-600',
                   )}
                 >
-                  {clo.score === null ? 'ไม่มีข้อมูล' : `${Math.round(clo.score)}%`}
+                  {formatFiveScale(clo.score, 'ไม่มีข้อมูล')}
                 </span>
               </div>
             ))}

@@ -32,7 +32,7 @@ interface CourseSeed {
 // category's precedent in import-ict-2564.ts.
 const COURSES: CourseSeed[] = [
   // กลุ่มสาระอยู่ดีมีสุข (sum 3+1+1=5, matches minCredits=5 — all required)
-  { code: '01991113', name: 'สิ่งแวดล้อม เทคโนโลยี และชีวิต', nameEn: 'Environment, Technology and Life', credits: 3, isRequired: true, category: 'กลุ่มสาระอยู่ดีมีสุข' },
+  { code: '01999213', name: 'สิ่งแวดล้อม เทคโนโลยี และชีวิต', nameEn: 'Environment, Technology and Life', credits: 3, isRequired: true, category: 'กลุ่มสาระอยู่ดีมีสุข' },
   { code: '01175129', name: 'ฟุตซอลเพื่อสุขภาพ', nameEn: 'Futsal for Health', credits: 1, isRequired: true, category: 'กลุ่มสาระอยู่ดีมีสุข' },
   { code: '01175153', name: 'มวยไทย', nameEn: 'Martial Art with Thai Boxing', credits: 1, isRequired: true, category: 'กลุ่มสาระอยู่ดีมีสุข' },
 
@@ -52,6 +52,7 @@ const COURSES: CourseSeed[] = [
 
   // กลุ่มสาระสุนทรียศาสตร์ (sum 3=3, matches minCredits=3 — required)
   { code: '02999037', name: 'ศิลปะแห่งสุนทรียศาสตร์เพื่อความสุข', nameEn: 'Arts of Aesthetics for Happiness', credits: 3, isRequired: true, category: 'กลุ่มสาระสุนทรียศาสตร์' },
+  { code: '01387102', name: 'ปรัชญาสำหรับชีวิตยุคใหม่', nameEn: 'Philosophy for New Life', credits: 3, isRequired: true, category: 'กลุ่มสาระสุนทรียศาสตร์' },
 
   // วิชาเลือกเสรี (sum 3+2+3+3=11 > minCredits=6 — a pool to choose from, not required)
   { code: '03751111', name: 'มนุษย์กับสิ่งแวดล้อม', nameEn: 'Man and Environment', credits: 3, isRequired: false, category: 'วิชาเลือกเสรี' },

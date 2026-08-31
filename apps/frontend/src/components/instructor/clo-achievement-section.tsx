@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { CloAchievementEntry, CoursePloEntry, CourseCloAchievementReport } from '@eduanalyze-ai/shared-types';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
+import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { achievementBadgeTone } from '@/lib/achievement-color';
@@ -55,7 +56,7 @@ export function CloAchievementSection({
         <div className="flex items-center gap-3">
           <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
           <Badge tone={achievementBadgeTone(achievementPercent)}>
-            {Math.round(achievementPercent)}%
+            {formatFiveScale(achievementPercent)}
           </Badge>
         </div>
         {isLoading && <p className="text-xs text-muted-foreground">กำลังโหลดจำนวนนักศึกษา...</p>}
@@ -78,7 +79,9 @@ export function CloAchievementSection({
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
               <p className="text-sm text-primary">{clo.description}</p>
-              <p className="text-xs text-muted-foreground">เกณฑ์ผ่าน ≥ {clo.threshold}%</p>
+              <p className="text-xs text-muted-foreground">
+                เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
+              </p>
             </div>
             <Badge tone={clo.isAchieved ? 'green' : 'amber'}>
               {clo.isAchieved ? 'Achieved' : 'Not Achieved'}
@@ -97,7 +100,7 @@ export function CloAchievementSection({
                   {plo.code} · {plo.name}
                 </span>
                 <span className="font-medium text-primary">
-                  {Math.round(plo.achievementPercent)}%
+                  {formatFiveScale(plo.achievementPercent)}
                 </span>
               </div>
               <Progress

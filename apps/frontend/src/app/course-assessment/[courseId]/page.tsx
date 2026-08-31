@@ -6,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { Check } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCourses } from '@/lib/api/academic-record';
 import {
@@ -22,12 +23,18 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DEFAULT_SCORE = 3;
+const SELF_ASSESSMENT_LEVELS = [
+  { score: 1, label: 'ยังไม่สามารถ' },
+  { score: 2, label: 'เริ่มต้น' },
+  { score: 3, label: 'ทำได้ตามความคาดหวัง' },
+  { score: 4, label: 'ดี' },
+  { score: 5, label: 'ดีเยี่ยม' },
+] as const;
 
 export default function CourseAssessmentPage({ params }: { params: { courseId: string } }) {
   return (
@@ -72,10 +79,13 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   useEffect(() => {
     if (clos.length === 0) return;
     replace(
-      clos.map((clo) => ({
-        cloId: clo.id,
-        score: existing?.cloScores.find((s) => s.cloId === clo.id)?.score ?? DEFAULT_SCORE,
-      })),
+      clos.map((clo) => {
+        const existingScore = existing?.cloScores.find((s) => s.cloId === clo.id)?.score;
+        return {
+          cloId: clo.id,
+          score: existingScore ?? DEFAULT_SCORE,
+        };
+      }),
     );
     if (existing?.comment) {
       form.setValue('comment', existing.comment);
@@ -168,10 +178,10 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">ให้คะแนนตัวเองในแต่ละ CLO (1-5)</CardTitle>
+          <CardTitle className="text-base">ให้คะแนนตัวเองในแต่ละ CLO</CardTitle>
         </CardHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {serverError && (
               <Alert variant="destructive">
                 <AlertDescription>{serverError}</AlertDescription>
@@ -182,29 +192,57 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
               const clo = clos.find((c) => c.id === field.cloId)!;
               const currentScore = form.watch(`cloScores.${index}.score`);
               return (
-                <div key={field.id} className="space-y-2">
+                <section
+                  key={field.id}
+                  className="space-y-3 border-t border-slate-100 pt-4 first:border-t-0 first:pt-0"
+                >
                   <div className="flex items-baseline justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-medium text-primary">{clo.code}</p>
-                      <p className="text-sm text-muted-foreground">{clo.description}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-primary">{clo.code}</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{clo.description}</p>
                     </div>
-                    <span className="shrink-0 text-lg font-semibold text-brand">{currentScore}</span>
+                    <span className="shrink-0 rounded-md bg-slate-50 px-2.5 py-1 text-sm font-medium text-primary">
+                      ระดับ {currentScore}
+                    </span>
                   </div>
-                  <Slider
-                    min={1}
-                    max={5}
-                    step={1}
-                    value={currentScore}
-                    onValueChange={(score) => form.setValue(`cloScores.${index}.score`, score)}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                    <span>5</span>
+                  <div
+                    role="radiogroup"
+                    aria-label={`ระดับการประเมิน ${clo.code}`}
+                    className="grid grid-cols-1 gap-2 sm:grid-cols-5"
+                  >
+                    {SELF_ASSESSMENT_LEVELS.map((level) => {
+                      const isSelected = currentScore === level.score;
+                      return (
+                        <Button
+                          key={level.score}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          variant={isSelected ? 'default' : 'outline'}
+                          className={`h-auto min-h-14 whitespace-normal border-slate-100 px-2 py-2 text-center ${
+                            isSelected
+                              ? 'shadow-sm ring-1 ring-primary/20'
+                              : 'text-primary hover:border-slate-200'
+                          }`}
+                          onClick={() =>
+                            form.setValue(`cloScores.${index}.score`, level.score, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        >
+                          <span className="flex flex-col items-center gap-0.5 leading-tight">
+                            <span className="flex items-center gap-1 text-base font-semibold">
+                              {isSelected && <Check aria-hidden="true" size={14} strokeWidth={2.5} />}
+                              {level.score}
+                            </span>
+                            <span className="text-xs">{level.label}</span>
+                          </span>
+                        </Button>
+                      );
+                    })}
                   </div>
-                </div>
+                </section>
               );
             })}
 
