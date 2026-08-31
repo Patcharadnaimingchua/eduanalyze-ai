@@ -8,13 +8,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { GradeDistributionChart } from './grade-distribution-chart';
 import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
+import { AssessmentEvidenceSection } from './assessment-evidence-section';
 
-export type InstructorTab = 'grades' | 'clo' | 'roster';
+export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence';
 
 const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'grades', label: 'Grade Distribution' },
   { key: 'clo', label: 'CLO Achievement' },
   { key: 'roster', label: 'Student Roster' },
+  { key: 'evidence', label: 'Assessment Evidence' },
 ];
 
 // Both queries here are lazy — enabled only once their tab is actually
@@ -91,6 +93,13 @@ export function InstructorDetailPanel({
             isLoading={rosterQuery.isLoading}
             isError={rosterQuery.isError}
           />
+        )}
+
+        {/* Own internal queries (not the enabled-per-tab pattern above) —
+            mounting only while this tab is active already keeps it from
+            firing requests when unused, same net effect. */}
+        {activeTab === 'evidence' && isInstructor && (
+          <AssessmentEvidenceSection courseId={course.courseId} />
         )}
       </CardContent>
     </Card>

@@ -467,9 +467,99 @@ export interface UpdateSemesterRequest {
 // No email field — the roster intentionally does not expose it.
 export interface StudentRosterEntry {
   studentProfileId: string;
+  // The student's latest attempt of this course — needed to key
+  // StudentAssessmentScore upserts (see assessment-evidence types below).
+  studentCourseRecordId: string;
   studentCode: string;
   fullName: string;
   grade: Grade;
+}
+
+// ---- Evidence-based CLO/PLO infrastructure (assessment-evidence module) ----
+// Completely separate from grade-based CloAchievementService/
+// PloAchievementService and from the 1-5 self-assessment
+// (CourseAssessmentCloScore) above — see backend schema.prisma's
+// "Evidence-based CLO/PLO infrastructure" comment block. Decimal fields
+// (maxScore/weight/maxScoreOverride/score/coverage weights) come back as
+// strings over the wire (Prisma.Decimal's JSON serialization), never
+// numbers — parse with Number()/parseFloat() at the display boundary,
+// never compare/sum them as strings.
+export type MissingScorePolicy = 'EXCLUDE' | 'TREAT_AS_ZERO';
+export type AssessmentScoreStatus = 'PENDING' | 'GRADED' | 'ABSENT' | 'EXCUSED';
+export type EvidenceSource = 'EVIDENCE_BASED' | 'LEGACY_GRADE_ESTIMATE' | 'NO_EVIDENCE';
+export type AchievementStatus = 'NO_EVIDENCE' | 'PARTIAL' | 'COMPLETE';
+
+export interface AssessmentDefinition {
+  id: string;
+  title: string;
+  kind: string;
+  maxScore: string;
+  missingScorePolicy: MissingScorePolicy;
+  isActive: boolean;
+  courseId: string;
+  semesterId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAssessmentDefinitionRequest {
+  title: string;
+  kind: string;
+  maxScore: number;
+  missingScorePolicy?: MissingScorePolicy;
+  courseId: string;
+  semesterId: string;
+}
+
+export interface AssessmentCloMapping {
+  id: string;
+  weight: string;
+  maxScoreOverride: string | null;
+  isActive: boolean;
+  assessmentDefinitionId: string;
+  cloId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAssessmentCloMappingRequest {
+  assessmentDefinitionId: string;
+  cloId: string;
+  weight: number;
+  maxScoreOverride?: number;
+  courseId: string;
+}
+
+export interface StudentAssessmentScore {
+  id: string;
+  score: string | null;
+  status: AssessmentScoreStatus;
+  assessmentCloMappingId: string;
+  studentCourseRecordId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertStudentAssessmentScoreRequest {
+  assessmentCloMappingId: string;
+  studentCourseRecordId: string;
+  score?: number;
+  status: AssessmentScoreStatus;
+  courseId: string;
+}
+
+export interface CoverageInfo {
+  validCount: number;
+  totalCount: number;
+  validWeight: string;
+  totalWeight: string;
+}
+
+export interface AchievementResult {
+  score: string | null;
+  status: AchievementStatus;
+  source: EvidenceSource;
+  coverage: CoverageInfo;
 }
 
 // ---- Instructor dashboard (GET /dashboard/instructor) and course-level

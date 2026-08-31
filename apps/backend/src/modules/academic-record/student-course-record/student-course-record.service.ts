@@ -23,6 +23,12 @@ export type LatestCourseAttempt = Prisma.StudentCourseRecordGetPayload<{
 
 export interface StudentRosterEntry {
   studentProfileId: string;
+  // The specific latest-attempt record id — additive field (Phase 2.1
+  // assessment-evidence UI) so the roster can double as the row source
+  // for StudentAssessmentScore upserts, which key off the attempt, not
+  // just the student. Computed for free from the same latestAttempts Map
+  // this method already builds — no extra query.
+  studentCourseRecordId: string;
   studentCode: string;
   fullName: string;
   grade: Grade;
@@ -356,6 +362,7 @@ export class StudentCourseRecordService {
         const profile = profileById.get(studentProfileId)!;
         return {
           studentProfileId,
+          studentCourseRecordId: attempt.id,
           studentCode: profile.studentCode,
           fullName: profile.user.fullName,
           grade: attempt.grade,
