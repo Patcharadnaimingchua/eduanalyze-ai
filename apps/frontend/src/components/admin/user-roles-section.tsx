@@ -18,7 +18,10 @@ const ROLE_BADGE_TONE: Record<Role, BadgeTone> = {
   SUPER_ADMIN: 'red',
 };
 
-const ALL_ASSIGNABLE_ROLES: Role[] = ['INSTRUCTOR', 'STAFF', 'ADMIN', 'SUPER_ADMIN'];
+// SUPER_ADMIN deliberately excluded — never grantable via API (advisor
+// feedback, see plan file "เรื่องที่ 2"), backend rejects it with 403
+// regardless of requester, so it's never offered here either.
+const ALL_ASSIGNABLE_ROLES: Role[] = ['INSTRUCTOR', 'STAFF', 'ADMIN'];
 
 export function UserRolesSection({
   userId,

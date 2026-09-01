@@ -657,8 +657,12 @@ export interface CreateUserRequest {
   scope?: InitialScope;
 }
 
-// tempPassword is shown exactly once — there is no way to retrieve or
-// regenerate it later (resend-invitation is dead code, see TODO.md).
+// No more temp password shown to the requester — the new account gets an
+// unusable generated password hash, and a real "set your password" email
+// is sent automatically (EmailService, reusing the same reset-token
+// mechanism as POST /auth/forgot-password). passwordSetupEmailSent is
+// false only if SMTP failed — the account still exists either way, and
+// the fallback is the ordinary forgot-password flow at /login.
 export interface CreateUserResponse {
   id: string;
   email: string;
@@ -666,7 +670,7 @@ export interface CreateUserResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  tempPassword: string;
+  passwordSetupEmailSent: boolean;
 }
 
 export interface UpdateUserActiveStatusRequest {

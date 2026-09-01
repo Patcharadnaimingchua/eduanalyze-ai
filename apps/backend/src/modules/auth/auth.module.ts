@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from '../users/users.module';
+import { EmailModule } from '../../common/email/email.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
@@ -27,6 +28,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     JwtModule.register({}),
     PendingInvitationModule,
     PasswordResetModule,
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [

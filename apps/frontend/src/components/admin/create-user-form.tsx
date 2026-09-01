@@ -25,11 +25,15 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScopeSelector } from './scope-selector';
 
+// SUPER_ADMIN deliberately excluded — never creatable via API, even by an
+// existing SUPER_ADMIN (advisor feedback, see plan file "เรื่องที่ 2").
+// Provisioning a new one is an out-of-band database action; the backend
+// rejects role:SUPER_ADMIN with 403 unconditionally, so it's never
+// offered here either.
 const CREATABLE_ROLES: { value: Role; label: string }[] = [
   { value: 'INSTRUCTOR', label: 'อาจารย์ (INSTRUCTOR)' },
   { value: 'STAFF', label: 'เจ้าหน้าที่ (STAFF)' },
   { value: 'ADMIN', label: 'ผู้ดูแลระบบ (ADMIN)' },
-  { value: 'SUPER_ADMIN', label: 'ผู้ดูแลระบบสูงสุด (SUPER_ADMIN)' },
 ];
 
 // ADMIN can only ever create STAFF (backend-enforced) — the role field

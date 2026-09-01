@@ -17,6 +17,7 @@ import { StudentProfileService } from '../users/student-profile/student-profile.
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationService } from './pending-invitation.service';
 import { PasswordResetService } from './password-reset.service';
+import { EmailService } from '../../common/email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
@@ -52,6 +53,7 @@ export class AuthService {
     private readonly googlePendingRegistrationService: GooglePendingRegistrationService,
     private readonly pendingInvitationService: PendingInvitationService,
     private readonly passwordResetService: PasswordResetService,
+    private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -288,7 +290,14 @@ export class AuthService {
 
     if (user.passwordHash) {
       const token = await this.passwordResetService.create(user.id);
-      console.warn(`[PASSWORD RESET MOCK] Would send reset token "${token}" to ${user.email}`);
+      // Swallow send failures here too — letting one propagate would turn
+      // "SMTP is down" into a 500 only when the account exists (silence on
+      // a not-found email never reaches this branch at all), which is
+      // itself an account-enumeration side channel via response shape.
+      // EmailService.sendMail already logs the failure.
+      await this.emailService
+        .sendPasswordSetupEmail(user.email, token, 'reset')
+        .catch(() => undefined);
     }
     // A Google-only account (passwordHash: null) gets no token — there's
     // no password to reset. Same generic response either way, so this

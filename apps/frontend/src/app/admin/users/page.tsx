@@ -9,8 +9,10 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { CreateUserForm } from '@/components/admin/create-user-form';
-import { TempPasswordReveal } from '@/components/admin/temp-password-reveal';
 import { UserListTable } from '@/components/admin/user-list-table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function AdminUsersPage() {
   return (
@@ -58,12 +60,30 @@ function AdminUsersContent() {
       </div>
 
       {createdUser ? (
-        <TempPasswordReveal
-          fullName={createdUser.fullName}
-          email={createdUser.email}
-          tempPassword={createdUser.tempPassword}
-          onAcknowledge={handleAcknowledge}
-        />
+        <Card className={createdUser.passwordSetupEmailSent ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}>
+          <CardContent className="space-y-4 pt-6">
+            <p className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}>
+              สร้างบัญชีสำเร็จ — {createdUser.fullName} ({createdUser.email})
+            </p>
+            {createdUser.passwordSetupEmailSent ? (
+              <Alert>
+                <AlertDescription>
+                  ระบบส่งอีเมลตั้งรหัสผ่านให้ {createdUser.email} แล้ว — ผู้ใช้จะได้รับลิงก์สำหรับตั้งรหัสผ่านของตัวเอง
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  ส่งอีเมลไม่สำเร็จ (ระบบส่งอีเมลขัดข้อง) — บัญชีถูกสร้างแล้ว แจ้งให้ผู้ใช้กด &ldquo;ลืมรหัสผ่าน&rdquo;
+                  ที่หน้าเข้าสู่ระบบด้วยอีเมล {createdUser.email} เพื่อตั้งรหัสผ่านเอง
+                </AlertDescription>
+              </Alert>
+            )}
+            <Button type="button" onClick={handleAcknowledge}>
+              รับทราบ ปิดหน้าต่างนี้
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <CreateUserForm requesterIsSuperAdmin={requesterIsSuperAdmin} onCreated={setCreatedUser} />
       )}

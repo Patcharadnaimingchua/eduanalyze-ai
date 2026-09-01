@@ -12,6 +12,8 @@ import {
 } from '../../../common/util/password.util';
 import { RequestUser } from '../../auth/request-user.interface';
 import { PendingInvitationService } from '../../auth/pending-invitation.service';
+import { PasswordResetService } from '../../auth/password-reset.service';
+import { EmailService } from '../../../common/email/email.service';
 import { UserService } from '../user/user.service';
 import { UserRoleService } from '../user-role/user-role.service';
 import { UserScopeService } from '../user-scope/user-scope.service';
@@ -26,6 +28,8 @@ export class UserManagementService {
     private readonly userScopeService: UserScopeService,
     private readonly scopeResolverService: ScopeResolverService,
     private readonly pendingInvitationService: PendingInvitationService,
+    private readonly passwordResetService: PasswordResetService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createStaffOrAdmin(dto: CreateUserDto, requester: RequestUser) {
@@ -34,6 +38,18 @@ export class UserManagementService {
     if (dto.role === 'STUDENT') {
       throw new BadRequestException(
         'STUDENT accounts must be created via /auth/register',
+      );
+    }
+
+    // Advisor feedback (see plan file, "เรื่องที่ 2"): SUPER_ADMIN must
+    // never be grantable through this API, even by an existing
+    // SUPER_ADMIN — provisioning a new one is a deliberately out-of-band
+    // action (direct database write), not something reachable from any
+    // UI/API surface. Checked before the requester-role branch below so
+    // it applies unconditionally.
+    if (dto.role === 'SUPER_ADMIN') {
+      throw new ForbiddenException(
+        'SUPER_ADMIN accounts cannot be created via API — provision directly via database',
       );
     }
 
@@ -64,12 +80,15 @@ export class UserManagementService {
       }
     }
 
-    // No email service (see TODO.md) — the requester sets a usable
-    // password directly rather than issuing an invitation the new user
-    // would need email access to redeem. Generated before the transaction
-    // since it doesn't depend on anything created inside it.
-    const tempPassword = generateTempPassword();
-    const passwordHash = await hashPassword(tempPassword);
+    // Real email service now exists (EmailService) — the account gets an
+    // unusable, never-revealed password hash instead of a temp password
+    // the requester would have to copy and hand over out-of-band. The new
+    // user sets their own real password via the same reset-token/email
+    // flow POST /auth/forgot-password already uses (see below).
+    // generateTempPassword() is reused purely as an entropy source here —
+    // its output never leaves this function.
+    const unusablePassword = generateTempPassword();
+    const passwordHash = await hashPassword(unusablePassword);
 
     const user = await this.prisma.$transaction(async (tx) => {
       const createdUser = await this.userService.create(
@@ -77,7 +96,7 @@ export class UserManagementService {
         passwordHash,
         dto.fullName,
         tx,
-        true, // mustChangePassword — server-generated temp password, must be changed on first use
+        true, // mustChangePassword — the generated hash is unusable anyway; kept true for defense in depth
       );
       await this.userRoleService.assignRole(createdUser.id, dto.role, tx);
       if (dto.scope) {
@@ -91,6 +110,19 @@ export class UserManagementService {
       return createdUser;
     });
 
+    // Outside the transaction — token creation/email sending are not part
+    // of the "did the account get created" guarantee. Best-effort: if
+    // SMTP is down, the account still exists and the new user (or the
+    // requester on their behalf) can always retry via the ordinary
+    // POST /auth/forgot-password self-service flow, same mechanism.
+    let passwordSetupEmailSent = true;
+    try {
+      const token = await this.passwordResetService.create(user.id);
+      await this.emailService.sendPasswordSetupEmail(user.email, token, 'new-account');
+    } catch {
+      passwordSetupEmailSent = false;
+    }
+
     return {
       id: user.id,
       email: user.email,
@@ -98,7 +130,7 @@ export class UserManagementService {
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      tempPassword,
+      passwordSetupEmailSent,
     };
   }
 
@@ -201,6 +233,14 @@ export class UserManagementService {
     if (role === 'STUDENT') {
       throw new BadRequestException(
         'STUDENT role is not managed through this endpoint',
+      );
+    }
+    // Same unconditional block as createStaffOrAdmin — SUPER_ADMIN is
+    // never grantable (or revocable) through this API, regardless of the
+    // requester's own role.
+    if (role === 'SUPER_ADMIN') {
+      throw new ForbiddenException(
+        'SUPER_ADMIN role cannot be managed via API — provision directly via database',
       );
     }
     // Natural 404 if the target is outside the ADMIN's scope.
