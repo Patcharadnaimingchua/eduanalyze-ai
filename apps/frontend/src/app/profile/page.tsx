@@ -30,6 +30,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { ChangePasswordForm } from '@/components/auth/change-password-form';
+import { TwoFactorSection } from '@/components/auth/two-factor-section';
 import { ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -257,6 +258,7 @@ function ProfileContent() {
           </Alert>
         )}
         <ChangePasswordForm onSuccess={() => setPasswordChanged(true)} />
+        <TwoFactorSection />
       </div>
     </DashboardShell>
   );

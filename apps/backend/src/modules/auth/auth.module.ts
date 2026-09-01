@@ -10,7 +10,9 @@ import { PendingInvitationModule } from './pending-invitation.module';
 import { PasswordResetModule } from './password-reset.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { Jwt2faPendingStrategy } from './strategies/jwt-2fa-pending.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { TwoFactorService } from './two-factor.service';
 
 @Module({
   // No default secret/expiry on JwtModule — access and refresh tokens use
@@ -34,9 +36,12 @@ import { GoogleStrategy } from './strategies/google.strategy';
   providers: [
     AuthService,
     GooglePendingRegistrationService,
+    TwoFactorService,
     JwtStrategy,
     JwtRefreshStrategy,
+    Jwt2faPendingStrategy,
     GoogleStrategy,
   ],
+  exports: [TwoFactorService],
 })
 export class AuthModule {}

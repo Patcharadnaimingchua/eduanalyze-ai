@@ -18,6 +18,7 @@ import { GooglePendingRegistrationService } from './google-pending-registration.
 import { PendingInvitationService } from './pending-invitation.service';
 import { PasswordResetService } from './password-reset.service';
 import { EmailService } from '../../common/email/email.service';
+import { TwoFactorService } from './two-factor.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
@@ -54,6 +55,7 @@ export class AuthService {
     private readonly pendingInvitationService: PendingInvitationService,
     private readonly passwordResetService: PasswordResetService,
     private readonly emailService: EmailService,
+    private readonly twoFactorService: TwoFactorService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -85,6 +87,16 @@ export class AuthService {
 
     if (existingMethod) {
       const user = await this.userService.findById(existingMethod.userId);
+      // Google verifying identity is not a substitute for TOTP step-up —
+      // a user who opted into 2FA must clear it regardless of which
+      // first factor they used (advisor feedback: step up Google login
+      // too, not just email+password).
+      if (await this.twoFactorService.isEnabled(user.id)) {
+        return {
+          pendingToken: this.signPendingTwoFactorToken(user.id),
+          requiresTwoFactor: true as const,
+        };
+      }
       return this.issueTokenPair(user);
     }
 
@@ -214,6 +226,26 @@ export class AuthService {
       throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
+    // Password alone is enough UNLESS this user opted into 2FA — checked
+    // live from the database every login (same "always resolve live"
+    // principle as mustChangePassword), so this is the one and only
+    // branch point: everyone who never enables 2FA gets byte-identical
+    // behavior to before this feature existed.
+    if (await this.twoFactorService.isEnabled(user.id)) {
+      return {
+        pendingToken: this.signPendingTwoFactorToken(user.id),
+        requiresTwoFactor: true as const,
+      };
+    }
+
+    return this.issueTokenPair(user);
+  }
+
+  // Called by POST /auth/2fa/verify once TwoFactorService.verifyLoginCode
+  // confirms the code — issues the exact same token pair a normal
+  // login()/register() would, just reached via a different path.
+  async completeTwoFactorLogin(userId: string) {
+    const user = await this.userService.findById(userId);
     return this.issueTokenPair(user);
   }
 
@@ -240,12 +272,14 @@ export class AuthService {
   async getMe(userId: string) {
     const user = await this.userService.findById(userId);
     const roles = await this.userRoleService.findRolesByUserId(userId);
+    const twoFactorEnabled = await this.twoFactorService.isEnabled(userId);
     return {
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
       roles,
       mustChangePassword: user.mustChangePassword,
+      twoFactorEnabled,
     };
   }
 
@@ -329,6 +363,19 @@ export class AuthService {
       secret: this.configService.get<string>('jwt.accessSecret'),
       expiresIn: this.configService.get<string>('jwt.accessExpiresIn'),
     });
+  }
+
+  // Minimal payload ({sub} only, see TwoFactorPendingPayload) and its own
+  // secret+short TTL — verified by Jwt2faPendingStrategy at
+  // POST /auth/2fa/verify, never by the ordinary access-token strategy.
+  private signPendingTwoFactorToken(userId: string): string {
+    return this.jwtService.sign(
+      { sub: userId },
+      {
+        secret: this.configService.get<string>('jwt.twoFactorPendingSecret'),
+        expiresIn: this.configService.get<string>('jwt.twoFactorPendingExpiresIn'),
+      },
+    );
   }
 
   private async issueTokenPair(user: User) {

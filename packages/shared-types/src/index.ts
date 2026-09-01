@@ -59,7 +59,48 @@ export interface CurrentUserResponse {
   fullName: string;
   roles: Role[];
   mustChangePassword: boolean;
+  // Whether TOTP 2FA is currently enabled — read live from
+  // TwoFactorCredential every /auth/me call, same as mustChangePassword.
+  twoFactorEnabled: boolean;
 }
+
+// ---- Authenticator-app (TOTP) 2FA — opt-in, see backend
+// schema.prisma's TwoFactorCredential comment for full design rationale.
+export interface TwoFactorSetupResponse {
+  qrCodeDataUrl: string;
+  // Plaintext secret for manual entry — shown alongside the QR as a
+  // fallback if the authenticator app can't scan it.
+  secret: string;
+}
+
+export interface TwoFactorEnableRequest {
+  code: string;
+}
+
+// recoveryCodes is shown exactly once — there is no way to retrieve them
+// again later (same "shown once" pattern as the old TempPasswordReveal).
+export interface TwoFactorEnableResponse {
+  recoveryCodes: string[];
+}
+
+export interface TwoFactorDisableRequest {
+  password: string;
+}
+
+export interface TwoFactorVerifyRequest {
+  code: string;
+}
+
+// POST /auth/login and GET /auth/google/callback's redirect both surface
+// this shape when the account has 2FA enabled — the caller must submit
+// pendingToken + a code to POST /auth/2fa/verify to get a real
+// AccessTokenResponse.
+export interface RequiresTwoFactorResponse {
+  pendingToken: string;
+  requiresTwoFactor: true;
+}
+
+export type LoginResponse = AccessTokenResponse | RequiresTwoFactorResponse;
 
 // ---- Organization structure (public, unauthenticated GETs) ----
 

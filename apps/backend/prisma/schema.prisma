@@ -138,6 +138,7 @@ model User {
   authMethods          UserAuthMethod[]
   pendingInvitation    PendingInvitation?
   passwordResetToken   PasswordResetToken?
+  twoFactorCredential  TwoFactorCredential?
   courseInstructor     CourseInstructor[]
   enteredCourseRecords StudentCourseRecord[]
 
@@ -276,6 +277,56 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@map("password_reset_tokens")
+}
+
+// Authenticator-app (TOTP, RFC 6238) 2FA — opt-in per user, unlike the
+// email-OTP mechanism removed 2026-08-25 (see PROJECT_CONTEXT.md §"อัปเดต
+// 2026-08-25"): that one was mandatory-for-everyone and routed through an
+// email service that was only ever mocked. This is the opposite on both
+// axes — self-service opt-in, and the authenticator app works fully
+// offline (never depends on EmailService). Not a reintroduction of the
+// removed design.
+//
+// secretCiphertext must be DECRYPTABLE (unlike passwordHash, which is a
+// one-way bcrypt hash) — verifying a login code requires the plaintext
+// secret every time. Encrypted with AES-256-GCM using TOTP_ENCRYPTION_KEY
+// (see common/util/crypto.util.ts) — this is the first secret-at-rest
+// encryption anywhere in this codebase (grep for "encrypt"/"cipher"
+// found no prior precedent). If TOTP_ENCRYPTION_KEY is ever lost or
+// rotated, every row here becomes permanently undecryptable — every user
+// who enabled 2FA would be unable to log in until a SUPER_ADMIN deletes
+// their row directly via the database (same runbook as "lost device AND
+// exhausted recovery codes" below), letting them fall back to 1-factor
+// and re-enable 2FA fresh if they want. There is no key-rotation support
+// in this design.
+//
+// enabled:false means "setup in progress, not yet verified" — a row can
+// sit in this state indefinitely with zero effect on login (harmless);
+// AuthService.two-factor.setup upserts over it freely. Only flips true
+// once the user proves they can generate a real code
+// (TwoFactorService.enable), which is what prevents someone from locking
+// themselves out with a mistyped/never-scanned secret.
+//
+// Recovery: recoveryCodeHashes (sha256, single-use, same hashing
+// approach as PasswordResetToken.tokenHash) is the self-service path for
+// "lost my device." If those run out too, there is deliberately no
+// self-service or ADMIN-level recovery endpoint — a SUPER_ADMIN deletes
+// this row directly via the database (`DELETE FROM
+// two_factor_credentials WHERE "userId" = '...'`), identical in spirit
+// to how SUPER_ADMIN accounts themselves are provisioned (see
+// UserManagementService — never via API, always a direct DB action).
+model TwoFactorCredential {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  secretCiphertext   String
+  enabled            Boolean  @default(false)
+  recoveryCodeHashes String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("two_factor_credentials")
 }
 
 model CourseCategory {

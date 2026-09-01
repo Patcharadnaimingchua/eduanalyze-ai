@@ -1,16 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import type { AccessTokenResponse } from '@eduanalyze-ai/shared-types';
+import type { LoginResponse } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
+import {
+  twoFactorVerifySchema,
+  type TwoFactorVerifyFormValues,
+} from '@/lib/validation/two-factor.schema';
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
@@ -26,19 +31,52 @@ import {
 } from '@/components/ui/form';
 
 export default function LoginPage() {
+  return (
+    // useSearchParams (for the Google-callback ?pendingToken=&requires2fa=1
+    // case below) requires a Suspense boundary in the App Router.
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
+  const twoFactorForm = useForm<TwoFactorVerifyFormValues>({
+    resolver: zodResolver(twoFactorVerifySchema),
+    defaultValues: { code: '' },
+  });
 
-  async function onSubmit(values: LoginFormValues) {
+  // Google OAuth's callback is a top-level redirect (can't return JSON),
+  // so when that account has 2FA enabled it lands back here with the
+  // pending token in the URL instead of a normal API response — jump
+  // straight to the code-entry step.
+  useEffect(() => {
+    const tokenFromGoogle = searchParams.get('pendingToken');
+    if (tokenFromGoogle && searchParams.get('requires2fa') === '1') {
+      setPendingToken(tokenFromGoogle);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function onSubmitCredentials(values: LoginFormValues) {
     setServerError(null);
     try {
-      const { data } = await apiClient.post<AccessTokenResponse>('/auth/login', values);
+      const { data } = await apiClient.post<LoginResponse>('/auth/login', values);
+      if ('requiresTwoFactor' in data) {
+        setPendingToken(data.pendingToken);
+        return;
+      }
       await login(data.accessToken);
       router.push('/dashboard');
     } catch (error) {
@@ -50,6 +88,75 @@ export default function LoginPage() {
     }
   }
 
+  async function onSubmitTwoFactor(values: TwoFactorVerifyFormValues) {
+    setServerError(null);
+    if (!pendingToken) return;
+    try {
+      const data = await verifyTwoFactor(pendingToken, values);
+      if ('requiresTwoFactor' in data) {
+        // Unreachable in practice (verify() always issues real tokens on
+        // success) — kept only so the discriminated union is exhaustive.
+        return;
+      }
+      await login(data.accessToken);
+      router.push('/dashboard');
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        setServerError('รหัสยืนยันไม่ถูกต้องหรือหมดอายุ — ลองเข้าสู่ระบบใหม่อีกครั้ง');
+      } else {
+        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      }
+    }
+  }
+
+  if (pendingToken) {
+    return (
+      <AuthSplitLayout>
+        <h2 className="mb-1 text-center text-xl font-medium">ยืนยันตัวตนสองขั้นตอน</h2>
+        <p className="mb-5 text-center text-sm text-muted-foreground">
+          กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)
+        </p>
+
+        <Form {...twoFactorForm}>
+          <form onSubmit={twoFactorForm.handleSubmit(onSubmitTwoFactor)} className="space-y-4">
+            {serverError && (
+              <Alert variant="destructive">
+                <AlertDescription>{serverError}</AlertDescription>
+              </Alert>
+            )}
+            <FormField
+              control={twoFactorForm.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>รหัสยืนยัน</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123456" autoComplete="one-time-code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={twoFactorForm.formState.isSubmitting}>
+              {twoFactorForm.formState.isSubmitting ? 'กำลังยืนยัน...' : 'ยืนยัน'}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setPendingToken(null);
+                setServerError(null);
+              }}
+            >
+              กลับไปเข้าสู่ระบบใหม่
+            </Button>
+          </form>
+        </Form>
+      </AuthSplitLayout>
+    );
+  }
+
   return (
     <AuthSplitLayout>
       <h2 className="mb-5 text-center text-xl font-medium">เข้าสู่ระบบ</h2>
@@ -57,7 +164,7 @@ export default function LoginPage() {
       <AuthModeTabs active="login" />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmitCredentials)} className="space-y-4">
           {serverError && (
             <Alert variant="destructive">
               <AlertDescription>{serverError}</AlertDescription>

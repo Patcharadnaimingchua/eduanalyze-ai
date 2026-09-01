@@ -1,4 +1,13 @@
-import { Controller, Get, Patch, Post, UseGuards, Body, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  UseGuards,
+  Body,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -8,7 +17,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SkipPasswordChangeCheck } from '../../common/decorators/skip-password-change-check.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../../common/guards/jwt-refresh.guard';
+import { Jwt2faPendingGuard } from '../../common/guards/jwt-2fa-pending.guard';
 import { AuthService } from './auth.service';
+import { TwoFactorService } from './two-factor.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
@@ -16,6 +27,9 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
+import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
+import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
+import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
 import { GoogleProfile } from './google-profile.interface';
 import { RequestUser } from './request-user.interface';
 
@@ -30,6 +44,7 @@ const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly twoFactorService: TwoFactorService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -55,17 +70,20 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary:
-      'Verify email + password — sets the refresh token as an httpOnly cookie and returns the access token in the body',
+      'Verify email + password. If the account has 2FA enabled, returns a short-lived pendingToken instead of an access token — submit it with a TOTP/recovery code to POST /auth/2fa/verify to finish logging in. Otherwise sets the refresh token as an httpOnly cookie and returns the access token in the body, unchanged from before 2FA existed.',
   })
-  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
+  @ApiResponse({ status: 201, description: 'Access token issued (refresh cookie set), or a pendingToken if 2FA is required' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.login(dto);
-    this.setRefreshCookie(response, refreshToken);
-    return { accessToken };
+    const result = await this.authService.login(dto);
+    if ('requiresTwoFactor' in result) {
+      return result;
+    }
+    this.setRefreshCookie(response, result.refreshToken);
+    return { accessToken: result.accessToken };
   }
 
   @Post('refresh')
@@ -147,6 +165,72 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
+  @Post('2fa/setup')
+  @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Generate a new TOTP secret + QR code (not yet active) — call POST /auth/2fa/enable with a code from the scanned app to actually turn 2FA on. Safe to call repeatedly; each call overwrites the previous unconfirmed secret.',
+  })
+  @ApiResponse({ status: 201, description: 'QR code (data URL) + secret for manual entry' })
+  twoFactorSetup(@CurrentUser() user: RequestUser) {
+    return this.twoFactorService.setup(user.userId, user.email);
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
+  @ApiBearerAuth('access-token')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Confirm a 6-digit code from the authenticator app to actually turn 2FA on — proves the app was set up correctly before it can lock the account. Returns 8 recovery codes, shown exactly once.',
+  })
+  @ApiResponse({ status: 201, description: '2FA enabled; recovery codes (plaintext, one-time)' })
+  @ApiResponse({ status: 400, description: 'No pending setup — call POST /auth/2fa/setup first' })
+  @ApiResponse({ status: 401, description: 'Invalid verification code' })
+  twoFactorEnable(@Body() dto: TwoFactorEnableDto, @CurrentUser() user: RequestUser) {
+    return this.twoFactorService.enable(user.userId, dto.code);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Turn 2FA off — requires the current password to confirm' })
+  @ApiResponse({ status: 201, description: '2FA disabled' })
+  @ApiResponse({ status: 401, description: 'Current password is incorrect' })
+  async twoFactorDisable(@Body() dto: TwoFactorDisableDto, @CurrentUser() user: RequestUser) {
+    await this.twoFactorService.disable(user.userId, dto.password);
+    return { message: '2FA disabled' };
+  }
+
+  @Post('2fa/verify')
+  @UseGuards(Jwt2faPendingGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Second step of login for an account with 2FA enabled — submit the pendingToken from POST /auth/login (as the Authorization bearer) plus a TOTP or recovery code. Issues the same access token + refresh cookie a normal login would.',
+  })
+  @ApiResponse({ status: 201, description: 'Access token issued, refresh cookie set' })
+  @ApiResponse({ status: 401, description: 'pendingToken expired/invalid, or the code is wrong' })
+  async twoFactorVerify(
+    @Body() dto: TwoFactorVerifyDto,
+    @CurrentUser() user: RequestUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const isValid = await this.twoFactorService.verifyLoginCode(user.userId, dto.code);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+    const { accessToken, refreshToken } = await this.authService.completeTwoFactorLogin(
+      user.userId,
+    );
+    this.setRefreshCookie(response, refreshToken);
+    return { accessToken };
+  }
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Start Google OAuth sign-in (redirects to Google)' })
@@ -168,9 +252,20 @@ export class AuthController {
     const result = await this.authService.handleGoogleCallback(profile);
     const frontendUrl = this.configService.get<string>('frontendUrl');
 
-    if ('pendingToken' in result) {
+    if ('isNewUser' in result) {
       response.redirect(
         `${frontendUrl}/register/google?pendingToken=${encodeURIComponent(result.pendingToken)}`,
+      );
+      return;
+    }
+
+    if ('requiresTwoFactor' in result) {
+      // Top-level redirect target (see this route's own doc comment) —
+      // can't return JSON, so the pending token travels as a query
+      // param. The login page reads it on mount and jumps straight to
+      // the code-entry step instead of the email/password form.
+      response.redirect(
+        `${frontendUrl}/login?pendingToken=${encodeURIComponent(result.pendingToken)}&requires2fa=1`,
       );
       return;
     }

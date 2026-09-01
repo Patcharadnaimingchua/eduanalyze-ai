@@ -9,6 +9,14 @@ export default () => ({
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    // Signs the short-lived "pending 2FA" token between password-verify
+    // and TOTP-code-verify — separate secret so it can never be replayed
+    // as a real access/refresh token. Jwt2faPendingStrategy reads
+    // JWT_2FA_PENDING_SECRET directly from process.env (same reason as
+    // JwtStrategy/JwtRefreshStrategy: can't use ConfigService before
+    // super() runs) — kept here too for consistency/future non-strategy use.
+    twoFactorPendingSecret: process.env.JWT_2FA_PENDING_SECRET,
+    twoFactorPendingExpiresIn: process.env.JWT_2FA_PENDING_EXPIRES_IN || '5m',
   },
   cors: {
     origin: process.env.CORS_ORIGIN?.split(',') ?? [],
@@ -24,6 +32,9 @@ export default () => ({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+  },
+  totp: {
+    encryptionKey: process.env.TOTP_ENCRYPTION_KEY,
   },
   smtp: {
     host: process.env.SMTP_HOST,
