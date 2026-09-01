@@ -30,6 +30,7 @@ import { CompleteGoogleRegistrationDto } from './dto/complete-google-registratio
 import { TwoFactorEnableDto } from './dto/two-factor-enable.dto';
 import { TwoFactorDisableDto } from './dto/two-factor-disable.dto';
 import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
+import { TwoFactorRegenerateRecoveryCodesDto } from './dto/two-factor-regenerate-recovery-codes.dto';
 import { GoogleProfile } from './google-profile.interface';
 import { RequestUser } from './request-user.interface';
 
@@ -192,6 +193,25 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid verification code' })
   twoFactorEnable(@Body() dto: TwoFactorEnableDto, @CurrentUser() user: RequestUser) {
     return this.twoFactorService.enable(user.userId, dto.code);
+  }
+
+  @Post('2fa/regenerate-recovery-codes')
+  @UseGuards(JwtAuthGuard)
+  @SkipPasswordChangeCheck()
+  @ApiBearerAuth('access-token')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Replace all recovery codes with a fresh set of 8 — the old set stops working immediately (useful if you suspect they leaked, or just used your last one). Requires a live TOTP code, not the password.',
+  })
+  @ApiResponse({ status: 201, description: 'New recovery codes (plaintext, one-time)' })
+  @ApiResponse({ status: 400, description: '2FA is not enabled on this account' })
+  @ApiResponse({ status: 401, description: 'Invalid verification code' })
+  twoFactorRegenerateRecoveryCodes(
+    @Body() dto: TwoFactorRegenerateRecoveryCodesDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.twoFactorService.regenerateRecoveryCodes(user.userId, dto.code);
   }
 
   @Post('2fa/disable')

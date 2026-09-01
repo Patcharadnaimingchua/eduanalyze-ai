@@ -88,6 +88,32 @@ export class TwoFactorService {
     return { recoveryCodes };
   }
 
+  // Reauth-gated with a live TOTP code (not password, unlike disable()) —
+  // replaces recoveryCodeHashes wholesale, so any old codes (including
+  // ones that may have leaked) stop working the instant this succeeds.
+  // Returns the new set plaintext, same one-time-reveal contract as
+  // enable().
+  async regenerateRecoveryCodes(userId: string, code: string): Promise<{ recoveryCodes: string[] }> {
+    const credential = await this.prisma.twoFactorCredential.findUnique({ where: { userId } });
+    if (!credential || !credential.enabled) {
+      throw new BadRequestException('2FA is not enabled on this account');
+    }
+
+    const secret = decryptSecret(credential.secretCiphertext, this.encryptionKey());
+    const result = await verifyTotp({ token: code, secret });
+    if (!result.valid) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    const recoveryCodes = generateRecoveryCodes(RECOVERY_CODE_COUNT);
+    await this.prisma.twoFactorCredential.update({
+      where: { userId },
+      data: { recoveryCodeHashes: recoveryCodes.map(hashRecoveryCode) },
+    });
+
+    return { recoveryCodes };
+  }
+
   // Reauth-gated (mirrors AuthService.changePassword's bcrypt.compare
   // pattern exactly) — deletes the credential row entirely, not a soft
   // disable. No audit/natural-key requirement to keep it around.
