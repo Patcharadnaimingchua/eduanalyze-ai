@@ -103,17 +103,15 @@ Dashboard's `aiSummary` (Student Dashboard, §29) และ `aiCurriculumSummary
 
 **"Student ที่เกี่ยวข้อง" ปิดแล้ว**: `GET /courses/:courseId/students` (endpoint ใหม่ — คนละ path จาก `StudentCourseRecordService.findAll`, ไม่ได้แก้ endpoint เดิม) คืน roster ขั้นต่ำ (`studentProfileId`/`studentCode`/`fullName`/`grade` ล่าสุด — ไม่มี email/ข้อมูลติดต่ออื่น) ผ่าน `StudentCourseRecordService.getStudentRosterForCourse` ใหม่ ซึ่ง reuse `getLatestAttemptsPerStudent(courseId)` เดิม (ตัวเดียวกับ Grade Distribution) — permission ใช้ `InstructorOrScopeGuard` (`SUPER_ADMIN`/`ADMIN`-with-scope/`INSTRUCTOR`-assigned) อยู่ในไฟล์ใหม่ `course-students.controller.ts` ที่ลงทะเบียนใน `StudentCourseRecordModule` (ไม่ใช่ `CourseModule`/`CourseController` — เพื่อเลี่ยง circular import เพราะ `StudentCourseRecordModule` import `CourseModule` อยู่แล้ว)
 
-## Auth gaps closure — forgot-password email เป็น mock log เหมือน OTP/invitation
+## ~~Auth gaps closure — forgot-password email เป็น mock log เหมือน OTP/invitation~~ — แก้แล้ว (2026-09-01)
 
-`PasswordResetService.create` ไม่ได้ส่งอีเมลจริง — log ผ่าน `console.warn('[PASSWORD RESET MOCK] ...')` เท่านั้น เป็น pattern เดียวกับ OTP/invitation ที่บันทึกไว้แล้ว ไม่ใช่ gap ใหม่ — ทั้งสามจุด (OTP, invitation, password reset) ต้องรอ real email service ตัวเดียวกันก่อน deploy จริง
+**แก้แล้ว**: `PasswordResetService.create` ส่งอีเมลจริงแล้วผ่าน `EmailService` (`apps/backend/src/common/email/email.service.ts`, nodemailer) ไม่ใช่ `console.warn` mock อีกต่อไป — OTP ถูกลบออกจากระบบทั้งหมดไปแล้ว (ดูหัวข้อ "OTP verification" ด้านล่าง) จึงไม่มี gap ฝั่งนั้นให้ต้องรออีก มีแค่ `PendingInvitationService`/`resend-invitation` ที่ยังไม่ถูกเรียกใช้งานจริงตามที่บันทึกไว้ใน Module 12 (ไม่เกี่ยวกับ email service แล้ว เพราะไม่มีจุดเรียก invitation flow เลยตั้งแต่เปลี่ยนเป็น temp password)
 
 ## Module 12 — User Management: `POST /users` เปลี่ยนจาก invitation-token เป็น temp password ตรงๆ แล้ว
 
-`UserManagementService.createStaffOrAdmin` **ไม่เรียก `PendingInvitationService.create` อีกต่อไป** (2026-08-08) — เปลี่ยนเป็น generate temp password แบบสุ่ม (`generateTempPassword()`, `apps/backend/src/common/util/password.util.ts`) hash แล้วตั้งให้ user ทันทีในทรานแซกชันเดียวกับที่สร้าง `User`+`UserRole`+`UserScope` คืนค่า `tempPassword` ใน response ครั้งเดียวให้ ADMIN/SUPER_ADMIN คัดลอกไปแจ้งเจ้าของบัญชีนอกระบบเอง (ไม่ต้องพึ่ง email service ที่ยังเป็น mock อยู่)
+`UserManagementService.createStaffOrAdmin` **ไม่เรียก `PendingInvitationService.create` อีกต่อไป** (2026-08-08) — เปลี่ยนเป็น generate temp password แบบสุ่ม (`generateTempPassword()`, `apps/backend/src/common/util/password.util.ts`) hash แล้วตั้งให้ user ทันทีในทรานแซกชันเดียวกับที่สร้าง `User`+`UserRole`+`UserScope` คืนค่า `tempPassword` ใน response ครั้งเดียวให้ ADMIN/SUPER_ADMIN คัดลอกไปแจ้งเจ้าของบัญชีนอกระบบเอง
 
-**`PendingInvitationService`/`POST /auth/accept-invitation`/`POST /users/:id/resend-invitation` ยังอยู่ครบ ไม่ได้ลบ** — แค่ไม่มีจุดเรียกใช้จาก `createStaffOrAdmin` แล้ว เพราะฉะนั้น `resend-invitation` จะ 404 ("no pending invitation") เสมอสำหรับ user ที่สร้างหลังการเปลี่ยนนี้ ซึ่งถูกต้องตามพฤติกรรมใหม่ ไม่ใช่ bug — เก็บโค้ดไว้เผื่อกลับมาใช้ invitation-based flow อีกครั้งถ้ามี email service จริงในอนาคต
-
-`PasswordResetService`/`OtpService`'s mock-email gap (OTP, forgot-password) ยังคงเปิดอยู่เหมือนเดิม ไม่เกี่ยวกับการเปลี่ยนแปลงนี้
+**`PendingInvitationService`/`POST /auth/accept-invitation`/`POST /users/:id/resend-invitation` ยังอยู่ครบ ไม่ได้ลบ** — แค่ไม่มีจุดเรียกใช้จาก `createStaffOrAdmin` แล้ว เพราะฉะนั้น `resend-invitation` จะ 404 ("no pending invitation") เสมอสำหรับ user ที่สร้างหลังการเปลี่ยนนี้ ซึ่งถูกต้องตามพฤติกรรมใหม่ ไม่ใช่ bug — เก็บโค้ดไว้เผื่อกลับมาใช้ invitation-based flow อีกครั้งในอนาคต (email service เป็นของจริงแล้วตั้งแต่ 2026-09-01 จึงไม่มี blocker ฝั่งนั้นแล้วถ้าจะเปิดกลับมาใช้)
 
 ## ~~ไม่มี `mustChangePassword` flag บังคับเปลี่ยนรหัสผ่านครั้งแรก~~ — แก้แล้ว (2026-08-25)
 
