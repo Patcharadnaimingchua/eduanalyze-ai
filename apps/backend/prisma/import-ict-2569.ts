@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+import { upsertActive } from './upsert-active';
+
 const prisma = new PrismaClient();
 
 const PROGRAM_CODE = 'ICT';
@@ -152,8 +154,8 @@ async function main() {
   // ICT 2564, so every course/prerequisite lookup below must be scoped
   // to this curriculumId, never to code alone.
   const program = await prisma.program.findFirstOrThrow({ where: { code: PROGRAM_CODE } });
-  const curriculum = await prisma.curriculum.findUniqueOrThrow({
-    where: { programId_version: { programId: program.id, version: CURRICULUM_VERSION } },
+  const curriculum = await prisma.curriculum.findFirstOrThrow({
+    where: { programId: program.id, version: CURRICULUM_VERSION, isActive: true },
   });
   console.log(`Curriculum: ${program.code} ${curriculum.version} (curriculumId=${curriculum.id})`);
 
@@ -175,10 +177,16 @@ async function main() {
 
   const categoryIdByName = new Map<string, string>();
   for (const cat of CATEGORIES) {
-    const category = await prisma.courseCategory.upsert({
-      where: { curriculumId_name: { curriculumId: curriculum.id, name: cat.name } },
-      update: {},
-      create: { name: cat.name, curriculumId: curriculum.id },
+    const category = await upsertActive({
+      find: () =>
+        prisma.courseCategory.findFirst({
+          where: { curriculumId: curriculum.id, name: cat.name, isActive: true },
+        }),
+      update: (id) => prisma.courseCategory.update({ where: { id }, data: {} }),
+      create: () =>
+        prisma.courseCategory.create({
+          data: { name: cat.name, curriculumId: curriculum.id },
+        }),
     });
     categoryIdByName.set(cat.name, category.id);
 
@@ -203,24 +211,34 @@ async function main() {
     if (!categoryId) {
       throw new Error(`Unknown category "${c.category}" for course ${c.code}`);
     }
-    const course = await prisma.course.upsert({
-      where: { curriculumId_code: { curriculumId: curriculum.id, code: c.code } },
-      update: {
-        name: c.name,
-        nameEn: c.nameEn,
-        credits: c.credits,
-        isRequired: c.isRequired,
-        categoryId,
-      },
-      create: {
-        code: c.code,
-        name: c.name,
-        nameEn: c.nameEn,
-        credits: c.credits,
-        isRequired: c.isRequired,
-        curriculumId: curriculum.id,
-        categoryId,
-      },
+    const course = await upsertActive({
+      find: () =>
+        prisma.course.findFirst({
+          where: { curriculumId: curriculum.id, code: c.code, isActive: true },
+        }),
+      update: (id) =>
+        prisma.course.update({
+          where: { id },
+          data: {
+          name: c.name,
+          nameEn: c.nameEn,
+          credits: c.credits,
+          isRequired: c.isRequired,
+          categoryId,
+          },
+        }),
+      create: () =>
+        prisma.course.create({
+          data: {
+          code: c.code,
+          name: c.name,
+          nameEn: c.nameEn,
+          credits: c.credits,
+          isRequired: c.isRequired,
+          curriculumId: curriculum.id,
+          categoryId,
+          },
+        }),
     });
     courseIdByCode.set(c.code, course.id);
     console.log(`    Course: ${c.code} ${c.name} (curriculumId=${course.curriculumId})`);

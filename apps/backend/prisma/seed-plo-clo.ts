@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+import { upsertActive } from './upsert-active';
+
 const prisma = new PrismaClient();
 
 // PROJECT_CONTEXT.md §20 — the 6 PLOs are real, taken verbatim from the
@@ -369,18 +371,28 @@ async function main() {
 
     const ploIdByCode = new Map<string, string>();
     for (const plo of PLOS) {
-      const created = await prisma.plo.upsert({
-        where: { curriculumId_code: { curriculumId: cur.id, code: plo.code } },
-        update: { name: plo.name, description: plo.description },
-        create: { curriculumId: cur.id, code: plo.code, name: plo.name, description: plo.description },
+      const created = await upsertActive({
+        find: () =>
+          prisma.plo.findFirst({
+            where: { curriculumId: cur.id, code: plo.code, isActive: true },
+          }),
+        update: (id) =>
+          prisma.plo.update({
+            where: { id },
+            data: { name: plo.name, description: plo.description },
+          }),
+        create: () =>
+          prisma.plo.create({
+            data: { curriculumId: cur.id, code: plo.code, name: plo.name, description: plo.description },
+          }),
       });
       ploIdByCode.set(plo.code, created.id);
       console.log(`  PLO ${created.code}: ${created.name}`);
     }
 
     for (const courseSeed of cur.courses) {
-      const course = await prisma.course.findUnique({
-        where: { curriculumId_code: { curriculumId: cur.id, code: courseSeed.courseCode } },
+      const course = await prisma.course.findFirst({
+        where: { curriculumId: cur.id, code: courseSeed.courseCode, isActive: true },
       });
       if (!course) {
         console.warn(`  !! Course ${courseSeed.courseCode} not found in ${cur.label} — skipped`);
@@ -388,10 +400,20 @@ async function main() {
       }
 
       for (const cloSeed of courseSeed.clos) {
-        const clo = await prisma.clo.upsert({
-          where: { courseId_code: { courseId: course.id, code: cloSeed.code } },
-          update: { description: cloSeed.description },
-          create: { courseId: course.id, code: cloSeed.code, description: cloSeed.description },
+        const clo = await upsertActive({
+          find: () =>
+            prisma.clo.findFirst({
+              where: { courseId: course.id, code: cloSeed.code, isActive: true },
+            }),
+          update: (id) =>
+            prisma.clo.update({
+              where: { id },
+              data: { description: cloSeed.description },
+            }),
+          create: () =>
+            prisma.clo.create({
+              data: { courseId: course.id, code: cloSeed.code, description: cloSeed.description },
+            }),
         });
 
         for (const mapping of cloSeed.mappings) {

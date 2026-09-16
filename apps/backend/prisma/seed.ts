@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+import { upsertActive } from './upsert-active';
+
 const prisma = new PrismaClient();
 
 interface CurriculumSeed {
@@ -142,50 +144,76 @@ const DEPARTMENTS: DepartmentSeed[] = [
 ];
 
 async function main() {
-  const faculty = await prisma.faculty.upsert({
-    where: { code: FACULTY.code },
-    update: { name: FACULTY.name },
-    create: FACULTY,
+  const faculty = await upsertActive({
+    find: () =>
+      prisma.faculty.findFirst({ where: { code: FACULTY.code, isActive: true } }),
+    update: (id) =>
+      prisma.faculty.update({ where: { id }, data: { name: FACULTY.name } }),
+    create: () => prisma.faculty.create({ data: FACULTY }),
   });
   console.log(`Faculty: ${faculty.name} (${faculty.code})`);
 
   for (const deptSeed of DEPARTMENTS) {
-    const department = await prisma.department.upsert({
-      where: { facultyId_code: { facultyId: faculty.id, code: deptSeed.code } },
-      update: { name: deptSeed.name },
-      create: { name: deptSeed.name, code: deptSeed.code, facultyId: faculty.id },
+    const department = await upsertActive({
+      find: () =>
+        prisma.department.findFirst({
+          where: { facultyId: faculty.id, code: deptSeed.code, isActive: true },
+        }),
+      update: (id) =>
+        prisma.department.update({ where: { id }, data: { name: deptSeed.name } }),
+      create: () =>
+        prisma.department.create({
+          data: { name: deptSeed.name, code: deptSeed.code, facultyId: faculty.id },
+        }),
     });
     console.log(`  Department: ${department.name} (${department.code})`);
 
     for (const progSeed of deptSeed.programs) {
-      const program = await prisma.program.upsert({
-        where: {
-          departmentId_code: { departmentId: department.id, code: progSeed.code },
-        },
-        update: { name: progSeed.name },
-        create: {
-          name: progSeed.name,
-          code: progSeed.code,
-          departmentId: department.id,
-        },
+      const program = await upsertActive({
+        find: () =>
+          prisma.program.findFirst({
+            where: { departmentId: department.id, code: progSeed.code, isActive: true },
+          }),
+        update: (id) =>
+          prisma.program.update({ where: { id }, data: { name: progSeed.name } }),
+        create: () =>
+          prisma.program.create({
+            data: {
+              name: progSeed.name,
+              code: progSeed.code,
+              departmentId: department.id,
+            },
+          }),
       });
       console.log(`    Program: ${program.name} (${program.code})`);
 
       for (const curSeed of progSeed.curricula) {
-        const curriculum = await prisma.curriculum.upsert({
-          where: {
-            programId_version: { programId: program.id, version: curSeed.version },
-          },
-          update: {
-            effectiveYear: curSeed.effectiveYear,
-            totalCredits: curSeed.totalCredits,
-          },
-          create: {
-            programId: program.id,
-            version: curSeed.version,
-            effectiveYear: curSeed.effectiveYear,
-            totalCredits: curSeed.totalCredits,
-          },
+        const curriculum = await upsertActive({
+          find: () =>
+            prisma.curriculum.findFirst({
+              where: {
+                programId: program.id,
+                version: curSeed.version,
+                isActive: true,
+              },
+            }),
+          update: (id) =>
+            prisma.curriculum.update({
+              where: { id },
+              data: {
+                effectiveYear: curSeed.effectiveYear,
+                totalCredits: curSeed.totalCredits,
+              },
+            }),
+          create: () =>
+            prisma.curriculum.create({
+              data: {
+                programId: program.id,
+                version: curSeed.version,
+                effectiveYear: curSeed.effectiveYear,
+                totalCredits: curSeed.totalCredits,
+              },
+            }),
         });
         console.log(
           `      Curriculum: ${curriculum.version} (totalCredits=${curriculum.totalCredits})`,
