@@ -4,11 +4,13 @@
     "module": "commonjs",
     "declaration": true,
     "outDir": "./dist",
+    "moduleResolution": "node",
     "strict": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "5.0"
   },
   "include": ["src"]
 }
