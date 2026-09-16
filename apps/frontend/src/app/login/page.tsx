@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import type { LoginResponse } from '@eduanalyze-ai/shared-types';
+import type { LoginResponse, Role } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
@@ -38,6 +38,30 @@ export default function LoginPage() {
       <LoginPageContent />
     </Suspense>
   );
+}
+
+// Highest privilege first — a user with multiple roles (e.g. a bootstrapped
+// STUDENT+SUPER_ADMIN account) lands on the dashboard for their most
+// privileged role.
+const ROLE_REDIRECT_PRIORITY: Role[] = [
+  'SUPER_ADMIN',
+  'ADMIN',
+  'STAFF',
+  'INSTRUCTOR',
+  'STUDENT',
+];
+
+const ROLE_HOME: Record<Role, string> = {
+  SUPER_ADMIN: '/admin/users',
+  ADMIN: '/admin/users',
+  STAFF: '/staff/dashboard',
+  INSTRUCTOR: '/instructor/dashboard',
+  STUDENT: '/dashboard',
+};
+
+function resolveHomeRoute(roles: Role[]): string {
+  const highestRole = ROLE_REDIRECT_PRIORITY.find((role) => roles.includes(role));
+  return highestRole ? ROLE_HOME[highestRole] : '/dashboard';
 }
 
 function LoginPageContent() {
@@ -77,8 +101,8 @@ function LoginPageContent() {
         setPendingToken(data.pendingToken);
         return;
       }
-      await login(data.accessToken);
-      router.push('/dashboard');
+      const user = await login(data.accessToken);
+      router.push(resolveHomeRoute(user.roles));
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -98,8 +122,8 @@ function LoginPageContent() {
         // success) — kept only so the discriminated union is exhaustive.
         return;
       }
-      await login(data.accessToken);
-      router.push('/dashboard');
+      const user = await login(data.accessToken);
+      router.push(resolveHomeRoute(user.roles));
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('รหัสยืนยันไม่ถูกต้องหรือหมดอายุ — ลองเข้าสู่ระบบใหม่อีกครั้ง');

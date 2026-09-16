@@ -49,7 +49,9 @@ function InstructorDashboardContent() {
       ? courseIdParam
       : (courses[0]?.courseId ?? null);
   const activeTab: InstructorTab =
-    tabParam === 'clo' || tabParam === 'roster' || tabParam === 'evidence' ? tabParam : 'grades';
+    tabParam === 'clo' || tabParam === 'roster' || tabParam === 'evidence' || tabParam === 'course'
+      ? tabParam
+      : 'grades';
 
   // courseId/tab live only in the URL (no parallel useState) — once courses
   // load, reflect the resolved default back into the URL so a reload lands

@@ -14,8 +14,9 @@ interface AuthContextValue {
   user: CurrentUserResponse | null;
   status: AuthStatus;
   // Called after a call that issued a fresh access token (login, register,
-  // google/complete-registration) — stores it in memory and loads /me.
-  login: (accessToken: string) => Promise<void>;
+  // google/complete-registration) — stores it in memory, loads /me, and
+  // returns the loaded user so the caller can decide where to redirect.
+  login: (accessToken: string) => Promise<CurrentUserResponse>;
   logout: () => Promise<void>;
   // Re-fetches /auth/me without touching the access token — used after a
   // password change so `user.mustChangePassword` reflects reality without
@@ -34,12 +35,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await apiClient.get<CurrentUserResponse>('/auth/me');
     setUser(data);
     setStatus('authenticated');
+    return data;
   }, []);
 
   const login = useCallback(
     async (accessToken: string) => {
       setAccessToken(accessToken);
-      await loadCurrentUser();
+      return loadCurrentUser();
     },
     [loadCurrentUser],
   );
@@ -81,7 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, status, login, logout, refreshUser: loadCurrentUser }}
+      value={{
+        user,
+        status,
+        login,
+        logout,
+        refreshUser: async () => {
+          await loadCurrentUser();
+        },
+      }}
     >
       {children}
     </AuthContext.Provider>

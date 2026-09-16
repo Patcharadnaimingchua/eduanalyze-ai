@@ -146,6 +146,9 @@ export class StudentCourseRecordService {
       // data, so ScopeGuard's usual 403 convention applies here instead.
       await this.assertStaffScopeCovers(record.studentProfileId, user);
     }
+    if (this.isInstructorTier(user)) {
+      await this.assertInstructorAssigned(record.courseId, user);
+    }
     return record;
   }
 
@@ -166,12 +169,12 @@ export class StudentCourseRecordService {
 
   // STUDENT deleting their own mis-entered row, or SUPER_ADMIN: hard
   // delete, unchanged (PROJECT_CONTEXT.md §16's original framing still
-  // holds for self-correction). ADMIN/STAFF deleting a record that isn't
-  // theirs: soft delete — higher risk than correcting your own row, so it
-  // stays recoverable/auditable rather than gone outright.
+  // holds for self-correction). ADMIN/STAFF/INSTRUCTOR deleting a record
+  // that isn't theirs: soft delete — higher risk than correcting your own
+  // row, so it stays recoverable/auditable rather than gone outright.
   async remove(id: string, user: RequestUser) {
     await this.findOne(id, user);
-    if (this.isStaffTier(user)) {
+    if (this.isStaffTier(user) || this.isInstructorTier(user)) {
       return this.prisma.studentCourseRecord.update({
         where: { id },
         data: { isActive: false },
@@ -397,6 +400,29 @@ export class StudentCourseRecordService {
     );
   }
 
+  // INSTRUCTOR may only correct/remove existing records in courses they are
+  // assigned to (no create, no listing — the course roster endpoint covers
+  // reads). A user who also holds ADMIN/STAFF takes the scope-based path
+  // instead, so this never narrows an existing staff grant.
+  private isInstructorTier(user: RequestUser) {
+    return (
+      user.roles.includes('INSTRUCTOR') &&
+      !user.roles.includes('SUPER_ADMIN') &&
+      !user.roles.includes('ADMIN') &&
+      !user.roles.includes('STAFF')
+    );
+  }
+
+  private async assertInstructorAssigned(courseId: string, user: RequestUser) {
+    const assignment = await this.prisma.courseInstructor.findUnique({
+      where: { userId_courseId: { userId: user.userId, courseId } },
+    });
+    if (!assignment) {
+      // 403, not 404 — same convention as InstructorGuard.
+      throw new ForbiddenException('You are not assigned to this course');
+    }
+  }
+
   // Audit-trail snapshot for enteredByRole — most-privileged role wins if
   // a user somehow holds more than one (STUDENT never co-occurs with
   // ADMIN/STAFF/SUPER_ADMIN in practice, per §33, so this is unambiguous).
@@ -404,6 +430,7 @@ export class StudentCourseRecordService {
     if (user.roles.includes('SUPER_ADMIN')) return Role.SUPER_ADMIN;
     if (user.roles.includes('ADMIN')) return Role.ADMIN;
     if (user.roles.includes('STAFF')) return Role.STAFF;
+    if (user.roles.includes('INSTRUCTOR')) return Role.INSTRUCTOR;
     return Role.STUDENT;
   }
 

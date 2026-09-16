@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { cn } from '@/lib/utils';
@@ -9,14 +9,16 @@ import { GradeDistributionChart } from './grade-distribution-chart';
 import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
+import { CourseInfoSection } from './course-info-section';
 
-export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence';
+export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence' | 'course';
 
 const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'grades', label: 'Grade Distribution' },
   { key: 'clo', label: 'CLO Achievement' },
-  { key: 'roster', label: 'Student Roster' },
+  { key: 'roster', label: 'Gradebook' },
   { key: 'evidence', label: 'Assessment Evidence' },
+  { key: 'course', label: 'ข้อมูลรายวิชา' },
 ];
 
 // Both queries here are lazy — enabled only once their tab is actually
@@ -33,6 +35,8 @@ export function InstructorDetailPanel({
   onTabChange: (tab: InstructorTab) => void;
   isInstructor: boolean;
 }) {
+  const queryClient = useQueryClient();
+
   const cloQuery = useQuery({
     queryKey: ['course-clo-achievement', course.courseId],
     queryFn: () => fetchCourseCloAchievement(course.courseId),
@@ -45,6 +49,11 @@ export function InstructorDetailPanel({
     enabled: isInstructor && activeTab === 'roster',
   });
 
+  function handleGradebookChanged() {
+    void queryClient.invalidateQueries({ queryKey: ['course-roster', course.courseId] });
+    void queryClient.invalidateQueries({ queryKey: ['instructor-dashboard'] });
+  }
+
   return (
     <Card>
       <CardContent className="space-y-4 pt-6">
@@ -53,7 +62,7 @@ export function InstructorDetailPanel({
           <p className="text-lg font-medium text-primary">{course.name}</p>
         </div>
 
-        <div className="flex gap-2 border-b border-slate-100">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
@@ -92,6 +101,7 @@ export function InstructorDetailPanel({
             roster={rosterQuery.data}
             isLoading={rosterQuery.isLoading}
             isError={rosterQuery.isError}
+            onChanged={isInstructor ? handleGradebookChanged : undefined}
           />
         )}
 
@@ -101,6 +111,8 @@ export function InstructorDetailPanel({
         {activeTab === 'evidence' && isInstructor && (
           <AssessmentEvidenceSection courseId={course.courseId} />
         )}
+
+        {activeTab === 'course' && <CourseInfoSection course={course} />}
       </CardContent>
     </Card>
   );
