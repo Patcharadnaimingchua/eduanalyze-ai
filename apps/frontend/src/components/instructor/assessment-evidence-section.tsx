@@ -8,7 +8,7 @@ import { StudentScoreEntryPanel } from './student-score-entry-panel';
 // Orchestrates the 3-level drill-down (Assessment -> CLO mapping -> Score
 // entry) behind the instructor dashboard's "evidence" tab. Selection state
 // is local UI state, not URL-driven — unlike the top-level course/tab
-// selection in instructor/dashboard/page.tsx, this is a transient
+// selection in instructor/courses/[courseId]/page.tsx, this is a transient
 // in-page drill-down that doesn't need to survive a reload or be
 // link-shareable.
 //

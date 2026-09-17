@@ -1,23 +1,15 @@
 'use client';
 
+import Link from 'next/link';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
-import { cn } from '@/lib/utils';
 import { achievementBadgeTone } from '@/lib/achievement-color';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function InstructorCourseCard({
-  course,
-  selected,
-  onSelect,
-}: {
-  course: InstructorCourseSummary;
-  selected: boolean;
-  onSelect: () => void;
-}) {
+export function InstructorCourseCard({ course }: { course: InstructorCourseSummary }) {
   return (
-    <button type="button" onClick={onSelect} className="w-full text-left">
-      <Card className={cn('transition', selected && 'ring-2 ring-brand')}>
+    <Link href={`/instructor/courses/${course.courseId}`} className="block w-full text-left">
+      <Card className="transition hover:ring-2 hover:ring-brand">
         <CardContent className="space-y-2 pt-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -36,6 +28,6 @@ export function InstructorCourseCard({
           </div>
         </CardContent>
       </Card>
-    </button>
+    </Link>
   );
 }

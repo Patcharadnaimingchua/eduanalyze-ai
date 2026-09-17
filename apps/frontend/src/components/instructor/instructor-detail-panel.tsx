@@ -21,6 +21,10 @@ const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'course', label: 'ข้อมูลรายวิชา' },
 ];
 
+export function parseInstructorTab(value: string | null): InstructorTab {
+  return TABS.find((tab) => tab.key === value)?.key ?? 'grades';
+}
+
 // Both queries here are lazy — enabled only once their tab is actually
 // opened — so switching between courses without ever visiting the CLO or
 // Roster tab never fires more than the one dashboard-level request.

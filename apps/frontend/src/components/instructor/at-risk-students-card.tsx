@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
@@ -7,13 +8,7 @@ import { GRADE_LABELS, formatSemesterLabel } from '@/lib/grade-label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function AtRiskStudentsCard({
-  courses,
-  onOpenGradebook,
-}: {
-  courses: InstructorCourseSummary[];
-  onOpenGradebook: (courseId: string) => void;
-}) {
+export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSummary[] }) {
   const coursesWithRisk = courses.filter((c) => c.atRiskStudents.length > 0);
   const total = coursesWithRisk.reduce((sum, c) => sum + c.atRiskStudents.length, 0);
 
@@ -37,13 +32,12 @@ export function AtRiskStudentsCard({
           <div className="space-y-4">
             {coursesWithRisk.map((course) => (
               <div key={course.courseId} className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => onOpenGradebook(course.courseId)}
+                <Link
+                  href={`/instructor/courses/${course.courseId}?tab=roster`}
                   className="text-sm font-medium text-brand hover:underline"
                 >
                   {course.code} {course.name}
-                </button>
+                </Link>
                 <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
                   {course.atRiskStudents.map((student) => (
                     <li

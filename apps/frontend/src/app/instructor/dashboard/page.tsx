@@ -1,93 +1,48 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { BookOpen, Target, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchInstructorDashboard } from '@/lib/api/instructor';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
 import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
-import {
-  InstructorDetailPanel,
-  type InstructorTab,
-} from '@/components/instructor/instructor-detail-panel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function InstructorDashboardPage() {
   return (
     <ProtectedRoute>
-      {/* useSearchParams requires a Suspense boundary in the App Router */}
-      <Suspense fallback={<InstructorDashboardSkeleton />}>
-        <InstructorDashboardContent />
-      </Suspense>
+      <InstructorDashboardContent />
     </ProtectedRoute>
   );
+}
+
+// Weighted by studentCount — a plain mean of per-course percentages would
+// let a 1-student course count as much as a 60-student one.
+function overallAchievementPercent(courses: InstructorCourseSummary[]): number | null {
+  const totalStudents = courses.reduce((sum, c) => sum + c.studentCount, 0);
+  if (totalStudents === 0) return null;
+  const achieved = courses.reduce(
+    (sum, c) => sum + (c.achievementPercent * c.studentCount) / 100,
+    0,
+  );
+  return (achieved / totalStudents) * 100;
 }
 
 function InstructorDashboardContent() {
   const { user } = useAuth();
   const isInstructor = !!user?.roles.includes('INSTRUCTOR');
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const dashboardQuery = useQuery({
     queryKey: ['instructor-dashboard'],
     queryFn: fetchInstructorDashboard,
     enabled: isInstructor,
   });
-
-  const courses = dashboardQuery.data?.courses ?? [];
-  const courseIdParam = searchParams.get('courseId');
-  const tabParam = searchParams.get('tab');
-
-  const selectedCourseId =
-    courseIdParam && courses.some((c) => c.courseId === courseIdParam)
-      ? courseIdParam
-      : (courses[0]?.courseId ?? null);
-  const activeTab: InstructorTab =
-    tabParam === 'clo' || tabParam === 'roster' || tabParam === 'evidence' || tabParam === 'course'
-      ? tabParam
-      : 'grades';
-
-  // courseId/tab live only in the URL (no parallel useState) — once courses
-  // load, reflect the resolved default back into the URL so a reload lands
-  // on the same course/tab instead of silently re-defaulting.
-  useEffect(() => {
-    if (!selectedCourseId) return;
-    if (courseIdParam === selectedCourseId && tabParam === activeTab) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('courseId', selectedCourseId);
-    params.set('tab', activeTab);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCourseId, activeTab, courseIdParam, tabParam]);
-
-  function selectCourse(courseId: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('courseId', courseId);
-    params.set('tab', activeTab);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
-
-  function openGradebook(courseId: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('courseId', courseId);
-    params.set('tab', 'roster');
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
-
-  function selectTab(tab: InstructorTab) {
-    if (!selectedCourseId) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('courseId', selectedCourseId);
-    params.set('tab', tab);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
 
   if (!user) {
     return (
@@ -97,7 +52,9 @@ function InstructorDashboardContent() {
     );
   }
 
-  const selectedCourse = courses.find((c) => c.courseId === selectedCourseId) ?? null;
+  const courses = dashboardQuery.data?.courses ?? [];
+  const enrollments = courses.reduce((sum, c) => sum + c.studentCount, 0);
+  const achievement = overallAchievementPercent(courses);
 
   return (
     <RequireRole role="INSTRUCTOR">
@@ -127,20 +84,22 @@ function InstructorDashboardContent() {
 
         {dashboardQuery.data && courses.length > 0 && (
           <>
-            <AtRiskStudentsCard courses={courses} onOpenGradebook={openGradebook} />
-            <InstructorCourseGrid
-              courses={courses}
-              selectedCourseId={selectedCourseId}
-              onSelect={selectCourse}
-            />
-            {selectedCourse && (
-              <InstructorDetailPanel
-                course={selectedCourse}
-                activeTab={activeTab}
-                onTabChange={selectTab}
-                isInstructor={isInstructor}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <StatCard icon={BookOpen} label="รายวิชาที่สอน" value={courses.length} suffix="วิชา" />
+              <StatCard
+                icon={Users}
+                label="นักศึกษา (นับตามรายวิชา)"
+                value={enrollments}
+                suffix="คน"
               />
-            )}
+              <StatCard
+                icon={Target}
+                label="ผลสัมฤทธิ์เฉลี่ย (เกรด B ขึ้นไป)"
+                value={achievement === null ? '—' : `${Math.round(achievement)}%`}
+              />
+            </div>
+            <AtRiskStudentsCard courses={courses} />
+            <InstructorCourseGrid courses={courses} />
           </>
         )}
       </DashboardShell>

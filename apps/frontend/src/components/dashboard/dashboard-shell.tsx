@@ -103,7 +103,12 @@ export function DashboardShell({
 
         <nav className="flex flex-1 flex-col gap-1">
           {navItems.map(({ label, icon: Icon, href }) => {
-            const active = !!href && pathname === href;
+            // Per-course pages have no nav entry of their own — keep the
+            // instructor overview highlighted while inside one.
+            const active =
+              !!href &&
+              (pathname === href ||
+                (href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/')));
 
             if (href) {
               return (
