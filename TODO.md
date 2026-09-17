@@ -157,4 +157,4 @@ Business logic อื่นๆ (anti-account-takeover, expired/reused token) ผ
 
 **แก้แล้ว**: เพิ่ม self-target check ใน `grantScope`/`revoke` (ซ้อนอยู่ใน `if (!requester.roles.includes('SUPER_ADMIN'))` เดิม — SUPER_ADMIN ยกเว้นเพราะ access ของตัวเองไม่ได้ผูกกับ scope) throw `ForbiddenException('Cannot modify your own scope')` ทดสอบยืนยันแล้วผ่าน curl จริง: self-grant/self-revoke โดน 403, grant/revoke user อื่นในสโคปยังทำงานปกติ (regression-safe)
 
-**ยังไม่มี** (นอกขอบเขตรอบนี้): frontend UI สำหรับ Module 12 ทั้งหมด (สร้าง user, list, active-status, assign/revoke role, manage scope) — ต้องสร้างใหม่ทั้งหมด ไม่มี `lib/api/*` wrapper หรือ shared-types ใดๆ อยู่เลย
+**Frontend UI สำหรับ Module 12 — เสร็จแล้ว (commit `9d1cf96 feat: ADMIN User Management UI`)**: `apps/frontend/src/app/admin/users/` (list + create + detail page), `lib/api/user-management.ts` (fetchUsers/createUserScope/deleteUserScope ฯลฯ), `components/admin/create-user-form.tsx`, `user-list-table.tsx`, `scope-selector.tsx`, `user-scopes-section.tsx` — ครอบคลุมสร้าง user, list, assign/revoke role, manage scope ครบตามที่ต้องการ

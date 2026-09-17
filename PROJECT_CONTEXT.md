@@ -229,6 +229,12 @@ B. Google Authentication — Google Sign-In/OAuth (ถือว่า Google ย
 ถอด OTP ออกจากระบบทั้งหมดแล้ว (ไม่ใช่แค่ปิด flag) เหลือ Email+Password ล้วนสำหรับ
 วิธี A — Google OAuth (วิธี B) ไม่เปลี่ยนแปลง ไม่เคยผ่าน OTP อยู่แล้ว]
 
+[อัปเดต 2026-09-01: เพิ่ม TOTP-based 2FA แบบ opt-in สำหรับวิธี A (commit
+`32bd478 feat: TOTP-based 2FA`) — คนละอย่างกับ Email OTP ที่ถอดไปแล้วข้างบน (TOTP คือ
+authenticator app แบบ Google Authenticator ไม่ใช่ code ส่งทาง email) ผู้ใช้เปิดใช้เองได้
+ผ่าน endpoint enable/disable/regenerate-recovery-codes ไม่ได้บังคับทุกคน — login ปกติ
+ด้วย Email+Password ยังคงออก token ทันทีเหมือนเดิมถ้าไม่ได้เปิด TOTP ไว้]
+
 ==================================================
 16. MY ACADEMIC RECORD
 ==================================================
@@ -523,7 +529,18 @@ Phase 3 — เสร็จสมบูรณ์: Authentication เต็มร
 - Google OAuth: 2-step flow (pending-registration token สำหรับ user ใหม่ที่ยังไม่มีข้อมูลนิสิต),
   anti-account-takeover (ถ้า email ซ้ำแต่ไม่มี UserAuthMethod GOOGLE ผูกไว้ → reject ไม่ auto-link)
 
-ช่องว่างที่ยังไม่ทำ: ScopeGuard ตัวจริงตาม CONVENTIONS.md §3 ยังไม่มี — ปัจจุบันบังคับแค่ role
-level (เช่น SUPER_ADMIN) ยังไม่มี Department/Program-level scope enforcement จริงในทุก endpoint
+ช่องว่างที่ยังไม่ทำ (ตอนเขียน log นี้ครั้งแรก): ScopeGuard ตัวจริงตาม CONVENTIONS.md §3
+ยังไม่มี — ปัจจุบันบังคับแค่ role level (เช่น SUPER_ADMIN) ยังไม่มี Department/Program-level
+scope enforcement จริงในทุก endpoint
 
-ถัดไป: Phase 4 — Curriculum Content (Course, Category, Requirement, Prerequisite)
+[อัปเดต 2026-09-17: log นี้หยุดบันทึกละเอียดที่ Phase 3-4 ("ถัดไป: Phase 4" ด้านล่าง)
+แต่งานจริงไปไกลกว่านี้มากแล้ว — repo มี 97 commits รวมถึง ScopeGuard จริงทุก endpoint,
+Phase 4-9 (Curriculum Content, Credit Checker, Learning Path, CLO/PLO Achievement,
+Curriculum Analytics), Module 10-12 (Dashboards ครบ 4 role, Organization Management UI,
+User/Scope Management UI), STAFF role, TOTP 2FA, Docker deploy ฯลฯ — ดู `git log
+--oneline` สำหรับรายการคอมมิตจริงทั้งหมด และ `TODO.md` สำหรับ known limitations/decisions
+ที่ยังค้างอยู่ ไม่ได้กลับมาบันทึกละเอียดทุก Phase ในไฟล์นี้ต่อเพราะ TODO.md
+ทำหน้าที่นั้นแทนไปแล้วในทางปฏิบัติ]
+
+ถัดไป (ตามที่ log นี้บันทึกไว้ครั้งแรก): Phase 4 — Curriculum Content (Course, Category,
+Requirement, Prerequisite)
