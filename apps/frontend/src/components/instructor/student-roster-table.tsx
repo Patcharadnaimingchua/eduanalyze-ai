@@ -2,13 +2,33 @@
 
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
+import { Download } from 'lucide-react';
 import type { Grade, StudentRosterEntry } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
+import { downloadCsv, toCsv } from '@/lib/csv';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+function exportRosterCsv(
+  courseCode: string,
+  roster: StudentRosterEntry[],
+  atRiskStudentIds: Set<string>,
+) {
+  const csv = toCsv(
+    ['รหัสนักศึกษา', 'ชื่อ-นามสกุล', 'เกรด', 'สถานะเสี่ยง'],
+    roster.map((student) => [
+      student.studentCode,
+      student.fullName,
+      GRADE_LABELS[student.grade],
+      atRiskStudentIds.has(student.studentProfileId) ? 'เสี่ยง' : '',
+    ]),
+  );
+  const today = new Date().toISOString().slice(0, 10);
+  downloadCsv(`gradebook-${courseCode}-${today}.csv`, csv);
+}
 
 function describeWriteError(error: unknown) {
   if (isAxiosError(error)) {
@@ -21,14 +41,18 @@ function describeWriteError(error: unknown) {
 // Read-only when onChanged is omitted. Rows are each student's latest
 // attempt only, so removing one can surface an earlier attempt in its place.
 export function StudentRosterTable({
+  courseCode,
   roster,
   isLoading,
   isError,
+  atRiskStudentIds,
   onChanged,
 }: {
+  courseCode: string;
   roster: StudentRosterEntry[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  atRiskStudentIds: Set<string>;
   onChanged?: () => void;
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -62,12 +86,25 @@ export function StudentRosterTable({
 
   return (
     <div className="space-y-3">
-      {editable && (
-        <p className="text-xs text-muted-foreground">
-          นักศึกษาเป็นผู้บันทึกผลการเรียนเอง — ใช้หน้านี้เพื่อแก้ไขกรณีเกรดผิดเท่านั้น
-          แสดงเฉพาะผลการเรียนครั้งล่าสุดของแต่ละคน
-        </p>
-      )}
+      <div className="flex items-start justify-between gap-3">
+        {editable ? (
+          <p className="text-xs text-muted-foreground">
+            นักศึกษาเป็นผู้บันทึกผลการเรียนเอง — ใช้หน้านี้เพื่อแก้ไขกรณีเกรดผิดเท่านั้น
+            แสดงเฉพาะผลการเรียนครั้งล่าสุดของแต่ละคน
+          </p>
+        ) : (
+          <div />
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => exportRosterCsv(courseCode, roster, atRiskStudentIds)}
+        >
+          <Download className="mr-1.5 h-3.5 w-3.5" />
+          ส่งออก CSV
+        </Button>
+      </div>
       {writeError && <p className="text-sm text-destructive">{writeError}</p>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
