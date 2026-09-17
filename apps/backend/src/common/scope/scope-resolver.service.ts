@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ScopeLevel } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ScopeTargetEntity } from '../decorators/scope-target.decorator';
@@ -45,6 +45,19 @@ export class ScopeResolverService {
     entity: ScopeTargetEntity,
     id: string,
   ): Promise<ScopeAncestry> {
+    // ScopeGuard passes body[key] straight through when the DTO is
+    // malformed (guards run before ValidationPipe in the Nest pipeline —
+    // it hasn't rejected a missing/wrong-typed field yet at this point).
+    // Without this check, `id: undefined` reaches a Prisma findUnique
+    // below and Prisma throws PrismaClientValidationError, which
+    // AllExceptionsFilter only has a generic 500 for — the caller should
+    // get a 400 telling them the field is missing, not an opaque 500.
+    if (!id || typeof id !== 'string') {
+      throw new BadRequestException(
+        `Missing or invalid ${entity} id for scope resolution`,
+      );
+    }
+
     if (entity === 'faculty') {
       return { facultyId: id, departmentId: null, programId: null };
     }
