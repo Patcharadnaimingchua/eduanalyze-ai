@@ -9,6 +9,7 @@ import type {
   CurriculumRequirement,
   InstructorListItem,
   Prerequisite,
+  StaffOverviewReport,
   StudentCourseRecord,
   StudentProfileSummary,
   UpdateCourseCategoryRequest,
@@ -131,4 +132,9 @@ export async function createCourseInstructor(dto: CreateCourseInstructorRequest)
 
 export async function deleteCourseInstructor(id: string) {
   await apiClient.delete(`/course-instructors/${id}`);
+}
+
+export async function fetchStaffOverview() {
+  const { data } = await apiClient.get<StaffOverviewReport>('/dashboard/staff');
+  return data;
 }

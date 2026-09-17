@@ -63,3 +63,28 @@ export interface CurriculumDashboardReport extends CurriculumPloAchievementRepor
   // Module 7 hasn't started — same null-not-omitted reasoning as above.
   aiCurriculumSummary: null;
 }
+
+export interface StaffOverviewCurriculum {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  studentCount: number;
+  // null when no student in this curriculum has a graded course yet —
+  // same convention as GpaSummary.gpa (not 0, which would misread as F).
+  averageGpa: number | null;
+  totalCourses: number;
+  coursesWithoutClo: number;
+}
+
+export interface StaffOverviewProgram {
+  programId: string;
+  programName: string;
+  programCode: string;
+  departmentName: string;
+  facultyName: string;
+  curricula: StaffOverviewCurriculum[];
+}
+
+export interface StaffOverviewReport {
+  programs: StaffOverviewProgram[];
+}

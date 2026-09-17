@@ -179,6 +179,33 @@ export interface CreateCurriculumRequest {
 }
 export type UpdateCurriculumRequest = Partial<CreateCurriculumRequest>;
 
+// ---- GET /dashboard/staff — STAFF's program/curriculum overview,
+// scoped to their assigned org scope.
+
+export interface StaffOverviewCurriculum {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  studentCount: number;
+  // null when no student in this curriculum has a graded course yet.
+  averageGpa: number | null;
+  totalCourses: number;
+  coursesWithoutClo: number;
+}
+
+export interface StaffOverviewProgram {
+  programId: string;
+  programName: string;
+  programCode: string;
+  departmentName: string;
+  facultyName: string;
+  curricula: StaffOverviewCurriculum[];
+}
+
+export interface StaffOverviewReport {
+  programs: StaffOverviewProgram[];
+}
+
 // ---- GET /student-profiles/me — the logged-in STUDENT's own profile.
 // Dashboard needs studentProfileId, which /auth/me does not expose
 // (CurrentUserResponse is identity-only, not academic-record data) — this

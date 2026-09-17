@@ -49,6 +49,19 @@ export class DashboardController {
     return this.dashboardService.getInstructorDashboard(user);
   }
 
+  @Get('staff')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Staff Dashboard — program/curriculum overview within scope: student count, average GPA, courses missing CLOs',
+  })
+  @ApiResponse({ status: 200, description: 'Staff overview report' })
+  getStaffOverview(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getStaffOverview(user);
+  }
+
   @Get('curriculum/:curriculumId')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')

@@ -1,12 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchStudentProfiles } from '@/lib/api/staff';
+import { fetchStaffOverview, fetchStudentProfiles } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StaffDashboardSummary } from '@/components/staff/staff-dashboard-summary';
+import { ProgramOverviewList } from '@/components/staff/program-overview-list';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function StaffDashboardPage() {
@@ -22,6 +23,7 @@ export default function StaffDashboardPage() {
 function StaffDashboardContent() {
   const { user } = useAuth();
   const studentsQuery = useQuery({ queryKey: ['staff-students'], queryFn: fetchStudentProfiles });
+  const overviewQuery = useQuery({ queryKey: ['staff-overview'], queryFn: fetchStaffOverview });
 
   if (!user) {
     return (
@@ -45,6 +47,20 @@ function StaffDashboardContent() {
         </Alert>
       )}
       {studentsQuery.data && <StaffDashboardSummary students={studentsQuery.data} />}
+
+      <div>
+        <h2 className="text-lg font-semibold text-primary">ภาพรวมสาขา/หลักสูตรในความดูแล</h2>
+        <p className="text-sm text-muted-foreground">
+          จำนวนนักศึกษา, GPA เฉลี่ย, และวิชาที่ยังไม่มี CLO ต่อหลักสูตร
+        </p>
+      </div>
+      {overviewQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {overviewQuery.isError && (
+        <Alert variant="destructive">
+          <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
+        </Alert>
+      )}
+      {overviewQuery.data && <ProgramOverviewList programs={overviewQuery.data.programs} />}
     </DashboardShell>
   );
 }
