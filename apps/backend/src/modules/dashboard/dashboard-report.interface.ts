@@ -38,11 +38,22 @@ export interface StudentDashboardReport {
   aiSummary: null;
 }
 
+export interface AtRiskStudent {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  grade: Grade;
+  academicYear: number;
+  semesterTerm: string;
+}
+
 export interface InstructorCourseSummary {
   courseId: string;
   code: string;
   name: string;
   studentCount: number;
+  // Latest attempt graded C or below (AT_RISK_GRADES), worst first.
+  atRiskStudents: AtRiskStudent[];
   // "% B ขึ้นไป" per §30 — pass-through of Phase 8's course-level %.
   achievementPercent: number;
   // Full A-F (+W/I/S/U) tally per §30's "Grade Distribution" — raw counts,

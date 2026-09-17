@@ -131,7 +131,7 @@ export class DashboardService {
   ): Promise<InstructorDashboardReport> {
     const courses = await this.courseService.findMyCourses(user.userId);
 
-    const courseSummaries: InstructorCourseSummary[] = await Promise.all(
+    const summaries = await Promise.all(
       courses.map(async (course) => {
         const cloReport = await this.cloAchievementService.calculateForCourse(
           course.id,
@@ -150,17 +150,59 @@ export class DashboardService {
             latestAttempts,
           );
 
+        const atRiskAttempts =
+          this.studentCourseRecordService.selectAtRiskAttempts(latestAttempts);
+
         return {
-          courseId: course.id,
-          code: course.code,
-          name: course.name,
-          studentCount: cloReport.totalStudents,
-          achievementPercent: cloReport.achievementPercent,
-          gradeDistribution,
-          clos: cloReport.clos,
-          plos: ploReport.plos,
-          courseAssessment,
+          atRiskAttempts,
+          summary: {
+            courseId: course.id,
+            code: course.code,
+            name: course.name,
+            studentCount: cloReport.totalStudents,
+            achievementPercent: cloReport.achievementPercent,
+            gradeDistribution,
+            clos: cloReport.clos,
+            plos: ploReport.plos,
+            courseAssessment,
+          },
         };
+      }),
+    );
+
+    // One name lookup across every course, not one per course.
+    const atRiskProfileIds = new Set(
+      summaries.flatMap(({ atRiskAttempts }) =>
+        atRiskAttempts.map((attempt) => attempt.studentProfileId),
+      ),
+    );
+    const profiles =
+      atRiskProfileIds.size > 0
+        ? await this.prisma.studentProfile.findMany({
+            where: { id: { in: [...atRiskProfileIds] } },
+            select: {
+              id: true,
+              studentCode: true,
+              user: { select: { fullName: true } },
+            },
+          })
+        : [];
+    const profileById = new Map(profiles.map((p) => [p.id, p]));
+
+    const courseSummaries: InstructorCourseSummary[] = summaries.map(
+      ({ atRiskAttempts, summary }) => ({
+        ...summary,
+        atRiskStudents: atRiskAttempts.map((attempt) => {
+          const profile = profileById.get(attempt.studentProfileId)!;
+          return {
+            studentProfileId: attempt.studentProfileId,
+            studentCode: profile.studentCode,
+            fullName: profile.user.fullName,
+            grade: attempt.grade,
+            academicYear: attempt.semester.academicYear.year,
+            semesterTerm: attempt.semester.term,
+          };
+        }),
       }),
     );
 

@@ -28,7 +28,12 @@ export function InstructorCourseCard({
               {Math.round(course.achievementPercent)}%
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{course.studentCount} นักศึกษา</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">{course.studentCount} นักศึกษา</p>
+            {course.atRiskStudents.length > 0 && (
+              <Badge tone="red">เสี่ยง {course.atRiskStudents.length}</Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
     </button>

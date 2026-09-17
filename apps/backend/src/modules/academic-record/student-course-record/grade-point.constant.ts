@@ -47,6 +47,17 @@ export const ACHIEVED_GRADES: ReadonlySet<Grade> = new Set<Grade>([
   'B',
 ]);
 
+// Instructor dashboard's at-risk alert — C and below (C+ deliberately
+// excluded, confirmed product decision). Not ACHIEVED_GRADES' complement:
+// C+ misses the B bar but isn't flagged as at-risk.
+export const AT_RISK_GRADES: ReadonlySet<Grade> = new Set<Grade>([
+  'C',
+  'D_PLUS',
+  'D',
+  'F',
+  'U',
+]);
+
 export const GRADE_STATUS: Record<Grade, 'PASS' | 'FAIL' | 'EXCLUDED'> = {
   A: 'PASS',
   B_PLUS: 'PASS',

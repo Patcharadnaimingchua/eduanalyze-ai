@@ -681,11 +681,21 @@ export interface CoursePloEntry {
   cloBreakdown: { cloId: string; code: string; weight: number }[];
 }
 
+export interface AtRiskStudent {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  grade: Grade;
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+}
+
 export interface InstructorCourseSummary {
   courseId: string;
   code: string;
   name: string;
   studentCount: number; // excludes W/I
+  atRiskStudents: AtRiskStudent[]; // latest attempt C or below, worst first
   achievementPercent: number; // % graded B or above
   gradeDistribution: Record<Grade, number>; // full raw tally incl. W/I/S/U
   clos: CloAchievementEntry[];

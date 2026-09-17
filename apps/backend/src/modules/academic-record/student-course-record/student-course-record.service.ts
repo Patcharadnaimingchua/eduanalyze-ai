@@ -13,7 +13,11 @@ import { ScopeResolverService } from '../../../common/scope/scope-resolver.servi
 import { SemesterService } from '../semester/semester.service';
 import { CreateStudentCourseRecordDto } from './dto/create-student-course-record.dto';
 import { UpdateStudentCourseRecordDto } from './dto/update-student-course-record.dto';
-import { GRADE_POINTS, SEMESTER_TERM_RANK } from './grade-point.constant';
+import {
+  AT_RISK_GRADES,
+  GRADE_POINTS,
+  SEMESTER_TERM_RANK,
+} from './grade-point.constant';
 
 // Colocated with the service that produces it — no separate types file
 // exists yet in this module.
@@ -293,6 +297,17 @@ export class StudentCourseRecordService {
       distribution[record.grade] += 1;
     }
     return distribution;
+  }
+
+  // Pure — worst grade first; U has no grade point, ranked with F.
+  selectAtRiskAttempts(
+    latestAttempts: Map<string, LatestCourseAttempt>,
+  ): LatestCourseAttempt[] {
+    return [...latestAttempts.values()]
+      .filter((attempt) => AT_RISK_GRADES.has(attempt.grade))
+      .sort(
+        (a, b) => (GRADE_POINTS[a.grade] ?? 0) - (GRADE_POINTS[b.grade] ?? 0),
+      );
   }
 
   // Retake policy (confirmed in Phase 6): the latest attempt replaces

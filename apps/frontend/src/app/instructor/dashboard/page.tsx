@@ -10,6 +10,7 @@ import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
+import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
 import {
   InstructorDetailPanel,
   type InstructorTab,
@@ -73,6 +74,13 @@ function InstructorDashboardContent() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  function openGradebook(courseId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('courseId', courseId);
+    params.set('tab', 'roster');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   function selectTab(tab: InstructorTab) {
     if (!selectedCourseId) return;
     const params = new URLSearchParams(searchParams.toString());
@@ -119,6 +127,7 @@ function InstructorDashboardContent() {
 
         {dashboardQuery.data && courses.length > 0 && (
           <>
+            <AtRiskStudentsCard courses={courses} onOpenGradebook={openGradebook} />
             <InstructorCourseGrid
               courses={courses}
               selectedCourseId={selectedCourseId}
