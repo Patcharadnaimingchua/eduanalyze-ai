@@ -146,6 +146,39 @@ export interface CurriculumListItem {
   programId: string;
 }
 
+// ---- Organization management (SUPER_ADMIN) ----
+
+export interface CreateFacultyRequest {
+  name: string;
+  code: string;
+}
+export type UpdateFacultyRequest = Partial<CreateFacultyRequest>;
+
+export interface CreateDepartmentRequest {
+  name: string;
+  code: string;
+  facultyId: string;
+}
+export type UpdateDepartmentRequest = Partial<CreateDepartmentRequest>;
+
+export interface CreateProgramRequest {
+  name: string;
+  code: string;
+  departmentId: string;
+}
+export type UpdateProgramRequest = Partial<CreateProgramRequest>;
+
+export interface CreateCurriculumRequest {
+  programId: string;
+  version: string;
+  effectiveYear: number;
+  totalCredits: number;
+  isOpenForRegistration?: boolean;
+  defaultAchievementThreshold?: number;
+  maxCreditsPerSemester?: number;
+}
+export type UpdateCurriculumRequest = Partial<CreateCurriculumRequest>;
+
 // ---- GET /student-profiles/me — the logged-in STUDENT's own profile.
 // Dashboard needs studentProfileId, which /auth/me does not expose
 // (CurrentUserResponse is identity-only, not academic-record data) — this

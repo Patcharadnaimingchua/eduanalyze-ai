@@ -77,10 +77,24 @@ export class CurriculumService {
     return this.prisma.curriculum.update({ where: { id }, data: dto });
   }
 
-  // Curriculum is the leaf of the organization hierarchy — no child
-  // entities depend on it, so soft-delete never needs a blocking check.
+  // Leaf of the org hierarchy, but student profiles and curriculum content
+  // still reference it — block deactivation while any of those are active.
   async remove(id: string) {
     await this.findOne(id);
+
+    const where = { curriculumId: id, isActive: true };
+    const [students, courses, plos, categories] = await Promise.all([
+      this.prisma.studentProfile.count({ where }),
+      this.prisma.course.count({ where }),
+      this.prisma.plo.count({ where }),
+      this.prisma.courseCategory.count({ where }),
+    ]);
+    if (students + courses + plos + categories > 0) {
+      throw new ConflictException(
+        `Cannot deactivate curriculum ${id}: ${students} active student profile(s), ${courses} course(s), ${plos} PLO(s), ${categories} course categor(ies) still belong to it`,
+      );
+    }
+
     return this.prisma.curriculum.update({
       where: { id },
       data: { isActive: false },

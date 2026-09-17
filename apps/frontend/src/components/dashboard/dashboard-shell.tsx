@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
+  Building2,
   CalendarClock,
   CalendarRange,
   GraduationCap,
@@ -44,8 +45,9 @@ const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
 // ADMIN's nav — the two used to be lumped into one array, which would have
 // shown ADMIN a link into a page RequireRole immediately blocks them from.
 const SUPER_ADMIN_NAV_ITEMS: NavItem[] = [
-  { label: 'ปีการศึกษา', icon: CalendarClock, href: '/admin/academic-years' },
   { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
+  { label: 'โครงสร้างองค์กร', icon: Building2, href: '/admin/organization' },
+  { label: 'ปีการศึกษา', icon: CalendarClock, href: '/admin/academic-years' },
 ];
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
