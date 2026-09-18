@@ -13,6 +13,7 @@ import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
 import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
 import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
+import { CourseInsightCard } from '@/components/instructor/course-insight-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function InstructorDashboardPage() {
@@ -99,6 +100,7 @@ function InstructorDashboardContent() {
                 value={achievement === null ? '—' : `${Math.round(achievement)}%`}
               />
             </div>
+            <CourseInsightCard courses={courses} />
             <AtRiskStudentsCard courses={courses} />
             {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
             <InstructorCourseGrid courses={courses} />
