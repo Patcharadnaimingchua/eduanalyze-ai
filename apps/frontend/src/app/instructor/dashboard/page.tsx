@@ -12,6 +12,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
 import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
+import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function InstructorDashboardPage() {
@@ -99,6 +100,7 @@ function InstructorDashboardContent() {
               />
             </div>
             <AtRiskStudentsCard courses={courses} />
+            {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
             <InstructorCourseGrid courses={courses} />
           </>
         )}
