@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
-import { achievementBadgeTone } from '@/lib/achievement-color';
+import { achievementStatus } from '@/lib/achievement-status';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
 export function InstructorCourseCard({ course }: { course: InstructorCourseSummary }) {
+  const status = achievementStatus(course.achievementPercent, course.achievementThreshold);
+
   return (
     <Link href={`/instructor/courses/${course.courseId}`} className="block w-full text-left">
       <Card className="transition hover:ring-2 hover:ring-brand">
@@ -16,9 +18,7 @@ export function InstructorCourseCard({ course }: { course: InstructorCourseSumma
               <p className="text-sm font-medium text-muted-foreground">{course.code}</p>
               <p className="truncate font-medium text-primary">{course.name}</p>
             </div>
-            <Badge tone={achievementBadgeTone(course.achievementPercent)}>
-              {Math.round(course.achievementPercent)}%
-            </Badge>
+            <Badge tone={status.tone}>{status.label}</Badge>
           </div>
           <div className="flex items-center gap-2">
             <p className="text-sm text-muted-foreground">{course.studentCount} นักศึกษา</p>

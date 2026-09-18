@@ -57,6 +57,9 @@ export interface InstructorCourseSummary {
   atRiskStudents: AtRiskStudent[];
   // "% B ขึ้นไป" per §30 — pass-through of Phase 8's course-level %.
   achievementPercent: number;
+  // The bar achievementPercent is judged against, so the UI never has to
+  // invent its own fixed bands.
+  achievementThreshold: number;
   // Full A-F (+W/I/S/U) tally per §30's "Grade Distribution" — raw counts,
   // not pre-filtered like achievementPercent above.
   gradeDistribution: Record<Grade, number>;

@@ -6,7 +6,7 @@ import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { achievementBadgeTone } from '@/lib/achievement-color';
+import { achievementStatus } from '@/lib/achievement-status';
 
 interface CourseAssessmentSummary {
   courseId: string;
@@ -16,6 +16,7 @@ interface CourseAssessmentSummary {
 
 export function CloAchievementSection({
   achievementPercent,
+  achievementThreshold,
   clos,
   plos,
   courseAssessment,
@@ -24,6 +25,7 @@ export function CloAchievementSection({
   isError,
 }: {
   achievementPercent: number;
+  achievementThreshold: number;
   clos: CloAchievementEntry[];
   plos: CoursePloEntry[];
   courseAssessment: CourseAssessmentSummary;
@@ -31,6 +33,8 @@ export function CloAchievementSection({
   isLoading: boolean;
   isError: boolean;
 }) {
+  const courseStatus = achievementStatus(achievementPercent, achievementThreshold);
+
   const scoredAssessmentClos = useMemo(
     () => courseAssessment.clos.filter((c) => c.averageScore !== null && c.scoreCount > 0),
     [courseAssessment.clos],
@@ -55,9 +59,10 @@ export function CloAchievementSection({
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
-          <Badge tone={achievementBadgeTone(achievementPercent)}>
+          <Badge tone={courseStatus.tone}>{courseStatus.label}</Badge>
+          <span className="shrink-0 text-sm font-medium text-primary">
             {formatFiveScale(achievementPercent)}
-          </Badge>
+          </span>
         </div>
         {isLoading && <p className="text-xs text-muted-foreground">กำลังโหลดจำนวนนักศึกษา...</p>}
         {isError && (
@@ -71,23 +76,26 @@ export function CloAchievementSection({
       </div>
 
       <div className="space-y-2">
-        {clos.map((clo) => (
-          <div
-            key={clo.cloId}
-            className="flex items-start justify-between gap-3 rounded-md bg-slate-50 px-3 py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
-              <p className="text-sm text-primary">{clo.description}</p>
-              <p className="text-xs text-muted-foreground">
-                เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
-              </p>
+        {clos.map((clo) => {
+          // Same course-level achievementPercent for every CLO (backend
+          // limitation), but each CLO may set its own threshold.
+          const cloStatus = achievementStatus(achievementPercent, clo.threshold);
+          return (
+            <div
+              key={clo.cloId}
+              className="flex items-start justify-between gap-3 rounded-md bg-slate-50 px-3 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
+                <p className="text-sm text-primary">{clo.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
+                </p>
+              </div>
+              <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
             </div>
-            <Badge tone={clo.isAchieved ? 'green' : 'amber'}>
-              {clo.isAchieved ? 'Achieved' : 'Not Achieved'}
-            </Badge>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {plos.length > 0 && (

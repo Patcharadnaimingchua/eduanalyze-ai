@@ -166,6 +166,7 @@ export class DashboardService {
             name: course.name,
             studentCount: cloReport.totalStudents,
             achievementPercent: cloReport.achievementPercent,
+            achievementThreshold: cloReport.achievementThreshold,
             gradeDistribution,
             clos: cloReport.clos,
             plos: ploReport.plos,

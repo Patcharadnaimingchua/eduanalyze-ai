@@ -63,6 +63,7 @@ export class CloAchievementService {
       totalStudents,
       achievedStudents,
       achievementPercent,
+      achievementThreshold: curriculum.defaultAchievementThreshold,
       clos: clos.map((clo) => {
         const threshold =
           clo.achievementThreshold ?? curriculum.defaultAchievementThreshold;

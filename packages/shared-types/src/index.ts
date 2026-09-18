@@ -722,6 +722,7 @@ export interface InstructorCourseSummary {
   studentCount: number; // excludes W/I
   atRiskStudents: AtRiskStudent[]; // latest attempt C or below, worst first
   achievementPercent: number; // % graded B or above
+  achievementThreshold: number; // the bar achievementPercent is judged against
   gradeDistribution: Record<Grade, number>; // full raw tally incl. W/I/S/U
   clos: CloAchievementEntry[];
   plos: CoursePloEntry[];
@@ -746,6 +747,9 @@ export interface CourseCloAchievementReport {
   totalStudents: number;
   achievedStudents: number;
   achievementPercent: number;
+  // Curriculum.defaultAchievementThreshold — present even when clos is
+  // empty, unlike each CloAchievementEntry.threshold.
+  achievementThreshold: number;
   clos: CloAchievementEntry[];
 }
 

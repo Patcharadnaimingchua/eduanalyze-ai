@@ -11,5 +11,10 @@ export interface CourseCloAchievementReport {
   totalStudents: number;
   achievedStudents: number;
   achievementPercent: number;
+  // Curriculum.defaultAchievementThreshold — the course-level bar, kept
+  // separate from each CloAchievementEntry.threshold (which may override
+  // it per CLO). Present even when clos is empty, so a course with no CLOs
+  // defined still has a threshold to compare achievementPercent against.
+  achievementThreshold: number;
   clos: CloAchievementEntry[];
 }

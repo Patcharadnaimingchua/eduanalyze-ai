@@ -96,6 +96,7 @@ export function InstructorDetailPanel({
         {activeTab === 'clo' && (
           <CloAchievementSection
             achievementPercent={course.achievementPercent}
+            achievementThreshold={course.achievementThreshold}
             clos={course.clos}
             plos={course.plos}
             courseAssessment={course.courseAssessment}
