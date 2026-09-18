@@ -67,6 +67,24 @@ export interface SemesterAchievement {
   achievementPercent: number; // % graded B or above
 }
 
+export interface StudentInstructorTimelineEntry {
+  courseId: string;
+  code: string;
+  name: string;
+  grade: Grade;
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+}
+
+export interface StudentInstructorTimeline {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  // Only courses the requesting instructor teaches — never the student's
+  // full transcript. See getStudentTimelineWithInstructor.
+  entries: StudentInstructorTimelineEntry[];
+}
+
 @Injectable()
 export class StudentCourseRecordService {
   constructor(
@@ -448,6 +466,60 @@ export class StudentCourseRecordService {
         };
       })
       .sort((a, b) => a.studentCode.localeCompare(b.studentCode));
+  }
+
+  // "This student, as seen by me" — never the student's full transcript.
+  // instructorUserId's course list is derived here from CourseInstructor,
+  // never taken from the caller (the controller's :courseId param only
+  // gates *whether* to call this at all, via InstructorOrScopeGuard — it
+  // is never passed in), so no combination of route params can widen the
+  // result past what this instructor actually teaches.
+  async getStudentTimelineWithInstructor(
+    studentProfileId: string,
+    instructorUserId: string,
+  ): Promise<StudentInstructorTimeline> {
+    const profile = await this.studentProfileService.findActiveByIdOrThrow(
+      studentProfileId,
+    );
+
+    const myCourses = await this.courseService.findMyCourses(instructorUserId);
+    const myCourseIds = myCourses.map((c) => c.id);
+
+    const records =
+      myCourseIds.length === 0
+        ? []
+        : await this.prisma.studentCourseRecord.findMany({
+            where: {
+              studentProfileId,
+              isActive: true,
+              courseId: { in: myCourseIds },
+            },
+            include: {
+              course: { select: { id: true, code: true, name: true } },
+              semester: { include: { academicYear: true } },
+            },
+          });
+
+    const entries = records
+      .map((record) => ({
+        courseId: record.course.id,
+        code: record.course.code,
+        name: record.course.name,
+        grade: record.grade,
+        academicYear: record.semester.academicYear.year,
+        semesterTerm: record.semester.term,
+      }))
+      .sort((a, b) => {
+        if (a.academicYear !== b.academicYear) return a.academicYear - b.academicYear;
+        return SEMESTER_TERM_RANK[a.semesterTerm] - SEMESTER_TERM_RANK[b.semesterTerm];
+      });
+
+    return {
+      studentProfileId,
+      studentCode: profile.studentCode,
+      fullName: profile.user.fullName,
+      entries,
+    };
   }
 
   private isLaterAttempt(

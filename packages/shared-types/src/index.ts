@@ -697,6 +697,24 @@ export interface SemesterAchievement {
   achievementPercent: number; // % graded B or above
 }
 
+export interface StudentInstructorTimelineEntry {
+  courseId: string;
+  code: string;
+  name: string;
+  grade: Grade;
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+}
+
+export interface StudentInstructorTimeline {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  // Only courses the requesting instructor teaches — never the student's
+  // full transcript.
+  entries: StudentInstructorTimelineEntry[];
+}
+
 export interface InstructorCourseSummary {
   courseId: string;
   code: string;

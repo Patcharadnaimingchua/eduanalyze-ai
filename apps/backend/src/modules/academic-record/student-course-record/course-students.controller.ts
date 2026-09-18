@@ -5,11 +5,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { InstructorCourseTarget } from '../../../common/decorators/instructor-course-target.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { InstructorOrScopeGuard } from '../../../common/guards/instructor-or-scope.guard';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
+import { RequestUser } from '../../auth/request-user.interface';
 import { StudentCourseRecordService } from './student-course-record.service';
 
 // Separate controller (not CourseController) — StudentCourseRecordModule
@@ -37,5 +39,27 @@ export class CourseStudentsController {
   @ApiResponse({ status: 404, description: 'Course not found or inactive' })
   getStudentsForCourse(@Param('courseId') courseId: string) {
     return this.studentCourseRecordService.getStudentRosterForCourse(courseId);
+  }
+
+  @Get(':courseId/students/:studentProfileId/timeline')
+  @UseGuards(JwtAuthGuard, RolesGuard, InstructorOrScopeGuard)
+  @Roles('INSTRUCTOR')
+  @InstructorCourseTarget({ from: 'param', key: 'courseId' })
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      "A student's grades in every course the requesting instructor teaches — never the student's full transcript. :courseId only gates access (must teach at least this course); the course list used is always this instructor's own, resolved server-side.",
+  })
+  @ApiResponse({ status: 200, description: 'Timeline scoped to the requesting instructor' })
+  @ApiResponse({ status: 403, description: 'Not assigned to :courseId' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  getStudentTimeline(
+    @Param('studentProfileId') studentProfileId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.studentCourseRecordService.getStudentTimelineWithInstructor(
+      studentProfileId,
+      user.userId,
+    );
   }
 }

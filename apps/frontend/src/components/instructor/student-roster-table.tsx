@@ -11,6 +11,7 @@ import { downloadCsv, toCsv } from '@/lib/csv';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StudentTimelineCard } from './student-timeline-card';
 
 function exportRosterCsv(
   courseCode: string,
@@ -41,6 +42,7 @@ function describeWriteError(error: unknown) {
 // Read-only when onChanged is omitted. Rows are each student's latest
 // attempt only, so removing one can surface an earlier attempt in its place.
 export function StudentRosterTable({
+  courseId,
   courseCode,
   roster,
   isLoading,
@@ -48,6 +50,7 @@ export function StudentRosterTable({
   atRiskStudentIds,
   onChanged,
 }: {
+  courseId: string;
   courseCode: string;
   roster: StudentRosterEntry[] | undefined;
   isLoading: boolean;
@@ -58,6 +61,7 @@ export function StudentRosterTable({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const editable = !!onChanged;
 
   async function runWrite(recordId: string, action: () => Promise<unknown>) {
@@ -124,7 +128,15 @@ export function StudentRosterTable({
               return (
                 <tr key={student.studentProfileId} className="border-b border-slate-50">
                   <td className="py-2 pr-4 text-muted-foreground">{student.studentCode}</td>
-                  <td className="py-2 pr-4 text-primary">{student.fullName}</td>
+                  <td className="py-2 pr-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentId(student.studentProfileId)}
+                      className="text-primary hover:underline"
+                    >
+                      {student.fullName}
+                    </button>
+                  </td>
                   <td className="py-2 pr-4">
                     {editable ? (
                       <Select
@@ -193,6 +205,13 @@ export function StudentRosterTable({
           </tbody>
         </table>
       </div>
+      {selectedStudentId && (
+        <StudentTimelineCard
+          courseId={courseId}
+          studentProfileId={selectedStudentId}
+          onClose={() => setSelectedStudentId(null)}
+        />
+      )}
     </div>
   );
 }

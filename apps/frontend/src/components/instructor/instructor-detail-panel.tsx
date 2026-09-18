@@ -107,6 +107,7 @@ export function InstructorDetailPanel({
 
         {activeTab === 'roster' && (
           <StudentRosterTable
+            courseId={course.courseId}
             courseCode={course.code}
             roster={rosterQuery.data}
             isLoading={rosterQuery.isLoading}
