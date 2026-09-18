@@ -690,6 +690,13 @@ export interface AtRiskStudent {
   semesterTerm: SemesterTerm;
 }
 
+export interface SemesterAchievement {
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+  studentCount: number; // excludes W/I
+  achievementPercent: number; // % graded B or above
+}
+
 export interface InstructorCourseSummary {
   courseId: string;
   code: string;
@@ -705,6 +712,8 @@ export interface InstructorCourseSummary {
     submissionCount: number;
     clos: { cloId: string; code: string; averageScore: number | null; scoreCount: number }[];
   };
+  // One point per semester with >=1 non-W/I record, sorted chronologically.
+  semesterTrend: SemesterAchievement[];
 }
 
 export interface InstructorDashboardReport {

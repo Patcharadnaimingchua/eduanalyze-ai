@@ -141,10 +141,12 @@ export class DashboardService {
         );
         const courseAssessment =
           await this.courseAssessmentService.getAggregateForCourse(course.id);
-        const latestAttempts =
-          await this.studentCourseRecordService.getLatestAttemptsPerStudent(
+        const records =
+          await this.studentCourseRecordService.findActiveRecordsForCourse(
             course.id,
           );
+        const latestAttempts =
+          this.studentCourseRecordService.dedupeLatestPerStudent(records);
         const gradeDistribution =
           this.studentCourseRecordService.tallyGradeDistribution(
             latestAttempts,
@@ -152,6 +154,9 @@ export class DashboardService {
 
         const atRiskAttempts =
           this.studentCourseRecordService.selectAtRiskAttempts(latestAttempts);
+
+        const semesterTrend =
+          this.studentCourseRecordService.summarizeBySemester(records);
 
         return {
           atRiskAttempts,
@@ -165,6 +170,7 @@ export class DashboardService {
             clos: cloReport.clos,
             plos: ploReport.plos,
             courseAssessment,
+            semesterTrend,
           },
         };
       }),

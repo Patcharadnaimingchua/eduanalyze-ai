@@ -6,6 +6,7 @@ import { CourseCloAchievementReport } from '../curriculum-content/clo-achievemen
 import { CoursePloAchievementReport } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 import { CurriculumPloAchievementReport } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 import { CourseAssessmentService } from '../curriculum-content/course-assessment/course-assessment.service';
+import { SemesterAchievement } from '../academic-record/student-course-record/student-course-record.service';
 
 export interface RecentCourse {
   courseId: string;
@@ -64,6 +65,8 @@ export interface InstructorCourseSummary {
   courseAssessment: Awaited<
     ReturnType<CourseAssessmentService['getAggregateForCourse']>
   >;
+  // One point per semester with >=1 non-W/I record, sorted chronologically.
+  semesterTrend: SemesterAchievement[];
 }
 
 export interface InstructorDashboardReport {

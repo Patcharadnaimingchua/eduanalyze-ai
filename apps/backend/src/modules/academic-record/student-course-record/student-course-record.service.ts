@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Grade, Prisma, Role } from '@prisma/client';
+import { Grade, Prisma, Role, SemesterTerm } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RequestUser } from '../../auth/request-user.interface';
 import { CourseService } from '../../curriculum-content/course/course.service';
@@ -14,8 +14,10 @@ import { SemesterService } from '../semester/semester.service';
 import { CreateStudentCourseRecordDto } from './dto/create-student-course-record.dto';
 import { UpdateStudentCourseRecordDto } from './dto/update-student-course-record.dto';
 import {
+  ACHIEVED_GRADES,
   AT_RISK_GRADES,
   GRADE_POINTS,
+  GRADE_STATUS,
   SEMESTER_TERM_RANK,
 } from './grade-point.constant';
 
@@ -56,6 +58,13 @@ export interface GpaResult extends GpaSummary {
   // Timeline redesign plan note on why this can't reuse
   // getLatestAttemptsPerCourse.
   bySemester: SemesterGpa[];
+}
+
+export interface SemesterAchievement {
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+  studentCount: number; // excludes W/I, same base as CloAchievementService
+  achievementPercent: number; // % graded B or above
 }
 
 @Injectable()
@@ -343,11 +352,30 @@ export class StudentCourseRecordService {
   async getLatestAttemptsPerStudent(
     courseId: string,
   ): Promise<Map<string, LatestCourseAttempt>> {
-    const records = await this.prisma.studentCourseRecord.findMany({
+    const records = await this.findActiveRecordsForCourse(courseId);
+    return this.dedupeLatestPerStudent(records);
+  }
+
+  // Raw (non-deduped) active records for a course — shared by
+  // dedupeLatestPerStudent and summarizeBySemester below, so
+  // getInstructorDashboard's per-course achievement trend costs no extra
+  // query beyond what it already fetches for grade distribution.
+  async findActiveRecordsForCourse(
+    courseId: string,
+  ): Promise<LatestCourseAttempt[]> {
+    return this.prisma.studentCourseRecord.findMany({
       where: { courseId, isActive: true },
       include: { semester: { include: { academicYear: true } } },
     });
+  }
 
+  // Pure — extracted out of getLatestAttemptsPerStudent so
+  // getInstructorDashboard can fetch findActiveRecordsForCourse once and
+  // derive both the deduped map (grade distribution, at-risk) and
+  // summarizeBySemester's raw grouping from the same records.
+  dedupeLatestPerStudent(
+    records: LatestCourseAttempt[],
+  ): Map<string, LatestCourseAttempt> {
     const latestByStudent = new Map<string, LatestCourseAttempt>();
     for (const record of records) {
       const existing = latestByStudent.get(record.studentProfileId);
@@ -356,6 +384,39 @@ export class StudentCourseRecordService {
       }
     }
     return latestByStudent;
+  }
+
+  // Pure — per-semester achievement %, same B-or-above bar and W/I
+  // exclusion as CloAchievementService.calculateForCourse, but grouped by
+  // semester instead of collapsed to one course-wide number. Groups RAW
+  // records (not retake-deduped) for the same reason calculateGpaBySemester
+  // does: a course retaken in a later semester must still count in the
+  // semester it was originally attempted. A semester left with 0 students
+  // after excluding W/I is dropped entirely, not emitted as a fake 0%.
+  summarizeBySemester(records: LatestCourseAttempt[]): SemesterAchievement[] {
+    const bySemesterId = new Map<string, LatestCourseAttempt[]>();
+    for (const record of records) {
+      if (GRADE_STATUS[record.grade] === 'EXCLUDED') continue;
+      const group = bySemesterId.get(record.semesterId) ?? [];
+      group.push(record);
+      bySemesterId.set(record.semesterId, group);
+    }
+
+    return Array.from(bySemesterId.values())
+      .filter((group) => group.length > 0)
+      .map((group) => {
+        const achieved = group.filter((r) => ACHIEVED_GRADES.has(r.grade)).length;
+        return {
+          academicYear: group[0].semester.academicYear.year,
+          semesterTerm: group[0].semester.term,
+          studentCount: group.length,
+          achievementPercent: (achieved / group.length) * 100,
+        };
+      })
+      .sort((a, b) => {
+        if (a.academicYear !== b.academicYear) return a.academicYear - b.academicYear;
+        return SEMESTER_TERM_RANK[a.semesterTerm] - SEMESTER_TERM_RANK[b.semesterTerm];
+      });
   }
 
   // §9: INSTRUCTOR can view "Student ที่เกี่ยวข้องกับ Course ที่ตัวเองรับผิดชอบ".

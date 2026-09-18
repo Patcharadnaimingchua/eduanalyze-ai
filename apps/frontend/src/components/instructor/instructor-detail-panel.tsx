@@ -10,11 +10,13 @@ import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
+import { SemesterTrendChart } from './semester-trend-chart';
 
-export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence' | 'course';
+export type InstructorTab = 'grades' | 'trend' | 'clo' | 'roster' | 'evidence' | 'course';
 
 const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'grades', label: 'Grade Distribution' },
+  { key: 'trend', label: 'แนวโน้มรายเทอม' },
   { key: 'clo', label: 'CLO Achievement' },
   { key: 'roster', label: 'Gradebook' },
   { key: 'evidence', label: 'Assessment Evidence' },
@@ -88,6 +90,8 @@ export function InstructorDetailPanel({
         {activeTab === 'grades' && (
           <GradeDistributionChart distribution={course.gradeDistribution} />
         )}
+
+        {activeTab === 'trend' && <SemesterTrendChart trend={course.semesterTrend} />}
 
         {activeTab === 'clo' && (
           <CloAchievementSection
