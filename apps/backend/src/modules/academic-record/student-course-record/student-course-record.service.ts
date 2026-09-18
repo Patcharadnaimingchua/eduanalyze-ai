@@ -18,7 +18,9 @@ import {
   AT_RISK_GRADES,
   GRADE_POINTS,
   GRADE_STATUS,
+  RiskLevel,
   SEMESTER_TERM_RANK,
+  riskLevel,
 } from './grade-point.constant';
 
 // Colocated with the service that produces it — no separate types file
@@ -38,6 +40,9 @@ export interface StudentRosterEntry {
   studentCode: string;
   fullName: string;
   grade: Grade;
+  // Severity band of `grade`, so the gradebook can filter by it without
+  // reimplementing the AT_RISK_GRADES split client-side.
+  riskLevel: RiskLevel;
 }
 
 export interface GpaSummary {
@@ -463,6 +468,7 @@ export class StudentCourseRecordService {
           studentCode: profile.studentCode,
           fullName: profile.user.fullName,
           grade: attempt.grade,
+          riskLevel: riskLevel(attempt.grade),
         };
       })
       .sort((a, b) => a.studentCode.localeCompare(b.studentCode));

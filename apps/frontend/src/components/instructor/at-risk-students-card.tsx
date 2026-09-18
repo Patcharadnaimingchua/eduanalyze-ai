@@ -5,24 +5,37 @@ import { AlertTriangle } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, formatSemesterLabel } from '@/lib/grade-label';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSummary[] }) {
   const coursesWithRisk = courses.filter((c) => c.atRiskStudents.length > 0);
-  const total = coursesWithRisk.reduce((sum, c) => sum + c.atRiskStudents.length, 0);
+  const atRisk = coursesWithRisk.flatMap((c) => c.atRiskStudents);
+  const criticalCount = atRisk.filter((s) => s.riskLevel === 'CRITICAL').length;
+  const watchCount = atRisk.filter((s) => s.riskLevel === 'WATCH').length;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           นักศึกษากลุ่มเสี่ยง
-          {total > 0 && <Badge tone="red">{total}</Badge>}
+          {criticalCount > 0 && (
+            <Badge tone="red">
+              {RISK_LEVEL_LABELS.CRITICAL} {criticalCount}
+            </Badge>
+          )}
+          {watchCount > 0 && (
+            <Badge tone="amber">
+              {RISK_LEVEL_LABELS.WATCH} {watchCount}
+            </Badge>
+          )}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          ผลการเรียนครั้งล่าสุดได้เกรด C ลงมา (C, D+, D, F, U) — ประเมินจากเกรดรายวิชา
-          ไม่ใช่ผลประเมิน CLO รายบุคคล
+          ผลการเรียนครั้งล่าสุดได้เกรด C ลงมา — แบ่งเป็น{' '}
+          {RISK_LEVEL_LABELS.CRITICAL} (D+, D, F, U) และ {RISK_LEVEL_LABELS.WATCH} (C)
+          ประเมินจากเกรดรายวิชา ไม่ใช่ผลประเมิน CLO รายบุคคล
         </p>
       </CardHeader>
       <CardContent>
@@ -52,6 +65,9 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
                         <span className="text-xs text-muted-foreground">
                           {formatSemesterLabel(student.semesterTerm, student.academicYear)}
                         </span>
+                        <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
+                          {RISK_LEVEL_LABELS[student.riskLevel]}
+                        </Badge>
                         <Badge tone={gradeBadgeTone(student.grade)}>
                           {GRADE_LABELS[student.grade]}
                         </Badge>

@@ -58,6 +58,28 @@ export const AT_RISK_GRADES: ReadonlySet<Grade> = new Set<Grade>([
   'U',
 ]);
 
+export type RiskLevel = 'CRITICAL' | 'WATCH' | 'NORMAL';
+
+// The severe end of AT_RISK_GRADES: a failing grade (F/U) or one that
+// earns credit but sits at the bottom of the passing range (D/D+).
+export const CRITICAL_GRADES: ReadonlySet<Grade> = new Set<Grade>([
+  'D_PLUS',
+  'D',
+  'F',
+  'U',
+]);
+
+// Splits the existing at-risk population into severity bands WITHOUT
+// resizing it: WATCH is whatever AT_RISK_GRADES holds that isn't
+// CRITICAL, so CRITICAL ∪ WATCH === AT_RISK_GRADES by construction and
+// the two can never drift apart as grades are added or moved. C+ stays
+// NORMAL here for the same reason it stays out of AT_RISK_GRADES above.
+export function riskLevel(grade: Grade): RiskLevel {
+  if (CRITICAL_GRADES.has(grade)) return 'CRITICAL';
+  if (AT_RISK_GRADES.has(grade)) return 'WATCH';
+  return 'NORMAL';
+}
+
 export const GRADE_STATUS: Record<Grade, 'PASS' | 'FAIL' | 'EXCLUDED'> = {
   A: 'PASS',
   B_PLUS: 'PASS',

@@ -7,6 +7,7 @@ import { CoursePloAchievementReport } from '../curriculum-content/plo-achievemen
 import { CurriculumPloAchievementReport } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 import { CourseAssessmentService } from '../curriculum-content/course-assessment/course-assessment.service';
 import { SemesterAchievement } from '../academic-record/student-course-record/student-course-record.service';
+import { RiskLevel } from '../academic-record/student-course-record/grade-point.constant';
 
 export interface RecentCourse {
   courseId: string;
@@ -44,6 +45,9 @@ export interface AtRiskStudent {
   studentCode: string;
   fullName: string;
   grade: Grade;
+  // Always CRITICAL or WATCH here — this list is already filtered to
+  // AT_RISK_GRADES, and those two bands are exactly its partition.
+  riskLevel: RiskLevel;
   academicYear: number;
   semesterTerm: string;
 }

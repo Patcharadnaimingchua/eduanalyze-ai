@@ -566,6 +566,11 @@ export interface UpdateSemesterRequest {
 
 // ---- Instructor course roster (GET /courses/:courseId/students) ----
 // No email field — the roster intentionally does not expose it.
+// Severity bands of a latest-attempt grade. CRITICAL ∪ WATCH is exactly
+// the at-risk population (AT_RISK_GRADES) — WATCH is not a wider net, it
+// is the milder half of the same set. C+ is NORMAL, deliberately.
+export type RiskLevel = 'CRITICAL' | 'WATCH' | 'NORMAL';
+
 export interface StudentRosterEntry {
   studentProfileId: string;
   // The student's latest attempt of this course — needed to key
@@ -574,6 +579,7 @@ export interface StudentRosterEntry {
   studentCode: string;
   fullName: string;
   grade: Grade;
+  riskLevel: RiskLevel;
 }
 
 // ---- Evidence-based CLO/PLO infrastructure (assessment-evidence module) ----
@@ -686,6 +692,8 @@ export interface AtRiskStudent {
   studentCode: string;
   fullName: string;
   grade: Grade;
+  // Never NORMAL here — this list is already filtered to at-risk grades.
+  riskLevel: RiskLevel;
   academicYear: number;
   semesterTerm: SemesterTerm;
 }

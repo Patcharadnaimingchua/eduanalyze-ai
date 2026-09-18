@@ -5,7 +5,10 @@ import { ScopeResolverService } from '../../common/scope/scope-resolver.service'
 import { CreditCheckerService } from '../academic-record/credit-checker/credit-checker.service';
 import { LearningPathService } from '../academic-record/learning-path/learning-path.service';
 import { StudentCourseRecordService } from '../academic-record/student-course-record/student-course-record.service';
-import { SEMESTER_TERM_RANK } from '../academic-record/student-course-record/grade-point.constant';
+import {
+  SEMESTER_TERM_RANK,
+  riskLevel,
+} from '../academic-record/student-course-record/grade-point.constant';
 import { CloAchievementService } from '../curriculum-content/clo-achievement/clo-achievement.service';
 import { CourseAssessmentService } from '../curriculum-content/course-assessment/course-assessment.service';
 import { CourseService } from '../curriculum-content/course/course.service';
@@ -206,6 +209,7 @@ export class DashboardService {
             studentCode: profile.studentCode,
             fullName: profile.user.fullName,
             grade: attempt.grade,
+            riskLevel: riskLevel(attempt.grade),
             academicYear: attempt.semester.academicYear.year,
             semesterTerm: attempt.semester.term,
           };
