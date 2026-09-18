@@ -42,7 +42,6 @@ export function InstructorDetailPanel({
   isInstructor: boolean;
 }) {
   const queryClient = useQueryClient();
-  const atRiskStudentIds = new Set(course.atRiskStudents.map((s) => s.studentProfileId));
 
   const cloQuery = useQuery({
     queryKey: ['course-clo-achievement', course.courseId],
@@ -113,7 +112,6 @@ export function InstructorDetailPanel({
             roster={rosterQuery.data}
             isLoading={rosterQuery.isLoading}
             isError={rosterQuery.isError}
-            atRiskStudentIds={atRiskStudentIds}
             onChanged={isInstructor ? handleGradebookChanged : undefined}
           />
         )}
