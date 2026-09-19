@@ -355,7 +355,17 @@ export class StudentCourseRecordService {
       where: { studentProfileId, isActive: true },
       include: { semester: { include: { academicYear: true } } },
     });
+    return this.dedupeLatestPerCourse(records);
+  }
 
+  // Pure — extracted out of getLatestAttemptsPerCourse for the same reason
+  // dedupeLatestPerStudent was extracted below: getStaffOverview fetches
+  // every in-scope student's records in ONE query, then needs the retake
+  // policy applied per student without a round trip each. Same policy, one
+  // implementation (CONVENTIONS.md §6).
+  dedupeLatestPerCourse(
+    records: LatestCourseAttempt[],
+  ): Map<string, LatestCourseAttempt> {
     const latestByCourse = new Map<string, LatestCourseAttempt>();
     for (const record of records) {
       const existing = latestByCourse.get(record.courseId);
@@ -364,6 +374,19 @@ export class StudentCourseRecordService {
       }
     }
     return latestByCourse;
+  }
+
+  // Batched sibling of the per-student query above — one round trip for a
+  // whole cohort. Callers group by studentProfileId themselves and run
+  // dedupeLatestPerCourse on each group.
+  async findActiveRecordsForStudents(
+    studentProfileIds: string[],
+  ): Promise<LatestCourseAttempt[]> {
+    if (studentProfileIds.length === 0) return [];
+    return this.prisma.studentCourseRecord.findMany({
+      where: { studentProfileId: { in: studentProfileIds }, isActive: true },
+      include: { semester: { include: { academicYear: true } } },
+    });
   }
 
   // Mirror of getLatestAttemptsPerCourse, grouped the other direction —

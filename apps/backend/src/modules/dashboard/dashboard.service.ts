@@ -233,9 +233,13 @@ export class DashboardService {
   // getCoveredProgramIds — deliberately does not go through
   // PloAchievementService.calculateForCurriculum (that's the heavier
   // PLO radar/cohort/at-risk report behind /dashboard/curriculum/:id,
-  // ADMIN/SUPER_ADMIN only). Per-student GPA loop mirrors the same
-  // pattern getInstructorDashboard already uses above — no batch GPA
-  // query exists anywhere in this codebase yet.
+  // ADMIN/SUPER_ADMIN only).
+  //
+  // GPA used to cost one query per student (a loop per curriculum, each
+  // calling getLatestAttemptsPerCourse). Scope here can span a whole
+  // faculty, so that grew without bound. Students and their records are
+  // now each fetched once for the entire scope and grouped in memory —
+  // the query count no longer depends on how many students there are.
   async getStaffOverview(user: RequestUser): Promise<StaffOverviewReport> {
     const programIds = await this.scopeResolverService.getCoveredProgramIds(
       user.userId,
@@ -260,6 +264,10 @@ export class DashboardService {
       curriculaByProgram.set(curriculum.programId, list);
     }
 
+    const gpaByCurriculum = await this.summarizeGpaByCurriculum(
+      curricula.map((curriculum) => curriculum.id),
+    );
+
     const overviewPrograms = await Promise.all(
       programs.map(async (program) => ({
         programId: program.id,
@@ -269,7 +277,12 @@ export class DashboardService {
         facultyName: program.department.faculty.name,
         curricula: await Promise.all(
           (curriculaByProgram.get(program.id) ?? []).map((curriculum) =>
-            this.getStaffOverviewCurriculum(curriculum.id, curriculum.version, curriculum.effectiveYear),
+            this.getStaffOverviewCurriculum(
+              curriculum.id,
+              curriculum.version,
+              curriculum.effectiveYear,
+              gpaByCurriculum.get(curriculum.id),
+            ),
           ),
         ),
       })),
@@ -278,16 +291,71 @@ export class DashboardService {
     return { programs: overviewPrograms };
   }
 
+  // Two queries total for the whole scope: every in-scope student, then
+  // every one of their active records. Retake collapsing stays in
+  // StudentCourseRecordService (dedupeLatestPerCourse) and the GPA math
+  // stays in calculateGpaFromAttempts — neither is reimplemented here,
+  // per CONVENTIONS.md §6.
+  private async summarizeGpaByCurriculum(
+    curriculumIds: string[],
+  ): Promise<Map<string, { studentCount: number; averageGpa: number | null }>> {
+    const students = await this.prisma.studentProfile.findMany({
+      where: { curriculumId: { in: curriculumIds }, isActive: true },
+      select: { id: true, curriculumId: true },
+    });
+
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForStudents(
+        students.map((student) => student.id),
+      );
+    const recordsByStudent = new Map<string, typeof records>();
+    for (const record of records) {
+      const list = recordsByStudent.get(record.studentProfileId) ?? [];
+      list.push(record);
+      recordsByStudent.set(record.studentProfileId, list);
+    }
+
+    const gpasByCurriculum = new Map<string, (number | null)[]>();
+    for (const student of students) {
+      const latestByCourse =
+        this.studentCourseRecordService.dedupeLatestPerCourse(
+          recordsByStudent.get(student.id) ?? [],
+        );
+      const { gpa } =
+        this.studentCourseRecordService.calculateGpaFromAttempts(
+          latestByCourse,
+        );
+      const list = gpasByCurriculum.get(student.curriculumId) ?? [];
+      list.push(gpa);
+      gpasByCurriculum.set(student.curriculumId, list);
+    }
+
+    const summary = new Map<
+      string,
+      { studentCount: number; averageGpa: number | null }
+    >();
+    for (const [curriculumId, gpas] of gpasByCurriculum) {
+      const gradedGpas = gpas.filter((gpa): gpa is number => gpa !== null);
+      summary.set(curriculumId, {
+        studentCount: gpas.length,
+        averageGpa:
+          gradedGpas.length > 0
+            ? gradedGpas.reduce((sum, gpa) => sum + gpa, 0) / gradedGpas.length
+            : null,
+      });
+    }
+    return summary;
+  }
+
   private async getStaffOverviewCurriculum(
     curriculumId: string,
     version: string,
     effectiveYear: number,
+    // Absent when the curriculum enrolls nobody — no students means no
+    // entry in the grouped map, not a zero-length one.
+    gpaSummary: { studentCount: number; averageGpa: number | null } | undefined,
   ): Promise<StaffOverviewCurriculum> {
-    const [students, totalCourses, coursesWithoutClo] = await Promise.all([
-      this.prisma.studentProfile.findMany({
-        where: { curriculumId, isActive: true },
-        select: { id: true },
-      }),
+    const [totalCourses, coursesWithoutClo] = await Promise.all([
       this.prisma.course.count({ where: { curriculumId, isActive: true } }),
       this.prisma.course.count({
         where: {
@@ -298,27 +366,12 @@ export class DashboardService {
       }),
     ]);
 
-    const gpas = await Promise.all(
-      students.map(async ({ id }) => {
-        const latestByCourse =
-          await this.studentCourseRecordService.getLatestAttemptsPerCourse(id);
-        return this.studentCourseRecordService.calculateGpaFromAttempts(
-          latestByCourse,
-        ).gpa;
-      }),
-    );
-    const gradedGpas = gpas.filter((gpa): gpa is number => gpa !== null);
-    const averageGpa =
-      gradedGpas.length > 0
-        ? gradedGpas.reduce((sum, gpa) => sum + gpa, 0) / gradedGpas.length
-        : null;
-
     return {
       curriculumId,
       version,
       effectiveYear,
-      studentCount: students.length,
-      averageGpa,
+      studentCount: gpaSummary?.studentCount ?? 0,
+      averageGpa: gpaSummary?.averageGpa ?? null,
       totalCourses,
       coursesWithoutClo,
     };
