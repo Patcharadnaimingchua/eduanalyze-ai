@@ -192,6 +192,14 @@ Account Status, Security/Audit, System configuration ที่จำเป็น
 
 SUPER_ADMIN เป็น Role ที่มีสิทธิ์ระดับระบบ
 
+Implementation ปัจจุบัน (2026-09-19): เพิ่ม `/admin/curriculum-dashboard` — ภาพรวม
+นักศึกษา/PLO/CLO ข้ามทุกหลักสูตรในระบบ (ไม่จำกัด scope ต่างจาก STAFF/INSTRUCTOR โดย
+เจตนา) ครอบคลุม requirement ข้อ 29-31 ส่วน "Curriculum/Program Analytics Dashboard"
+เท่าที่ไม่ต้องมี AI Curriculum Summary (ดู Module 7 — ยังไม่มี curriculum-level AI
+endpoint) — ดูรายละเอียด N+1 fix + known limitation (14/16 หลักสูตรยังไม่มีข้อมูล,
+กราฟเปรียบเทียบยังไม่เคยถูกทดสอบด้วยข้อมูลจริง) ที่ root `TODO.md` หัวข้อ "SUPER_ADMIN
+Curriculum Dashboard" แทนการเขียนซ้ำที่นี่
+
 ==================================================
 13. DATA SCOPE / DATA ISOLATION
 ==================================================

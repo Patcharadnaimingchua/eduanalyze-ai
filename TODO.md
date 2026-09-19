@@ -1,5 +1,35 @@
 # TODO / Known Limitations
 
+## SUPER_ADMIN Curriculum Dashboard — ภาพรวมข้ามทุกหลักสูตร — เสร็จสมบูรณ์ (2026-09-19)
+
+**เสร็จแล้ว**: ก่อนหน้านี้ไม่มีใครเห็นภาพรวมทั้งระบบเลย (STAFF จำกัดแค่ scope ตัวเอง, INSTRUCTOR จำกัดแค่วิชาที่สอน) — ตอนนี้ SUPER_ADMIN เปิดหน้า `/admin/curriculum-dashboard` เห็นนักศึกษา/พร้อมจบ/เสี่ยงรวมทั้งระบบ, PLO เฉลี่ยรายหลักสูตร, PLO/CLO ที่ต่ำกว่าเกณฑ์ข้ามทุกหลักสูตร, และกราฟเปรียบเทียบหลักสูตร 3 commit:
+
+1. `c91c97f` — แก้ N+1 เดิมที่ `PloAchievementService.calculateForCurriculum` (student loop + course loop) ก่อนเพิ่มฟีเจอร์ใหม่ใดๆ — จาก `5 + N_students + 4×N_courses` เหลือ **~13 query คงที่ต่อหลักสูตร** วัดจริง: ICT 2564 (2 คน, 63 วิชา) จาก 264 table scans เหลือ 13 — พิสูจน์ด้วย response เต็ม (`radar`/`averageGpa`/`lowestClos`/`courseAnalytics`/`cohortComparison`) byte-identical ก่อน/หลัง
+2. `c2410ad` — `GET /dashboard/curricula` (SUPER_ADMIN-only, ไม่มี ScopeGuard เพราะเจตนาเป็นทั้งระบบ) — global batch pass **8 queries คงที่ไม่ว่าจะมีกี่หลักสูตร/นักศึกษา/วิชา** วัดจริง: ทั้ง 16 หลักสูตรใช้ 13 table scans เท่ากับ 1 หลักสูตรเดียวของ endpoint เดิม
+3. `381cad8` — หน้า `/admin/curriculum-dashboard` — 22 browser checks ผ่านทั้งหมดด้วย demo-superadmin
+
+**นิยามใหม่เพียงอย่างเดียวที่งานนี้เพิ่ม**: "PLO ต่ำกว่าเกณฑ์" อนุมานจาก CLO ลูก — PLO ถูกชี้ว่ามีปัญหาเมื่อ CLO ที่ map มาหามันไม่ผ่านเกณฑ์ (นิยามเดิมจาก CLO Achievement) ≥ ครึ่งหนึ่ง payload คืน `closBelowThreshold`/`totalMeasuredClos` เสมอเป็นหลักฐาน ไม่ใช่แค่ boolean
+
+**Known limitation ที่เจอระหว่างทำ**:
+- **14/16 หลักสูตรเป็น "เปลือกเปล่า"** (0 course/CLO/PLO/นักศึกษา) — `dataState: 'EMPTY'` คือ 14/16 ของเคสจริง หน้าจึงต้องมี 3 tier (`HAS_STUDENTS`/`STRUCTURE_ONLY`/`EMPTY`) ไม่ใช่ 1 empty state เดียว มิฉะนั้นหลักสูตรที่แค่ยังไม่ถูกสร้างจะดูเหมือนระบบที่กำลังล้มเหลว
+- **สาย assessment ว่างทั้งระบบ** (`assessment_definitions`/`assessment_clo_mappings`/`student_assessment_scores` = 0/0/0 แถว) — ตัวเลข PLO ทั้งหมดคำนวณจากเกรด (`gradePoint/4×100`) ไม่ใช่ evidence-based เลย
+- **มีหลักสูตรเดียวที่มีนักศึกษา** (ICT 2564, 2 คน) — กราฟเปรียบเทียบหลักสูตรต้องมี ≥2 หลักสูตรที่มีนักศึกษาถึงจะ render จึง **ไม่เคยถูกทดสอบด้วยข้อมูลจริง** เลย (แสดงข้อความอธิบายเงื่อนไขแทนแทนการซ่อนเงียบ) ถ้าจะพิสูจน์ต้อง seed นักศึกษาเข้าหลักสูตรที่สองชั่วคราวแล้วลบออก
+- ตัวเลขรวมทั้งระบบ (N=2 นักศึกษา) พิสูจน์ได้แค่ว่า "บวกถูก" ไม่ได้พิสูจน์ว่าทนต่อ scale จริง
+
+## STAFF Dashboard extension — At-Risk card + Directory risk filter + N+1 fix — เสร็จสมบูรณ์ (2026-09-19)
+
+**เสร็จแล้ว**: 3 commit ต่อยอด STAFF dashboard เดิม (`/staff/dashboard`, `/staff/students`, `/staff/curriculum`):
+
+1. `7fa310b` — แก้ N+1 ที่ `getStaffOverviewCurriculum` (fetch นักศึกษา+record ครั้งเดียวทั้ง scope แทนวนทีละหลักสูตร/นักศึกษา) — สกัด `dedupeLatestPerCourse` reuse จาก logic เดิมที่เคยฝังอยู่ใน `getLatestAttemptsPerCourse` วัดจริงบน demo scope: `student_course_records` 2→1, `student_profiles` 3→1 query ยืนยันแล้วว่า ICT/2564 `averageGpa` ยังคง 2.7004 เท่าเดิม
+2. `d7d3e6c` — การ์ด "นักศึกษากลุ่มเสี่ยง" บน `/staff/dashboard` — reuse `selectAtRiskAttempts`/`riskLevel` ตัวเดียวกับ INSTRUCTOR dashboard (ไม่ใช่กฎใหม่คนละชุด) group ตามนักศึกษาไม่ใช่ตามวิชา (ต่างจาก instructor card ที่ group ตามวิชา) จำกัด 20 แถวแรก เรียง CRITICAL ก่อน
+3. `8b64b6e` — `GET /dashboard/staff/students` (STAFF-only, scoped by programId) เพิ่ม risk-level filter เข้า `/staff/students` — share `computeStudentRisk` เดียวกับการ์ดข้อ 2 เพื่อไม่ให้สองหน้าเห็นความเสี่ยงไม่ตรงกัน
+
+**Known limitation**: filter ที่หน้า directory เป็น client-side ล้วนบนข้อมูลที่โหลดมาทั้งหมด (ซื่อตรงที่ demo scope แต่จะไม่ทนที่ FACULTY scope ขนาดใหญ่) — endpoint ยังไม่รับ query parameter เลยแม้แต่ search ต้องเพิ่ม pagination/server-side filter เป็นงานแยกถ้าข้อมูลโตขึ้นจริง
+
+## ADMIN academic-years/semesters — เพิ่ม UI แก้ไข (edit) — เสร็จแล้ว (2026-09-19, commit `4b87b5d`)
+
+`/admin/academic-years` เดิมมีแค่ create+delete (ดูหัวข้อด้านล่าง "ไม่มีหน้า ADMIN สำหรับจัดการ AcademicYear/Semester") — เพิ่ม inline-edit ตาม pattern เดิมที่มีอยู่แล้ว 2 จุด (`org-node-row.tsx`, `course-category-card.tsx`) ไม่ใช้ modal ใหม่ ใช้ PATCH endpoint ที่มีอยู่แล้วตั้งแต่ Phase 6 (`updateAcademicYear`/`updateSemester` ใน `lib/api/admin.ts` เชื่อมไว้แล้วแต่ไม่เคยมี UI เรียก) — ขอบเขตจำกัดแค่แก้ term ของ semester เอง ไม่รองรับย้ายข้ามปีการศึกษา (backend DTO รองรับแต่ shared-types ยังไม่เปิด field นี้ และไม่มีใครขอ capability นี้)
+
 ## ~~INSTRUCTOR Dashboard — gradebook/course management~~ — เสร็จสมบูรณ์แล้ว เกินกว่าที่วางแผนไว้เดิม (2026-09-19)
 
 **เสร็จแล้ว**: INSTRUCTOR dashboard (`/instructor/dashboard` ภาพรวม + `/instructor/courses/[courseId]` รายวิชา) ตอนนี้มีครบ **9 feature** จาก 2 รอบ (กลุ่ม A + กลุ่ม B) commit แยกกันทุกตัว — tsc+lint+Playwright ผ่านหมดทุก feature, baseline regression (`studentCount`/`achievementPercent`/`atRisk`/`semesterTrend` ต่อวิชา) ไม่ขยับเลยตลอดทั้ง 9 commit
