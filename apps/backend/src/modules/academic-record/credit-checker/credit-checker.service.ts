@@ -15,6 +15,22 @@ import {
   GraduationReadiness,
 } from './credit-checker-report.interface';
 
+// Shared by the singular and batched loaders below so their trees are
+// identical by construction rather than by two include blocks staying in
+// sync by hand.
+const CURRICULUM_TREE_INCLUDE = {
+  categories: {
+    where: { isActive: true },
+    include: {
+      requirement: true,
+      courses: {
+        where: { isActive: true },
+        include: { prerequisitesRequired: true },
+      },
+    },
+  },
+} satisfies Prisma.CurriculumInclude;
+
 // Colocated with the service that produces it, same pattern as
 // LatestCourseAttempt in student-course-record.service.ts.
 export type CreditCheckCurriculumTree = Prisma.CurriculumGetPayload<{
@@ -63,19 +79,25 @@ export class CreditCheckerService {
   ): Promise<CreditCheckCurriculumTree> {
     return this.prisma.curriculum.findUniqueOrThrow({
       where: { id: curriculumId },
-      include: {
-        categories: {
-          where: { isActive: true },
-          include: {
-            requirement: true,
-            courses: {
-              where: { isActive: true },
-              include: { prerequisitesRequired: true },
-            },
-          },
-        },
-      },
+      include: CURRICULUM_TREE_INCLUDE,
     });
+  }
+
+  // Batched sibling of loadCurriculumTree — one round trip for every
+  // curriculum in the system instead of one per curriculum. Same include
+  // shape, so both return the identical tree; only the fetch granularity
+  // differs. Missing ids are simply absent from the map (unlike the
+  // singular version's findUniqueOrThrow), because a system-wide caller
+  // asks for whatever exists rather than asserting one known id.
+  async loadCurriculumTrees(
+    curriculumIds: string[],
+  ): Promise<Map<string, CreditCheckCurriculumTree>> {
+    if (curriculumIds.length === 0) return new Map();
+    const curricula = await this.prisma.curriculum.findMany({
+      where: { id: { in: curriculumIds } },
+      include: CURRICULUM_TREE_INCLUDE,
+    });
+    return new Map(curricula.map((curriculum) => [curriculum.id, curriculum]));
   }
 
   // Pure/internal — no I/O, no ownership check, takes already-fetched

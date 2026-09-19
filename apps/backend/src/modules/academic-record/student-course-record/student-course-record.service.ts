@@ -415,6 +415,21 @@ export class StudentCourseRecordService {
     });
   }
 
+  // Batched sibling of findActiveRecordsForCourse, mirroring what
+  // findActiveRecordsForStudents does for the other grouping direction —
+  // one round trip for every course in a curriculum (or in the whole
+  // system) instead of one per course. Callers group by courseId
+  // themselves and run dedupeLatestPerStudent on each group.
+  async findActiveRecordsForCourses(
+    courseIds: string[],
+  ): Promise<LatestCourseAttempt[]> {
+    if (courseIds.length === 0) return [];
+    return this.prisma.studentCourseRecord.findMany({
+      where: { courseId: { in: courseIds }, isActive: true },
+      include: { semester: { include: { academicYear: true } } },
+    });
+  }
+
   // Pure — extracted out of getLatestAttemptsPerStudent so
   // getInstructorDashboard can fetch findActiveRecordsForCourse once and
   // derive both the deduped map (grade distribution, at-risk) and

@@ -315,6 +315,20 @@ export class PloAchievementService {
       where: { curriculumId, isActive: true },
     });
 
+    // One query for every student's records, then the retake policy
+    // applied per student in memory — replaces one query per student.
+    // Same shape as DashboardService.computeStudentRisk.
+    const studentRecords =
+      await this.studentCourseRecordService.findActiveRecordsForStudents(
+        students.map((student) => student.id),
+      );
+    const recordsByStudent = new Map<string, LatestCourseAttempt[]>();
+    for (const record of studentRecords) {
+      const group = recordsByStudent.get(record.studentProfileId) ?? [];
+      group.push(record);
+      recordsByStudent.set(record.studentProfileId, group);
+    }
+
     const gpas: number[] = [];
     let studentsAtRiskCount = 0;
     let graduationReadyCount = 0;
@@ -327,10 +341,9 @@ export class PloAchievementService {
     >();
 
     for (const student of students) {
-      const attempts =
-        await this.studentCourseRecordService.getLatestAttemptsPerCourse(
-          student.id,
-        );
+      const attempts = this.studentCourseRecordService.dedupeLatestPerCourse(
+        recordsByStudent.get(student.id) ?? [],
+      );
 
       const { gpa } =
         this.studentCourseRecordService.calculateGpaFromAttempts(attempts);
@@ -389,55 +402,73 @@ export class PloAchievementService {
         };
       });
 
-    // Separate data shape from the student loop above — own N₂ query cost,
-    // documented as a known limitation in TODO.md (same pattern as the
-    // per-student N-query note from Phase 9 Chunk 3).
+    // Separate data shape from the student loop above, but fetched the
+    // same way: one query for every course's records and one for every
+    // course's CLOs, instead of calculateForCourse's four queries per
+    // course. The achievement bar itself still comes from
+    // CloAchievementService (CONVENTIONS.md §6) — only the fetching moved.
     const courses = await this.prisma.course.findMany({
       where: { curriculumId, isActive: true },
       orderBy: { code: 'asc' },
     });
+    const courseIds = courses.map((course) => course.id);
+
+    const courseRecords =
+      await this.studentCourseRecordService.findActiveRecordsForCourses(
+        courseIds,
+      );
+    const recordsByCourse = new Map<string, LatestCourseAttempt[]>();
+    for (const record of courseRecords) {
+      const group = recordsByCourse.get(record.courseId) ?? [];
+      group.push(record);
+      recordsByCourse.set(record.courseId, group);
+    }
+
+    const allClos = await this.prisma.clo.findMany({
+      where: { courseId: { in: courseIds }, isActive: true },
+    });
+    const closByCourse = new Map<string, typeof allClos>();
+    for (const clo of allClos) {
+      const group = closByCourse.get(clo.courseId) ?? [];
+      group.push(clo);
+      closByCourse.set(clo.courseId, group);
+    }
 
     const courseAnalytics: CourseAnalyticsEntry[] = [];
     let lowestAchievement = Infinity;
     let lowestClos: LowestCloEntry[] = [];
 
     for (const course of courses) {
-      const report = await this.cloAchievementService.calculateForCourse(
-        course.id,
-      );
+      const latestByStudent =
+        this.studentCourseRecordService.dedupeLatestPerStudent(
+          recordsByCourse.get(course.id) ?? [],
+        );
+      const { achievementPercent } =
+        this.cloAchievementService.summarizeCourseAchievement(latestByStudent);
+
       courseAnalytics.push({
         courseId: course.id,
         code: course.code,
         name: course.name,
-        achievementPercent: report.achievementPercent,
+        achievementPercent,
       });
 
-      // Every CLO of this course shares report.achievementPercent — there
-      // is no per-CLO percent field on CloAchievementEntry (Phase 8
-      // limitation, see TODO.md).
-      for (const clo of report.clos) {
-        if (report.achievementPercent < lowestAchievement) {
-          lowestAchievement = report.achievementPercent;
-          lowestClos = [
-            {
-              cloId: clo.cloId,
-              code: clo.code,
-              description: clo.description,
-              courseId: course.id,
-              courseCode: course.code,
-              courseName: course.name,
-              achievementPercent: report.achievementPercent,
-            },
-          ];
-        } else if (report.achievementPercent === lowestAchievement) {
+      // Every CLO of this course shares achievementPercent — there is no
+      // per-CLO percent field (Phase 8 limitation, see TODO.md).
+      for (const clo of closByCourse.get(course.id) ?? []) {
+        if (achievementPercent < lowestAchievement) {
+          lowestAchievement = achievementPercent;
+          lowestClos = [];
+        }
+        if (achievementPercent === lowestAchievement) {
           lowestClos.push({
-            cloId: clo.cloId,
+            cloId: clo.id,
             code: clo.code,
             description: clo.description,
             courseId: course.id,
             courseCode: course.code,
             courseName: course.name,
-            achievementPercent: report.achievementPercent,
+            achievementPercent,
           });
         }
       }

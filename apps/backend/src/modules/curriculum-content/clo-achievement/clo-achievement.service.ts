@@ -4,7 +4,10 @@ import {
   ACHIEVED_GRADES,
   GRADE_STATUS,
 } from '../../academic-record/student-course-record/grade-point.constant';
-import { StudentCourseRecordService } from '../../academic-record/student-course-record/student-course-record.service';
+import {
+  LatestCourseAttempt,
+  StudentCourseRecordService,
+} from '../../academic-record/student-course-record/student-course-record.service';
 import { CurriculumService } from '../../organization/curriculum/curriculum.service';
 import { CourseService } from '../course/course.service';
 import { CourseCloAchievementReport } from './clo-achievement-report.interface';
@@ -35,23 +38,8 @@ export class CloAchievementService {
         courseId,
       );
 
-    // totalStudents excludes W/I (never completed the course) — same
-    // GRADE_STATUS distinction as Phase 7's Credit Checker: PASS+FAIL are
-    // final outcomes and count, EXCLUDED does not.
-    let totalStudents = 0;
-    let achievedStudents = 0;
-    for (const attempt of latestByStudent.values()) {
-      if (GRADE_STATUS[attempt.grade] === 'EXCLUDED') {
-        continue;
-      }
-      totalStudents += 1;
-      if (ACHIEVED_GRADES.has(attempt.grade)) {
-        achievedStudents += 1;
-      }
-    }
-
-    const achievementPercent =
-      totalStudents > 0 ? (achievedStudents / totalStudents) * 100 : 0;
+    const { totalStudents, achievedStudents, achievementPercent } =
+      this.summarizeCourseAchievement(latestByStudent);
 
     // Every CLO of this course shares the same achievementPercent — the
     // schema has no CLO-specific grade breakdown (only one grade per
@@ -75,6 +63,42 @@ export class CloAchievementService {
           isAchieved: achievementPercent >= threshold,
         };
       }),
+    };
+  }
+
+  // Pure — the course-level achievement bar itself, extracted so
+  // curriculum-wide callers can apply it to attempts they already fetched
+  // in one batched query instead of calling calculateForCourse (and its
+  // four queries) once per course. One definition of the bar, two fetch
+  // strategies (CONVENTIONS.md §6).
+  //
+  // totalStudents excludes W/I (never completed the course) — same
+  // GRADE_STATUS distinction as Phase 7's Credit Checker: PASS+FAIL are
+  // final outcomes and count, EXCLUDED does not.
+  summarizeCourseAchievement(
+    latestByStudent: Map<string, LatestCourseAttempt>,
+  ): {
+    totalStudents: number;
+    achievedStudents: number;
+    achievementPercent: number;
+  } {
+    let totalStudents = 0;
+    let achievedStudents = 0;
+    for (const attempt of latestByStudent.values()) {
+      if (GRADE_STATUS[attempt.grade] === 'EXCLUDED') {
+        continue;
+      }
+      totalStudents += 1;
+      if (ACHIEVED_GRADES.has(attempt.grade)) {
+        achievedStudents += 1;
+      }
+    }
+
+    return {
+      totalStudents,
+      achievedStudents,
+      achievementPercent:
+        totalStudents > 0 ? (achievedStudents / totalStudents) * 100 : 0,
     };
   }
 }
