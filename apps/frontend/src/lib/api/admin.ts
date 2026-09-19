@@ -3,6 +3,7 @@ import type {
   CreateAcademicYearRequest,
   CreateSemesterRequest,
   Semester,
+  SystemCurriculumOverviewReport,
   UpdateAcademicYearRequest,
   UpdateSemesterRequest,
 } from '@eduanalyze-ai/shared-types';
@@ -29,6 +30,13 @@ export async function createSemester(dto: CreateSemesterRequest) {
 
 export async function updateSemester(id: string, dto: UpdateSemesterRequest) {
   const { data } = await apiClient.patch<Semester>(`/semesters/${id}`, dto);
+  return data;
+}
+
+export async function fetchSystemCurriculumOverview() {
+  const { data } = await apiClient.get<SystemCurriculumOverviewReport>(
+    '/dashboard/curricula',
+  );
   return data;
 }
 
