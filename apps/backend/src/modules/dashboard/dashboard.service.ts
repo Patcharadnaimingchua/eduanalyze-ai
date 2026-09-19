@@ -18,12 +18,16 @@ import {
   InstructorCourseSummary,
   InstructorDashboardReport,
   RecentCourse,
+  StaffAtRiskStudent,
   StaffOverviewCurriculum,
   StaffOverviewReport,
   StudentDashboardReport,
 } from './dashboard-report.interface';
 
 const RECENT_COURSES_LIMIT = 5;
+// The dashboard card is a prompt to act, not a register. The directory
+// carries the full list, filtered by risk.
+const STAFF_AT_RISK_LIMIT = 20;
 
 @Injectable()
 export class DashboardService {
@@ -245,7 +249,11 @@ export class DashboardService {
       user.userId,
     );
     if (programIds.length === 0) {
-      return { programs: [] };
+      return {
+        programs: [],
+        atRiskStudents: [],
+        atRiskSummary: { critical: 0, watch: 0 },
+      };
     }
 
     const programs = await this.prisma.program.findMany({
@@ -264,9 +272,8 @@ export class DashboardService {
       curriculaByProgram.set(curriculum.programId, list);
     }
 
-    const gpaByCurriculum = await this.summarizeGpaByCurriculum(
-      curricula.map((curriculum) => curriculum.id),
-    );
+    const { gpaByCurriculum, atRiskStudents, atRiskSummary } =
+      await this.summarizeStudentsInScope(programs, curricula);
 
     const overviewPrograms = await Promise.all(
       programs.map(async (program) => ({
@@ -288,20 +295,45 @@ export class DashboardService {
       })),
     );
 
-    return { programs: overviewPrograms };
+    return {
+      programs: overviewPrograms,
+      atRiskStudents: atRiskStudents.slice(0, STAFF_AT_RISK_LIMIT),
+      atRiskSummary,
+    };
   }
 
-  // Two queries total for the whole scope: every in-scope student, then
-  // every one of their active records. Retake collapsing stays in
-  // StudentCourseRecordService (dedupeLatestPerCourse) and the GPA math
-  // stays in calculateGpaFromAttempts — neither is reimplemented here,
-  // per CONVENTIONS.md §6.
-  private async summarizeGpaByCurriculum(
-    curriculumIds: string[],
-  ): Promise<Map<string, { studentCount: number; averageGpa: number | null }>> {
+  // Two queries for the whole scope — every in-scope student, then every
+  // one of their active records — and both the GPA average and the
+  // at-risk roll-up come off that same pass.
+  //
+  // Retake collapsing stays in dedupeLatestPerCourse, the GPA math in
+  // calculateGpaFromAttempts, and the at-risk selection in
+  // selectAtRiskAttempts. None is reimplemented here (CONVENTIONS.md §6),
+  // which is what keeps a staff CRITICAL and an instructor CRITICAL the
+  // same claim about the same student.
+  private async summarizeStudentsInScope(
+    programs: { id: string; code: string }[],
+    curricula: { id: string; version: string }[],
+  ): Promise<{
+    gpaByCurriculum: Map<
+      string,
+      { studentCount: number; averageGpa: number | null }
+    >;
+    atRiskStudents: StaffAtRiskStudent[];
+    atRiskSummary: { critical: number; watch: number };
+  }> {
     const students = await this.prisma.studentProfile.findMany({
-      where: { curriculumId: { in: curriculumIds }, isActive: true },
-      select: { id: true, curriculumId: true },
+      where: {
+        curriculumId: { in: curricula.map((curriculum) => curriculum.id) },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        curriculumId: true,
+        programId: true,
+        studentCode: true,
+        user: { select: { fullName: true } },
+      },
     });
 
     const records =
@@ -315,7 +347,15 @@ export class DashboardService {
       recordsByStudent.set(record.studentProfileId, list);
     }
 
+    const programCodeById = new Map(programs.map((p) => [p.id, p.code]));
+    const versionByCurriculumId = new Map(
+      curricula.map((curriculum) => [curriculum.id, curriculum.version]),
+    );
+
     const gpasByCurriculum = new Map<string, (number | null)[]>();
+    const atRiskStudents: StaffAtRiskStudent[] = [];
+    const atRiskSummary = { critical: 0, watch: 0 };
+
     for (const student of students) {
       const latestByCourse =
         this.studentCourseRecordService.dedupeLatestPerCourse(
@@ -325,18 +365,51 @@ export class DashboardService {
         this.studentCourseRecordService.calculateGpaFromAttempts(
           latestByCourse,
         );
-      const list = gpasByCurriculum.get(student.curriculumId) ?? [];
-      list.push(gpa);
-      gpasByCurriculum.set(student.curriculumId, list);
+
+      const gpas = gpasByCurriculum.get(student.curriculumId) ?? [];
+      gpas.push(gpa);
+      gpasByCurriculum.set(student.curriculumId, gpas);
+
+      // Already sorted worst-first, so [0] is the attempt that decides
+      // the student's band — no separate roll-up rule to keep in sync.
+      const atRiskAttempts =
+        this.studentCourseRecordService.selectAtRiskAttempts(latestByCourse);
+      const worst = atRiskAttempts[0];
+      if (!worst) continue;
+
+      const level = riskLevel(worst.grade);
+      if (level === 'CRITICAL') atRiskSummary.critical += 1;
+      else if (level === 'WATCH') atRiskSummary.watch += 1;
+
+      atRiskStudents.push({
+        studentProfileId: student.id,
+        studentCode: student.studentCode,
+        fullName: student.user.fullName,
+        riskLevel: level,
+        worstGrade: worst.grade,
+        atRiskCourseCount: atRiskAttempts.length,
+        gpa,
+        programCode: programCodeById.get(student.programId) ?? '',
+        curriculumVersion:
+          versionByCurriculumId.get(student.curriculumId) ?? '',
+      });
     }
 
-    const summary = new Map<
+    // CRITICAL above WATCH, then most courses affected — the cap below
+    // has to keep the students worth looking at first.
+    atRiskStudents.sort(
+      (a, b) =>
+        Number(b.riskLevel === 'CRITICAL') - Number(a.riskLevel === 'CRITICAL') ||
+        b.atRiskCourseCount - a.atRiskCourseCount,
+    );
+
+    const gpaByCurriculum = new Map<
       string,
       { studentCount: number; averageGpa: number | null }
     >();
     for (const [curriculumId, gpas] of gpasByCurriculum) {
       const gradedGpas = gpas.filter((gpa): gpa is number => gpa !== null);
-      summary.set(curriculumId, {
+      gpaByCurriculum.set(curriculumId, {
         studentCount: gpas.length,
         averageGpa:
           gradedGpas.length > 0
@@ -344,7 +417,8 @@ export class DashboardService {
             : null,
       });
     }
-    return summary;
+
+    return { gpaByCurriculum, atRiskStudents, atRiskSummary };
   }
 
   private async getStaffOverviewCurriculum(

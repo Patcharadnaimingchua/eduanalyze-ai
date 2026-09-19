@@ -4,10 +4,10 @@ import Link from 'next/link';
 import type { StudentProfileSummary } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Minimal, chart-free landing summary — no dedicated backend dashboard
-// endpoint exists for STAFF yet (unlike STUDENT/INSTRUCTOR/curriculum
-// dashboards), so this is composed client-side from the already-fetched
-// scoped student list rather than a new aggregate endpoint.
+// Minimal, chart-free landing summary, counted client-side off the
+// scoped student list the page already holds. GET /dashboard/staff does
+// exist and the same page calls it, but it aggregates per curriculum —
+// these two totals are cheaper to derive here than to add to it.
 export function StaffDashboardSummary({ students }: { students: StudentProfileSummary[] }) {
   const curriculumCount = new Set(students.map((s) => s.curriculumId)).size;
 

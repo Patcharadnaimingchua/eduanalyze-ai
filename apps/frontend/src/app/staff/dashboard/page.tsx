@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StaffDashboardSummary } from '@/components/staff/staff-dashboard-summary';
+import { AtRiskStudentsCard } from '@/components/staff/at-risk-students-card';
 import { ProgramOverviewList } from '@/components/staff/program-overview-list';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -47,6 +48,15 @@ function StaffDashboardContent() {
         </Alert>
       )}
       {studentsQuery.data && <StaffDashboardSummary students={studentsQuery.data} />}
+
+      {/* Above the program list: who needs attention comes before what the
+          numbers average out to. */}
+      {overviewQuery.data && (
+        <AtRiskStudentsCard
+          students={overviewQuery.data.atRiskStudents}
+          summary={overviewQuery.data.atRiskSummary}
+        />
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-primary">ภาพรวมสาขา/หลักสูตรในความดูแล</h2>

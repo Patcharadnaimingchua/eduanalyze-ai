@@ -106,6 +106,32 @@ export interface StaffOverviewProgram {
   curricula: StaffOverviewCurriculum[];
 }
 
+// One row per student, not per attempt — staff act on people, where an
+// instructor acts on a course. riskLevel is the band of the student's
+// worst latest attempt, which is the same riskLevel() the instructor
+// dashboard applies per course, so a student failing one course reads as
+// CRITICAL in both places.
+export interface StaffAtRiskStudent {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  // Never NORMAL — this list is already filtered to at-risk grades.
+  riskLevel: RiskLevel;
+  // The grade that set riskLevel, and how many courses are at risk at
+  // all: one D+ reads very differently from six.
+  worstGrade: Grade;
+  atRiskCourseCount: number;
+  gpa: number | null;
+  // A scope can span programs, so a name alone doesn't say where to look.
+  programCode: string;
+  curriculumVersion: string;
+}
+
 export interface StaffOverviewReport {
   programs: StaffOverviewProgram[];
+  // Capped — a FACULTY scope covers every program in the faculty, so this
+  // is a worst-first preview, not the full set. Counts below are of the
+  // whole scope; the student directory holds the complete list.
+  atRiskStudents: StaffAtRiskStudent[];
+  atRiskSummary: { critical: number; watch: number };
 }

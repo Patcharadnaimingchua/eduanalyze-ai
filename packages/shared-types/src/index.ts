@@ -202,8 +202,28 @@ export interface StaffOverviewProgram {
   curricula: StaffOverviewCurriculum[];
 }
 
+// One row per student, not per attempt — staff act on people, where an
+// instructor acts on a course. riskLevel is the band of the student's
+// worst latest attempt, the same riskLevel the instructor dashboard
+// reports per course.
+export interface StaffAtRiskStudent {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  // Never NORMAL — this list is already filtered to at-risk grades.
+  riskLevel: RiskLevel;
+  worstGrade: Grade;
+  atRiskCourseCount: number;
+  gpa: number | null;
+  programCode: string;
+  curriculumVersion: string;
+}
+
 export interface StaffOverviewReport {
   programs: StaffOverviewProgram[];
+  // Capped worst-first preview — counts below cover the whole scope.
+  atRiskStudents: StaffAtRiskStudent[];
+  atRiskSummary: { critical: number; watch: number };
 }
 
 // ---- GET /student-profiles/me — the logged-in STUDENT's own profile.
