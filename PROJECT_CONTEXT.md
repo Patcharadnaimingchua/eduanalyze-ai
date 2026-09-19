@@ -153,6 +153,12 @@ CLO Achievement, % นักศึกษาที่ผ่าน Threshold, Cour
 ห้ามเห็นข้อมูลข้าม Scope โดยไม่มีสิทธิ์ ตัวอย่าง: อาจารย์ Program A ไม่ควรสามารถ query
 ข้อมูล Program B ได้เพียงแค่เปลี่ยน ID ใน URL/API — Backend ต้อง enforce scope
 
+Implementation ปัจจุบัน (2026-09-19): ครอบคลุม requirement ข้างต้นครบแล้วผ่าน
+`/instructor/dashboard` + `/instructor/courses/[courseId]` รวม 9 feature (status badge
+อิง threshold จริง, risk-level 3 ระดับ, search/filter, course comparison, semester trend,
+student timeline, rule-based course summary ฯลฯ) — ดูรายการเต็ม + commit hash ที่ root
+`TODO.md` หัวข้อ "INSTRUCTOR Dashboard — gradebook/course management" แทนการเขียนซ้ำที่นี่
+
 ==================================================
 10. STAFF
 ==================================================

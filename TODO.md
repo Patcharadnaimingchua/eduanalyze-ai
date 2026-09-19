@@ -1,5 +1,27 @@
 # TODO / Known Limitations
 
+## ~~INSTRUCTOR Dashboard — gradebook/course management~~ — เสร็จสมบูรณ์แล้ว เกินกว่าที่วางแผนไว้เดิม (2026-09-19)
+
+**เสร็จแล้ว**: INSTRUCTOR dashboard (`/instructor/dashboard` ภาพรวม + `/instructor/courses/[courseId]` รายวิชา) ตอนนี้มีครบ **9 feature** จาก 2 รอบ (กลุ่ม A + กลุ่ม B) commit แยกกันทุกตัว — tsc+lint+Playwright ผ่านหมดทุก feature, baseline regression (`studentCount`/`achievementPercent`/`atRisk`/`semesterTrend` ต่อวิชา) ไม่ขยับเลยตลอดทั้ง 9 commit
+
+กลุ่ม A (ภาพรวม + ข้อมูลพื้นฐาน):
+1. `4eb518b` — at-risk students alert บนหน้า dashboard
+2. `89174ea` — แยกหน้า instructor เป็น overview + per-course detail (route จริง ไม่ใช่ query param)
+3. `873065f` — export gradebook เป็น CSV
+4. `002b980` — course comparison chart บนหน้าภาพรวม
+5. `fe06947` — semester-over-semester achievement trend
+6. `22cc099` — student progress timeline ใน gradebook
+
+กลุ่ม B (คุณภาพการอ่านข้อมูล — ทำทีละ feature ตามที่ตัดสินใจไว้):
+7. `971a012` — status badge (EXCEEDED/ON_TRACK/CRITICAL) อิง `Curriculum.defaultAchievementThreshold` จริง แทนเกณฑ์ตายตัว 80/60 เดิม
+8. `dbe5e5c` — แยกกลุ่มเสี่ยงเป็น CRITICAL/WATCH/NORMAL — **ไม่เปลี่ยนจำนวนคนกลุ่มเสี่ยงเดิม** (`CRITICAL ∪ WATCH === AT_RISK_GRADES` เป๊ะโดยโครงสร้าง ไม่ใช่โดยวินัย)
+9. `5db2491` — search + risk-level filter ใน Gradebook (client-side ล้วน บนข้อมูลที่โหลดมาแล้ว ไม่มี query ใหม่)
+10. `53b8c6c` — สรุปภาพรวมรายวิชาแบบ rule-based บนหน้า overview (**ไม่ใช่ AI** — ดู known limitation ด้านล่าง)
+
+รายละเอียด rationale/design decision เต็มของแต่ละ feature อยู่ใน commit message ของแต่ละตัวแล้ว (ทุก commit เขียนละเอียด ไม่ต้องเขียนซ้ำที่นี่)
+
+**Known limitation ใหม่ที่เจอระหว่างทำ B4**: `ai-analysis` module (§25/§26, ดูหัวข้อ "Module 7" ด้านล่าง) ยังไม่รองรับ INSTRUCTOR เลย — `@Roles('STUDENT', 'SUPER_ADMIN')` เท่านั้น และ `isSelfServiceOnly` กันเฉพาะ STUDENT **ถ้าจะเปิดให้ INSTRUCTOR ใช้ในอนาคต ห้ามเพิ่ม `'INSTRUCTOR'` เข้า `@Roles` เฉยๆ** เพราะจะเห็นนักศึกษาคนไหนก็ได้ ไม่มี scoping ตามวิชาที่สอนเลย ต้องเพิ่ม scope check (แบบเดียวกับ `InstructorGuard`/`InstructorOrScopeGuard` ที่ `course-students.controller.ts` ใช้อยู่) ก่อนเปิดสิทธิ์ — นี่คือเหตุผลหลักอีกข้อ (นอกจากไม่มี mock/key จริง) ที่ B4 เลือกใช้ deterministic template (`apps/frontend/src/lib/interpret-instructor-courses.ts`) แทนการเรียก endpoint นี้ตรงๆ
+
 ## Learning Path Planner — รองรับ touch/มือถือผ่านปุ่ม tap ไม่ใช่การลาก (สร้าง 2026-08-12)
 
 `/learning-path`'s `DragDropPlanner` (`apps/frontend/src/components/learning-path/drag-drop-planner.tsx`, `course-drag-card.tsx`) ใช้ native HTML5 Drag and Drop API เป็นหลัก (ไม่มี dnd library ใน dependency) — **native drag ไม่ทำงานบน touch device เลย** (ข้อจำกัดจริงของ spec) แต่ทุกการ์ดมีปุ่ม "ย้ายเข้าแผน"/"เอาออกจากแผน" แสดงตลอดเวลา (ไม่ใช่แค่ตอน detect touch เพราะ detect ผิดพลาดได้) ที่เรียก state setter (`moveToPlan`/`moveToOthers`) ตัวเดียวกับที่ drop event ใช้ — **ใช้งานได้ครบทุก device ผ่านปุ่มนี้แม้ลากไม่ได้เลย** ไม่ต้อง duplicate state

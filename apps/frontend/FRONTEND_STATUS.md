@@ -1,4 +1,4 @@
-# Frontend Status (สรุปสถานะ ณ 2026-08-25)
+# Frontend Status (สรุปสถานะ ณ 2026-09-19)
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง เพื่อไม่ต้อง re-explore โค้ด
 > ดู backlog เต็มที่ root `TODO.md`
@@ -28,11 +28,12 @@
 
 | Path | สรุป |
 |---|---|
-| `app/instructor/dashboard/page.tsx` | Course card grid + detail panel (3 tab: Grade Distribution / CLO Achievement / Student Roster), state ขับเคลื่อนด้วย `?courseId=&tab=` query param ล้วนๆ (ไม่มี useState คู่ขนาน) |
+| `app/instructor/dashboard/page.tsx` | ภาพรวมทุกวิชาที่สอน — stat cards, สรุปภาพรวมรายวิชาแบบ rule-based (ไม่ใช่ AI), at-risk alert (แยก CRITICAL/WATCH), course comparison chart, course card grid (status badge อิง threshold จริง) |
+| `app/instructor/courses/[courseId]/page.tsx` | หน้ารายวิชา — แยกเป็น route จริงจาก dashboard แล้ว (เดิมเป็น `?courseId=` query param บนหน้าเดียว) 6 tab ผ่าน `?tab=`: Grade Distribution / แนวโน้มรายเทอม / CLO Achievement / Gradebook (search+risk filter+CSV export+student timeline) / Assessment Evidence / ข้อมูลรายวิชา |
 
-ดึงข้อมูลจาก `GET /dashboard/instructor` เป็นหลัก (course grid + grade distribution + CLO/PLO list มาในก้อนเดียว) ส่วน `GET /clo-achievement/course/:id` และ `GET /courses/:id/students` ยิงแบบ lazy เฉพาะตอนเปิด tab นั้นจริง — ดู `src/components/instructor/instructor-detail-panel.tsx` สำหรับ query lifecycle ทั้งหมด (อยู่ที่ parent เดียว ลูกเป็น presentational ล้วน)
+ดึงข้อมูลจาก `GET /dashboard/instructor` เป็นหลัก (course grid + grade distribution + CLO/PLO list + at-risk + semester trend มาในก้อนเดียว) ส่วน `GET /clo-achievement/course/:id`, `GET /courses/:id/students`, assessment evidence ยิงแบบ lazy เฉพาะตอนเปิด tab นั้นจริง — ดู `src/components/instructor/instructor-detail-panel.tsx` สำหรับ query lifecycle ทั้งหมด (อยู่ที่ parent เดียว ลูกเป็น presentational ล้วน)
 
-ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้ว (2026-08-25, Playwright) — ดูรายละเอียดการ setup test account ผ่าน flow จริง (POST /users, POST /course-instructors, POST /student-course-records) ใน conversation history หรือถามให้สรุปซ้ำได้
+ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้วทุก feature (Playwright, demo-instructor) — รายการ 9 feature เต็มพร้อม commit hash + design decision ของแต่ละตัว ดูที่ root `TODO.md` หัวข้อ "INSTRUCTOR Dashboard — gradebook/course management"
 
 ### ADMIN (SUPER_ADMIN only)
 
@@ -79,9 +80,7 @@ shadcn-style, hand-rolled (ไม่ใช้ Radix):
 - Learning Path ไม่มี backend persistence — state หายเมื่อ reload
 - Email (forgot-password/invite) เป็น mock (console.warn เท่านั้น)
 - PLO/CLO seed data ครอบคลุมแค่ 24/96 วิชา ที่เหลือเป็น demo data
-- AI Skill Analysis ไม่มี caching/persistence, ต้องใช้ ANTHROPIC_API_KEY จริง
-- ไม่มี admin UI สำหรับ AcademicYear/Semester CRUD
-- ไม่มี enforcement ของ `mustChangePassword`
+- AI Skill Analysis ไม่มี caching/persistence, ต้องใช้ ANTHROPIC_API_KEY จริง — และยังไม่รองรับ INSTRUCTOR scope เลย (ดู TODO.md)
 
 ## 6. Dev environment gotcha (พบ 2026-08-25)
 
