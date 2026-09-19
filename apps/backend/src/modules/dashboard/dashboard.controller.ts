@@ -75,6 +75,22 @@ export class DashboardController {
     return this.dashboardService.getStaffStudentRisk(user);
   }
 
+  // No ScopeGuard by design — this is the system-wide view, and
+  // SUPER_ADMIN is the only role that has one. Same posture as the
+  // SUPER_ADMIN-only cohort/curriculum routes on PloAchievementController.
+  @Get('curricula')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'System-wide Curriculum Dashboard — every active curriculum with student totals, graduation readiness, at-risk counts, average PLO achievement, and the PLOs/CLOs sitting below threshold across the whole institution',
+  })
+  @ApiResponse({ status: 200, description: 'System curriculum overview' })
+  getSystemCurriculumOverview() {
+    return this.dashboardService.getSystemCurriculumOverview();
+  }
+
   @Get('curriculum/:curriculumId')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')

@@ -242,6 +242,76 @@ export interface StaffOverviewReport {
   atRiskSummary: { critical: number; watch: number };
 }
 
+// ---- GET /dashboard/curricula — SUPER_ADMIN system-wide view across
+// every active curriculum. Mirrors dashboard-report.interface.ts.
+
+// How much of a curriculum actually exists, decided by the backend so
+// the UI never has to read "not built yet" out of a zero.
+export type CurriculumDataState = 'HAS_STUDENTS' | 'STRUCTURE_ONLY' | 'EMPTY';
+
+export interface SystemCurriculumEntry {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  programCode: string;
+  programName: string;
+  dataState: CurriculumDataState;
+  studentCount: number;
+  courseCount: number;
+  cloCount: number;
+  ploCount: number;
+  averageGpa: number | null;
+  studentsAtRiskCount: number;
+  graduationReadyCount: number;
+  // Mean of the radar points that have data; null when nothing measurable.
+  averagePloValue: number | null;
+  radar: RadarPoint[];
+}
+
+// Flagged from its own CLOs, not from averageValue — a radar value is an
+// average attainment score while a CLO's achievementPercent is the share
+// of students at B or above. Both are 0-100 and mean different things.
+export interface ProblematicPloEntry {
+  ploId: string;
+  code: string;
+  name: string;
+  curriculumId: string;
+  curriculumVersion: string;
+  programCode: string;
+  closBelowThreshold: number;
+  // Excludes CLOs whose course nobody has taken yet.
+  totalMeasuredClos: number;
+  averageValue: number | null;
+}
+
+export interface ProblematicCloEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  curriculumId: string;
+  curriculumVersion: string;
+  programCode: string;
+  achievementPercent: number;
+  threshold: number;
+}
+
+export interface SystemCurriculumOverviewReport {
+  totals: {
+    curriculumCount: number;
+    curriculaWithStudentsCount: number;
+    studentCount: number;
+    graduationReadyCount: number;
+    graduationReadyPercent: number | null;
+    studentsAtRiskCount: number;
+  };
+  curricula: SystemCurriculumEntry[];
+  problematicPlos: ProblematicPloEntry[];
+  problematicClos: ProblematicCloEntry[];
+}
+
 // ---- GET /student-profiles/me — the logged-in STUDENT's own profile.
 // Dashboard needs studentProfileId, which /auth/me does not expose
 // (CurrentUserResponse is identity-only, not academic-record data) — this

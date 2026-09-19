@@ -29,7 +29,7 @@ import {
 
 const AT_RISK_GPA_THRESHOLD = 2.0;
 
-type PloWithMappings = Prisma.PloGetPayload<{
+export type PloWithMappings = Prisma.PloGetPayload<{
   include: {
     cloMappings: {
       include: { clo: { select: { id: true; courseId: true } } };
@@ -512,7 +512,12 @@ export class PloAchievementService {
     }
   }
 
-  private accumulateRadar(
+  // The three helpers below are pure and public because the system-wide
+  // curriculum overview runs the same PLO math over data it fetched for
+  // every curriculum at once. Keeping them here rather than copying the
+  // weighting into the dashboard service is the point (CONVENTIONS.md §6)
+  // — a PLO number means the same thing wherever it is shown.
+  accumulateRadar(
     sums: Map<string, { sum: number; count: number }>,
     radar: RadarPoint[],
   ) {
@@ -527,7 +532,7 @@ export class PloAchievementService {
     }
   }
 
-  private buildRadarFromSums(
+  buildRadarFromSums(
     plos: PloWithMappings[],
     sums: Map<string, { sum: number; count: number }>,
   ): RadarPoint[] {
@@ -546,10 +551,10 @@ export class PloAchievementService {
     return values.reduce((a, b) => a + b, 0) / values.length;
   }
 
-  // Pure/internal — no I/O, takes already-fetched data. Reusable by
-  // Cohort/Curriculum chunks later without re-fetching curriculum.plos
-  // per student.
-  private computeStudentPloScores(
+  // Pure — no I/O, takes already-fetched data, so curriculum-wide and
+  // system-wide callers reuse it without re-fetching curriculum.plos per
+  // student.
+  computeStudentPloScores(
     plos: PloWithMappings[],
     latestAttemptsByCourse: Map<string, LatestCourseAttempt>,
   ): RadarPoint[] {

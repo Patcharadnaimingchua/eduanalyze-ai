@@ -143,6 +143,93 @@ export interface StaffStudentRiskEntry {
   atRiskCourseCount: number;
 }
 
+// How much of a curriculum actually exists, decided at the source rather
+// than inferred from zero-counts in the UI. Most curricula in the system
+// are EMPTY shells, and "nobody has enrolled yet" has to read differently
+// from "every student is failing" — a distinction a bare 0 destroys.
+export type CurriculumDataState =
+  | 'HAS_STUDENTS'
+  | 'STRUCTURE_ONLY'
+  | 'EMPTY';
+
+export interface SystemCurriculumEntry {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  programCode: string;
+  programName: string;
+  dataState: CurriculumDataState;
+  studentCount: number;
+  courseCount: number;
+  cloCount: number;
+  ploCount: number;
+  // null rather than 0 wherever nothing could be measured — same
+  // convention as StaffOverviewCurriculum.averageGpa.
+  averageGpa: number | null;
+  studentsAtRiskCount: number;
+  graduationReadyCount: number;
+  // Mean of the PLO radar points that have data. null when the
+  // curriculum has no PLOs or no student has touched any mapped course.
+  averagePloValue: number | null;
+  radar: RadarPoint[];
+}
+
+// A PLO is flagged from its own CLOs rather than from its radar value:
+// RadarPoint.value is an average attainment score (gradePoint/4*100)
+// while a CLO's achievementPercent is the share of students at B or
+// above. Both are 0-100 and they are NOT interchangeable, so the
+// threshold comparison lives on the side that already defines one.
+//
+// Counts are always exposed, never just the verdict, because the
+// underlying grain is coarser than it looks: every CLO in a course
+// carries that course's single achievementPercent (Phase 8 limitation),
+// so "3 of 6 CLOs below" really means "3 of the 6 courses behind this
+// PLO are below".
+export interface ProblematicPloEntry {
+  ploId: string;
+  code: string;
+  name: string;
+  curriculumId: string;
+  curriculumVersion: string;
+  programCode: string;
+  closBelowThreshold: number;
+  // Only CLOs whose course has at least one graded student — a course
+  // nobody has taken is not evidence of a weak PLO.
+  totalMeasuredClos: number;
+  averageValue: number | null;
+}
+
+export interface ProblematicCloEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  curriculumId: string;
+  curriculumVersion: string;
+  programCode: string;
+  achievementPercent: number;
+  threshold: number;
+}
+
+export interface SystemCurriculumOverviewReport {
+  totals: {
+    curriculumCount: number;
+    curriculaWithStudentsCount: number;
+    studentCount: number;
+    graduationReadyCount: number;
+    // null when no student exists at all — never a bare 0/0.
+    graduationReadyPercent: number | null;
+    studentsAtRiskCount: number;
+  };
+  // Curricula that have students first, then the rest — the UI groups on
+  // dataState but the order already puts what matters on top.
+  curricula: SystemCurriculumEntry[];
+  problematicPlos: ProblematicPloEntry[];
+  problematicClos: ProblematicCloEntry[];
+}
+
 export interface StaffOverviewReport {
   programs: StaffOverviewProgram[];
   // Capped — a FACULTY scope covers every program in the faculty, so this
