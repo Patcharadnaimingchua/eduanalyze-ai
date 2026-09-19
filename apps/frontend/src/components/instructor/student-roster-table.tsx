@@ -9,6 +9,7 @@ import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { downloadCsv, toCsv } from '@/lib/csv';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -181,119 +182,143 @@ export function StudentRosterTable({
       </div>
 
       {writeError && <p className="text-sm text-destructive">{writeError}</p>}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-              <th className="py-2 pr-4 font-medium">รหัสนักศึกษา</th>
-              <th className="py-2 pr-4 font-medium">ชื่อ-นามสกุล</th>
-              <th className="py-2 pr-4 font-medium">เกรด</th>
-              <th className="py-2 pr-4 font-medium">ความเสี่ยง</th>
-              {editable && <th className="py-2 font-medium">การจัดการ</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleRoster.map((student) => {
-              const recordId = student.studentCourseRecordId;
-              const isBusy = busyId === recordId;
+      {/* Two columns only once a student is picked, so an unselected table
+          keeps the full width. minmax(0,1fr) rather than 1fr: a 1fr track
+          defaults to min-width:auto, which would let the wide table push
+          the panel off screen instead of scrolling inside its own box. */}
+      <div
+        className={cn(
+          'grid gap-4',
+          selectedStudentId && 'lg:grid-cols-[minmax(0,1fr)_340px]',
+        )}
+      >
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
+                <th className="py-2 pr-4 font-medium">รหัสนักศึกษา</th>
+                <th className="py-2 pr-4 font-medium">ชื่อ-นามสกุล</th>
+                <th className="py-2 pr-4 font-medium">เกรด</th>
+                <th className="py-2 pr-4 font-medium">ความเสี่ยง</th>
+                {editable && <th className="py-2 font-medium">การจัดการ</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRoster.map((student) => {
+                const recordId = student.studentCourseRecordId;
+                const isBusy = busyId === recordId;
+                const isSelected = selectedStudentId === student.studentProfileId;
 
-              return (
-                <tr key={student.studentProfileId} className="border-b border-slate-50">
-                  <td className="py-2 pr-4 text-muted-foreground">{student.studentCode}</td>
-                  <td className="py-2 pr-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedStudentId(student.studentProfileId)}
-                      className="text-primary hover:underline"
-                    >
-                      {student.fullName}
-                    </button>
-                  </td>
-                  <td className="py-2 pr-4">
-                    {editable ? (
-                      <Select
-                        value={student.grade}
-                        onValueChange={(value) =>
-                          runWrite(recordId, () =>
-                            updateCourseRecordGrade(recordId, { grade: value as Grade }),
-                          )
+                return (
+                  <tr
+                    key={student.studentProfileId}
+                    className={cn('border-b border-slate-50', isSelected && 'bg-brand-light')}
+                  >
+                    <td className="py-2 pr-4 text-muted-foreground">{student.studentCode}</td>
+                    <td className="py-2 pr-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedStudentId(isSelected ? null : student.studentProfileId)
                         }
-                        disabled={isBusy}
+                        className={cn(
+                          'text-primary hover:underline',
+                          isSelected && 'font-medium underline',
+                        )}
                       >
-                        <SelectTrigger className="h-8 w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GRADE_OPTIONS.map((g) => (
-                            <SelectItem key={g} value={g}>
-                              {GRADE_LABELS[g]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge tone={gradeBadgeTone(student.grade)}>{GRADE_LABELS[student.grade]}</Badge>
-                    )}
-                  </td>
-                  <td className="py-2 pr-4">
-                    <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
-                      {RISK_LEVEL_LABELS[student.riskLevel]}
-                    </Badge>
-                  </td>
-                  {editable && (
-                    <td className="py-2">
-                      {confirmingId === recordId ? (
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() => runWrite(recordId, () => deleteCourseRecord(recordId))}
-                          >
-                            ยืนยันลบ
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={isBusy}
-                            onClick={() => setConfirmingId(null)}
-                          >
-                            ยกเลิก
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
+                        {student.fullName}
+                      </button>
+                    </td>
+                    <td className="py-2 pr-4">
+                      {editable ? (
+                        <Select
+                          value={student.grade}
+                          onValueChange={(value) =>
+                            runWrite(recordId, () =>
+                              updateCourseRecordGrade(recordId, { grade: value as Grade }),
+                            )
+                          }
                           disabled={isBusy}
-                          onClick={() => setConfirmingId(recordId)}
                         >
-                          ลบ
-                        </Button>
+                          <SelectTrigger className="h-8 w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GRADE_OPTIONS.map((g) => (
+                              <SelectItem key={g} value={g}>
+                                {GRADE_LABELS[g]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge tone={gradeBadgeTone(student.grade)}>{GRADE_LABELS[student.grade]}</Badge>
                       )}
                     </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {visibleRoster.length === 0 && (
-          <p className="py-4 text-sm text-muted-foreground">
-            ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
-          </p>
+                    <td className="py-2 pr-4">
+                      <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
+                        {RISK_LEVEL_LABELS[student.riskLevel]}
+                      </Badge>
+                    </td>
+                    {editable && (
+                      <td className="py-2">
+                        {confirmingId === recordId ? (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => runWrite(recordId, () => deleteCourseRecord(recordId))}
+                            >
+                              ยืนยันลบ
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => setConfirmingId(null)}
+                            >
+                              ยกเลิก
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={isBusy}
+                            onClick={() => setConfirmingId(recordId)}
+                          >
+                            ลบ
+                          </Button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {visibleRoster.length === 0 && (
+            <p className="py-4 text-sm text-muted-foreground">
+              ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
+            </p>
+          )}
+        </div>
+        {/* self-start stops the grid stretching this cell to the row
+            height, which would leave sticky with nothing to scroll past. */}
+        {selectedStudentId && (
+          <div className="lg:sticky lg:top-4 lg:self-start">
+            <StudentTimelineCard
+              courseId={courseId}
+              studentProfileId={selectedStudentId}
+              onClose={() => setSelectedStudentId(null)}
+            />
+          </div>
         )}
       </div>
-      {selectedStudentId && (
-        <StudentTimelineCard
-          courseId={courseId}
-          studentProfileId={selectedStudentId}
-          onClose={() => setSelectedStudentId(null)}
-        />
-      )}
     </div>
   );
 }
