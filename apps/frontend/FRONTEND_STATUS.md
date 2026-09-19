@@ -20,7 +20,7 @@
 | `app/aptitude-analysis/page.tsx` | PLO radar chart + rule-based interpretation (ไม่ใช้ AI live) |
 | `app/clo-plo-analysis/page.tsx` | CLO/PLO achievement cards |
 | `app/course-assessment/[courseId]/page.tsx` | Self-assessment form ต่อ course |
-| `app/credit-checker/page.tsx` | Credit check + prerequisite flow chart (hand-rolled) |
+| `app/credit-checker/page.tsx` | Credit check + prerequisite flow chart (ใช้ `@xyflow/react`) |
 | `app/learning-path/page.tsx` | Drag-and-drop planner (client-only, ไม่มี persist) |
 | `app/profile/page.tsx` | Profile/org info + เปลี่ยนรหัสผ่าน — **เปิดให้ทุก role แล้ว** (เดิม STUDENT-only), non-STUDENT เห็นแค่ identity card + role badge + change-password (ไม่มี "ข้อมูลการศึกษา") |
 
@@ -29,11 +29,13 @@
 | Path | สรุป |
 |---|---|
 | `app/instructor/dashboard/page.tsx` | ภาพรวมทุกวิชาที่สอน — stat cards, สรุปภาพรวมรายวิชาแบบ rule-based (ไม่ใช่ AI), at-risk alert (แยก CRITICAL/WATCH), course comparison chart, course card grid (status badge อิง threshold จริง) |
-| `app/instructor/courses/[courseId]/page.tsx` | หน้ารายวิชา — แยกเป็น route จริงจาก dashboard แล้ว (เดิมเป็น `?courseId=` query param บนหน้าเดียว) 6 tab ผ่าน `?tab=`: Grade Distribution / แนวโน้มรายเทอม / CLO Achievement / Gradebook (search+risk filter+CSV export+student timeline) / Assessment Evidence / ข้อมูลรายวิชา |
+| `app/instructor/courses/[courseId]/page.tsx` | หน้ารายวิชา — แยกเป็น route จริงจาก dashboard แล้ว (เดิมเป็น `?courseId=` query param บนหน้าเดียว) **5 tab** ผ่าน `?tab=` แบ่งตามคำถามที่ตอบ: **ผลการเรียน** (`grades` — การกระจายเกรด + แนวโน้มรายเทอม รวมกัน) / **ผลลัพธ์การเรียนรู้** (`clo` — CLO/PLO เทียบ threshold) / **Gradebook** (`roster` — search+risk filter+CSV+timeline เป็น side panel) / **Assessment Evidence** (`evidence`) / **ข้อมูลรายวิชา** (`course`) |
 
 ดึงข้อมูลจาก `GET /dashboard/instructor` เป็นหลัก (course grid + grade distribution + CLO/PLO list + at-risk + semester trend มาในก้อนเดียว) ส่วน `GET /clo-achievement/course/:id`, `GET /courses/:id/students`, assessment evidence ยิงแบบ lazy เฉพาะตอนเปิด tab นั้นจริง — ดู `src/components/instructor/instructor-detail-panel.tsx` สำหรับ query lifecycle ทั้งหมด (อยู่ที่ parent เดียว ลูกเป็น presentational ล้วน)
 
 ทดสอบ end-to-end ผ่านเบราว์เซอร์จริงแล้วทุก feature (Playwright, demo-instructor) — รายการ 9 feature เต็มพร้อม commit hash + design decision ของแต่ละตัว ดูที่ root `TODO.md` หัวข้อ "INSTRUCTOR Dashboard — gradebook/course management"
+
+`parseInstructorTab` fallback เป็น `grades` → ลิงก์เก่า `?tab=trend` (ก่อนรวม tab) ตกลงที่ tab ที่บรรจุ trend อยู่พอดี ไม่ต้องมี redirect · deep-link เดียวในโค้ดเบสคือ `?tab=roster` จาก at-risk card
 
 ### ADMIN (SUPER_ADMIN only)
 
@@ -51,25 +53,26 @@
 
 ## 2. Animation patterns
 
-- **ห้ามใช้ framer-motion / recharts / react-flow** — เป็น convention ที่ตั้งใจ (มี comment อธิบายไว้หลายที่)
+- **ห้ามใช้ framer-motion / recharts** — เป็น convention ที่ตั้งใจ (มี comment อธิบายไว้หลายที่) ชาร์ตสถิติทุกตัว (instructor, PLO radar) hand-roll เป็น DOM/SVG ล้วน ยกเว้น prerequisite flow chart ที่ใช้ `@xyflow/react` — ดูข้อยกเว้นใน §4
 - **Count-up ตัวเลข**: hook `src/lib/use-count-up.ts` → `useCountUp(target, { duration, decimals, replayKey })` (hand-rolled rAF + ease-out-cubic)
 - **Entrance/exit**: Tailwind plugin `tailwindcss-animate` (ใน `tailwind.config.ts`)
   - เข้า: `animate-in fade-in-0 slide-in-from-bottom-4 duration-500` (ใช้ใน dashboard, academic-record)
   - ออก: `animate-out fade-out-0 slide-out-to-top-4 duration-500` (ใช้ใน `record-timeline.tsx`)
   - Loading skeleton: `animate-pulse` (`dashboard-skeleton.tsx`)
 - ไม่มี custom `@keyframes` ใน `globals.css` — ใช้แค่ tailwindcss-animate + useCountUp
-- Chart/flow chart ใน credit-checker, radar ใน aptitude-analysis = SVG hand-rolled ทั้งหมด
+- radar ใน aptitude-analysis + ชาร์ตทุกตัวใน instructor = SVG/DOM hand-rolled · prerequisite flow chart ใน credit-checker = `@xyflow/react` (ข้อยกเว้นเดียว)
 
 ## 3. Reusable UI components (`src/components/ui/`)
 
-shadcn-style, hand-rolled (ไม่ใช้ Radix):
+shadcn-style — ส่วนใหญ่ hand-rolled แต่ **มี Radix อยู่ 4 ตัวใน `package.json`** (`react-label`, `react-popover`, `react-select`, `react-slot`): `select.tsx` = Radix Select, `combobox.tsx` = Radix Popover, `button.tsx`/`form.tsx` ใช้ `Slot`, `label.tsx` = Radix Label — ที่เหลือ hand-rolled จริง (นี่คือเหตุผลที่ Playwright ใช้ selector `button[role="combobox"]` / `getByRole('option')` ได้)
 `alert.tsx`, `badge.tsx` (tone-based: green/amber/red/gray — เพิ่ม 2026-08-25 แทน `<span>+cn()` inline ที่เคยซ้ำอยู่หลายจุด), `button.tsx`, `card.tsx` (Card/CardHeader/CardContent/CardTitle), `combobox.tsx`, `form.tsx` (RHF wrapper), `input.tsx`, `label.tsx`, `progress.tsx`, `select.tsx`, `slider.tsx`, `textarea.tsx`
 
 `DashboardShell` (`src/components/dashboard/dashboard-shell.tsx`) เป็น role-aware แล้ว (nav items ตาม `role` prop, default `'STUDENT'` — 9 หน้า STUDENT เดิมเรียกแบบไม่ใส่ `role` ได้เหมือนเดิม ไม่ต้องแก้) ส่วน role-gate ใช้ `src/components/auth/require-role.tsx` (`<RequireRole role="INSTRUCTOR">`) — หน้า STUDENT เดิมยังใช้ inline `isStudent` check เดิมอยู่ ยังไม่ได้ retro-fit ให้ใช้ `RequireRole` ร่วม
 
 ## 4. Convention ที่ตกลงกันไว้
 
-- **ห้าม** framer-motion, recharts, react-flow/reactflow, dnd-library
+- **ห้าม** framer-motion, recharts, dnd-library
+- ⚠️ `@xyflow/react` (react-flow) **ถูกติดตั้งและใช้งานจริงแล้ว** ใน `components/credit-checker/prerequisite-flow-chart.tsx` — เดิมเอกสารนี้ระบุว่าห้าม แต่ขัดกับของจริง ถือว่าเป็นข้อยกเว้นที่ยอมรับแล้ว ไม่ใช่ของที่ต้องถอด
 - Animation ทั้งหมด hand-roll ก่อนเสมอ (Tailwind utilities + custom hook) — ใช้ library เฉพาะกรณีจำเป็นจริงมากๆ เท่านั้น (ปัจจุบันยังไม่มีข้อยกเว้น)
 - Drag-and-drop ใช้ native HTML5 DnD + ปุ่ม move fallback สำหรับ touch device
 - ตอบ user เป็นภาษาไทย (โค้ด/comment เป็นอังกฤษ) — ดู `apps/CLAUDE.md`

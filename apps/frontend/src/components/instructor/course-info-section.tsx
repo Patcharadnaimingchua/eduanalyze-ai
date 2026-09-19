@@ -65,22 +65,6 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
           </ul>
         )}
       </section>
-
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-primary">Course Learning Outcomes (CLO)</h3>
-        {course.clos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ยังไม่มี CLO สำหรับรายวิชานี้</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {course.clos.map((clo) => (
-              <li key={clo.cloId}>
-                <span className="font-medium text-primary">{clo.code}</span>{' '}
-                <span className="text-slate-600">{clo.description}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }
