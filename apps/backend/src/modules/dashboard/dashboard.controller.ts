@@ -62,6 +62,19 @@ export class DashboardController {
     return this.dashboardService.getStaffOverview(user);
   }
 
+  @Get('staff/students')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Staff student directory — every student in scope with GPA and risk level, for filtering the directory by risk',
+  })
+  @ApiResponse({ status: 200, description: 'Risk-annotated student list' })
+  getStaffStudentRisk(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getStaffStudentRisk(user);
+  }
+
   @Get('curriculum/:curriculumId')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')

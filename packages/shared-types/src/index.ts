@@ -219,6 +219,22 @@ export interface StaffAtRiskStudent {
   curriculumVersion: string;
 }
 
+// The directory's row: every student in scope, at-risk or not, so the
+// page can filter by band. riskLevel is NORMAL for most, unlike
+// StaffAtRiskStudent which is pre-filtered.
+export interface StaffStudentRiskEntry {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  programId: string;
+  curriculumId: string;
+  admissionYear: number;
+  isActive: boolean;
+  riskLevel: RiskLevel;
+  gpa: number | null;
+  atRiskCourseCount: number;
+}
+
 export interface StaffOverviewReport {
   programs: StaffOverviewProgram[];
   // Capped worst-first preview — counts below cover the whole scope.

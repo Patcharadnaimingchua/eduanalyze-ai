@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Grade } from '@prisma/client';
 import { RequestUser } from '../auth/request-user.interface';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ScopeResolverService } from '../../common/scope/scope-resolver.service';
@@ -6,6 +7,7 @@ import { CreditCheckerService } from '../academic-record/credit-checker/credit-c
 import { LearningPathService } from '../academic-record/learning-path/learning-path.service';
 import { StudentCourseRecordService } from '../academic-record/student-course-record/student-course-record.service';
 import {
+  RiskLevel,
   SEMESTER_TERM_RANK,
   riskLevel,
 } from '../academic-record/student-course-record/grade-point.constant';
@@ -21,6 +23,7 @@ import {
   StaffAtRiskStudent,
   StaffOverviewCurriculum,
   StaffOverviewReport,
+  StaffStudentRiskEntry,
   StudentDashboardReport,
 } from './dashboard-report.interface';
 
@@ -336,16 +339,9 @@ export class DashboardService {
       },
     });
 
-    const records =
-      await this.studentCourseRecordService.findActiveRecordsForStudents(
-        students.map((student) => student.id),
-      );
-    const recordsByStudent = new Map<string, typeof records>();
-    for (const record of records) {
-      const list = recordsByStudent.get(record.studentProfileId) ?? [];
-      list.push(record);
-      recordsByStudent.set(record.studentProfileId, list);
-    }
+    const riskByStudent = await this.computeStudentRisk(
+      students.map((student) => student.id),
+    );
 
     const programCodeById = new Map(programs.map((p) => [p.id, p.code]));
     const versionByCurriculumId = new Map(
@@ -357,38 +353,25 @@ export class DashboardService {
     const atRiskSummary = { critical: 0, watch: 0 };
 
     for (const student of students) {
-      const latestByCourse =
-        this.studentCourseRecordService.dedupeLatestPerCourse(
-          recordsByStudent.get(student.id) ?? [],
-        );
-      const { gpa } =
-        this.studentCourseRecordService.calculateGpaFromAttempts(
-          latestByCourse,
-        );
+      const risk = riskByStudent.get(student.id)!;
 
       const gpas = gpasByCurriculum.get(student.curriculumId) ?? [];
-      gpas.push(gpa);
+      gpas.push(risk.gpa);
       gpasByCurriculum.set(student.curriculumId, gpas);
 
-      // Already sorted worst-first, so [0] is the attempt that decides
-      // the student's band — no separate roll-up rule to keep in sync.
-      const atRiskAttempts =
-        this.studentCourseRecordService.selectAtRiskAttempts(latestByCourse);
-      const worst = atRiskAttempts[0];
-      if (!worst) continue;
+      if (risk.worstGrade === null) continue;
 
-      const level = riskLevel(worst.grade);
-      if (level === 'CRITICAL') atRiskSummary.critical += 1;
-      else if (level === 'WATCH') atRiskSummary.watch += 1;
+      if (risk.riskLevel === 'CRITICAL') atRiskSummary.critical += 1;
+      else if (risk.riskLevel === 'WATCH') atRiskSummary.watch += 1;
 
       atRiskStudents.push({
         studentProfileId: student.id,
         studentCode: student.studentCode,
         fullName: student.user.fullName,
-        riskLevel: level,
-        worstGrade: worst.grade,
-        atRiskCourseCount: atRiskAttempts.length,
-        gpa,
+        riskLevel: risk.riskLevel,
+        worstGrade: risk.worstGrade,
+        atRiskCourseCount: risk.atRiskCourseCount,
+        gpa: risk.gpa,
         programCode: programCodeById.get(student.programId) ?? '',
         curriculumVersion:
           versionByCurriculumId.get(student.curriculumId) ?? '',
@@ -419,6 +402,115 @@ export class DashboardService {
     }
 
     return { gpaByCurriculum, atRiskStudents, atRiskSummary };
+  }
+
+  // One query for a whole cohort's records, then per student: collapse
+  // retakes, average, and pick the worst at-risk attempt. Every step is
+  // an existing StudentCourseRecordService method — this only groups
+  // their inputs (CONVENTIONS.md §6).
+  //
+  // selectAtRiskAttempts returns worst-first, so [0] decides the band.
+  // There is deliberately no separate "student is at risk when…" rule to
+  // drift away from the per-course one the instructor dashboard uses.
+  private async computeStudentRisk(studentProfileIds: string[]): Promise<
+    Map<
+      string,
+      {
+        gpa: number | null;
+        riskLevel: RiskLevel;
+        worstGrade: Grade | null;
+        atRiskCourseCount: number;
+      }
+    >
+  > {
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForStudents(
+        studentProfileIds,
+      );
+    const recordsByStudent = new Map<string, typeof records>();
+    for (const record of records) {
+      const list = recordsByStudent.get(record.studentProfileId) ?? [];
+      list.push(record);
+      recordsByStudent.set(record.studentProfileId, list);
+    }
+
+    const riskByStudent = new Map<
+      string,
+      {
+        gpa: number | null;
+        riskLevel: RiskLevel;
+        worstGrade: Grade | null;
+        atRiskCourseCount: number;
+      }
+    >();
+    for (const studentProfileId of studentProfileIds) {
+      const latestByCourse =
+        this.studentCourseRecordService.dedupeLatestPerCourse(
+          recordsByStudent.get(studentProfileId) ?? [],
+        );
+      const { gpa } =
+        this.studentCourseRecordService.calculateGpaFromAttempts(
+          latestByCourse,
+        );
+      const atRiskAttempts =
+        this.studentCourseRecordService.selectAtRiskAttempts(latestByCourse);
+      const worst = atRiskAttempts[0];
+
+      riskByStudent.set(studentProfileId, {
+        gpa,
+        riskLevel: worst ? riskLevel(worst.grade) : 'NORMAL',
+        worstGrade: worst?.grade ?? null,
+        atRiskCourseCount: atRiskAttempts.length,
+      });
+    }
+    return riskByStudent;
+  }
+
+  // The risk-annotated student list behind the staff directory. Scoped by
+  // programId to match GET /student-profiles, which this replaces on that
+  // page, and deliberately NOT filtered to isActive — the directory shows
+  // suspended students with a status badge, unlike the dashboard's
+  // enrolment aggregates.
+  async getStaffStudentRisk(
+    user: RequestUser,
+  ): Promise<StaffStudentRiskEntry[]> {
+    const programIds = await this.scopeResolverService.getCoveredProgramIds(
+      user.userId,
+    );
+    if (programIds.length === 0) return [];
+
+    const students = await this.prisma.studentProfile.findMany({
+      where: { programId: { in: programIds } },
+      select: {
+        id: true,
+        studentCode: true,
+        programId: true,
+        curriculumId: true,
+        admissionYear: true,
+        isActive: true,
+        user: { select: { fullName: true } },
+      },
+    });
+
+    const riskByStudent = await this.computeStudentRisk(
+      students.map((student) => student.id),
+    );
+
+    return students.map((student) => {
+      const risk = riskByStudent.get(student.id)!;
+      return {
+        studentProfileId: student.id,
+        studentCode: student.studentCode,
+        fullName: student.user.fullName,
+        programId: student.programId,
+        curriculumId: student.curriculumId,
+        admissionYear: student.admissionYear,
+        isActive: student.isActive,
+        riskLevel: risk.riskLevel,
+        gpa: risk.gpa,
+        atRiskCourseCount: risk.atRiskCourseCount,
+      };
+    });
   }
 
   private async getStaffOverviewCurriculum(

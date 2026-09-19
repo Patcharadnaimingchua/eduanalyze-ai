@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import type { CurriculumListItem, ProgramListItem, StudentProfileSummary } from '@eduanalyze-ai/shared-types';
+import type {
+  CurriculumListItem,
+  ProgramListItem,
+  StaffStudentRiskEntry,
+} from '@eduanalyze-ai/shared-types';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -10,7 +15,7 @@ export function StudentDirectoryTable({
   programs,
   curricula,
 }: {
-  students: StudentProfileSummary[];
+  students: StaffStudentRiskEntry[];
   programs: ProgramListItem[];
   curricula: CurriculumListItem[];
 }) {
@@ -32,6 +37,8 @@ export function StudentDirectoryTable({
                 <th className="py-2 pr-4 font-medium">สาขา</th>
                 <th className="py-2 pr-4 font-medium">ฉบับหลักสูตร</th>
                 <th className="py-2 pr-4 font-medium">ปีเข้าศึกษา</th>
+                <th className="py-2 pr-4 font-medium">GPA</th>
+                <th className="py-2 pr-4 font-medium">ความเสี่ยง</th>
                 <th className="py-2 pr-4 font-medium">สถานะ</th>
                 <th className="py-2 pr-0 font-medium" />
               </tr>
@@ -39,8 +46,8 @@ export function StudentDirectoryTable({
             <tbody>
               {students.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-muted-foreground">
-                    ยังไม่มีนักศึกษาในขอบเขตของคุณ
+                  <td colSpan={9} className="py-6 text-center text-muted-foreground">
+                    ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
                   </td>
                 </tr>
               )}
@@ -48,12 +55,25 @@ export function StudentDirectoryTable({
                 const program = programMap.get(student.programId);
                 const curriculum = curriculumMap.get(student.curriculumId);
                 return (
-                  <tr key={student.id} className="border-b border-slate-50">
-                    <td className="py-3 pr-4 text-primary">{student.user.fullName}</td>
+                  <tr key={student.studentProfileId} className="border-b border-slate-50">
+                    <td className="py-3 pr-4 text-primary">{student.fullName}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{student.studentCode}</td>
                     <td className="py-3 pr-4">{program?.name ?? '—'}</td>
                     <td className="py-3 pr-4">{curriculum?.version ?? '—'}</td>
                     <td className="py-3 pr-4">{student.admissionYear}</td>
+                    <td className="py-3 pr-4">
+                      {student.gpa === null ? '—' : student.gpa.toFixed(2)}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
+                        {RISK_LEVEL_LABELS[student.riskLevel]}
+                      </Badge>
+                      {student.atRiskCourseCount > 0 && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {student.atRiskCourseCount} วิชา
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4">
                       <Badge tone={student.isActive ? 'green' : 'gray'}>
                         {student.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
@@ -61,7 +81,7 @@ export function StudentDirectoryTable({
                     </td>
                     <td className="py-3 pr-0 text-right">
                       <Link
-                        href={`/staff/students/${student.id}`}
+                        href={`/staff/students/${student.studentProfileId}`}
                         className="text-sm font-medium text-brand hover:underline"
                       >
                         ดูรายละเอียด

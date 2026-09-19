@@ -10,6 +10,7 @@ import type {
   InstructorListItem,
   Prerequisite,
   StaffOverviewReport,
+  StaffStudentRiskEntry,
   StudentCourseRecord,
   StudentProfileSummary,
   UpdateCourseCategoryRequest,
@@ -136,5 +137,12 @@ export async function deleteCourseInstructor(id: string) {
 
 export async function fetchStaffOverview() {
   const { data } = await apiClient.get<StaffOverviewReport>('/dashboard/staff');
+  return data;
+}
+
+export async function fetchStaffStudentRisk() {
+  const { data } = await apiClient.get<StaffStudentRiskEntry[]>(
+    '/dashboard/staff/students',
+  );
   return data;
 }
