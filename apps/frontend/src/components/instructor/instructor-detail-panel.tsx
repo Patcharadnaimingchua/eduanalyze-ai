@@ -5,19 +5,21 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
-import { GradeDistributionChart } from './grade-distribution-chart';
+import { CourseResultsSection } from './course-results-section';
 import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
-import { SemesterTrendChart } from './semester-trend-chart';
 
-export type InstructorTab = 'grades' | 'trend' | 'clo' | 'roster' | 'evidence' | 'course';
+export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence' | 'course';
 
+// Split by the question each one answers: raw grades (day-to-day teaching)
+// vs threshold attainment (curriculum QA). 'grades' absorbed the old
+// standalone 'trend' tab, so stale ?tab=trend links fall back onto the tab
+// that now contains the trend chart.
 const TABS: { key: InstructorTab; label: string }[] = [
-  { key: 'grades', label: 'Grade Distribution' },
-  { key: 'trend', label: 'แนวโน้มรายเทอม' },
-  { key: 'clo', label: 'CLO Achievement' },
+  { key: 'grades', label: 'ผลการเรียน' },
+  { key: 'clo', label: 'ผลลัพธ์การเรียนรู้' },
   { key: 'roster', label: 'Gradebook' },
   { key: 'evidence', label: 'Assessment Evidence' },
   { key: 'course', label: 'ข้อมูลรายวิชา' },
@@ -87,10 +89,11 @@ export function InstructorDetailPanel({
         </div>
 
         {activeTab === 'grades' && (
-          <GradeDistributionChart distribution={course.gradeDistribution} />
+          <CourseResultsSection
+            distribution={course.gradeDistribution}
+            trend={course.semesterTrend}
+          />
         )}
-
-        {activeTab === 'trend' && <SemesterTrendChart trend={course.semesterTrend} />}
 
         {activeTab === 'clo' && (
           <CloAchievementSection
