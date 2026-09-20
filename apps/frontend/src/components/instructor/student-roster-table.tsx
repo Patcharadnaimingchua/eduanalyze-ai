@@ -9,6 +9,7 @@ import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { downloadCsv, toCsv } from '@/lib/csv';
+import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,7 @@ export function StudentRosterTable({
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
+  const toast = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(
@@ -101,15 +102,19 @@ export function StudentRosterTable({
     }
   }, [visibleRoster, selectedStudentId]);
 
-  async function runWrite(recordId: string, action: () => Promise<unknown>) {
+  async function runWrite(
+    recordId: string,
+    action: () => Promise<unknown>,
+    successMessage: string,
+  ) {
     setBusyId(recordId);
-    setWriteError(null);
     try {
       await action();
       setConfirmingId(null);
       onChanged?.();
+      toast.success(successMessage);
     } catch (error) {
-      setWriteError(describeWriteError(error));
+      toast.error(describeWriteError(error));
     } finally {
       setBusyId(null);
     }
@@ -181,7 +186,6 @@ export function StudentRosterTable({
         )}
       </div>
 
-      {writeError && <p className="text-sm text-destructive">{writeError}</p>}
       {/* Two columns only once a student is picked, so an unselected table
           keeps the full width. minmax(0,1fr) rather than 1fr: a 1fr track
           defaults to min-width:auto, which would let the wide table push
@@ -234,8 +238,10 @@ export function StudentRosterTable({
                         <Select
                           value={student.grade}
                           onValueChange={(value) =>
-                            runWrite(recordId, () =>
-                              updateCourseRecordGrade(recordId, { grade: value as Grade }),
+                            runWrite(
+                              recordId,
+                              () => updateCourseRecordGrade(recordId, { grade: value as Grade }),
+                              'บันทึกเกรดแล้ว',
                             )
                           }
                           disabled={isBusy}
@@ -269,7 +275,13 @@ export function StudentRosterTable({
                               variant="destructive"
                               size="sm"
                               disabled={isBusy}
-                              onClick={() => runWrite(recordId, () => deleteCourseRecord(recordId))}
+                              onClick={() =>
+                                runWrite(
+                                  recordId,
+                                  () => deleteCourseRecord(recordId),
+                                  'ลบผลการเรียนแล้ว',
+                                )
+                              }
                             >
                               ยืนยันลบ
                             </Button>

@@ -6,6 +6,7 @@ import type { CourseListItem, Grade, SemesterGpa, StudentCourseRecord } from '@e
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { gradeBadgeClassName } from '@/lib/grade-badge-color';
+import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ export function RecordTimeline({
   // Set while a row plays its exit animation, before the delete call
   // actually fires — see the effect below.
   const [exitingRecordId, setExitingRecordId] = useState<string | null>(null);
+  const toast = useToast();
 
   const gpaBySemesterId = new Map(gpaBySemester.map((s) => [s.semesterId, s]));
   const recordsBySemesterId = new Map<string, StudentCourseRecord[]>();
@@ -121,6 +123,9 @@ export function RecordTimeline({
     try {
       await updateCourseRecordGrade(id, { grade: grade as StudentCourseRecord['grade'] });
       onChanged();
+      toast.success('บันทึกเกรดแล้ว');
+    } catch {
+      toast.error('บันทึกเกรดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
@@ -144,6 +149,12 @@ export function RecordTimeline({
       try {
         await deleteCourseRecord(id);
         onChanged();
+        toast.success('ลบรายวิชาแล้ว');
+      } catch {
+        // The row already animated away, and clearing exitingRecordId below
+        // snaps it back into the list — without this the reappearance looks
+        // like a glitch rather than a failed delete.
+        toast.error('ลบรายวิชาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       } finally {
         setBusyId(null);
         setExitingRecordId(null);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { CourseListItem, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
+import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,12 +27,16 @@ export function RecordTable({
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const toast = useToast();
 
   async function handleGradeChange(id: string, grade: string) {
     setBusyId(id);
     try {
       await updateCourseRecordGrade(id, { grade: grade as StudentCourseRecord['grade'] });
       onChanged();
+      toast.success('บันทึกเกรดแล้ว');
+    } catch {
+      toast.error('บันทึกเกรดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
@@ -43,6 +48,9 @@ export function RecordTable({
       await deleteCourseRecord(id);
       setConfirmingId(null);
       onChanged();
+      toast.success('ลบรายวิชาแล้ว');
+    } catch {
+      toast.error('ลบรายวิชาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
