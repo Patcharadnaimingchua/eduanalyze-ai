@@ -141,10 +141,22 @@ export class StudentCourseRecordService {
   // ADMIN/STAFF (§10): scoped to students in programs their scope covers,
   // same query-level discipline via getCoveredProgramIds.
   async findAll(user: RequestUser) {
+    // Chronological, not insert-order — without this, Postgres has no
+    // guaranteed row order and a plain refetch can silently reshuffle a
+    // transcript. Same term ranking as SEMESTER_TERM_RANK below (the
+    // SemesterTerm enum is declared FIRST/SECOND/SUMMER in schema.prisma,
+    // so Postgres's native enum ordinal already sorts correctly here).
+    const orderBy: Prisma.StudentCourseRecordOrderByWithRelationInput[] = [
+      { semester: { academicYear: { year: 'asc' } } },
+      { semester: { term: 'asc' } },
+      { course: { code: 'asc' } },
+    ];
+
     if (this.isSelfServiceOnly(user)) {
       const own = await this.studentProfileService.findByUserId(user.userId);
       return this.prisma.studentCourseRecord.findMany({
         where: { studentProfileId: own.id, isActive: true },
+        orderBy,
       });
     }
     if (this.isStaffTier(user)) {
@@ -156,10 +168,12 @@ export class StudentCourseRecordService {
           studentProfile: { programId: { in: programIds } },
           isActive: true,
         },
+        orderBy,
       });
     }
     return this.prisma.studentCourseRecord.findMany({
       where: { isActive: true },
+      orderBy,
     });
   }
 
