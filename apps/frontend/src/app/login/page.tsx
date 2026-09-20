@@ -13,13 +13,16 @@ import { useAuth } from '@/lib/auth-context';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
 import {
-  twoFactorVerifySchema,
-  type TwoFactorVerifyFormValues,
+  twoFactorVerifyRecoverySchema,
+  twoFactorVerifyTotpSchema,
+  type TwoFactorVerifyRecoveryFormValues,
+  type TwoFactorVerifyTotpFormValues,
 } from '@/lib/validation/two-factor.schema';
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OtpInput } from '@/components/ui/otp-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Form,
@@ -71,15 +74,27 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
-  const twoFactorForm = useForm<TwoFactorVerifyFormValues>({
-    resolver: zodResolver(twoFactorVerifySchema),
+  const totpForm = useForm<TwoFactorVerifyTotpFormValues>({
+    resolver: zodResolver(twoFactorVerifyTotpSchema),
     defaultValues: { code: '' },
   });
+  const recoveryForm = useForm<TwoFactorVerifyRecoveryFormValues>({
+    resolver: zodResolver(twoFactorVerifyRecoverySchema),
+    defaultValues: { code: '' },
+  });
+
+  function toggleRecoveryMode() {
+    setIsRecoveryMode((v) => !v);
+    totpForm.reset({ code: '' });
+    recoveryForm.reset({ code: '' });
+    setServerError(null);
+  }
 
   // Google OAuth's callback is a top-level redirect (can't return JSON),
   // so when that account has 2FA enabled it lands back here with the
@@ -112,7 +127,9 @@ function LoginPageContent() {
     }
   }
 
-  async function onSubmitTwoFactor(values: TwoFactorVerifyFormValues) {
+  async function onSubmitTwoFactor(
+    values: TwoFactorVerifyTotpFormValues | TwoFactorVerifyRecoveryFormValues,
+  ) {
     setServerError(null);
     if (!pendingToken) return;
     try {
@@ -141,42 +158,110 @@ function LoginPageContent() {
           กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)
         </p>
 
-        <Form {...twoFactorForm}>
-          <form onSubmit={twoFactorForm.handleSubmit(onSubmitTwoFactor)} className="space-y-4">
-            {serverError && (
-              <Alert variant="destructive">
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
-            )}
-            <FormField
-              control={twoFactorForm.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>รหัสยืนยัน</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123456" autoComplete="one-time-code" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+        {isRecoveryMode ? (
+          <Form {...recoveryForm}>
+            <form onSubmit={recoveryForm.handleSubmit(onSubmitTwoFactor)} className="space-y-4">
+              {serverError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{serverError}</AlertDescription>
+                </Alert>
               )}
-            />
-            <Button type="submit" className="w-full" disabled={twoFactorForm.formState.isSubmitting}>
-              {twoFactorForm.formState.isSubmitting ? 'กำลังยืนยัน...' : 'ยืนยัน'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                setPendingToken(null);
-                setServerError(null);
-              }}
-            >
-              กลับไปเข้าสู่ระบบใหม่
-            </Button>
-          </form>
-        </Form>
+              <FormField
+                control={recoveryForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>กรอกรหัสสำรอง (recovery code)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="XXXX-XXXX"
+                        autoComplete="one-time-code"
+                        className={serverError ? 'animate-shake border-destructive' : ''}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="text-right text-sm">
+                <button
+                  type="button"
+                  className="font-medium text-brand hover:underline"
+                  onClick={toggleRecoveryMode}
+                >
+                  กลับไปใช้รหัสจากแอป Authenticator
+                </button>
+              </div>
+              <Button type="submit" className="w-full" disabled={recoveryForm.formState.isSubmitting}>
+                {recoveryForm.formState.isSubmitting ? 'กำลังยืนยัน...' : 'ยืนยัน'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setPendingToken(null);
+                  setServerError(null);
+                  setIsRecoveryMode(false);
+                }}
+              >
+                กลับไปเข้าสู่ระบบใหม่
+              </Button>
+            </form>
+          </Form>
+        ) : (
+          <Form {...totpForm}>
+            <form onSubmit={totpForm.handleSubmit(onSubmitTwoFactor)} className="space-y-4">
+              {serverError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{serverError}</AlertDescription>
+                </Alert>
+              )}
+              <FormField
+                control={totpForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>กรอกรหัส 6 หลักจากแอป Authenticator</FormLabel>
+                    <FormControl>
+                      <OtpInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        hasError={!!serverError}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="text-right text-sm">
+                <button
+                  type="button"
+                  className="font-medium text-brand hover:underline"
+                  onClick={toggleRecoveryMode}
+                >
+                  ใช้รหัสสำรองแทน
+                </button>
+              </div>
+              <Button type="submit" className="w-full" disabled={totpForm.formState.isSubmitting}>
+                {totpForm.formState.isSubmitting ? 'กำลังยืนยัน...' : 'ยืนยัน'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setPendingToken(null);
+                  setServerError(null);
+                  setIsRecoveryMode(false);
+                }}
+              >
+                กลับไปเข้าสู่ระบบใหม่
+              </Button>
+            </form>
+          </Form>
+        )}
       </AuthSplitLayout>
     );
   }

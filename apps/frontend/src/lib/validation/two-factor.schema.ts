@@ -22,3 +22,19 @@ export const twoFactorVerifySchema = z.object({
   code: z.string().min(1, 'กรุณากรอกรหัสยืนยัน'),
 });
 export type TwoFactorVerifyFormValues = z.infer<typeof twoFactorVerifySchema>;
+
+// Login page's two explicit modes (OtpInput vs recovery-code text field) —
+// stricter than the loose combined schema above, one per mode.
+export const twoFactorVerifyTotpSchema = z.object({
+  code: z.string().length(6, 'กรุณากรอกรหัส 6 หลัก').regex(/^\d{6}$/, 'กรอกได้เฉพาะตัวเลข'),
+});
+export type TwoFactorVerifyTotpFormValues = z.infer<typeof twoFactorVerifyTotpSchema>;
+
+// Mirrors RECOVERY_CODE_FORMAT (apps/backend/src/common/util/crypto.util.ts)
+// case-insensitively.
+export const twoFactorVerifyRecoverySchema = z.object({
+  code: z
+    .string()
+    .regex(/^[A-Za-z2-9]{4}-[A-Za-z2-9]{4}$/, 'รูปแบบต้องเป็น XXXX-XXXX'),
+});
+export type TwoFactorVerifyRecoveryFormValues = z.infer<typeof twoFactorVerifyRecoverySchema>;
