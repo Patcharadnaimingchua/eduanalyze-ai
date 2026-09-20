@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { AcademicYearForm } from '@/components/admin/academic-year-form';
+import { BulkAcademicYearForm } from '@/components/admin/bulk-academic-year-form';
 import { AcademicYearCard } from '@/components/admin/academic-year-card';
 
 export default function AcademicYearsAdminPage() {
@@ -47,6 +48,8 @@ function AcademicYearsAdminContent() {
           จัดการปีการศึกษาและภาคเรียนที่ใช้ทั่วทั้งระบบ
         </p>
       </div>
+
+      <BulkAcademicYearForm onCreated={refetchAll} />
 
       <AcademicYearForm onCreated={refetchAll} />
 
