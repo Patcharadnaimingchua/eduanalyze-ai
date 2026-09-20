@@ -1,9 +1,13 @@
 'use client';
 
 import type { CourseListItem } from '@eduanalyze-ai/shared-types';
+import { usePagination } from '@/lib/use-pagination';
+import { useTableSort } from '@/lib/use-table-sort';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
+import { SortHeader } from '@/components/ui/sort-header';
 
 export function CourseListTable({
   courses,
@@ -14,6 +18,20 @@ export function CourseListTable({
   selectedCourseId: string | null;
   onSelect: (courseId: string) => void;
 }) {
+  const sort = useTableSort(courses, {
+    code: (c) => c.code,
+    name: (c) => c.name,
+    credits: (c) => c.credits,
+    status: (c) => (c.isActive ? 0 : 1),
+  });
+  // courses[0].id changes when the parent switches category, which should
+  // start the new category at page 1 rather than mid-list.
+  const pagination = usePagination(
+    sort.sorted,
+    undefined,
+    `${courses[0]?.id ?? ''}|${courses.length}|${sort.sortKey}|${sort.direction}`,
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -24,10 +42,12 @@ export function CourseListTable({
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">รหัสวิชา</th>
-                <th className="py-2 pr-4 font-medium">ชื่อวิชา</th>
-                <th className="py-2 pr-4 font-medium">หน่วยกิต</th>
-                <th className="py-2 pr-0 font-medium">สถานะ</th>
+                <SortHeader {...sort.sortProps('code')}>รหัสวิชา</SortHeader>
+                <SortHeader {...sort.sortProps('name')}>ชื่อวิชา</SortHeader>
+                <SortHeader {...sort.sortProps('credits')}>หน่วยกิต</SortHeader>
+                <SortHeader {...sort.sortProps('status')} className="pr-0">
+                  สถานะ
+                </SortHeader>
               </tr>
             </thead>
             <tbody>
@@ -38,7 +58,7 @@ export function CourseListTable({
                   </td>
                 </tr>
               )}
-              {courses.map((course) => (
+              {pagination.pageRows.map((course) => (
                 <tr
                   key={course.id}
                   onClick={() => onSelect(course.id)}
@@ -60,6 +80,7 @@ export function CourseListTable({
             </tbody>
           </table>
         </div>
+        <Pagination {...pagination} onPageChange={pagination.setPage} />
       </CardContent>
     </Card>
   );

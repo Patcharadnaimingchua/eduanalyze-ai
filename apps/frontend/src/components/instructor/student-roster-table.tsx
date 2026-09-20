@@ -10,11 +10,15 @@ import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { downloadCsv, toCsv } from '@/lib/csv';
 import { useToast } from '@/lib/toast-context';
+import { usePagination } from '@/lib/use-pagination';
+import { useTableSort } from '@/lib/use-table-sort';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SortHeader } from '@/components/ui/sort-header';
 import { StudentTimelineCard } from './student-timeline-card';
 
 // Radix reserves the empty string as a SelectItem value, so "no filter"
@@ -90,6 +94,24 @@ export function StudentRosterTable({
 
   const isFiltered = search.trim() !== '' || riskFilter !== ALL_RISK_LEVELS;
 
+  const sort = useTableSort(visibleRoster, {
+    studentCode: (s) => s.studentCode,
+    fullName: (s) => s.fullName,
+    grade: (s) => GRADE_OPTIONS.indexOf(s.grade),
+    risk: (s) => RISK_LEVEL_ORDER.indexOf(s.riskLevel),
+  });
+  const pagination = usePagination(
+    sort.sorted,
+    undefined,
+    `${search}|${riskFilter}|${sort.sortKey}|${sort.direction}`,
+  );
+
+  // A row left awaiting delete-confirmation must not stay armed once it
+  // has scrolled to another page or moved under a re-sort.
+  useEffect(() => {
+    setConfirmingId(null);
+  }, [pagination.page, sort.sortKey, sort.direction]);
+
   // The timeline card is opened from a row, so it has to close when that
   // row is filtered away — otherwise it hangs below the table with no
   // visible student to tie it back to.
@@ -146,7 +168,7 @@ export function StudentRosterTable({
           variant="outline"
           size="sm"
           disabled={visibleRoster.length === 0}
-          onClick={() => exportRosterCsv(courseCode, visibleRoster, isFiltered)}
+          onClick={() => exportRosterCsv(courseCode, sort.sorted, isFiltered)}
         >
           <Download className="mr-1.5 h-3.5 w-3.5" />
           ส่งออก CSV
@@ -196,128 +218,140 @@ export function StudentRosterTable({
           selectedStudentId && 'lg:grid-cols-[minmax(0,1fr)_340px]',
         )}
       >
-        <div className="min-w-0 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">รหัสนักศึกษา</th>
-                <th className="py-2 pr-4 font-medium">ชื่อ-นามสกุล</th>
-                <th className="py-2 pr-4 font-medium">เกรด</th>
-                <th className="py-2 pr-4 font-medium">ความเสี่ยง</th>
-                {editable && <th className="py-2 font-medium">การจัดการ</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRoster.map((student) => {
-                const recordId = student.studentCourseRecordId;
-                const isBusy = busyId === recordId;
-                const isSelected = selectedStudentId === student.studentProfileId;
+        {/* overflow-x-auto sits on an inner div so the pagination bar below
+            it does not scroll sideways with a wide table. */}
+        <div className="min-w-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
+                  <SortHeader {...sort.sortProps('studentCode')}>รหัสนักศึกษา</SortHeader>
+                  <SortHeader {...sort.sortProps('fullName')}>ชื่อ-นามสกุล</SortHeader>
+                  <SortHeader {...sort.sortProps('grade')}>เกรด</SortHeader>
+                  <SortHeader {...sort.sortProps('risk')}>ความเสี่ยง</SortHeader>
+                  {editable && <th className="py-2 font-medium">การจัดการ</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {pagination.pageRows.map((student) => {
+                  const recordId = student.studentCourseRecordId;
+                  const isBusy = busyId === recordId;
+                  const isSelected = selectedStudentId === student.studentProfileId;
 
-                return (
-                  <tr
-                    key={student.studentProfileId}
-                    className={cn('border-b border-slate-50', isSelected && 'bg-brand-light')}
-                  >
-                    <td className="py-2 pr-4 text-muted-foreground">{student.studentCode}</td>
-                    <td className="py-2 pr-4">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedStudentId(isSelected ? null : student.studentProfileId)
-                        }
-                        className={cn(
-                          'text-primary hover:underline',
-                          isSelected && 'font-medium underline',
-                        )}
-                      >
-                        {student.fullName}
-                      </button>
-                    </td>
-                    <td className="py-2 pr-4">
-                      {editable ? (
-                        <Select
-                          value={student.grade}
-                          onValueChange={(value) =>
-                            runWrite(
-                              recordId,
-                              () => updateCourseRecordGrade(recordId, { grade: value as Grade }),
-                              'บันทึกเกรดแล้ว',
-                            )
-                          }
-                          disabled={isBusy}
-                        >
-                          <SelectTrigger className="h-8 w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {GRADE_OPTIONS.map((g) => (
-                              <SelectItem key={g} value={g}>
-                                {GRADE_LABELS[g]}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge tone={gradeBadgeTone(student.grade)}>{GRADE_LABELS[student.grade]}</Badge>
+                  return (
+                    <tr
+                      key={student.studentProfileId}
+                      className={cn(
+                        'border-b border-slate-50',
+                        // Ungated, the hover grey would win over the selected
+                        // row's brand-light (Tailwind emits hover: variants
+                        // after base utilities).
+                        !isSelected && 'hover:bg-slate-50',
+                        isSelected && 'bg-brand-light',
                       )}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
-                        {RISK_LEVEL_LABELS[student.riskLevel]}
-                      </Badge>
-                    </td>
-                    {editable && (
-                      <td className="py-2">
-                        {confirmingId === recordId ? (
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              disabled={isBusy}
-                              onClick={() =>
-                                runWrite(
-                                  recordId,
-                                  () => deleteCourseRecord(recordId),
-                                  'ลบผลการเรียนแล้ว',
-                                )
-                              }
-                            >
-                              ยืนยันลบ
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={isBusy}
-                              onClick={() => setConfirmingId(null)}
-                            >
-                              ยกเลิก
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
+                    >
+                      <td className="py-2 pr-4 text-muted-foreground">{student.studentCode}</td>
+                      <td className="py-2 pr-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedStudentId(isSelected ? null : student.studentProfileId)
+                          }
+                          className={cn(
+                            'text-primary hover:underline',
+                            isSelected && 'font-medium underline',
+                          )}
+                        >
+                          {student.fullName}
+                        </button>
+                      </td>
+                      <td className="py-2 pr-4">
+                        {editable ? (
+                          <Select
+                            value={student.grade}
+                            onValueChange={(value) =>
+                              runWrite(
+                                recordId,
+                                () => updateCourseRecordGrade(recordId, { grade: value as Grade }),
+                                'บันทึกเกรดแล้ว',
+                              )
+                            }
                             disabled={isBusy}
-                            onClick={() => setConfirmingId(recordId)}
                           >
-                            ลบ
-                          </Button>
+                            <SelectTrigger className="h-8 w-24">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {GRADE_OPTIONS.map((g) => (
+                                <SelectItem key={g} value={g}>
+                                  {GRADE_LABELS[g]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge tone={gradeBadgeTone(student.grade)}>{GRADE_LABELS[student.grade]}</Badge>
                         )}
                       </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {visibleRoster.length === 0 && (
-            <p className="py-4 text-sm text-muted-foreground">
-              ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
-            </p>
-          )}
+                      <td className="py-2 pr-4">
+                        <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
+                          {RISK_LEVEL_LABELS[student.riskLevel]}
+                        </Badge>
+                      </td>
+                      {editable && (
+                        <td className="py-2">
+                          {confirmingId === recordId ? (
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={isBusy}
+                                onClick={() =>
+                                  runWrite(
+                                    recordId,
+                                    () => deleteCourseRecord(recordId),
+                                    'ลบผลการเรียนแล้ว',
+                                  )
+                                }
+                              >
+                                ยืนยันลบ
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={isBusy}
+                                onClick={() => setConfirmingId(null)}
+                              >
+                                ยกเลิก
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => setConfirmingId(recordId)}
+                            >
+                              ลบ
+                            </Button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {visibleRoster.length === 0 && (
+              <p className="py-4 text-sm text-muted-foreground">
+                ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
+              </p>
+            )}
+          </div>
+          <Pagination {...pagination} onPageChange={pagination.setPage} />
         </div>
         {/* self-start stops the grid stretching this cell to the row
             height, which would leave sticky with nothing to scroll past. */}

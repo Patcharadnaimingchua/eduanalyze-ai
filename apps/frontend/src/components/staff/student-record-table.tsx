@@ -1,23 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CourseListItem, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { useToast } from '@/lib/toast-context';
+import { usePagination } from '@/lib/use-pagination';
+import { useTableSort } from '@/lib/use-table-sort';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SortHeader } from '@/components/ui/sort-header';
 
 interface SemesterLabel {
   label: string;
 }
 
-// Same shape as components/academic-record/record-table.tsx (STUDENT
-// self-service), minus the "ประเมินวิชานี้" self-assessment link — that
-// action belongs to the student themselves, not staff acting on their
-// behalf. updateCourseRecordGrade/deleteCourseRecord are role-agnostic
-// (@Roles includes STAFF on both routes already) so reused as-is.
+// The staff-side view of what students see as a timeline in
+// components/academic-record/record-timeline.tsx, minus the "ประเมินวิชานี้"
+// self-assessment link — that action belongs to the student themselves, not
+// staff acting on their behalf. updateCourseRecordGrade/deleteCourseRecord
+// are role-agnostic (@Roles includes STAFF on both routes already) so reused
+// as-is.
 export function StaffRecordTable({
   records,
   courseMap,
@@ -32,6 +37,25 @@ export function StaffRecordTable({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const toast = useToast();
+
+  const sort = useTableSort(records, {
+    code: (r) => courseMap.get(r.courseId)?.code,
+    name: (r) => courseMap.get(r.courseId)?.name,
+    credits: (r) => r.credits,
+    semester: (r) => semesterMap.get(r.semesterId)?.label,
+    grade: (r) => GRADE_OPTIONS.indexOf(r.grade),
+  });
+  const pagination = usePagination(
+    sort.sorted,
+    undefined,
+    `${records.length}|${records[0]?.id ?? ''}|${sort.sortKey}|${sort.direction}`,
+  );
+
+  // A row left awaiting delete-confirmation must not stay armed once it
+  // has scrolled to another page or moved under a re-sort.
+  useEffect(() => {
+    setConfirmingId(null);
+  }, [pagination.page, sort.sortKey, sort.direction]);
 
   async function handleGradeChange(id: string, grade: string) {
     setBusyId(id);
@@ -70,11 +94,11 @@ export function StaffRecordTable({
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">รหัสวิชา</th>
-                <th className="py-2 pr-4 font-medium">ชื่อวิชา</th>
-                <th className="py-2 pr-4 font-medium">หน่วยกิต</th>
-                <th className="py-2 pr-4 font-medium">ภาคเรียน</th>
-                <th className="py-2 pr-4 font-medium">เกรด</th>
+                <SortHeader {...sort.sortProps('code')}>รหัสวิชา</SortHeader>
+                <SortHeader {...sort.sortProps('name')}>ชื่อวิชา</SortHeader>
+                <SortHeader {...sort.sortProps('credits')}>หน่วยกิต</SortHeader>
+                <SortHeader {...sort.sortProps('semester')}>ภาคเรียน</SortHeader>
+                <SortHeader {...sort.sortProps('grade')}>เกรด</SortHeader>
                 <th className="py-2 pr-0 font-medium">การจัดการ</th>
               </tr>
             </thead>
@@ -86,13 +110,13 @@ export function StaffRecordTable({
                   </td>
                 </tr>
               )}
-              {records.map((record) => {
+              {pagination.pageRows.map((record) => {
                 const course = courseMap.get(record.courseId);
                 const semester = semesterMap.get(record.semesterId);
                 const isBusy = busyId === record.id;
 
                 return (
-                  <tr key={record.id} className="border-b border-slate-50">
+                  <tr key={record.id} className="border-b border-slate-50 hover:bg-slate-50">
                     <td className="py-3 pr-4 text-primary">{course?.code ?? '—'}</td>
                     <td className="py-3 pr-4">{course?.name ?? '—'}</td>
                     <td className="py-3 pr-4">{record.credits}</td>
@@ -154,6 +178,7 @@ export function StaffRecordTable({
             </tbody>
           </table>
         </div>
+        <Pagination {...pagination} onPageChange={pagination.setPage} />
       </CardContent>
     </Card>
   );

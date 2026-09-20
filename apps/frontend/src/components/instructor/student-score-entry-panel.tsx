@@ -147,7 +147,7 @@ export function StudentScoreEntryPanel({
                 {fields.map((field, index) => {
                   const status = form.watch(`rows.${index}.status`);
                   return (
-                    <tr key={field.id} className="border-b border-slate-50">
+                    <tr key={field.id} className="border-b border-slate-50 hover:bg-slate-50">
                       <td className="py-2 pr-4 text-muted-foreground">{field.studentCode}</td>
                       <td className="py-2 pr-4 text-primary">{field.fullName}</td>
                       <td className="py-2 pr-4">
