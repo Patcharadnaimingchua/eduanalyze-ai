@@ -12,6 +12,7 @@ import { fetchCourseRoster } from '@/lib/api/instructor';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TableSkeleton } from '@/components/ui/skeleton';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 
 const STATUS_OPTIONS: { value: AssessmentScoreStatus; label: string }[] = [
@@ -126,7 +127,7 @@ export function StudentScoreEntryPanel({
           </Alert>
         )}
 
-        {isLoading && <p className="text-sm text-muted-foreground">กำลังโหลด...</p>}
+        {isLoading && <TableSkeleton cols={5} rows={4} />}
         {isError && <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>}
         {!isLoading && !isError && fields.length === 0 && (
           <p className="text-sm text-muted-foreground">ยังไม่มีนักศึกษาลงทะเบียนในรายวิชานี้</p>

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AuthSplitLayout } from './auth-split-layout';
 import { ChangePasswordForm } from './change-password-form';
 
@@ -29,9 +30,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [status, router]);
 
   if (status === 'loading') {
+    // Fires before the page shell (sidebar/topbar) mounts — the shell needs
+    // a resolved user, so there's no real layout to mimic yet. A small
+    // centered mark, not a page-shaped skeleton, is the honest choice here.
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลด...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

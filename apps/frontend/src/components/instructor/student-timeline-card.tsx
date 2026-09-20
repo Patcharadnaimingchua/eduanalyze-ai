@@ -8,6 +8,7 @@ import { GRADE_LABELS, formatSemesterLabel } from '@/lib/grade-label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSkeleton } from '@/components/ui/skeleton';
 
 export function StudentTimelineCard({
   courseId,
@@ -39,9 +40,7 @@ export function StudentTimelineCard({
         </Button>
       </CardHeader>
       <CardContent>
-        {query.isLoading && (
-          <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
-        )}
+        {query.isLoading && <ListSkeleton items={3} />}
         {query.isError && (
           <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>
         )}

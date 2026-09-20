@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { ListSkeleton } from '@/components/ui/skeleton';
 
 export function AssessmentCloMappingPanel({
   courseId,
@@ -87,7 +88,7 @@ export function AssessmentCloMappingPanel({
           <CardTitle className="text-base">CLO ที่ผูกกับการประเมินนี้</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {mappingsQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลด...</p>}
+          {mappingsQuery.isLoading && <ListSkeleton items={3} />}
           {mappingsQuery.isError && <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>}
           {mappingsQuery.data && mappings.length === 0 && (
             <p className="text-sm text-muted-foreground">ยังไม่มี CLO ผูกกับการประเมินนี้ — เพิ่มด้านล่าง</p>

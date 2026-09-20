@@ -15,6 +15,7 @@ import { OverallAchievementCard } from '@/components/clo-plo-analysis/overall-ac
 import { PloCard } from '@/components/clo-plo-analysis/plo-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 type SortMode = 'lowest' | 'highest' | 'code';
 
@@ -114,7 +115,10 @@ function CloPloAnalysisContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -132,9 +136,26 @@ function CloPloAnalysisContent() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <Skeleton className="mx-auto h-32 w-32 rounded-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+        <ListSkeleton items={4} />
+      </DashboardShell>
     );
   }
 

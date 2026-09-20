@@ -14,6 +14,7 @@ import { PloProgressTable } from '@/components/dashboard/plo-progress-table';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   return (
@@ -47,7 +48,10 @@ function DashboardContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

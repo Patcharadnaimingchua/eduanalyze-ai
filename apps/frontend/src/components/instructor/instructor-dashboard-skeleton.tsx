@@ -1,8 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-
-function Block({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-slate-100 ${className ?? ''}`} />;
-}
+import { Skeleton } from '@/components/ui/skeleton';
 
 function CardRow({ children }: { children: (i: number) => React.ReactNode }) {
   return (
@@ -24,18 +21,18 @@ export function InstructorDashboardSkeleton() {
       <CardRow>
         {() => (
           <>
-            <Block className="h-9 w-9" />
-            <Block className="h-4 w-28" />
-            <Block className="h-8 w-16" />
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-8 w-16" />
           </>
         )}
       </CardRow>
       <CardRow>
         {() => (
           <>
-            <Block className="h-4 w-16" />
-            <Block className="h-5 w-40" />
-            <Block className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-24" />
           </>
         )}
       </CardRow>
@@ -47,13 +44,13 @@ export function InstructorCourseSkeleton() {
   return (
     <Card>
       <CardContent className="space-y-4 pt-6">
-        <Block className="h-5 w-56" />
+        <Skeleton className="h-5 w-56" />
         <div className="flex gap-4">
-          <Block className="h-6 w-28" />
-          <Block className="h-6 w-28" />
-          <Block className="h-6 w-28" />
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-6 w-28" />
         </div>
-        <Block className="h-56 w-full" />
+        <Skeleton className="h-56 w-full" />
       </CardContent>
     </Card>
   );

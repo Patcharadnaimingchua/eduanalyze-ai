@@ -12,7 +12,8 @@ import { CreateUserForm } from '@/components/admin/create-user-form';
 import { UserListTable } from '@/components/admin/user-list-table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 export default function AdminUsersPage() {
   return (
@@ -34,7 +35,10 @@ function AdminUsersContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -88,7 +92,16 @@ function AdminUsersContent() {
         <CreateUserForm requesterIsSuperAdmin={requesterIsSuperAdmin} onCreated={setCreatedUser} />
       )}
 
-      {usersQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {usersQuery.isLoading && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">รายชื่อผู้ใช้งาน</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableSkeleton cols={4} rows={6} />
+          </CardContent>
+        </Card>
+      )}
       {usersQuery.isError && (
         <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
       )}

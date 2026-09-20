@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { OrgTree } from '@/components/admin/organization/org-tree';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OrganizationAdminPage() {
   return (
@@ -22,7 +23,10 @@ function OrganizationAdminContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

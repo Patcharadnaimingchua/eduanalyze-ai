@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 const DEFAULT_SCORE = 3;
 const SELF_ASSESSMENT_LEVELS = [
@@ -116,7 +117,10 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -134,9 +138,16 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-48" />
+          </CardHeader>
+          <CardContent>
+            <ListSkeleton items={4} />
+          </CardContent>
+        </Card>
+      </DashboardShell>
     );
   }
 

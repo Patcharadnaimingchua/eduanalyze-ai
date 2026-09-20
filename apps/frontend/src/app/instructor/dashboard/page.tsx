@@ -15,6 +15,7 @@ import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-car
 import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
 import { CourseInsightCard } from '@/components/instructor/course-insight-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
   return (
@@ -49,7 +50,10 @@ function InstructorDashboardContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

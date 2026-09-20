@@ -2,6 +2,7 @@
 
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { useAuth } from '@/lib/auth-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const ROLE_LABEL_TH: Record<Role, string> = {
   STUDENT: 'นักศึกษา',
@@ -28,9 +29,15 @@ export function RequireRole({
   const allowedRoles = Array.isArray(role) ? role : [role];
 
   if (!user) {
+    // Fires before the page shell mounts (same reasoning as
+    // ProtectedRoute's loading branch) — a small centered mark rather than
+    // a page-shaped skeleton, since there's no real layout to mimic yet.
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

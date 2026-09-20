@@ -27,6 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Same Card + react-hook-form + zod + apiClient pattern as
 // ChangePasswordForm — the closest existing analog. No Dialog primitive
@@ -130,7 +131,13 @@ function TwoFactorSetupFlow({
   }
 
   if (setupQuery.isLoading) {
-    return <p className="text-sm text-muted-foreground">กำลังสร้างรหัสลับ...</p>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="mx-auto h-40 w-40" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
   }
   if (setupQuery.isError || !setupQuery.data) {
     return <p className="text-sm text-destructive">ไม่สามารถสร้างรหัสลับได้ กรุณาลองใหม่อีกครั้ง</p>;

@@ -22,6 +22,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ListSkeleton } from '@/components/ui/skeleton';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
 
@@ -93,9 +94,7 @@ export function AssessmentDefinitionPanel({
           <CardTitle className="text-base">การประเมิน (Assessment) ในรายวิชานี้</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {definitionsQuery.isLoading && (
-            <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
-          )}
+          {definitionsQuery.isLoading && <ListSkeleton items={3} />}
           {definitionsQuery.isError && (
             <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>
           )}

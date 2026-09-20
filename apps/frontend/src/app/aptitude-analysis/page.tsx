@@ -10,6 +10,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
 import { PloInterpretationCard } from '@/components/aptitude-analysis/plo-interpretation-card';
 import { AptitudeAnalysisSkeleton } from '@/components/aptitude-analysis/aptitude-analysis-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AptitudeAnalysisPage() {
   return (
@@ -46,7 +47,10 @@ function AptitudeAnalysisContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

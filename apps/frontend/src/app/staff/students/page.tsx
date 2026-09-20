@@ -12,7 +12,9 @@ import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StudentDirectoryTable } from '@/components/staff/student-directory-table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -65,7 +67,10 @@ function StaffStudentsContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -109,7 +114,16 @@ function StaffStudentsContent() {
         )}
       </div>
 
-      {studentsQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {studentsQuery.isLoading && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">ทำเนียบนักศึกษา</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TableSkeleton cols={6} rows={6} />
+          </CardContent>
+        </Card>
+      )}
       {studentsQuery.isError && (
         <Alert variant="destructive">
           <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>

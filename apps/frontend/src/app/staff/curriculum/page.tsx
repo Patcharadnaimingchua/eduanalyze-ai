@@ -15,13 +15,23 @@ import { CourseCategoryCard } from '@/components/staff/course-category-card';
 import { CourseForm } from '@/components/staff/course-form';
 import { CourseListTable } from '@/components/staff/course-list-table';
 import { CourseDetailPanel, type CourseDetailTab } from '@/components/staff/course-detail-panel';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StaffCurriculumPage() {
   return (
     <ProtectedRoute>
       <RequireRole role="STAFF">
         {/* useSearchParams requires a Suspense boundary in the App Router */}
-        <Suspense fallback={<p className="p-8 text-muted-foreground">กำลังโหลดข้อมูล...</p>}>
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen items-center justify-center">
+              <div className="space-y-3">
+                <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          }
+        >
           <StaffCurriculumContent />
         </Suspense>
       </RequireRole>
@@ -72,7 +82,10 @@ function StaffCurriculumContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

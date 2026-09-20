@@ -12,6 +12,7 @@ import { CategoryProgressList } from '@/components/credit-checker/category-progr
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { FailedCoursesList } from '@/components/credit-checker/failed-courses-list';
 import { PrerequisiteFlowChart } from '@/components/credit-checker/prerequisite-flow-chart';
+import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 export default function CreditCheckerPage() {
   return (
@@ -41,7 +42,10 @@ function CreditCheckerContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -56,9 +60,10 @@ function CreditCheckerContent() {
 
   if (profileQuery.isLoading || reportQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <StatCardsSkeleton count={3} />
+        <ListSkeleton items={4} />
+      </DashboardShell>
     );
   }
 

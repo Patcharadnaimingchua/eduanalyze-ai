@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
+import { TableSkeleton } from '@/components/ui/skeleton';
 import { StudentTimelineCard } from './student-timeline-card';
 
 // Radix reserves the empty string as a SelectItem value, so "no filter"
@@ -143,7 +144,7 @@ export function StudentRosterTable({
   }
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">กำลังโหลดรายชื่อนักศึกษา...</p>;
+    return <TableSkeleton cols={5} rows={4} />;
   }
   if (isError || !roster) {
     return <p className="text-sm text-destructive">ไม่สามารถโหลดรายชื่อนักศึกษาได้</p>;

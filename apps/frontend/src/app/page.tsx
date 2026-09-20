@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const { user, status, logout } = useAuth();
@@ -11,9 +12,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
       <h1 className="text-3xl font-bold">EduAnalyzeAI</h1>
 
-      {status === 'loading' && (
-        <p className="text-muted-foreground">กำลังโหลด...</p>
-      )}
+      {status === 'loading' && <Skeleton className="h-4 w-48" />}
 
       {status === 'authenticated' && user && (
         <div className="flex flex-col items-center gap-3">

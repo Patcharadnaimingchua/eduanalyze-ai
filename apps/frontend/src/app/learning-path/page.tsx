@@ -15,6 +15,7 @@ import { MissingCoursesList } from '@/components/credit-checker/missing-courses-
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
 import { ElectiveCategoryList } from '@/components/learning-path/elective-category-list';
 import { LearningPathSkeleton } from '@/components/learning-path/learning-path-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LearningPathPage() {
   return (
@@ -63,7 +64,10 @@ function LearningPathContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

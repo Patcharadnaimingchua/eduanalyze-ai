@@ -10,6 +10,8 @@ import { StaffDashboardSummary } from '@/components/staff/staff-dashboard-summar
 import { AtRiskStudentsCard } from '@/components/staff/at-risk-students-card';
 import { ProgramOverviewList } from '@/components/staff/program-overview-list';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function StaffDashboardPage() {
   return (
@@ -29,7 +31,10 @@ function StaffDashboardContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -41,7 +46,21 @@ function StaffDashboardContent() {
         <p className="text-sm text-muted-foreground">ภาพรวมนักศึกษาและหลักสูตรในขอบเขตของคุณ</p>
       </div>
 
-      {studentsQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {studentsQuery.isLoading && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-40" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
       {studentsQuery.isError && (
         <Alert variant="destructive">
           <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
@@ -64,7 +83,7 @@ function StaffDashboardContent() {
           จำนวนนักศึกษา, GPA เฉลี่ย, และวิชาที่ยังไม่มี CLO ต่อหลักสูตร
         </p>
       </div>
-      {overviewQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {overviewQuery.isLoading && <ListSkeleton items={3} />}
       {overviewQuery.isError && (
         <Alert variant="destructive">
           <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>

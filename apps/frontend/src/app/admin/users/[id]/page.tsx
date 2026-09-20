@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminUserDetailPage({ params }: { params: { id: string } }) {
   return (
@@ -40,7 +41,10 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
   if (!requester) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -81,7 +85,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
         กลับไปรายชื่อผู้ใช้งาน
       </Link>
 
-      {userQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {userQuery.isLoading && <ListSkeleton items={3} />}
       {userQuery.isError && (
         <p className="text-sm text-destructive">ไม่พบผู้ใช้งาน หรือไม่มีสิทธิ์เข้าถึง</p>
       )}

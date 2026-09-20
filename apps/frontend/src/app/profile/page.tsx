@@ -36,6 +36,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   return (
@@ -141,7 +142,10 @@ function ProfileContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }

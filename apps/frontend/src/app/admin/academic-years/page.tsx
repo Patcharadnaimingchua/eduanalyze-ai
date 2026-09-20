@@ -9,6 +9,8 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { AcademicYearForm } from '@/components/admin/academic-year-form';
 import { BulkAcademicYearForm } from '@/components/admin/bulk-academic-year-form';
 import { AcademicYearCard } from '@/components/admin/academic-year-card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AcademicYearsAdminPage() {
   return (
@@ -35,7 +37,10 @@ function AcademicYearsAdminContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -54,7 +59,19 @@ function AcademicYearsAdminContent() {
       <AcademicYearForm onCreated={refetchAll} />
 
       {(yearsQuery.isLoading || semestersQuery.isLoading) && (
-        <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {(yearsQuery.isError || semestersQuery.isError) && (

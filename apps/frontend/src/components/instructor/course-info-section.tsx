@@ -5,6 +5,7 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourses } from '@/lib/api/academic-record';
 import { fetchPrerequisites } from '@/lib/api/staff';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function CourseInfoSection({ course }: { course: InstructorCourseSummary }) {
   const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: fetchCourses });
@@ -22,7 +23,16 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
     <div className="space-y-6">
       <section className="space-y-2">
         <h3 className="text-sm font-semibold text-primary">ข้อมูลรายวิชา</h3>
-        {isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูลรายวิชา...</p>}
+        {isLoading && (
+          <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
+        )}
         {isError && <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลรายวิชาได้</p>}
         {detail && (
           <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">

@@ -18,6 +18,7 @@ import { AddRecordForm } from '@/components/academic-record/add-record-form';
 import { StaffRecordTable } from '@/components/staff/student-record-table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
 
@@ -97,7 +98,10 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -117,7 +121,34 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
         กลับไปทำเนียบนักศึกษา
       </Link>
 
-      {profileQuery.isLoading && <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>}
+      {profileQuery.isLoading && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">ข้อมูลนักศึกษา</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-56" />
+              <Skeleton className="h-4 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">GPA สะสม</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-4 w-28" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <TableSkeleton cols={5} rows={4} />
+            </CardContent>
+          </Card>
+        </>
+      )}
       {forbidden && (
         <p className="text-sm text-destructive">ไม่มีสิทธิ์เข้าถึงนักศึกษาคนนี้</p>
       )}

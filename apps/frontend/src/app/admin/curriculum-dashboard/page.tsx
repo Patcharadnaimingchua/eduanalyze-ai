@@ -13,6 +13,7 @@ import { CurriculumComparisonChart } from '@/components/admin/curriculum-compari
 import { SystemCurriculumList } from '@/components/admin/system-curriculum-list';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 // Comparing one curriculum against nothing is not a comparison, so the
 // chart needs at least two with real enrolment — same bar the instructor
@@ -39,7 +40,10 @@ function CurriculumDashboardContent() {
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
       </div>
     );
   }
@@ -58,9 +62,7 @@ function CurriculumDashboardContent() {
         </p>
       </div>
 
-      {overviewQuery.isLoading && (
-        <p className="text-sm text-muted-foreground">กำลังโหลดข้อมูล...</p>
-      )}
+      {overviewQuery.isLoading && <StatCardsSkeleton count={3} />}
       {overviewQuery.isError && (
         <Alert variant="destructive">
           <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>

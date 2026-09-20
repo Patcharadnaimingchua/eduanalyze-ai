@@ -6,6 +6,7 @@ import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { achievementStatus } from '@/lib/achievement-status';
 
 interface CourseAssessmentSummary {
@@ -64,7 +65,7 @@ export function CloAchievementSection({
             {formatFiveScale(achievementPercent)}
           </span>
         </div>
-        {isLoading && <p className="text-xs text-muted-foreground">กำลังโหลดจำนวนนักศึกษา...</p>}
+        {isLoading && <Skeleton className="h-3 w-40" />}
         {isError && (
           <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ผ่านเกณฑ์ได้</p>
         )}

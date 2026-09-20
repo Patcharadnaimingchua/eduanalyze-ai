@@ -17,6 +17,7 @@ import {
   updateFaculty,
   updateProgram,
 } from '@/lib/api/organization';
+import { ListSkeleton } from '@/components/ui/skeleton';
 import { AddOrgEntity, OrgNodeRow } from './org-node-row';
 import { CurriculumPanel } from './curriculum-panel';
 
@@ -60,7 +61,7 @@ export function OrgTree() {
   }
 
   if (queries.some((q) => q.isLoading)) {
-    return <p className="text-sm text-muted-foreground">กำลังโหลดโครงสร้างองค์กร...</p>;
+    return <ListSkeleton items={5} />;
   }
   if (queries.some((q) => q.isError)) {
     return <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>;
