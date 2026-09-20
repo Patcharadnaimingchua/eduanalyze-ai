@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { ShieldCheck } from 'lucide-react';
+import { Check, Copy, ShieldCheck } from 'lucide-react';
 import { disableTwoFactor, enableTwoFactor, setupTwoFactor } from '@/lib/api/two-factor';
 import {
   twoFactorDisableSchema,
@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { OtpInput } from '@/components/ui/otp-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Card,
@@ -104,6 +105,7 @@ function TwoFactorSetupFlow({
   onEnabled: (recoveryCodes: string[]) => void;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [verified, setVerified] = useState(false);
   const setupQuery = useQuery({ queryKey: ['two-factor-setup'], queryFn: setupTwoFactor });
   const form = useForm<TwoFactorEnableFormValues>({
     resolver: zodResolver(twoFactorEnableSchema),
@@ -114,7 +116,10 @@ function TwoFactorSetupFlow({
     setServerError(null);
     try {
       const { recoveryCodes } = await enableTwoFactor(values);
-      onEnabled(recoveryCodes);
+      // Brief success beat before handing off to the recovery-codes step —
+      // an instant jump reads as "did anything happen?" on a 2-field form.
+      setVerified(true);
+      setTimeout(() => onEnabled(recoveryCodes), 500);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('รหัสไม่ถูกต้อง ลองสแกน QR ใหม่หรือกรอกรหัสอีกครั้ง');
@@ -137,12 +142,21 @@ function TwoFactorSetupFlow({
         <p className="text-sm text-muted-foreground">
           1. เปิดแอป Authenticator แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
         </p>
-        {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
-        <img
-          src={setupQuery.data.qrCodeDataUrl}
-          alt="QR code สำหรับตั้งค่า 2FA"
-          className="h-44 w-44 rounded-md border border-slate-200"
-        />
+        <div className="relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
+          <img
+            src={setupQuery.data.qrCodeDataUrl}
+            alt="QR code สำหรับตั้งค่า 2FA"
+            className={`h-44 w-44 rounded-md border transition-colors duration-300 ${
+              verified ? 'border-emerald-400' : 'border-slate-200'
+            }`}
+          />
+          {verified && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-white/80 animate-in fade-in zoom-in duration-300">
+              <ShieldCheck className="h-12 w-12 text-emerald-600" />
+            </div>
+          )}
+        </div>
         <p className="break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-muted-foreground">
           {setupQuery.data.secret}
         </p>
@@ -159,20 +173,25 @@ function TwoFactorSetupFlow({
             control={form.control}
             name="code"
             render={({ field }) => (
-              <FormItem className="w-40">
+              <FormItem>
                 <FormLabel>2. กรอกรหัส 6 หลักจากแอป</FormLabel>
                 <FormControl>
-                  <Input inputMode="numeric" maxLength={6} placeholder="123456" {...field} />
+                  <OtpInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    hasError={!!serverError}
+                    disabled={verified}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <div className="flex gap-2">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button type="submit" disabled={form.formState.isSubmitting || verified}>
               {form.formState.isSubmitting ? 'กำลังยืนยัน...' : 'ยืนยันและเปิดใช้งาน'}
             </Button>
-            <Button type="button" variant="ghost" onClick={onCancel}>
+            <Button type="button" variant="ghost" onClick={onCancel} disabled={verified}>
               ยกเลิก
             </Button>
           </div>
@@ -189,6 +208,14 @@ function TwoFactorRecoveryCodesReveal({
   recoveryCodes: string[];
   onDone: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopyAll() {
+    await navigator.clipboard.writeText(recoveryCodes.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="space-y-4">
       <Alert>
@@ -196,9 +223,22 @@ function TwoFactorRecoveryCodesReveal({
         <AlertDescription>เปิดใช้งาน 2FA สำเร็จ</AlertDescription>
       </Alert>
       <div>
-        <p className="mb-2 text-sm font-semibold text-amber-900">
-          รหัสสำรอง (Recovery Codes) — เก็บไว้ในที่ปลอดภัย จะแสดงเพียงครั้งเดียว
-        </p>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-amber-900">
+            รหัสสำรอง (Recovery Codes) — เก็บไว้ในที่ปลอดภัย จะแสดงเพียงครั้งเดียว
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={handleCopyAll}>
+            {copied ? (
+              <>
+                <Check className="mr-1.5 h-3.5 w-3.5" /> คัดลอกแล้ว
+              </>
+            ) : (
+              <>
+                <Copy className="mr-1.5 h-3.5 w-3.5" /> คัดลอกทั้งหมด
+              </>
+            )}
+          </Button>
+        </div>
         <div className="grid grid-cols-2 gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 font-mono text-sm">
           {recoveryCodes.map((code) => (
             <span key={code}>{code}</span>
