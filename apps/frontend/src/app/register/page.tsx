@@ -83,7 +83,7 @@ export default function RegisterPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {serverError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="animate-shake">
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           )}

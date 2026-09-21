@@ -9,6 +9,7 @@ import { isAxiosError } from 'axios';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import type { LoginResponse, Role } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
@@ -296,7 +297,7 @@ function LoginPageContent() {
                       type="email"
                       autoComplete="email"
                       placeholder="you@example.ac.th"
-                      className="pl-9"
+                      className={cn('pl-9', serverError && 'animate-shake border-destructive')}
                       {...field}
                     />
                   </div>
@@ -321,7 +322,10 @@ function LoginPageContent() {
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
-                      className="pl-9 pr-9"
+                      className={cn(
+                        'pl-9 pr-9',
+                        serverError && 'animate-shake border-destructive',
+                      )}
                       {...field}
                     />
                     <button
