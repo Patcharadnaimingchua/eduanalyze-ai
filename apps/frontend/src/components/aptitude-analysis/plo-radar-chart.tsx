@@ -2,6 +2,7 @@ import { Radar } from 'lucide-react';
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
 import { formatFiveScale } from '@/lib/five-scale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const DEFAULT_SIZE = 320;
 const RING_FRACTIONS = [0.25, 0.5, 0.75, 1];
@@ -135,7 +136,19 @@ export function PloRadarChart({
             strokeWidth={2}
           />
           {dataPoints.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={3} className="fill-brand" />
+            <Tooltip key={radar[i].ploId}>
+              <TooltipTrigger asChild>
+                {/* Transparent oversized circle as the hover hit-target —
+                    the visible r=3 dot below stays the same size as before. */}
+                <circle cx={p.x} cy={p.y} r={9} fill="transparent" />
+              </TooltipTrigger>
+              <TooltipContent>
+                {radar[i].code}: {formatFiveScale(radar[i].value, 'ไม่มีข้อมูล')}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          {dataPoints.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={3} className="pointer-events-none fill-brand" />
           ))}
 
           {/* Labels */}

@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { QueryProvider } from '@/lib/query-client';
 import { ToastProvider } from '@/lib/toast-context';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
   title: 'EduAnalyzeAI',
@@ -19,7 +20,9 @@ export default function RootLayout({
       <body>
         <ToastProvider>
           <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+            </AuthProvider>
           </QueryProvider>
         </ToastProvider>
       </body>

@@ -4,6 +4,7 @@ import type { SystemCurriculumEntry } from '@eduanalyze-ai/shared-types';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Sibling of instructor/course-comparison-chart.tsx — same hand-built DOM
 // bars (no chart library in this project), comparing curricula instead of
@@ -46,13 +47,20 @@ export function CurriculumComparisonChart({
               </div>
               <div className="h-5 flex-1 overflow-hidden rounded bg-slate-100">
                 {value !== null && (
-                  <div
-                    className={cn(
-                      'h-full rounded transition-all',
-                      ploProgressBarColorClassName(value, threshold),
-                    )}
-                    style={{ width: `${value}%` }}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          'h-full rounded transition-all',
+                          ploProgressBarColorClassName(value, threshold),
+                        )}
+                        style={{ width: `${value}%` }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {Math.round(value)}% ({curriculum.studentCount} คน)
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               <div className="flex w-36 shrink-0 items-center justify-end gap-2">

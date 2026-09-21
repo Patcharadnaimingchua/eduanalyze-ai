@@ -7,6 +7,7 @@ import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // No chart library in this project — hand-built DOM bars, same approach as
 // grade-distribution-chart.tsx (vertical) but horizontal here.
@@ -33,46 +34,48 @@ export function CourseComparisonChart({ courses }: { courses: InstructorCourseSu
             course.achievementPercent,
             course.achievementThreshold,
           );
+          const tooltipText = hasStudents
+            ? `${course.achievementPercent.toFixed(1)}% (${course.studentCount} คน)`
+            : 'ยังไม่มีนักศึกษา';
           return (
-            <Link
-              key={course.courseId}
-              href={`/instructor/courses/${course.courseId}`}
-              className="block rounded-md transition hover:bg-slate-50"
-              title={
-                hasStudents
-                  ? `${course.achievementPercent.toFixed(1)}% (${course.studentCount} คน)`
-                  : 'ยังไม่มีนักศึกษา'
-              }
-            >
-              <div className="flex items-center gap-3 px-2 py-1.5">
-                <div className="w-40 shrink-0 truncate text-sm">
-                  <span className="text-muted-foreground">{course.code}</span>{' '}
-                  <span className="text-primary">{course.name}</span>
-                </div>
-                <div className="h-5 flex-1 overflow-hidden rounded bg-slate-100">
-                  {hasStudents && (
-                    <div
-                      className={cn(
-                        'h-full rounded transition-all',
-                        ploProgressBarColorClassName(
-                          course.achievementPercent,
-                          course.achievementThreshold,
-                        ),
+            <Tooltip key={course.courseId}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/instructor/courses/${course.courseId}`}
+                  className="block rounded-md transition hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-3 px-2 py-1.5">
+                    <div className="w-40 shrink-0 truncate text-sm">
+                      <span className="text-muted-foreground">{course.code}</span>{' '}
+                      <span className="text-primary">{course.name}</span>
+                    </div>
+                    <div className="h-5 flex-1 overflow-hidden rounded bg-slate-100">
+                      {hasStudents && (
+                        <div
+                          className={cn(
+                            'h-full rounded transition-all',
+                            ploProgressBarColorClassName(
+                              course.achievementPercent,
+                              course.achievementThreshold,
+                            ),
+                          )}
+                          style={{ width: `${course.achievementPercent}%` }}
+                        />
                       )}
-                      style={{ width: `${course.achievementPercent}%` }}
-                    />
-                  )}
-                </div>
-                <div className="flex w-44 shrink-0 items-center justify-end gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {hasStudents
-                      ? `${Math.round(course.achievementPercent)}% (${course.studentCount})`
-                      : 'ไม่มีข้อมูล'}
-                  </span>
-                  {hasStudents && <Badge tone={status.tone}>{status.label}</Badge>}
-                </div>
-              </div>
-            </Link>
+                    </div>
+                    <div className="flex w-44 shrink-0 items-center justify-end gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {hasStudents
+                          ? `${Math.round(course.achievementPercent)}% (${course.studentCount})`
+                          : 'ไม่มีข้อมูล'}
+                      </span>
+                      {hasStudents && <Badge tone={status.tone}>{status.label}</Badge>}
+                    </div>
+                  </div>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>{tooltipText}</TooltipContent>
+            </Tooltip>
           );
         })}
       </CardContent>
