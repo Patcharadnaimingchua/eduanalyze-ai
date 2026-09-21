@@ -1,6 +1,7 @@
-import { Info } from 'lucide-react';
+import { CheckCircle2, Inbox, Info } from 'lucide-react';
 import type { IncompleteElectiveCategory } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState, InlineNotice } from '@/components/ui/empty-state';
 
 export function ElectiveCategoryList({
   categories,
@@ -16,7 +17,7 @@ export function ElectiveCategoryList({
       </CardHeader>
       <CardContent className="space-y-6">
         {categories.length === 0 && (
-          <p className="text-center text-muted-foreground">คุณผ่านหมวดวิชาเลือกครบตามเกณฑ์แล้ว</p>
+          <EmptyState icon={CheckCircle2} description="คุณผ่านหมวดวิชาเลือกครบตามเกณฑ์แล้ว" />
         )}
         {categories.map((category) => {
           const hasCatalog = (courseCountByCategory.get(category.categoryId) ?? 0) > 0;
@@ -45,9 +46,9 @@ export function ElectiveCategoryList({
                   ))}
                 </div>
               ) : hasCatalog ? (
-                <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-muted-foreground">
+                <InlineNotice icon={Inbox}>
                   มีวิชาในหมวดนี้ แต่ยังไม่มีวิชาที่ลงทะเบียนได้ในขณะนี้
-                </p>
+                </InlineNotice>
               ) : (
                 // Free Elective / some Gen Ed groups are university-wide by
                 // design (PROJECT_CONTEXT.md's "generic across programs"
@@ -55,13 +56,10 @@ export function ElectiveCategoryList({
                 // import into this system, decided at Phase 4. This is
                 // expected, not missing data, so the copy explains why
                 // instead of reading like a broken/incomplete page.
-                <div className="flex items-start gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-muted-foreground">
-                  <Info size={16} className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-                  <p>
-                    หมวดนี้ยังขาดอีก {category.creditsShort} หน่วยกิต — เลือกได้จากทุกคณะทั่วมหาวิทยาลัย
-                    ระบบยังไม่มีรายชื่อวิชาให้แนะนำในหมวดนี้ ติดต่อฝ่ายทะเบียนหรือเลือกจากรายวิชาเปิดสอนในระบบทะเบียนกลาง
-                  </p>
-                </div>
+                <InlineNotice icon={Info}>
+                  หมวดนี้ยังขาดอีก {category.creditsShort} หน่วยกิต — เลือกได้จากทุกคณะทั่วมหาวิทยาลัย
+                  ระบบยังไม่มีรายชื่อวิชาให้แนะนำในหมวดนี้ ติดต่อฝ่ายทะเบียนหรือเลือกจากรายวิชาเปิดสอนในระบบทะเบียนกลาง
+                </InlineNotice>
               )}
             </div>
           );

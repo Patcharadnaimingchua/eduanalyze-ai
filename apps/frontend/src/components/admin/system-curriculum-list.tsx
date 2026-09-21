@@ -1,5 +1,6 @@
 'use client';
 
+import { FolderOpen, Users } from 'lucide-react';
 import type { SystemCurriculumEntry } from '@eduanalyze-ai/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,7 +77,8 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         </CardHeader>
         <CardContent>
           {active.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users size={16} className="shrink-0 text-slate-300" aria-hidden="true" />
               ยังไม่มีหลักสูตรใดที่มีนักศึกษาลงทะเบียน
             </p>
           ) : (
@@ -92,7 +94,8 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
       {structureOnly.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               จัดทำหลักสูตรแล้ว แต่ยังไม่มีนักศึกษา ({structureOnly.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -112,7 +115,8 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
       {empty.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FolderOpen size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               ยังไม่ได้จัดทำหลักสูตร ({empty.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
