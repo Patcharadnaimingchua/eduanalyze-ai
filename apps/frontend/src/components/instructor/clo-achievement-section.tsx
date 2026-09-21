@@ -44,14 +44,20 @@ export function CloAchievementSection({
     () =>
       scoredAssessmentClos.length === 0
         ? null
-        : scoredAssessmentClos.reduce((min, c) => (c.averageScore! < min.averageScore! ? c : min)).cloId,
+        : scoredAssessmentClos.reduce(
+            (min, c) => (c.averageScore! < min.averageScore! ? c : min),
+            scoredAssessmentClos[0],
+          ).cloId,
     [scoredAssessmentClos],
   );
   const highestAssessmentCloId = useMemo(
     () =>
       scoredAssessmentClos.length === 0
         ? null
-        : scoredAssessmentClos.reduce((max, c) => (c.averageScore! > max.averageScore! ? c : max)).cloId,
+        : scoredAssessmentClos.reduce(
+            (max, c) => (c.averageScore! > max.averageScore! ? c : max),
+            scoredAssessmentClos[0],
+          ).cloId,
     [scoredAssessmentClos],
   );
 

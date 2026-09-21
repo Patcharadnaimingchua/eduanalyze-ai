@@ -479,7 +479,7 @@ export class PloAchievementService {
     );
     const lowestPlo =
       withData.length > 0
-        ? withData.reduce((min, p) => (p.value < min.value ? p : min))
+        ? withData.reduce((min, p) => (p.value < min.value ? p : min), withData[0])
         : null;
 
     return {
