@@ -44,6 +44,56 @@ export type CreditCheckCurriculumTree = Prisma.CurriculumGetPayload<{
   };
 }>;
 
+type CourseStatus = 'PASS' | 'FAIL' | 'EXCLUDED';
+
+// No record at all is treated the same as W/I — see grade-point.constant.ts
+// on GRADE_STATUS. Shared by computeCreditCheck and computePassedCourseIds
+// so the two passes can never disagree on what "passed" means.
+function resolveCourseStatus(
+  attempt: LatestCourseAttempt | undefined,
+): CourseStatus {
+  return attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
+}
+
+// requirement is nullable (1:1, a category may have no CurriculumRequirement
+// row) — treat as always-satisfied rather than crashing on null.minCredits.
+function resolveCategoryRequirement(
+  requirement: { minCredits: number; minCourses: number | null } | null,
+): { minCredits: number; minCourses: number | null } {
+  return {
+    minCredits: requirement?.minCredits ?? 0,
+    minCourses: requirement?.minCourses ?? null,
+  };
+}
+
+function isCategoryComplete(
+  creditsEarned: number,
+  coursesPassedCount: number,
+  minCredits: number,
+  minCourses: number | null,
+): boolean {
+  return (
+    creditsEarned >= minCredits &&
+    (minCourses === null || coursesPassedCount >= minCourses)
+  );
+}
+
+function computeGraduationReadiness(
+  creditsPassed: number,
+  totalCreditsRequired: number,
+  categoryProgress: CategoryProgress[],
+  missingRequiredCount: number,
+): GraduationReadiness {
+  const creditsMet = creditsPassed >= totalCreditsRequired;
+  const allCategoriesMet = categoryProgress.every((c) => c.isComplete);
+  return {
+    isReady: creditsMet && allCategoriesMet && missingRequiredCount === 0,
+    creditsMet,
+    allCategoriesMet,
+    missingRequiredCount,
+  };
+}
+
 @Injectable()
 export class CreditCheckerService {
   constructor(
@@ -141,28 +191,13 @@ export class CreditCheckerService {
 
       for (const course of category.courses) {
         const attempt = latestByCourse.get(course.id);
-        const status = attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
-        // Computed for every course (not just required-and-not-passed) —
-        // the Prerequisite Flow Chart needs this for every node, and it's
-        // free: prerequisitesRequired/passedCourseIds are already in
-        // memory from loadCurriculumTree/computePassedCourseIds above.
-        const isPrerequisiteSatisfied = this.isCoursePrerequisiteSatisfied(
+        const status = resolveCourseStatus(attempt);
+        const summary = this.buildCourseSummary(
           course,
+          category.id,
+          attempt,
           passedCourseIds,
         );
-        const summary: CourseSummary = {
-          courseId: course.id,
-          code: course.code,
-          name: course.name,
-          credits: course.credits,
-          grade: attempt?.grade,
-          isRequired: course.isRequired,
-          categoryId: category.id,
-          prerequisiteCourseIds: course.prerequisitesRequired.map(
-            (p) => p.prerequisiteCourseId,
-          ),
-          isPrerequisiteSatisfied,
-        };
 
         if (status === 'PASS') {
           passedCourses.push(summary);
@@ -184,14 +219,15 @@ export class CreditCheckerService {
         }
       }
 
-      // requirement is nullable (1:1, a category may have no
-      // CurriculumRequirement row) — treat as always-satisfied rather
-      // than crashing on null.minCredits.
-      const minCredits = category.requirement?.minCredits ?? 0;
-      const minCourses = category.requirement?.minCourses ?? null;
-      const isComplete =
-        categoryCreditsEarned >= minCredits &&
-        (minCourses === null || categoryCoursesPassedCount >= minCourses);
+      const { minCredits, minCourses } = resolveCategoryRequirement(
+        category.requirement,
+      );
+      const isComplete = isCategoryComplete(
+        categoryCreditsEarned,
+        categoryCoursesPassedCount,
+        minCredits,
+        minCourses,
+      );
 
       categoryProgress.push({
         categoryId: category.id,
@@ -205,15 +241,12 @@ export class CreditCheckerService {
     }
 
     const creditsRemaining = curriculum.totalCredits - creditsPassed;
-    const allCategoriesMet = categoryProgress.every((c) => c.isComplete);
-    const creditsMet = creditsPassed >= curriculum.totalCredits;
-    const graduationReadiness: GraduationReadiness = {
-      isReady:
-        creditsMet && allCategoriesMet && missingRequiredCourses.length === 0,
-      creditsMet,
-      allCategoriesMet,
-      missingRequiredCount: missingRequiredCourses.length,
-    };
+    const graduationReadiness = computeGraduationReadiness(
+      creditsPassed,
+      curriculum.totalCredits,
+      categoryProgress,
+      missingRequiredCourses.length,
+    );
 
     return {
       studentProfileId: profile.id,
@@ -233,6 +266,34 @@ export class CreditCheckerService {
     };
   }
 
+  // isPrerequisiteSatisfied is computed for every course (not just
+  // required-and-not-passed) — the Prerequisite Flow Chart needs it for
+  // every node, and it's free: prerequisitesRequired/passedCourseIds are
+  // already in memory from loadCurriculumTree/computePassedCourseIds.
+  private buildCourseSummary(
+    course: CreditCheckCurriculumTree['categories'][number]['courses'][number],
+    categoryId: string,
+    attempt: LatestCourseAttempt | undefined,
+    passedCourseIds: Set<string>,
+  ): CourseSummary {
+    return {
+      courseId: course.id,
+      code: course.code,
+      name: course.name,
+      credits: course.credits,
+      grade: attempt?.grade,
+      isRequired: course.isRequired,
+      categoryId,
+      prerequisiteCourseIds: course.prerequisitesRequired.map(
+        (p) => p.prerequisiteCourseId,
+      ),
+      isPrerequisiteSatisfied: this.isCoursePrerequisiteSatisfied(
+        course,
+        passedCourseIds,
+      ),
+    };
+  }
+
   // Pure/internal — no I/O. Extracted (same reasoning as
   // loadCurriculumTree/computeCreditCheck in Phase 9 Chunk 4) so
   // LearningPathService can reuse the exact same "which courses has this
@@ -245,8 +306,7 @@ export class CreditCheckerService {
     for (const category of curriculum.categories) {
       for (const course of category.courses) {
         const attempt = latestByCourse.get(course.id);
-        const status = attempt ? GRADE_STATUS[attempt.grade] : 'EXCLUDED';
-        if (status === 'PASS') {
+        if (resolveCourseStatus(attempt) === 'PASS') {
           passedCourseIds.add(course.id);
         }
       }
