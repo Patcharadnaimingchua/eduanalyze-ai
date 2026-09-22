@@ -78,13 +78,13 @@ apiClient.interceptors.response.use(
     if (config?._isRefreshCall) {
       setAccessToken(null);
       onRefreshFailed?.();
-      return Promise.reject(error);
+      throw error;
     }
 
     const isRetryableAuthFailure =
       error.response?.status === 401 && config && !config._retried;
     if (!isRetryableAuthFailure) {
-      return Promise.reject(error);
+      throw error;
     }
 
     config._retried = true;
@@ -95,7 +95,7 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       setAccessToken(null);
       onRefreshFailed?.();
-      return Promise.reject(refreshError);
+      throw refreshError;
     }
   },
 );
