@@ -91,8 +91,8 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   {failedCount > 0 && ` · ผิดพลาด ${failedCount} รายการ`}
                 </p>
                 <ul className="space-y-1 text-sm">
-                  {results.map((r, i) => (
-                    <li key={i} className="flex items-center justify-between gap-2">
+                  {results.map((r) => (
+                    <li key={r.label} className="flex items-center justify-between gap-2">
                       <span className="text-muted-foreground">{r.label}</span>
                       <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                     </li>
