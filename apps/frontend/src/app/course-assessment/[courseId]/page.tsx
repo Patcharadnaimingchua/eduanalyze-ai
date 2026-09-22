@@ -258,8 +258,14 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
             })}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-primary">ความคิดเห็นเพิ่มเติม (ถ้ามี)</label>
-              <Textarea {...form.register('comment')} placeholder="แสดงความคิดเห็นเกี่ยวกับวิชานี้..." />
+              <label htmlFor="comment" className="text-sm font-medium text-primary">
+                ความคิดเห็นเพิ่มเติม (ถ้ามี)
+              </label>
+              <Textarea
+                id="comment"
+                {...form.register('comment')}
+                placeholder="แสดงความคิดเห็นเกี่ยวกับวิชานี้..."
+              />
             </div>
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
