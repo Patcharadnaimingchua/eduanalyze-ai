@@ -5,22 +5,24 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssessmentScoreStatus } from '@eduanalyze-ai/shared-types';
 import {
+  fetchAssessmentCloMappings,
+  fetchAssessmentDefinitions,
   fetchStudentAssessmentScores,
   upsertStudentAssessmentScore,
 } from '@/lib/api/assessment-evidence';
 import { fetchCourseRoster } from '@/lib/api/instructor';
+import { SCORE_CSV_HEADERS } from '@/lib/assessment-score-import';
+import { toCsv, downloadCsv } from '@/lib/csv';
+import {
+  ASSESSMENT_SCORE_STATUS_LABELS,
+  ASSESSMENT_SCORE_STATUS_OPTIONS,
+} from '@/lib/grade-label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
-
-const STATUS_OPTIONS: { value: AssessmentScoreStatus; label: string }[] = [
-  { value: 'PENDING', label: 'ยังไม่ตรวจ' },
-  { value: 'GRADED', label: 'ตรวจแล้ว' },
-  { value: 'ABSENT', label: 'ขาดสอบ' },
-  { value: 'EXCUSED', label: 'ได้รับการยกเว้น' },
-];
+import { ScoreCsvImportPanel } from './score-csv-import-panel';
 
 interface ScoreRow {
   studentProfileId: string;
@@ -34,14 +36,17 @@ interface ScoreRow {
 
 export function StudentScoreEntryPanel({
   courseId,
+  assessmentDefinitionId,
   assessmentCloMappingId,
-}: {
+}: Readonly<{
   courseId: string;
+  assessmentDefinitionId: string;
   assessmentCloMappingId: string;
-}) {
+}>) {
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const rosterQuery = useQuery({
     queryKey: ['course-roster', courseId],
@@ -51,6 +56,24 @@ export function StudentScoreEntryPanel({
     queryKey: ['student-assessment-scores', assessmentCloMappingId],
     queryFn: () => fetchStudentAssessmentScores(assessmentCloMappingId, courseId),
   });
+  // Same query keys the definition/mapping panels above already populated, so
+  // these resolve from cache — needed only to derive the score ceiling.
+  const definitionsQuery = useQuery({
+    queryKey: ['assessment-definitions', courseId],
+    queryFn: () => fetchAssessmentDefinitions(courseId),
+  });
+  const mappingsQuery = useQuery({
+    queryKey: ['assessment-clo-mappings', assessmentDefinitionId],
+    queryFn: () => fetchAssessmentCloMappings(assessmentDefinitionId, courseId),
+  });
+
+  // Decimal fields arrive as strings; parse only here at the boundary.
+  const effectiveMax = useMemo(() => {
+    const mapping = mappingsQuery.data?.find((m) => m.id === assessmentCloMappingId);
+    const definition = definitionsQuery.data?.find((d) => d.id === assessmentDefinitionId);
+    const raw = mapping?.maxScoreOverride ?? definition?.maxScore;
+    return raw === undefined || raw === null ? null : Number(raw);
+  }, [mappingsQuery.data, definitionsQuery.data, assessmentCloMappingId, assessmentDefinitionId]);
 
   const form = useForm<{ rows: ScoreRow[] }>({ defaultValues: { rows: [] } });
   const { fields, replace } = useFieldArray({ control: form.control, name: 'rows' });
@@ -109,6 +132,27 @@ export function StudentScoreEntryPanel({
     }
   }
 
+  // Exports what's on screen now, so the file round-trips straight back
+  // through import after editing in a spreadsheet.
+  function onDownloadTemplate() {
+    const csv = toCsv(
+      SCORE_CSV_HEADERS,
+      form.getValues('rows').map((row) => [
+        row.studentCode,
+        row.fullName,
+        row.status === 'GRADED' ? row.score : '',
+        ASSESSMENT_SCORE_STATUS_LABELS[row.status],
+      ]),
+    );
+    downloadCsv(`assessment-scores-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  }
+
+  async function onImported() {
+    await queryClient.invalidateQueries({
+      queryKey: ['student-assessment-scores', assessmentCloMappingId],
+    });
+  }
+
   const isLoading = rosterQuery.isLoading || scoresQuery.isLoading;
   const isError = rosterQuery.isError || scoresQuery.isError;
 
@@ -125,6 +169,37 @@ export function StudentScoreEntryPanel({
           <Alert variant="destructive">
             <AlertDescription>{serverError}</AlertDescription>
           </Alert>
+        )}
+
+        {fields.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={onDownloadTemplate}>
+              ดาวน์โหลดเทมเพลต
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen((open) => !open)}
+              disabled={effectiveMax === null}
+            >
+              นำเข้า CSV
+            </Button>
+            {effectiveMax !== null && (
+              <span className="text-xs text-muted-foreground">คะแนนเต็ม {effectiveMax}</span>
+            )}
+          </div>
+        )}
+
+        {importOpen && effectiveMax !== null && rosterQuery.data && (
+          <ScoreCsvImportPanel
+            courseId={courseId}
+            assessmentCloMappingId={assessmentCloMappingId}
+            roster={rosterQuery.data}
+            effectiveMax={effectiveMax}
+            onImported={onImported}
+            onClose={() => setImportOpen(false)}
+          />
         )}
 
         {isLoading && <TableSkeleton cols={5} rows={4} />}
@@ -164,9 +239,9 @@ export function StudentScoreEntryPanel({
                             },
                           })}
                         >
-                          {STATUS_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
+                          {ASSESSMENT_SCORE_STATUS_OPTIONS.map((value) => (
+                            <option key={value} value={value}>
+                              {ASSESSMENT_SCORE_STATUS_LABELS[value]}
                             </option>
                           ))}
                         </select>

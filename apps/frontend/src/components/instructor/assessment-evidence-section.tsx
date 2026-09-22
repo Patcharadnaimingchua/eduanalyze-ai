@@ -45,8 +45,12 @@ export function AssessmentEvidenceSection({ courseId }: { courseId: string }) {
         />
       )}
 
-      {selectedMappingId && (
-        <StudentScoreEntryPanel courseId={courseId} assessmentCloMappingId={selectedMappingId} />
+      {selectedDefinitionId && selectedMappingId && (
+        <StudentScoreEntryPanel
+          courseId={courseId}
+          assessmentDefinitionId={selectedDefinitionId}
+          assessmentCloMappingId={selectedMappingId}
+        />
       )}
     </div>
   );
