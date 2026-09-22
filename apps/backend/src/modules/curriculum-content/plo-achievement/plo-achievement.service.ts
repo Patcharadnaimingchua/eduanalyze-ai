@@ -12,7 +12,10 @@ import {
 } from '../../academic-record/student-course-record/student-course-record.service';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
 import { CurriculumService } from '../../organization/curriculum/curriculum.service';
-import { CreditCheckerService } from '../../academic-record/credit-checker/credit-checker.service';
+import {
+  CreditCheckCurriculumTree,
+  CreditCheckerService,
+} from '../../academic-record/credit-checker/credit-checker.service';
 import { CloAchievementService } from '../clo-achievement/clo-achievement.service';
 import {
   CohortPloAchievementReport,
@@ -28,6 +31,26 @@ import {
 } from './plo-achievement-report.interface';
 
 const AT_RISK_GPA_THRESHOLD = 2.0;
+
+function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
+  const groups = new Map<K, T[]>();
+  for (const item of items) {
+    const group = groups.get(key(item)) ?? [];
+    group.push(item);
+    groups.set(key(item), group);
+  }
+  return groups;
+}
+
+function getOrCreate<K, V>(map: Map<K, V>, key: K, factory: () => V): V {
+  const existing = map.get(key);
+  if (existing !== undefined) {
+    return existing;
+  }
+  const created = factory();
+  map.set(key, created);
+  return created;
+}
 
 export type PloWithMappings = Prisma.PloGetPayload<{
   include: {
@@ -322,18 +345,83 @@ export class PloAchievementService {
       await this.studentCourseRecordService.findActiveRecordsForStudents(
         students.map((student) => student.id),
       );
-    const recordsByStudent = new Map<string, LatestCourseAttempt[]>();
-    for (const record of studentRecords) {
-      const group = recordsByStudent.get(record.studentProfileId) ?? [];
-      group.push(record);
-      recordsByStudent.set(record.studentProfileId, group);
-    }
+    const recordsByStudent = groupBy(
+      studentRecords,
+      (record) => record.studentProfileId,
+    );
 
+    const {
+      gpas,
+      studentsAtRiskCount,
+      graduationReadyCount,
+      ploSums,
+      cohortGpas,
+      cohortPloSums,
+    } = this.accumulateStudentMetrics(
+      students,
+      recordsByStudent,
+      plos,
+      curriculumTree,
+    );
+
+    const radar = this.buildRadarFromSums(plos, ploSums);
+    const { strengths, areasForImprovement } =
+      this.rankStrengthsAndWeaknesses(radar);
+
+    const cohortComparison = this.buildCohortComparison(
+      curriculumId,
+      students,
+      plos,
+      cohortGpas,
+      cohortPloSums,
+    );
+
+    const { courseAnalytics, lowestClos } =
+      await this.buildCourseAnalytics(curriculumId);
+
+    const withData = radar.filter(
+      (p): p is RadarPoint & { value: number } => p.value !== null,
+    );
+    const lowestPlo =
+      withData.length > 0
+        ? withData.reduce((min, p) => (p.value < min.value ? p : min), withData[0])
+        : null;
+
+    return {
+      curriculumId,
+      studentCount: students.length,
+      averageGpa: gpas.length > 0 ? this.average(gpas) : null,
+      gpaSampleSize: gpas.length,
+      studentsAtRiskCount,
+      graduationReadyCount,
+      graduationReadyPercent:
+        students.length > 0
+          ? (graduationReadyCount / students.length) * 100
+          : null,
+      radar,
+      strengths,
+      areasForImprovement,
+      lowestPlo,
+      lowestClos,
+      courseAnalytics,
+      cohortComparison,
+    };
+  }
+
+  // Accumulates curriculum-wide and per-cohort buckets in a single pass.
+  // Iteration order over `students` is load-bearing: the PLO sums are
+  // floating-point `+=`, so visiting students in a different order (or
+  // folding with reduce) can shift the last bits of the reported averages.
+  private accumulateStudentMetrics(
+    students: StudentProfile[],
+    recordsByStudent: Map<string, LatestCourseAttempt[]>,
+    plos: PloWithMappings[],
+    curriculumTree: CreditCheckCurriculumTree,
+  ) {
     const gpas: number[] = [];
     let studentsAtRiskCount = 0;
     let graduationReadyCount = 0;
     const ploSums = new Map<string, { sum: number; count: number }>();
-
     const cohortGpas = new Map<number, number[]>();
     const cohortPloSums = new Map<
       number,
@@ -355,32 +443,42 @@ export class PloAchievementService {
         this.pushInto(cohortGpas, student.admissionYear, gpa);
       }
 
-      const { graduationReadiness } = this.creditCheckerService.computeCreditCheck(
-        student,
-        curriculumTree,
-        attempts,
-      );
+      const { graduationReadiness } =
+        this.creditCheckerService.computeCreditCheck(
+          student,
+          curriculumTree,
+          attempts,
+        );
       if (graduationReadiness.isReady) {
         graduationReadyCount += 1;
       }
 
       const radar = this.computeStudentPloScores(plos, attempts);
       this.accumulateRadar(ploSums, radar);
-      const cohortSums =
-        cohortPloSums.get(student.admissionYear) ??
-        cohortPloSums.set(student.admissionYear, new Map()).get(
-          student.admissionYear,
-        )!;
-      this.accumulateRadar(cohortSums, radar);
+      this.accumulateRadar(
+        getOrCreate(cohortPloSums, student.admissionYear, () => new Map()),
+        radar,
+      );
     }
 
-    const radar = this.buildRadarFromSums(plos, ploSums);
-    const { strengths, areasForImprovement } =
-      this.rankStrengthsAndWeaknesses(radar);
+    return {
+      gpas,
+      studentsAtRiskCount,
+      graduationReadyCount,
+      ploSums,
+      cohortGpas,
+      cohortPloSums,
+    };
+  }
 
-    const cohortComparison: CohortPloAchievementReport[] = Array.from(
-      cohortGpas.keys(),
-    )
+  private buildCohortComparison(
+    curriculumId: string,
+    students: StudentProfile[],
+    plos: PloWithMappings[],
+    cohortGpas: Map<number, number[]>,
+    cohortPloSums: Map<number, Map<string, { sum: number; count: number }>>,
+  ): CohortPloAchievementReport[] {
+    return Array.from(cohortGpas.keys())
       .sort((a, b) => a - b)
       .map((year) => {
         const yearGpas = cohortGpas.get(year) ?? [];
@@ -392,8 +490,7 @@ export class PloAchievementService {
         return {
           curriculumId,
           admissionYear: year,
-          studentCount: students.filter((s) => s.admissionYear === year)
-            .length,
+          studentCount: students.filter((s) => s.admissionYear === year).length,
           averageGpa: yearGpas.length > 0 ? this.average(yearGpas) : null,
           gpaSampleSize: yearGpas.length,
           radar: yearRadar,
@@ -401,12 +498,17 @@ export class PloAchievementService {
           areasForImprovement: ranked.areasForImprovement,
         };
       });
+  }
 
-    // Separate data shape from the student loop above, but fetched the
-    // same way: one query for every course's records and one for every
-    // course's CLOs, instead of calculateForCourse's four queries per
-    // course. The achievement bar itself still comes from
-    // CloAchievementService (CONVENTIONS.md §6) — only the fetching moved.
+  // Separate data shape from the student loop, but fetched the same way:
+  // one query for every course's records and one for every course's CLOs,
+  // instead of calculateForCourse's four queries per course. The
+  // achievement bar itself still comes from CloAchievementService
+  // (CONVENTIONS.md §6) — only the fetching moved.
+  private async buildCourseAnalytics(curriculumId: string): Promise<{
+    courseAnalytics: CourseAnalyticsEntry[];
+    lowestClos: LowestCloEntry[];
+  }> {
     const courses = await this.prisma.course.findMany({
       where: { curriculumId, isActive: true },
       orderBy: { code: 'asc' },
@@ -417,27 +519,19 @@ export class PloAchievementService {
       await this.studentCourseRecordService.findActiveRecordsForCourses(
         courseIds,
       );
-    const recordsByCourse = new Map<string, LatestCourseAttempt[]>();
-    for (const record of courseRecords) {
-      const group = recordsByCourse.get(record.courseId) ?? [];
-      group.push(record);
-      recordsByCourse.set(record.courseId, group);
-    }
+    const recordsByCourse = groupBy(courseRecords, (record) => record.courseId);
 
     const allClos = await this.prisma.clo.findMany({
       where: { courseId: { in: courseIds }, isActive: true },
     });
-    const closByCourse = new Map<string, typeof allClos>();
-    for (const clo of allClos) {
-      const group = closByCourse.get(clo.courseId) ?? [];
-      group.push(clo);
-      closByCourse.set(clo.courseId, group);
-    }
+    const closByCourse = groupBy(allClos, (clo) => clo.courseId);
 
     const courseAnalytics: CourseAnalyticsEntry[] = [];
     let lowestAchievement = Infinity;
     let lowestClos: LowestCloEntry[] = [];
 
+    // Running minimum rather than a second pass, so `lowestClos` keeps the
+    // `courses` ordering (code asc) that the query above establishes.
     for (const course of courses) {
       const latestByStudent =
         this.studentCourseRecordService.dedupeLatestPerStudent(
@@ -474,33 +568,7 @@ export class PloAchievementService {
       }
     }
 
-    const withData = radar.filter(
-      (p): p is RadarPoint & { value: number } => p.value !== null,
-    );
-    const lowestPlo =
-      withData.length > 0
-        ? withData.reduce((min, p) => (p.value < min.value ? p : min), withData[0])
-        : null;
-
-    return {
-      curriculumId,
-      studentCount: students.length,
-      averageGpa: gpas.length > 0 ? this.average(gpas) : null,
-      gpaSampleSize: gpas.length,
-      studentsAtRiskCount,
-      graduationReadyCount,
-      graduationReadyPercent:
-        students.length > 0
-          ? (graduationReadyCount / students.length) * 100
-          : null,
-      radar,
-      strengths,
-      areasForImprovement,
-      lowestPlo,
-      lowestClos,
-      courseAnalytics,
-      cohortComparison,
-    };
+    return { courseAnalytics, lowestClos };
   }
 
   private pushInto<K>(map: Map<K, number[]>, key: K, value: number) {
