@@ -365,72 +365,107 @@ const CURRICULA = [
   { id: '013cf004-c252-4ccb-9254-c661a437311f', label: 'ICT 2569', courses: CURRICULUM_2569_COURSES },
 ];
 
+type CurriculumSeed = (typeof CURRICULA)[number];
+type SeededCourse = { id: string; code: string; name: string };
+type SeededClo = { id: string; code: string };
+
+// Every write below goes through upsertActive (or a natural-key upsert),
+// and each step is awaited in sequence rather than batched with
+// Promise.all — upsertActive is a read-then-write with no surrounding
+// transaction, so concurrent calls for the same natural key would race.
+
+async function seedPlos(curriculumId: string): Promise<Map<string, string>> {
+  const ploIdByCode = new Map<string, string>();
+  for (const plo of PLOS) {
+    const created = await upsertActive({
+      find: () =>
+        prisma.plo.findFirst({
+          where: { curriculumId, code: plo.code, isActive: true },
+        }),
+      update: (id) =>
+        prisma.plo.update({
+          where: { id },
+          data: { name: plo.name, description: plo.description },
+        }),
+      create: () =>
+        prisma.plo.create({
+          data: { curriculumId, code: plo.code, name: plo.name, description: plo.description },
+        }),
+    });
+    ploIdByCode.set(plo.code, created.id);
+    console.log(`  PLO ${created.code}: ${created.name}`);
+  }
+  return ploIdByCode;
+}
+
+async function seedCloPloMappings(
+  clo: SeededClo,
+  course: SeededCourse,
+  mappings: CloMappingSeed[],
+  ploIdByCode: Map<string, string>,
+) {
+  for (const mapping of mappings) {
+    const ploId = ploIdByCode.get(mapping.ploCode);
+    if (!ploId) {
+      console.warn(`  !! Unknown PLO code ${mapping.ploCode} referenced by ${course.code}/${clo.code}`);
+      continue;
+    }
+    await prisma.cloPloMapping.upsert({
+      where: { cloId_ploId: { cloId: clo.id, ploId } },
+      update: { weight: mapping.weight, isActive: true },
+      create: { cloId: clo.id, ploId, weight: mapping.weight },
+    });
+  }
+}
+
+async function seedCourseClos(
+  course: SeededCourse,
+  cloSeeds: CloSeed[],
+  ploIdByCode: Map<string, string>,
+) {
+  for (const cloSeed of cloSeeds) {
+    const clo = await upsertActive({
+      find: () =>
+        prisma.clo.findFirst({
+          where: { courseId: course.id, code: cloSeed.code, isActive: true },
+        }),
+      update: (id) =>
+        prisma.clo.update({
+          where: { id },
+          data: { description: cloSeed.description },
+        }),
+      create: () =>
+        prisma.clo.create({
+          data: { courseId: course.id, code: cloSeed.code, description: cloSeed.description },
+        }),
+    });
+
+    await seedCloPloMappings(clo, course, cloSeed.mappings, ploIdByCode);
+  }
+}
+
+async function seedCurriculum(cur: CurriculumSeed) {
+  console.log(`\n=== ${cur.label} (${cur.id}) ===`);
+
+  const ploIdByCode = await seedPlos(cur.id);
+
+  for (const courseSeed of cur.courses) {
+    const course = await prisma.course.findFirst({
+      where: { curriculumId: cur.id, code: courseSeed.courseCode, isActive: true },
+    });
+    if (!course) {
+      console.warn(`  !! Course ${courseSeed.courseCode} not found in ${cur.label} — skipped`);
+      continue;
+    }
+
+    await seedCourseClos(course, courseSeed.clos, ploIdByCode);
+    console.log(`  Course ${course.code} ${course.name}: ${courseSeed.clos.length} CLO(s)`);
+  }
+}
+
 async function main() {
   for (const cur of CURRICULA) {
-    console.log(`\n=== ${cur.label} (${cur.id}) ===`);
-
-    const ploIdByCode = new Map<string, string>();
-    for (const plo of PLOS) {
-      const created = await upsertActive({
-        find: () =>
-          prisma.plo.findFirst({
-            where: { curriculumId: cur.id, code: plo.code, isActive: true },
-          }),
-        update: (id) =>
-          prisma.plo.update({
-            where: { id },
-            data: { name: plo.name, description: plo.description },
-          }),
-        create: () =>
-          prisma.plo.create({
-            data: { curriculumId: cur.id, code: plo.code, name: plo.name, description: plo.description },
-          }),
-      });
-      ploIdByCode.set(plo.code, created.id);
-      console.log(`  PLO ${created.code}: ${created.name}`);
-    }
-
-    for (const courseSeed of cur.courses) {
-      const course = await prisma.course.findFirst({
-        where: { curriculumId: cur.id, code: courseSeed.courseCode, isActive: true },
-      });
-      if (!course) {
-        console.warn(`  !! Course ${courseSeed.courseCode} not found in ${cur.label} — skipped`);
-        continue;
-      }
-
-      for (const cloSeed of courseSeed.clos) {
-        const clo = await upsertActive({
-          find: () =>
-            prisma.clo.findFirst({
-              where: { courseId: course.id, code: cloSeed.code, isActive: true },
-            }),
-          update: (id) =>
-            prisma.clo.update({
-              where: { id },
-              data: { description: cloSeed.description },
-            }),
-          create: () =>
-            prisma.clo.create({
-              data: { courseId: course.id, code: cloSeed.code, description: cloSeed.description },
-            }),
-        });
-
-        for (const mapping of cloSeed.mappings) {
-          const ploId = ploIdByCode.get(mapping.ploCode);
-          if (!ploId) {
-            console.warn(`  !! Unknown PLO code ${mapping.ploCode} referenced by ${course.code}/${clo.code}`);
-            continue;
-          }
-          await prisma.cloPloMapping.upsert({
-            where: { cloId_ploId: { cloId: clo.id, ploId } },
-            update: { weight: mapping.weight, isActive: true },
-            create: { cloId: clo.id, ploId, weight: mapping.weight },
-          });
-        }
-      }
-      console.log(`  Course ${course.code} ${course.name}: ${courseSeed.clos.length} CLO(s)`);
-    }
+    await seedCurriculum(cur);
   }
 }
 
