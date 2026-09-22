@@ -9,6 +9,13 @@ export interface ScopeAncestry {
   programId: string | null;
 }
 
+// Every entity that sits below Program in the hierarchy and therefore
+// resolves by finding its own programId first.
+type ProgramDerivedEntity = Exclude<
+  ScopeTargetEntity,
+  'faculty' | 'department' | 'program'
+>;
+
 export interface EffectiveScope {
   level: ScopeLevel;
   facultyId: string | null;
@@ -45,153 +52,194 @@ export class ScopeResolverService {
     entity: ScopeTargetEntity,
     id: string,
   ): Promise<ScopeAncestry> {
-    // ScopeGuard passes body[key] straight through when the DTO is
-    // malformed (guards run before ValidationPipe in the Nest pipeline —
-    // it hasn't rejected a missing/wrong-typed field yet at this point).
-    // Without this check, `id: undefined` reaches a Prisma findUnique
-    // below and Prisma throws PrismaClientValidationError, which
-    // AllExceptionsFilter only has a generic 500 for — the caller should
-    // get a 400 telling them the field is missing, not an opaque 500.
+    this.assertResolvableId(entity, id);
+
+    if (entity === 'faculty') {
+      return { facultyId: id, departmentId: null, programId: null };
+    }
+    if (entity === 'department') {
+      return this.resolveDepartmentAncestry(id);
+    }
+    if (entity === 'program') {
+      return this.resolveProgramAncestry(id);
+    }
+    return this.resolveViaProgram(entity, id);
+  }
+
+  // ScopeGuard passes body[key] straight through when the DTO is
+  // malformed (guards run before ValidationPipe in the Nest pipeline —
+  // it hasn't rejected a missing/wrong-typed field yet at this point).
+  // Without this check, `id: undefined` reaches a Prisma findUnique
+  // below and Prisma throws PrismaClientValidationError, which
+  // AllExceptionsFilter only has a generic 500 for — the caller should
+  // get a 400 telling them the field is missing, not an opaque 500.
+  private assertResolvableId(
+    entity: ScopeTargetEntity,
+    id: string,
+  ): asserts id is string {
     if (!id || typeof id !== 'string') {
       throw new BadRequestException(
         `Missing or invalid ${entity} id for scope resolution`,
       );
     }
+  }
 
-    if (entity === 'faculty') {
-      return { facultyId: id, departmentId: null, programId: null };
-    }
-
-    if (entity === 'department') {
-      const department = await this.prisma.department.findUnique({
-        where: { id },
-        select: { facultyId: true },
-      });
-      if (!department) {
-        throw new NotFoundException(`Department ${id} not found`);
-      }
-      return { facultyId: department.facultyId, departmentId: id, programId: null };
-    }
-
-    if (entity === 'program') {
-      const program = await this.prisma.program.findUnique({
-        where: { id },
-        include: { department: { select: { facultyId: true } } },
-      });
-      if (!program) {
-        throw new NotFoundException(`Program ${id} not found`);
-      }
-      return {
-        facultyId: program.department.facultyId,
-        departmentId: program.departmentId,
-        programId: id,
-      };
-    }
-
-    // Everything below Program delegates to the 'program' branch above for
-    // the Department/Faculty walk-up, after one query to find its own
-    // programId — reuse over duplicating the walk-up logic (CONVENTIONS
-    // §6), at the cost of one extra query per resolution (single-row
-    // mutation-time lookups, not a list endpoint, so this is cheap).
-
-    if (entity === 'curriculum') {
-      const curriculum = await this.prisma.curriculum.findUnique({
-        where: { id },
-        select: { programId: true },
-      });
-      if (!curriculum) {
-        throw new NotFoundException(`Curriculum ${id} not found`);
-      }
-      return this.resolveAncestry('program', curriculum.programId);
-    }
-
-    if (entity === 'course') {
-      const course = await this.prisma.course.findUnique({
-        where: { id },
-        select: { curriculum: { select: { programId: true } } },
-      });
-      if (!course) {
-        throw new NotFoundException(`Course ${id} not found`);
-      }
-      return this.resolveAncestry('program', course.curriculum.programId);
-    }
-
-    if (entity === 'plo') {
-      const plo = await this.prisma.plo.findUnique({
-        where: { id },
-        select: { curriculum: { select: { programId: true } } },
-      });
-      if (!plo) {
-        throw new NotFoundException(`Plo ${id} not found`);
-      }
-      return this.resolveAncestry('program', plo.curriculum.programId);
-    }
-
-    if (entity === 'clo') {
-      const clo = await this.prisma.clo.findUnique({
-        where: { id },
-        select: { course: { select: { curriculum: { select: { programId: true } } } } },
-      });
-      if (!clo) {
-        throw new NotFoundException(`Clo ${id} not found`);
-      }
-      return this.resolveAncestry('program', clo.course.curriculum.programId);
-    }
-
-    if (entity === 'cloPloMapping') {
-      const mapping = await this.prisma.cloPloMapping.findUnique({
-        where: { id },
-        select: { plo: { select: { curriculum: { select: { programId: true } } } } },
-      });
-      if (!mapping) {
-        throw new NotFoundException(`CloPloMapping ${id} not found`);
-      }
-      return this.resolveAncestry('program', mapping.plo.curriculum.programId);
-    }
-
-    if (entity === 'courseCategory') {
-      const category = await this.prisma.courseCategory.findUnique({
-        where: { id },
-        select: { curriculum: { select: { programId: true } } },
-      });
-      if (!category) {
-        throw new NotFoundException(`CourseCategory ${id} not found`);
-      }
-      return this.resolveAncestry('program', category.curriculum.programId);
-    }
-
-    if (entity === 'curriculumRequirement') {
-      const requirement = await this.prisma.curriculumRequirement.findUnique({
-        where: { id },
-        select: { curriculum: { select: { programId: true } } },
-      });
-      if (!requirement) {
-        throw new NotFoundException(`CurriculumRequirement ${id} not found`);
-      }
-      return this.resolveAncestry('program', requirement.curriculum.programId);
-    }
-
-    if (entity === 'prerequisite') {
-      const prerequisite = await this.prisma.prerequisite.findUnique({
-        where: { id },
-        select: { course: { select: { curriculum: { select: { programId: true } } } } },
-      });
-      if (!prerequisite) {
-        throw new NotFoundException(`Prerequisite ${id} not found`);
-      }
-      return this.resolveAncestry('program', prerequisite.course.curriculum.programId);
-    }
-
-    // entity === 'studentProfile' — StudentProfile has a direct programId
-    // column (no curriculum hop needed), unlike every branch above.
-    const profile = await this.prisma.studentProfile.findUnique({
+  private async resolveDepartmentAncestry(id: string): Promise<ScopeAncestry> {
+    const department = await this.prisma.department.findUnique({
       where: { id },
-      select: { programId: true },
+      select: { facultyId: true },
     });
-    if (!profile) {
-      throw new NotFoundException(`Student profile ${id} not found`);
+    if (!department) {
+      throw new NotFoundException(`Department ${id} not found`);
     }
-    return this.resolveAncestry('program', profile.programId);
+    return { facultyId: department.facultyId, departmentId: id, programId: null };
+  }
+
+  private async resolveProgramAncestry(id: string): Promise<ScopeAncestry> {
+    const program = await this.prisma.program.findUnique({
+      where: { id },
+      include: { department: { select: { facultyId: true } } },
+    });
+    if (!program) {
+      throw new NotFoundException(`Program ${id} not found`);
+    }
+    return {
+      facultyId: program.department.facultyId,
+      departmentId: program.departmentId,
+      programId: id,
+    };
+  }
+
+  // Everything below Program resolves to its own programId with one query
+  // and then delegates to the program walk-up above — reuse over
+  // duplicating the Department/Faculty walk (CONVENTIONS §6), at the cost
+  // of one extra query per resolution (single-row mutation-time lookups,
+  // not a list endpoint, so this is cheap).
+  //
+  // Keyed by entity so the ScopeTargetEntity union and this table have to
+  // stay in step: adding a member without a lookup here is a compile
+  // error. `label` is the exact NotFoundException wording each entity
+  // already used and is deliberately inconsistent (`Student profile` vs
+  // `CloPloMapping`) — callers may match on it.
+  private programDerivedLookup(
+    entity: ProgramDerivedEntity,
+  ): { label: string; findProgramId: (id: string) => Promise<string | null> } {
+    const lookups: Record<
+      ProgramDerivedEntity,
+      { label: string; findProgramId: (id: string) => Promise<string | null> }
+    > = {
+      curriculum: {
+        label: 'Curriculum',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.curriculum.findUnique({
+              where: { id },
+              select: { programId: true },
+            })
+          )?.programId ?? null,
+      },
+      course: {
+        label: 'Course',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.course.findUnique({
+              where: { id },
+              select: { curriculum: { select: { programId: true } } },
+            })
+          )?.curriculum.programId ?? null,
+      },
+      plo: {
+        label: 'Plo',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.plo.findUnique({
+              where: { id },
+              select: { curriculum: { select: { programId: true } } },
+            })
+          )?.curriculum.programId ?? null,
+      },
+      clo: {
+        label: 'Clo',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.clo.findUnique({
+              where: { id },
+              select: {
+                course: { select: { curriculum: { select: { programId: true } } } },
+              },
+            })
+          )?.course.curriculum.programId ?? null,
+      },
+      cloPloMapping: {
+        label: 'CloPloMapping',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.cloPloMapping.findUnique({
+              where: { id },
+              select: {
+                plo: { select: { curriculum: { select: { programId: true } } } },
+              },
+            })
+          )?.plo.curriculum.programId ?? null,
+      },
+      courseCategory: {
+        label: 'CourseCategory',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.courseCategory.findUnique({
+              where: { id },
+              select: { curriculum: { select: { programId: true } } },
+            })
+          )?.curriculum.programId ?? null,
+      },
+      curriculumRequirement: {
+        label: 'CurriculumRequirement',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.curriculumRequirement.findUnique({
+              where: { id },
+              select: { curriculum: { select: { programId: true } } },
+            })
+          )?.curriculum.programId ?? null,
+      },
+      prerequisite: {
+        label: 'Prerequisite',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.prerequisite.findUnique({
+              where: { id },
+              select: {
+                course: { select: { curriculum: { select: { programId: true } } } },
+              },
+            })
+          )?.course.curriculum.programId ?? null,
+      },
+      // StudentProfile has a direct programId column (no curriculum hop),
+      // unlike every other entry here.
+      studentProfile: {
+        label: 'Student profile',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.studentProfile.findUnique({
+              where: { id },
+              select: { programId: true },
+            })
+          )?.programId ?? null,
+      },
+    };
+    return lookups[entity];
+  }
+
+  private async resolveViaProgram(
+    entity: ProgramDerivedEntity,
+    id: string,
+  ): Promise<ScopeAncestry> {
+    const { label, findProgramId } = this.programDerivedLookup(entity);
+    const programId = await findProgramId(id);
+    if (programId === null) {
+      throw new NotFoundException(`${label} ${id} not found`);
+    }
+    return this.resolveProgramAncestry(programId);
   }
 
   // Resolves scope live per CONVENTIONS.md §8 — a UserScope row pointing
