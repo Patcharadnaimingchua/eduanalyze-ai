@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 import { ScoreCsvImportPanel } from './score-csv-import-panel';
+import { StudentActualCloCell } from './student-actual-clo-cell';
 
 interface ScoreRow {
   studentProfileId: string;
@@ -67,13 +68,17 @@ export function StudentScoreEntryPanel({
     queryFn: () => fetchAssessmentCloMappings(assessmentDefinitionId, courseId),
   });
 
+  const selectedMapping = useMemo(
+    () => mappingsQuery.data?.find((m) => m.id === assessmentCloMappingId),
+    [mappingsQuery.data, assessmentCloMappingId],
+  );
+
   // Decimal fields arrive as strings; parse only here at the boundary.
   const effectiveMax = useMemo(() => {
-    const mapping = mappingsQuery.data?.find((m) => m.id === assessmentCloMappingId);
     const definition = definitionsQuery.data?.find((d) => d.id === assessmentDefinitionId);
-    const raw = mapping?.maxScoreOverride ?? definition?.maxScore;
+    const raw = selectedMapping?.maxScoreOverride ?? definition?.maxScore;
     return raw === undefined || raw === null ? null : Number(raw);
-  }, [mappingsQuery.data, definitionsQuery.data, assessmentCloMappingId, assessmentDefinitionId]);
+  }, [selectedMapping, definitionsQuery.data, assessmentDefinitionId]);
 
   const form = useForm<{ rows: ScoreRow[] }>({ defaultValues: { rows: [] } });
   const { fields, replace } = useFieldArray({ control: form.control, name: 'rows' });
@@ -216,7 +221,8 @@ export function StudentScoreEntryPanel({
                   <th className="py-2 pr-4 font-medium">รหัสนักศึกษา</th>
                   <th className="py-2 pr-4 font-medium">ชื่อ-นามสกุล</th>
                   <th className="py-2 pr-4 font-medium">สถานะ</th>
-                  <th className="py-2 font-medium">คะแนน</th>
+                  <th className="py-2 pr-4 font-medium">คะแนน</th>
+                  <th className="py-2 font-medium">ผลรวมของ CLO นี้ (จากหลักฐาน)</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +252,7 @@ export function StudentScoreEntryPanel({
                           ))}
                         </select>
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 pr-4">
                         <input
                           type="number"
                           step="0.01"
@@ -255,6 +261,15 @@ export function StudentScoreEntryPanel({
                           className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                           {...form.register(`rows.${index}.score`)}
                         />
+                      </td>
+                      <td className="py-2">
+                        {selectedMapping && (
+                          <StudentActualCloCell
+                            courseId={courseId}
+                            cloId={selectedMapping.cloId}
+                            studentCourseRecordId={field.studentCourseRecordId}
+                          />
+                        )}
                       </td>
                     </tr>
                   );

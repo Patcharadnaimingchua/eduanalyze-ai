@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { achievementStatus } from '@/lib/achievement-status';
+import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 
 interface CourseAssessmentSummary {
   courseId: string;
@@ -24,7 +25,10 @@ export function CloAchievementSection({
   detail,
   isLoading,
   isError,
-}: {
+  evidenceCoverage,
+  evidenceTotal,
+  evidenceError,
+}: Readonly<{
   achievementPercent: number;
   achievementThreshold: number;
   clos: CloAchievementEntry[];
@@ -33,7 +37,15 @@ export function CloAchievementSection({
   detail: CourseCloAchievementReport | undefined;
   isLoading: boolean;
   isError: boolean;
-}) {
+  // Per-CLO count of students with a graded score. Sits *beside* the
+  // grade-based percentages above — never replaces them: there is no
+  // course-level evidence endpoint, and computing that percentage in the
+  // browser would fork the backend's Decimal arithmetic. See
+  // lib/evidence-coverage.ts.
+  evidenceCoverage: Map<string, number> | undefined;
+  evidenceTotal: number | undefined;
+  evidenceError: boolean;
+}>) {
   const courseStatus = achievementStatus(achievementPercent, achievementThreshold);
 
   const scoredAssessmentClos = useMemo(
@@ -80,6 +92,9 @@ export function CloAchievementSection({
             {detail.achievedStudents} จาก {detail.totalStudents} คนผ่านเกณฑ์
           </p>
         )}
+        <p className="text-xs text-muted-foreground">
+          ตัวเลขนี้คำนวณจากเกรดรายวิชา (สัดส่วนนักศึกษาที่ได้ ≥ B) ไม่ใช่จากคะแนนหลักฐานรายชิ้น
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -99,7 +114,22 @@ export function CloAchievementSection({
                   เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
                 </p>
               </div>
-              <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
+                {evidenceError ? (
+                  <span className="text-xs text-destructive">โหลดหลักฐานไม่สำเร็จ</span>
+                ) : (
+                  evidenceTotal !== undefined &&
+                  evidenceCoverage !== undefined && (
+                    <EvidenceCoverageBadge
+                      coverage={{
+                        validCount: evidenceCoverage.get(clo.cloId) ?? 0,
+                        totalCount: evidenceTotal,
+                      }}
+                    />
+                  )
+                )}
+              </div>
             </div>
           );
         })}

@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
+import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { CourseResultsSection } from './course-results-section';
@@ -54,7 +55,15 @@ export function InstructorDetailPanel({
   const rosterQuery = useQuery({
     queryKey: ['course-roster', course.courseId],
     queryFn: () => fetchCourseRoster(course.courseId),
-    enabled: isInstructor && activeTab === 'roster',
+    enabled: isInstructor && (activeTab === 'roster' || activeTab === 'clo'),
+  });
+
+  // Evidence coverage sits beside the grade-based numbers on the CLO tab so
+  // the two are never confused for one another.
+  const evidenceCoverageQuery = useQuery({
+    queryKey: ['course-evidence-coverage', course.courseId],
+    queryFn: () => fetchCourseEvidenceCoverage(course.courseId),
+    enabled: isInstructor && activeTab === 'clo',
   });
 
   function handleGradebookChanged() {
@@ -105,6 +114,9 @@ export function InstructorDetailPanel({
             detail={cloQuery.data}
             isLoading={cloQuery.isLoading}
             isError={cloQuery.isError}
+            evidenceCoverage={evidenceCoverageQuery.data}
+            evidenceTotal={rosterQuery.data?.length}
+            evidenceError={evidenceCoverageQuery.isError}
           />
         )}
 
