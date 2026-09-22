@@ -32,11 +32,17 @@ FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/apps/backend/dist ./apps/backend/dist
-COPY --from=build /app/apps/backend/prisma ./apps/backend/prisma
-COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/apps/backend/dist ./apps/backend/dist
+COPY --chown=node:node --from=build /app/apps/backend/prisma ./apps/backend/prisma
+COPY --chown=node:node --from=build /app/apps/backend/package.json ./apps/backend/package.json
+COPY --chown=node:node --from=build /app/node_modules/.prisma ./node_modules/.prisma
+
+# node:22-slim ships a built-in non-root `node` user (uid 1000) — run as it
+# instead of root (docker:S6471). All app files above are chown'd to it, so
+# reads/writes it needs at runtime (Prisma engine binary, migration state
+# via the DB) work without it owning anything outside /app.
+USER node
 
 EXPOSE 3001
 

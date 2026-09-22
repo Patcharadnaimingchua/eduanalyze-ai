@@ -28,10 +28,14 @@ RUN npm run build --workspace=apps/frontend
 FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/apps/frontend/.next-build ./apps/frontend/.next-build
-COPY --from=build /app/apps/frontend/package.json ./apps/frontend/package.json
-COPY --from=build /app/apps/frontend/next.config.mjs ./apps/frontend/next.config.mjs
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/apps/frontend/.next-build ./apps/frontend/.next-build
+COPY --chown=node:node --from=build /app/apps/frontend/package.json ./apps/frontend/package.json
+COPY --chown=node:node --from=build /app/apps/frontend/next.config.mjs ./apps/frontend/next.config.mjs
+
+# node:22-slim ships a built-in non-root `node` user (uid 1000) — run as it
+# instead of root (docker:S6471). All app files above are chown'd to it.
+USER node
 
 EXPOSE 3000
 WORKDIR /app/apps/frontend
