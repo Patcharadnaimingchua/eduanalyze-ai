@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { GraduationCap } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCourses } from '@/lib/api/academic-record';
 import { fetchCurriculum } from '@/lib/api/plo-achievement';
@@ -11,12 +11,13 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
 import { ElectiveCategoryList } from '@/components/learning-path/elective-category-list';
 import { LearningPathSkeleton } from '@/components/learning-path/learning-path-skeleton';
+import { MissingRequiredSummary } from '@/components/learning-path/missing-required-summary';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LearningPathPage() {
@@ -54,6 +55,10 @@ function LearningPathContent() {
     queryFn: () => fetchCurriculum(curriculumId!),
     enabled: !!curriculumId,
   });
+
+  // Bumping the key remounts the planner, which puts it back on the
+  // recommended plan — the planner keeps its own state otherwise.
+  const [plannerKey, setPlannerKey] = useState(0);
 
   const courseCountByCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -114,38 +119,68 @@ function LearningPathContent() {
         description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและ Prerequisite ของคุณ"
       />
 
-      <div
-        className="grid grid-cols-1 gap-4 md:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
-      >
-        <StatCard
-          icon={GraduationCap}
-          label="วิชาบังคับที่ยังขาด"
-          value={path.graduationReadiness.missingRequiredCount}
-          suffix="วิชา"
-          badge={
-            path.graduationReadiness.isReady
-              ? { text: 'พร้อมสำเร็จการศึกษา', tone: 'positive' }
-              : { text: 'ยังไม่พร้อม', tone: 'neutral' }
+      <Reveal delayMs={75}>
+        <PageSection
+          title="จัดแผนเทอมหน้า"
+          description={`ระบบจัดแผนที่แนะนำไว้ให้แล้ว — ลากวิชาหรือกดปุ่มย้ายเพื่อปรับ (ไม่เกิน ${curriculumQuery.data.maxCreditsPerSemester} หน่วยกิตต่อเทอม)`}
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setPlannerKey((k) => k + 1)}
+            >
+              <RotateCcw size={14} aria-hidden="true" />
+              รีเซ็ตเป็นแผนที่แนะนำ
+            </Button>
           }
-        />
-      </div>
+        >
+          <DragDropPlanner
+            key={plannerKey}
+            availableCourses={path.availableCourses}
+            nextSemesterPlan={path.nextSemesterPlan}
+            maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
+          />
+        </PageSection>
+      </Reveal>
 
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '150ms', animationFillMode: 'both' }}
-      >
-        <DragDropPlanner
-          availableCourses={path.availableCourses}
-          nextSemesterPlan={path.nextSemesterPlan}
-          maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
-        />
-      </div>
-      <MissingCoursesList courses={path.missingRequiredCourses} />
-      <ElectiveCategoryList
-        categories={path.incompleteElectiveCategories}
-        courseCountByCategory={courseCountByCategory}
-      />
+      <Reveal delayMs={150}>
+        <PageSection
+          title="สิ่งที่ยังขาดก่อนจบ"
+          description="วิชาบังคับและหมวดวิชาเลือกที่ยังไม่ครบตามหลักสูตร"
+        >
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+            {/* Wrapper keeps StatCard's h-full from stretching to the elective list's height. */}
+            <div>
+              <MissingRequiredSummary
+                courses={path.missingRequiredCourses}
+                readiness={path.graduationReadiness}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <ElectiveCategoryList
+                categories={path.incompleteElectiveCategories}
+                courseCountByCategory={courseCountByCategory}
+              />
+            </div>
+          </div>
+        </PageSection>
+      </Reveal>
     </DashboardShell>
+  );
+}
+
+function Reveal({
+  delayMs,
+  children,
+}: Readonly<{ delayMs: number; children: React.ReactNode }>) {
+  return (
+    <div
+      className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'both' }}
+    >
+      {children}
+    </div>
   );
 }

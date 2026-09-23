@@ -14,11 +14,11 @@ export function CourseDragCard({
   course,
   moveLabel,
   onMove,
-}: {
+}: Readonly<{
   course: AvailableCourse;
   moveLabel: string;
   onMove: () => void;
-}) {
+}>) {
   return (
     <div
       draggable
@@ -26,32 +26,37 @@ export function CourseDragCard({
         e.dataTransfer.setData('text/plain', course.courseId);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="flex cursor-grab items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white p-3 active:cursor-grabbing"
+      className="flex cursor-grab flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-slate-100 bg-white p-3 active:cursor-grabbing"
     >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-primary">
+      {/* basis-48 + wrap: when the column is too narrow for name, badge and
+          button on one line, the actions drop below instead of squeezing
+          the course name to zero width. */}
+      <div className="min-w-0 grow basis-48">
+        <p className="text-sm font-medium text-primary">
           {course.code}: {course.name}
         </p>
         <p className="text-xs text-muted-foreground">{course.credits} หน่วยกิต</p>
       </div>
-      <span
-        className={cn(
-          'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-          course.isRequired ? 'bg-brand-light text-brand' : 'bg-slate-100 text-slate-600',
-        )}
-      >
-        {course.isRequired ? 'วิชาบังคับ' : 'วิชาเลือก'}
-      </span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="shrink-0 gap-1"
-        onClick={onMove}
-      >
-        <ArrowLeftRight size={14} />
-        {moveLabel}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-xs font-medium',
+            course.isRequired ? 'bg-brand-light text-brand' : 'bg-slate-100 text-slate-600',
+          )}
+        >
+          {course.isRequired ? 'วิชาบังคับ' : 'วิชาเลือก'}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-auto gap-1 whitespace-normal py-1.5 text-left"
+          onClick={onMove}
+        >
+          <ArrowLeftRight size={14} aria-hidden="true" />
+          {moveLabel}
+        </Button>
+      </div>
     </div>
   );
 }
