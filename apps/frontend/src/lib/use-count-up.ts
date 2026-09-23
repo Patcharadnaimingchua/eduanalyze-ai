@@ -37,6 +37,14 @@ export function useCountUp(
     const replayRequested = replayKey !== undefined && replayKey !== prevReplayKeyRef.current;
     prevReplayKeyRef.current = replayKey;
 
+    // A requestAnimationFrame loop is out of reach of the globals.css
+    // media query, so the preference has to be honoured here as well.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      fromRef.current = target;
+      setDisplay(target);
+      return;
+    }
+
     const from = replayRequested ? 0 : fromRef.current;
     if (!replayRequested && from === target) return;
     if (replayRequested) fromRef.current = 0;

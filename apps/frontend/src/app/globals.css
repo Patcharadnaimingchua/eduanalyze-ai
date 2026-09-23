@@ -55,3 +55,16 @@
 .animate-shake {
   animation: shake 0.4s ease-in-out;
 }
+
+/* Motion is also driven from JS in use-count-up.ts, which a media query
+   cannot reach — that hook checks this same preference itself. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
