@@ -16,22 +16,12 @@ import { PageSection } from '@/components/layout/page-section';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { OverallAchievementCard } from '@/components/clo-plo-analysis/overall-achievement-card';
 import { PloCard } from '@/components/clo-plo-analysis/plo-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SCORE_BANDS, scoreBandKey } from '@/lib/plo-score-bands';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 type SortMode = 'lowest' | 'highest' | 'code';
-
-const SCORE_BANDS = [
-  { key: 'excellent', label: 'ยอดเยี่ยม', minimum: 80, indicatorClassName: 'bg-emerald-600' },
-  { key: 'good', label: 'ดี', minimum: 60, indicatorClassName: 'bg-emerald-500' },
-  { key: 'fair', label: 'พอใช้', minimum: 40, indicatorClassName: 'bg-amber-500' },
-  { key: 'needsWork', label: 'ควรพัฒนา', minimum: 0, indicatorClassName: 'bg-rose-500' },
-] as const;
-
-function scoreBandKey(value: number) {
-  return SCORE_BANDS.find((band) => value >= band.minimum)!.key;
-}
 
 export default function CloPloAnalysisPage() {
   return (
@@ -136,23 +126,16 @@ function CloPloAnalysisContent() {
   if (isLoading) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardContent className="space-y-3 pt-6">
-              <Skeleton className="mx-auto h-32 w-32 rounded-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-5 w-32" />
-            </CardHeader>
-            <CardContent className="space-y-3">
+        <Card>
+          <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
+            <Skeleton className="mx-auto h-32 w-32 rounded-full" />
+            <div className="space-y-3">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
         <ListSkeleton items={4} />
       </DashboardShell>
     );
@@ -182,30 +165,12 @@ function CloPloAnalysisContent() {
         description="ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ"
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <OverallAchievementCard percent={overallPercent} isAchieved={overallAchieved} />
-        <Card className="border-slate-100 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle>สรุปตามสถานะ</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            {SCORE_BANDS.map((band) => (
-              <div key={band.key} className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <span className={`h-2 w-2 rounded-full ${band.indicatorClassName}`} aria-hidden="true" />
-                  {band.label}
-                </span>
-                <span className="font-medium text-primary">{statusCounts.counts[band.key]} PLO</span>
-              </div>
-            ))}
-            {statusCounts.noDataCount > 0 && (
-              <p className="border-t border-slate-100 pt-3 text-xs text-muted-foreground">
-                ไม่มีข้อมูล {statusCounts.noDataCount} PLO
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <OverallAchievementCard
+        percent={overallPercent}
+        isAchieved={overallAchieved}
+        bandCounts={statusCounts.counts}
+        noDataCount={statusCounts.noDataCount}
+      />
 
       <PageSection
         title="ผลการวิเคราะห์ราย PLO"

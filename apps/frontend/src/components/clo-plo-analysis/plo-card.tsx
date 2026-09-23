@@ -27,7 +27,7 @@ export function PloCard({
   const breakdownId = `plo-${plo.ploId}-clo-details`;
 
   return (
-    <Card className="border-slate-100 shadow-sm">
+    <Card>
       <CardContent className="space-y-4 pt-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
