@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Award, FileCheck2, Star } from 'lucide-react';
 import type { StudentDashboardResponse } from '@eduanalyze-ai/shared-types';
@@ -8,12 +9,14 @@ import { useAuth } from '@/lib/auth-context';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
-import { PloProgressTable } from '@/components/dashboard/plo-progress-table';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -86,13 +89,27 @@ function DashboardContent() {
   );
 }
 
+function Reveal({
+  delayMs,
+  children,
+}: Readonly<{ delayMs: number; children: React.ReactNode }>) {
+  return (
+    <div
+      className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'both' }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function DashboardCards({
   fullName,
   dashboard,
-}: {
+}: Readonly<{
   fullName: string;
   dashboard: StudentDashboardResponse;
-}) {
+}>) {
   const animatedGpa = useCountUp(dashboard.gpa ?? 0, { duration: 900, decimals: 2 });
   const animatedCredits = useCountUp(dashboard.creditsEarned, { duration: 900, decimals: 0 });
   const animatedProgress = useCountUp(dashboard.curriculumProgressPercent, {
@@ -102,32 +119,23 @@ function DashboardCards({
 
   return (
     <>
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 rounded-xl bg-brand-light px-6 py-5 duration-500"
-        style={{ animationFillMode: 'both' }}
-      >
-        <h1 className="text-2xl font-semibold text-primary">สวัสดี, {fullName}</h1>
-        <p className="text-sm text-muted-foreground">
-          แผนการเรียนวิชาการและตัวชี้วัดความพร้อมของคุณ
-        </p>
-      </div>
+      <Reveal delayMs={0}>
+        <PageHeader
+          title={`สวัสดี, ${fullName}`}
+          description="แผนการเรียนวิชาการและตัวชี้วัดความพร้อมของคุณ"
+        />
+      </Reveal>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '75ms', animationFillMode: 'both' }}
-        >
+        <Reveal delayMs={75}>
           <StatCard
             icon={Star}
             label="เกรดเฉลี่ยสะสม"
             value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
             suffix="/ 4.0"
           />
-        </div>
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '150ms', animationFillMode: 'both' }}
-        >
+        </Reveal>
+        <Reveal delayMs={150}>
           <StatCard
             icon={FileCheck2}
             label="หน่วยกิตสะสม"
@@ -139,41 +147,38 @@ function DashboardCards({
                 : { text: 'ยังไม่ครบ', tone: 'neutral' }
             }
           />
-        </div>
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 space-y-2 duration-500"
-          style={{ animationDelay: '225ms', animationFillMode: 'both' }}
-        >
+        </Reveal>
+        <Reveal delayMs={225}>
           <StatCard
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
             value={`${Math.round(animatedProgress)}%`}
+            footer={
+              <Progress value={animatedProgress} label="ความพร้อมสำหรับการสำเร็จการศึกษา" />
+            }
           />
-          <Progress value={animatedProgress} className="mx-1" />
-        </div>
+        </Reveal>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+      <Reveal delayMs={300}>
+        <PageSection title="สิ่งที่ต้องทำต่อ">
+          <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
+        </PageSection>
+      </Reveal>
+
+      <Reveal delayMs={375}>
+        <PageSection
+          title="ผลลัพธ์การเรียนรู้ (PLO)"
+          description="ความสำเร็จตามผลลัพธ์การเรียนรู้ระดับหลักสูตร จากผลการเรียนของคุณ"
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link href="/aptitude-analysis">ดูการวิเคราะห์ฉบับเต็ม</Link>
+            </Button>
+          }
         >
           <PloRadarCard radar={dashboard.radar} />
-        </div>
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '375ms', animationFillMode: 'both' }}
-        >
-          <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
-        </div>
-      </div>
-
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '450ms', animationFillMode: 'both' }}
-      >
-        <PloProgressTable radar={dashboard.radar} />
-      </div>
+        </PageSection>
+      </Reveal>
     </>
   );
 }

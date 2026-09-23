@@ -8,6 +8,7 @@ interface StatCardProps {
   value: React.ReactNode;
   suffix?: string;
   badge?: { text: string; tone?: 'positive' | 'neutral' };
+  footer?: React.ReactNode;
 }
 
 // Deliberately no percentile/trend badges — the Figma mockup had "Top
@@ -15,9 +16,9 @@ interface StatCardProps {
 // computes a peer percentile or a term-over-term delta. `badge` here is
 // only ever fed a value derived from real fields (e.g. graduationReadiness
 // .creditsMet → "On Track"), never a placeholder number.
-export function StatCard({ icon: Icon, label, value, suffix, badge }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, suffix, badge, footer }: StatCardProps) {
   return (
-    <Card>
+    <Card className="h-full">
       <CardContent className="pt-6">
         <div className="mb-3 flex items-start justify-between">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-light">
@@ -41,6 +42,7 @@ export function StatCard({ icon: Icon, label, value, suffix, badge }: StatCardPr
           {value}
           {suffix && <span className="ml-1 text-base font-normal text-muted-foreground">{suffix}</span>}
         </p>
+        {footer && <div className="mt-3">{footer}</div>}
       </CardContent>
     </Card>
   );

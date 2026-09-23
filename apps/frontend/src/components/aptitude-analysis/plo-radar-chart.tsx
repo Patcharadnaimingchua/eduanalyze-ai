@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Radar } from 'lucide-react';
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
 import { formatFiveScale } from '@/lib/five-scale';
@@ -23,6 +24,7 @@ export function PloRadarChart({
   size = DEFAULT_SIZE,
   title = 'Radar ความสำเร็จตาม PLO',
   threshold,
+  footer,
 }: {
   radar: RadarPoint[];
   size?: number;
@@ -33,6 +35,7 @@ export function PloRadarChart({
   // Omitted entirely on the Dashboard's compact card (not worth the
   // visual noise at that size).
   threshold?: number;
+  footer?: ReactNode;
 }) {
   const total = radar.length;
   const center = size / 2;
@@ -174,6 +177,7 @@ export function PloRadarChart({
           })}
         </svg>
       </CardContent>
+      {footer && <CardContent>{footer}</CardContent>}
     </Card>
   );
 }
