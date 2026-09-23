@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
@@ -28,12 +28,10 @@ import {
 } from '@/lib/api/organization';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { ChangePasswordForm } from '@/components/auth/change-password-form';
 import { TwoFactorSection } from '@/components/auth/two-factor-section';
 import { primaryRoleFor, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageLoadError } from '@/components/layout/page-states';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -115,7 +113,6 @@ function ProfileEducationCard({
 function ProfileContent() {
   const { user } = useAuth();
   const isStudent = !!user?.roles.includes('STUDENT');
-  const [passwordChanged, setPasswordChanged] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
@@ -248,12 +245,12 @@ function ProfileContent() {
         className="animate-in fade-in-0 slide-in-from-bottom-4 space-y-3 duration-500"
         style={{ animationDelay: '200ms', animationFillMode: 'both' }}
       >
-        {passwordChanged && (
-          <Alert>
-            <AlertDescription>เปลี่ยนรหัสผ่านสำเร็จ</AlertDescription>
-          </Alert>
-        )}
-        <ChangePasswordForm onSuccess={() => setPasswordChanged(true)} />
+        <p className="text-sm text-muted-foreground">
+          ต้องการเปลี่ยนรหัสผ่าน?{' '}
+          <Link href="/forgot-password" className="text-primary hover:underline">
+            ไปที่หน้าลืมรหัสผ่าน
+          </Link>
+        </p>
         <TwoFactorSection />
       </div>
     </DashboardShell>
