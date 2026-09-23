@@ -54,7 +54,7 @@ export function CourseForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เพิ่มวิชา</CardTitle>
+        <CardTitle>เพิ่มวิชา</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

@@ -91,7 +91,7 @@ export function AssessmentDefinitionPanel({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">การประเมิน (Assessment) ในรายวิชานี้</CardTitle>
+          <CardTitle>การประเมิน (Assessment) ในรายวิชานี้</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {definitionsQuery.isLoading && <ListSkeleton items={3} />}
@@ -124,7 +124,7 @@ export function AssessmentDefinitionPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">เพิ่มการประเมินใหม่</CardTitle>
+          <CardTitle>เพิ่มการประเมินใหม่</CardTitle>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

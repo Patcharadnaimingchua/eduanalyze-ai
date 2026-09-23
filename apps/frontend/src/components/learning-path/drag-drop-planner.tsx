@@ -84,7 +84,7 @@ export function DragDropPlanner({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">แผนการเรียนเทอมหน้า</CardTitle>
+              <CardTitle>แผนการเรียนเทอมหน้า</CardTitle>
               <span className={cn('text-sm font-medium', isOverLimit ? 'text-destructive' : 'text-emerald-700')}>
                 {totalCredits} / {maxCreditsPerSemester} หน่วยกิต
               </span>
@@ -121,7 +121,7 @@ export function DragDropPlanner({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">วิชาที่ลงได้อื่นๆ</CardTitle>
+            <CardTitle>วิชาที่ลงได้อื่นๆ</CardTitle>
           </CardHeader>
           <CardContent
             onDragOver={(e) => e.preventDefault()}

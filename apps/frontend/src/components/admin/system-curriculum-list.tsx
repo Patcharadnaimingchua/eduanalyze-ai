@@ -70,7 +70,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">หลักสูตรที่มีนักศึกษา</CardTitle>
+          <CardTitle>หลักสูตรที่มีนักศึกษา</CardTitle>
           <p className="text-xs text-muted-foreground">
             หลักสูตรที่มีข้อมูลผลการเรียนจริง จึงคำนวณ GPA และ PLO ได้
           </p>
@@ -94,7 +94,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
       {structureOnly.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2">
               <Users size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               จัดทำหลักสูตรแล้ว แต่ยังไม่มีนักศึกษา ({structureOnly.length})
             </CardTitle>
@@ -115,7 +115,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
       {empty.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2">
               <FolderOpen size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               ยังไม่ได้จัดทำหลักสูตร ({empty.length})
             </CardTitle>

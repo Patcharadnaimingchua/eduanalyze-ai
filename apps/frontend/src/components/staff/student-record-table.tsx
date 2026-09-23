@@ -87,7 +87,7 @@ export function StaffRecordTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">รายวิชาที่บันทึกไว้</CardTitle>
+        <CardTitle>รายวิชาที่บันทึกไว้</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

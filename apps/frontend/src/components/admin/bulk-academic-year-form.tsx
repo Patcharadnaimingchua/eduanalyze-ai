@@ -54,7 +54,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">สร้างชุดปีการศึกษาอัตโนมัติ</CardTitle>
+        <CardTitle>สร้างชุดปีการศึกษาอัตโนมัติ</CardTitle>
         <p className="text-sm text-muted-foreground">
           กรอกปีเริ่มต้น ระบบจะสร้างปีการศึกษา {YEARS_TO_CREATE} ปีต่อเนื่องกัน
           พร้อมภาคเรียนต้น/ปลาย/ฤดูร้อนให้ครบทุกปีโดยอัตโนมัติ

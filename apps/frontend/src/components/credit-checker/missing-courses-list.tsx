@@ -10,7 +10,7 @@ export function MissingCoursesList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">รายวิชาบังคับที่ยังไม่ผ่าน</CardTitle>
+        <CardTitle>รายวิชาบังคับที่ยังไม่ผ่าน</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {courses.length === 0 && (

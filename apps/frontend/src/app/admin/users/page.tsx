@@ -95,7 +95,7 @@ function AdminUsersContent() {
       {usersQuery.isLoading && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">รายชื่อผู้ใช้งาน</CardTitle>
+            <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
           </CardHeader>
           <CardContent>
             <TableSkeleton cols={4} rows={6} />

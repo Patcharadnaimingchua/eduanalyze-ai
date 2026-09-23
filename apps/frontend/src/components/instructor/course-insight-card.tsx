@@ -57,7 +57,7 @@ export function CourseInsightCard({ courses }: { courses: InstructorCourseSummar
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <ClipboardList size={16} className="text-brand" />
           สรุปภาพรวมรายวิชาที่คุณสอน
         </CardTitle>

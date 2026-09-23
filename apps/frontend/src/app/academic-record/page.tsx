@@ -17,6 +17,8 @@ import { useCountUp } from '@/lib/use-count-up';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
 import { RecordTimeline } from '@/components/academic-record/record-timeline';
@@ -143,11 +145,7 @@ function AcademicRecordContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   const isLoading =
@@ -177,18 +175,18 @@ function AcademicRecordContent() {
     !profileQuery.data
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">การติดตามผลการเรียน</h1>
-        <p className="text-sm text-muted-foreground">บันทึกและจัดการรายวิชาที่คุณเรียนไปแล้ว</p>
-      </div>
+      <PageHeader
+        title="การติดตามผลการเรียน"
+        description="บันทึกและจัดการรายวิชาที่คุณเรียนไปแล้ว"
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div

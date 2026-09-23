@@ -85,7 +85,7 @@ export function AssessmentCloMappingPanel({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">CLO ที่ผูกกับการประเมินนี้</CardTitle>
+          <CardTitle>CLO ที่ผูกกับการประเมินนี้</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {mappingsQuery.isLoading && <ListSkeleton items={3} />}
@@ -122,7 +122,7 @@ export function AssessmentCloMappingPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">ผูก CLO เพิ่ม</CardTitle>
+          <CardTitle>ผูก CLO เพิ่ม</CardTitle>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

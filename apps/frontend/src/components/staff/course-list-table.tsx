@@ -35,7 +35,7 @@ export function CourseListTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">รายวิชาในหมวดนี้</CardTitle>
+        <CardTitle>รายวิชาในหมวดนี้</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

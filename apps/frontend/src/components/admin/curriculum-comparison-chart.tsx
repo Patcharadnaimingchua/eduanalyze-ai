@@ -30,7 +30,7 @@ export function CurriculumComparisonChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เปรียบเทียบผลสัมฤทธิ์ PLO ระหว่างหลักสูตร</CardTitle>
+        <CardTitle>เปรียบเทียบผลสัมฤทธิ์ PLO ระหว่างหลักสูตร</CardTitle>
         <p className="text-xs text-muted-foreground">
           คะแนน PLO เฉลี่ยของนักศึกษาในแต่ละหลักสูตร เรียงจากหลักสูตรที่ต้องดูแลก่อน
           — คำนวณจากเกรดรายวิชา ไม่ใช่ % นักศึกษาที่ผ่านเกณฑ์

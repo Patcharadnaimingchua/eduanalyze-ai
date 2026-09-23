@@ -46,7 +46,7 @@ export function StudentDirectoryTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">ทำเนียบนักศึกษา</CardTitle>
+        <CardTitle>ทำเนียบนักศึกษา</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

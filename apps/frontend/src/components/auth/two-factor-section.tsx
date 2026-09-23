@@ -53,7 +53,7 @@ export function TwoFactorSection() {
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-base">ยืนยันตัวตนสองขั้นตอน (2FA)</CardTitle>
+            <CardTitle>ยืนยันตัวตนสองขั้นตอน (2FA)</CardTitle>
             <CardDescription>ใช้แอป Authenticator (เช่น Google Authenticator, Authy) เพิ่มความปลอดภัยตอนเข้าสู่ระบบ</CardDescription>
           </div>
           {mode === 'view' && (

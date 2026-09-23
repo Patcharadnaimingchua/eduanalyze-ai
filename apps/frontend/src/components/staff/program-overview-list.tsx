@@ -12,7 +12,7 @@ export function ProgramOverviewList({ programs }: { programs: StaffOverviewProgr
       {programs.map((program) => (
         <Card key={program.programId}>
           <CardHeader>
-            <CardTitle className="text-base">
+            <CardTitle>
               <span className="font-mono text-sm text-muted-foreground">{program.programCode}</span>{' '}
               {program.programName}
             </CardTitle>

@@ -181,7 +181,7 @@ export function AcademicYearCard({
             </form>
           </Form>
         ) : (
-          <CardTitle className="text-base">ปีการศึกษา {academicYear.year}</CardTitle>
+          <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
         )}
         {confirmingYearDelete ? (
           <div className="flex gap-2">

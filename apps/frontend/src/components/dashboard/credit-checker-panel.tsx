@@ -14,7 +14,7 @@ export function CreditCheckerPanel({ courses }: { courses: MissingRequiredCourse
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">ระบบตรวจสอบเครดิตอัจฉริยะ</CardTitle>
+        <CardTitle>ระบบตรวจสอบเครดิตอัจฉริยะ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">

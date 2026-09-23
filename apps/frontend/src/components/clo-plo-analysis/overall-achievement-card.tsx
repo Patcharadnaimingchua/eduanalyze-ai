@@ -20,7 +20,7 @@ export function OverallAchievementCard({
   return (
     <Card className="border-slate-100 shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">ภาพรวมความสำเร็จของ PLO</CardTitle>
+        <CardTitle>ภาพรวมความสำเร็จของ PLO</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 pt-2">
         <div className="relative h-[132px] w-[132px]">

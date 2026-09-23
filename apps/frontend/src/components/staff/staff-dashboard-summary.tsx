@@ -15,7 +15,7 @@ export function StaffDashboardSummary({ students }: { students: StudentProfileSu
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">นักศึกษาในความดูแล</CardTitle>
+          <CardTitle>นักศึกษาในความดูแล</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-semibold text-primary">{students.length}</p>
@@ -27,7 +27,7 @@ export function StaffDashboardSummary({ students }: { students: StudentProfileSu
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">หลักสูตรในความดูแล</CardTitle>
+          <CardTitle>หลักสูตรในความดูแล</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-semibold text-primary">{curriculumCount}</p>

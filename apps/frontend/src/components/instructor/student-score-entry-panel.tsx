@@ -164,7 +164,7 @@ export function StudentScoreEntryPanel({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">กรอกคะแนนนักศึกษา</CardTitle>
+        <CardTitle>กรอกคะแนนนักศึกษา</CardTitle>
         {fields.length > 0 && (
           <EvidenceCoverageBadge coverage={{ validCount: gradedCount, totalCount: fields.length }} />
         )}

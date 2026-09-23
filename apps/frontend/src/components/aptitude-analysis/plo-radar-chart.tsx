@@ -49,7 +49,7 @@ export function PloRadarChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
           <Radar size={28} className="text-slate-300" />
@@ -76,7 +76,7 @@ export function PloRadarChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>

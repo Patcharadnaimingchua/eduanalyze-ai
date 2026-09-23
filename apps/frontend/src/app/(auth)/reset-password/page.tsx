@@ -77,7 +77,7 @@ function ResetPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ตั้งรหัสผ่านใหม่</CardTitle>
+        <CardTitle className="text-2xl">ตั้งรหัสผ่านใหม่</CardTitle>
         <CardDescription>กรอกรหัสผ่านใหม่ของคุณ</CardDescription>
       </CardHeader>
       <Form {...form}>

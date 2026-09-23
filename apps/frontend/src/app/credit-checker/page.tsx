@@ -7,6 +7,8 @@ import { fetchCreditCheck } from '@/lib/api/credit-checker';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CategoryProgressList } from '@/components/credit-checker/category-progress-list';
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
@@ -51,11 +53,7 @@ function CreditCheckerContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   if (profileQuery.isLoading || reportQuery.isLoading) {
@@ -69,9 +67,9 @@ function CreditCheckerContent() {
 
   if (profileQuery.isError || reportQuery.isError || !profileQuery.data || !reportQuery.data) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
@@ -79,12 +77,10 @@ function CreditCheckerContent() {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">ระบบตรวจสอบเครดิตอัจฉริยะ</h1>
-        <p className="text-sm text-muted-foreground">
-          ตรวจสอบความคืบหน้าการเรียนเทียบกับโครงสร้างหลักสูตรของคุณแบบละเอียด
-        </p>
-      </div>
+      <PageHeader
+        title="ระบบตรวจสอบเครดิตอัจฉริยะ"
+        description="ตรวจสอบความคืบหน้าการเรียนเทียบกับโครงสร้างหลักสูตรของคุณแบบละเอียด"
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard

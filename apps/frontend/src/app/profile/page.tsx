@@ -17,7 +17,6 @@ import type {
   DepartmentListItem,
   FacultyListItem,
   ProgramListItem,
-  Role,
   StudentProfileMeResponse,
 } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
@@ -31,8 +30,9 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { ChangePasswordForm } from '@/components/auth/change-password-form';
 import { TwoFactorSection } from '@/components/auth/two-factor-section';
-import { ROLE_LABEL_TH } from '@/components/auth/require-role';
+import { primaryRoleFor, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageLoadError } from '@/components/layout/page-states';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
@@ -44,14 +44,6 @@ export default function ProfilePage() {
       <ProfileContent />
     </ProtectedRoute>
   );
-}
-
-function primaryRoleFor(roles: Role[]): Role {
-  if (roles.includes('SUPER_ADMIN')) return 'SUPER_ADMIN';
-  if (roles.includes('ADMIN')) return 'ADMIN';
-  if (roles.includes('INSTRUCTOR')) return 'INSTRUCTOR';
-  if (roles.includes('STAFF')) return 'STAFF';
-  return 'STUDENT';
 }
 
 function ProfileItem({
@@ -179,9 +171,9 @@ function ProfileContent() {
 
   if (hasError) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell role={primaryRole} identityLabel={user.email} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 

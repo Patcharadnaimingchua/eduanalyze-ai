@@ -167,7 +167,7 @@ export function RecordTimeline({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">รายวิชาที่บันทึกไว้</CardTitle>
+        <CardTitle>รายวิชาที่บันทึกไว้</CardTitle>
       </CardHeader>
       <CardContent>
         {semestersWithRecords.length === 0 && (

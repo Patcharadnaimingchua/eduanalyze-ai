@@ -7,7 +7,7 @@ export function CategoryProgressList({ categories }: { categories: CategoryProgr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">ความคืบหน้าตามหมวดวิชา</CardTitle>
+        <CardTitle>ความคืบหน้าตามหมวดวิชา</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {categories.length === 0 && (

@@ -18,7 +18,7 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+        <CardTitle className="flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           นักศึกษากลุ่มเสี่ยง
           {criticalCount > 0 && (

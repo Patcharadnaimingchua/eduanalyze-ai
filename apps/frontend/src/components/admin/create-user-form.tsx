@@ -101,7 +101,7 @@ export function CreateUserForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เพิ่มผู้ใช้งาน</CardTitle>
+        <CardTitle>เพิ่มผู้ใช้งาน</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

@@ -78,7 +78,7 @@ export function AddRecordForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เพิ่มรายวิชา</CardTitle>
+        <CardTitle>เพิ่มรายวิชา</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form key={formKey} onSubmit={form.handleSubmit(onSubmit)}>

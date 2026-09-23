@@ -22,7 +22,7 @@ export function CourseComparisonChart({ courses }: { courses: InstructorCourseSu
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เปรียบเทียบผลสัมฤทธิ์ระหว่างวิชา</CardTitle>
+        <CardTitle>เปรียบเทียบผลสัมฤทธิ์ระหว่างวิชา</CardTitle>
         <p className="text-xs text-muted-foreground">
           % นักศึกษาที่ได้เกรด B ขึ้นไปในแต่ละวิชา เรียงจากวิชาที่ต้องดูแลก่อน
         </p>

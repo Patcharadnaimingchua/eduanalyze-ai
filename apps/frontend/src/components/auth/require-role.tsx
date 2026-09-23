@@ -21,6 +21,14 @@ export const ROLE_BADGE_TONE: Record<Role, SemanticTone> = {
   SUPER_ADMIN: 'danger',
 };
 
+export function primaryRoleFor(roles: Role[]): Role {
+  if (roles.includes('SUPER_ADMIN')) return 'SUPER_ADMIN';
+  if (roles.includes('ADMIN')) return 'ADMIN';
+  if (roles.includes('INSTRUCTOR')) return 'INSTRUCTOR';
+  if (roles.includes('STAFF')) return 'STAFF';
+  return 'STUDENT';
+}
+
 // Reproduces the inline-message role gate pattern copy-pasted across every
 // STUDENT page (e.g. app/dashboard/page.tsx's `isStudent` check) as a
 // shared component, for pages restricted to a role other than STUDENT.

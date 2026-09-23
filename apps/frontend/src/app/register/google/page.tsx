@@ -109,7 +109,7 @@ function CompleteGoogleRegistrationForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ข้อมูลนิสิต/นักศึกษา</CardTitle>
+        <CardTitle className="text-2xl">ข้อมูลนิสิต/นักศึกษา</CardTitle>
         <CardDescription>กรอกข้อมูลที่เหลือเพื่อสมัครสมาชิกให้เสร็จสมบูรณ์</CardDescription>
       </CardHeader>
       <Form {...form}>

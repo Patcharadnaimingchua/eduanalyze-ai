@@ -117,7 +117,7 @@ function StaffStudentsContent() {
       {studentsQuery.isLoading && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">ทำเนียบนักศึกษา</CardTitle>
+            <CardTitle>ทำเนียบนักศึกษา</CardTitle>
           </CardHeader>
           <CardContent>
             <TableSkeleton cols={6} rows={6} />

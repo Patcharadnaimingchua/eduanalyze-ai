@@ -50,7 +50,7 @@ export function CourseCategoryForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เพิ่มหมวดวิชา</CardTitle>
+        <CardTitle>เพิ่มหมวดวิชา</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

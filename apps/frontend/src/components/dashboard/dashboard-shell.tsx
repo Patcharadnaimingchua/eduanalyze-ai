@@ -8,9 +8,9 @@ import {
   CalendarClock,
   CalendarRange,
   GraduationCap,
-  HelpCircle,
   LayoutGrid,
   LineChart,
+  ListChecks,
   LogOut,
   Network,
   Target,
@@ -24,14 +24,13 @@ import { useAuth } from '@/lib/auth-context';
 interface NavItem {
   label: string;
   icon: LucideIcon;
-  href?: string;
+  href: string;
 }
 
-// Items without an `href` have no page behind them yet — shown per the
-// design (so the shell reads as complete) but disabled/unclickable.
 const STUDENT_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/dashboard' },
   { label: 'การติดตามผลการเรียน', icon: LineChart, href: '/academic-record' },
+  { label: 'ตรวจสอบหน่วยกิต', icon: ListChecks, href: '/credit-checker' },
   { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
   { label: 'วัดความถนัด', icon: Target, href: '/aptitude-analysis' },
   { label: 'แผนการเรียน', icon: CalendarRange, href: '/learning-path' },
@@ -107,51 +106,27 @@ export function DashboardShell({
             // Per-course pages have no nav entry of their own — keep the
             // instructor overview highlighted while inside one.
             const active =
-              !!href &&
-              (pathname === href ||
-                (href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/')));
-
-            if (href) {
-              return (
-                <Link
-                  key={label}
-                  href={href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
-                    active ? 'bg-brand-light text-brand' : 'text-slate-600 hover:bg-slate-50',
-                  )}
-                >
-                  <Icon size={16} />
-                  {label}
-                </Link>
-              );
-            }
+              pathname === href ||
+              (href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/'));
 
             return (
-              <button
+              <Link
                 key={label}
-                type="button"
-                disabled
-                aria-disabled
-                className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-400 transition"
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
+                  active ? 'bg-brand-light text-brand' : 'text-slate-600 hover:bg-slate-50',
+                )}
               >
                 <Icon size={16} />
                 {label}
-              </button>
+              </Link>
             );
           })}
         </nav>
 
         <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">
-          <button
-            type="button"
-            disabled
-            className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-400"
-          >
-            <HelpCircle size={16} />
-            Help Center
-          </button>
           <button
             type="button"
             onClick={() => logout()}
@@ -164,21 +139,14 @@ export function DashboardShell({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-slate-100 px-8 py-4">
-          <div className="flex gap-6 text-sm">
-            {['Transcript', 'My Courses', 'Degree Audit'].map((tab) => (
-              <span key={tab} className="cursor-not-allowed text-slate-400">
-                {tab}
-              </span>
-            ))}
-          </div>
+        <header className="flex items-center justify-end border-b border-slate-100 px-8 py-4">
           <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
             {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
             <span className="font-medium text-primary">{fullName}</span>
           </Link>
         </header>
 
-        <main className="flex-1 space-y-6 p-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-8">{children}</main>
       </div>
     </div>
   );

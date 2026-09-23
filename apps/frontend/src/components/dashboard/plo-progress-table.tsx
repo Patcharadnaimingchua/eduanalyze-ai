@@ -11,7 +11,7 @@ export function PloProgressTable({ radar }: { radar: RadarPoint[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">ความคืบหน้าผลลัพธ์การเรียนรู้ของหลักสูตร (PLO)</CardTitle>
+        <CardTitle>ความคืบหน้าผลลัพธ์การเรียนรู้ของหลักสูตร (PLO)</CardTitle>
         <CardDescription>คะแนนการประเมินที่รวบรวมและเชื่อมโยงกับเป้าหมายของหลักสูตร</CardDescription>
       </CardHeader>
       <CardContent>

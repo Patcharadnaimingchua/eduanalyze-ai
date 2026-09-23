@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ลืมรหัสผ่าน</CardTitle>
+        <CardTitle className="text-2xl">ลืมรหัสผ่าน</CardTitle>
         <CardDescription>กรอกอีเมลที่ใช้สมัครสมาชิก</CardDescription>
       </CardHeader>
       {submitted ? (

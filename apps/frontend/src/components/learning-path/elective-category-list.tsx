@@ -13,7 +13,7 @@ export function ElectiveCategoryList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">หมวดวิชาเลือกที่ยังไม่ครบ</CardTitle>
+        <CardTitle>หมวดวิชาเลือกที่ยังไม่ครบ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {categories.length === 0 && (

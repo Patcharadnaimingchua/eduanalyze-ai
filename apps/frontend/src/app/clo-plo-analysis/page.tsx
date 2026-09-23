@@ -11,6 +11,9 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { OverallAchievementCard } from '@/components/clo-plo-analysis/overall-achievement-card';
 import { PloCard } from '@/components/clo-plo-analysis/plo-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,11 +127,7 @@ function CloPloAnalysisContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   const isLoading =
@@ -168,9 +167,9 @@ function CloPloAnalysisContent() {
     !achievementQuery.data
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
@@ -178,18 +177,16 @@ function CloPloAnalysisContent() {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">การวิเคราะห์ CLO/PLO</h1>
-        <p className="text-sm text-muted-foreground">
-          ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ
-        </p>
-      </div>
+      <PageHeader
+        title="การวิเคราะห์ CLO/PLO"
+        description="ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ"
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <OverallAchievementCard percent={overallPercent} isAchieved={overallAchieved} />
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">สรุปตามสถานะ</CardTitle>
+            <CardTitle>สรุปตามสถานะ</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-0">
             {SCORE_BANDS.map((band) => (
@@ -210,12 +207,10 @@ function CloPloAnalysisContent() {
         </Card>
       </div>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-primary">ผลการวิเคราะห์ราย PLO</h2>
-            <p className="text-sm text-muted-foreground">คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง</p>
-          </div>
+      <PageSection
+        title="ผลการวิเคราะห์ราย PLO"
+        description="คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง"
+        actions={
           <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
             <SelectTrigger aria-label="เรียงลำดับ PLO" className="w-full sm:w-48">
               <SelectValue />
@@ -226,7 +221,8 @@ function CloPloAnalysisContent() {
               <SelectItem value="code">เรียงตาม PLO</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        }
+      >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {sortedRadar.map((plo) => (
             <PloCard
@@ -238,7 +234,7 @@ function CloPloAnalysisContent() {
             />
           ))}
         </div>
-      </section>
+      </PageSection>
     </DashboardShell>
   );
 }

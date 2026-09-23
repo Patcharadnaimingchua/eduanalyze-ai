@@ -7,6 +7,8 @@ import { interpretPloRadar } from '@/lib/interpret-plo-radar';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
 import { PloInterpretationCard } from '@/components/aptitude-analysis/plo-interpretation-card';
 import { AptitudeAnalysisSkeleton } from '@/components/aptitude-analysis/aptitude-analysis-skeleton';
@@ -56,11 +58,7 @@ function AptitudeAnalysisContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   if (profileQuery.isLoading || ploQuery.isLoading || curriculumQuery.isLoading) {
@@ -80,9 +78,9 @@ function AptitudeAnalysisContent() {
     !curriculumQuery.data
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
@@ -93,12 +91,10 @@ function AptitudeAnalysisContent() {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">วัดความถนัด</h1>
-        <p className="text-sm text-muted-foreground">
-          ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมสรุปผลตามเกณฑ์ที่กำหนด
-        </p>
-      </div>
+      <PageHeader
+        title="วัดความถนัด"
+        description="ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมสรุปผลตามเกณฑ์ที่กำหนด"
+      />
 
       <div
         className="grid grid-cols-1 gap-6 lg:grid-cols-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"

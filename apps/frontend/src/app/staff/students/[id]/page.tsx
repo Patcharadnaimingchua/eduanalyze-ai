@@ -125,7 +125,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">ข้อมูลนักศึกษา</CardTitle>
+              <CardTitle>ข้อมูลนักศึกษา</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Skeleton className="h-6 w-48" />
@@ -135,7 +135,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">GPA สะสม</CardTitle>
+              <CardTitle>GPA สะสม</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Skeleton className="h-9 w-20" />
@@ -160,7 +160,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">ข้อมูลนักศึกษา</CardTitle>
+              <CardTitle>ข้อมูลนักศึกษา</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-lg font-medium text-primary">{profile.user.fullName}</p>
@@ -180,7 +180,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
           {gpa && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">GPA สะสม</CardTitle>
+                <CardTitle>GPA สะสม</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className={`text-3xl font-semibold ${gpaColorClassName(gpa.gpa)}`}>

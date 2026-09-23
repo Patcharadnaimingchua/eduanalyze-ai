@@ -91,7 +91,7 @@ export function PrerequisiteFlowChart({ report }: { report: CreditCheckReport })
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">แผนผังลำดับวิชาก่อน (Prerequisite Flow Chart)</CardTitle>
+        <CardTitle>แผนผังลำดับวิชาก่อน (Prerequisite Flow Chart)</CardTitle>
         <div className="flex flex-wrap gap-3 pt-2">
           {LEGEND.map((item) => (
             <div key={item.status} className="flex items-center gap-1.5 text-xs text-muted-foreground">

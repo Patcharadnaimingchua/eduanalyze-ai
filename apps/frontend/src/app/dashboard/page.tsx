@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PloProgressTable } from '@/components/dashboard/plo-progress-table';
@@ -57,11 +58,7 @@ function DashboardContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   if (profileQuery.isLoading || dashboardQuery.isLoading) {
@@ -74,9 +71,9 @@ function DashboardContent() {
 
   if (profileQuery.isError || dashboardQuery.isError || !dashboardQuery.data) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError message="ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง" />
+      </DashboardShell>
     );
   }
 

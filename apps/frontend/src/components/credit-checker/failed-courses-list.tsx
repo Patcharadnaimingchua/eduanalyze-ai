@@ -8,7 +8,7 @@ export function FailedCoursesList({ courses }: { courses: CourseSummary[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">วิชาที่สอบตก (ต้องลงทะเบียนใหม่)</CardTitle>
+        <CardTitle>วิชาที่สอบตก (ต้องลงทะเบียนใหม่)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {courses.map((course) => (

@@ -40,7 +40,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เพิ่มปีการศึกษา</CardTitle>
+        <CardTitle>เพิ่มปีการศึกษา</CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

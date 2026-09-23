@@ -10,6 +10,8 @@ import { fetchLearningPath } from '@/lib/api/learning-path';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
@@ -73,11 +75,7 @@ function LearningPathContent() {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   const isLoading =
@@ -101,9 +99,9 @@ function LearningPathContent() {
     !curriculumQuery.data
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
@@ -111,12 +109,10 @@ function LearningPathContent() {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">แผนการเรียน</h1>
-        <p className="text-sm text-muted-foreground">
-          แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและ Prerequisite ของคุณ
-        </p>
-      </div>
+      <PageHeader
+        title="แผนการเรียน"
+        description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและ Prerequisite ของคุณ"
+      />
 
       <div
         className="grid grid-cols-1 gap-4 md:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"

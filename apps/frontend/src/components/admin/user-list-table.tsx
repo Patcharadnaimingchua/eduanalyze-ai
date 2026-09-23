@@ -21,7 +21,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">รายชื่อผู้ใช้งาน</CardTitle>
+        <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

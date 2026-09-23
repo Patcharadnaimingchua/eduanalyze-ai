@@ -22,6 +22,8 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -126,11 +128,7 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   }
 
   if (!isStudent) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">หน้านี้สำหรับนักศึกษาเท่านั้น</p>
-      </div>
-    );
+    return <StudentOnlyPage user={user} />;
   }
 
   const isLoading =
@@ -160,9 +158,9 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
     !profileQuery.data
   ) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      </div>
+      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <PageLoadError />
+      </DashboardShell>
     );
   }
 
@@ -178,18 +176,14 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">
-          {existing ? 'แก้ไขการประเมินตนเอง' : 'ประเมินตนเองตาม CLO'}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {course.code}: {course.name}
-        </p>
-      </div>
+      <PageHeader
+        title={existing ? 'แก้ไขการประเมินตนเอง' : 'ประเมินตนเองตาม CLO'}
+        description={`${course.code}: ${course.name}`}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">ให้คะแนนตัวเองในแต่ละ CLO</CardTitle>
+          <CardTitle>ให้คะแนนตัวเองในแต่ละ CLO</CardTitle>
         </CardHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">

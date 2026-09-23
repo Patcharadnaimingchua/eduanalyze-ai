@@ -116,7 +116,7 @@ export function CourseCategoryCard({
         className="flex-row items-center justify-between space-y-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <CardTitle className="text-base">
+        <CardTitle>
           {category.name}
           {category.code && <span className="ml-2 text-sm text-muted-foreground">({category.code})</span>}
         </CardTitle>
