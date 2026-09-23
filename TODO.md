@@ -218,3 +218,13 @@ Business logic อื่นๆ (anti-account-takeover, expired/reused token) ผ
 **แก้แล้ว**: เพิ่ม self-target check ใน `grantScope`/`revoke` (ซ้อนอยู่ใน `if (!requester.roles.includes('SUPER_ADMIN'))` เดิม — SUPER_ADMIN ยกเว้นเพราะ access ของตัวเองไม่ได้ผูกกับ scope) throw `ForbiddenException('Cannot modify your own scope')` ทดสอบยืนยันแล้วผ่าน curl จริง: self-grant/self-revoke โดน 403, grant/revoke user อื่นในสโคปยังทำงานปกติ (regression-safe)
 
 **Frontend UI สำหรับ Module 12 — เสร็จแล้ว (commit `9d1cf96 feat: ADMIN User Management UI`)**: `apps/frontend/src/app/admin/users/` (list + create + detail page), `lib/api/user-management.ts` (fetchUsers/createUserScope/deleteUserScope ฯลฯ), `components/admin/create-user-form.tsx`, `user-list-table.tsx`, `scope-selector.tsx`, `user-scopes-section.tsx` — ครอบคลุมสร้าง user, list, assign/revoke role, manage scope ครบตามที่ต้องการ
+
+## Phase 2.2 — Evidence-based CLO/PLO CSV Import + Analysis wiring — เสร็จสมบูรณ์ (2026-09-22)
+
+**เสร็จแล้ว**: 2 commits ต่อเนื่อง
+1. `debfea7` — CSV import with validating preview (parseCsv, parseScoreCsv, executeScoreImport, score-csv-import-panel)
+2. `4832051` — Analysis UI wiring (achievement-source-badge, evidence-coverage badges on CLO tab, per-student drill-down with StudentActualCloCell)
+
+ทดสอบ end-to-end ผ่าน browser เสร็จแล้ว (CSV round-trip, validation errors per row, idempotent upsert, coverage badge count, per-student evidence score) — tsc+lint ผ่าน SonarQube new_violations=0
+
+**Known limitation จาก Phase 2.1 (ยังไม่แก้ เป็นงานแยก)**: CLO mapping panel ที่สอบแสดง UUID ดิบแทนรหัส CLO (เช่น `d9dc5581-f002-4206-afab-70c181e40268` แทน `CLO1`) — โค้ดมี fallback `{clo?.code ?? mapping.cloId}` ซึ่งแสดงว่า `GET /clos` ไม่คืน CLO ของรายวิชานี้ให้ครบ (ปัญหาเดิมของ Phase 2.1 ไม่ใช่ของ Phase 2.2) — ต้องเช็ค endpoint นั้นว่า query parameter/scoping ถูกต้องไหม (แยกงาน หลังจากความจำเป็นจริงกลับมา)
