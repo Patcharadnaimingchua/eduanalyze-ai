@@ -11,6 +11,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
@@ -89,20 +90,6 @@ function DashboardContent() {
   );
 }
 
-function Reveal({
-  delayMs,
-  children,
-}: Readonly<{ delayMs: number; children: React.ReactNode }>) {
-  return (
-    <div
-      className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'both' }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function DashboardCards({
   fullName,
   dashboard,
@@ -119,7 +106,7 @@ function DashboardCards({
 
   return (
     <>
-      <Reveal delayMs={0}>
+      <Reveal index={0}>
         <PageHeader
           title={`สวัสดี, ${fullName}`}
           description="แผนการเรียนวิชาการและตัวชี้วัดความพร้อมของคุณ"
@@ -127,7 +114,7 @@ function DashboardCards({
       </Reveal>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Reveal delayMs={75}>
+        <Reveal index={1}>
           <StatCard
             icon={Star}
             label="เกรดเฉลี่ยสะสม"
@@ -135,7 +122,7 @@ function DashboardCards({
             suffix="/ 4.0"
           />
         </Reveal>
-        <Reveal delayMs={150}>
+        <Reveal index={2}>
           <StatCard
             icon={FileCheck2}
             label="หน่วยกิตสะสม"
@@ -148,7 +135,7 @@ function DashboardCards({
             }
           />
         </Reveal>
-        <Reveal delayMs={225}>
+        <Reveal index={3}>
           <StatCard
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
@@ -160,13 +147,13 @@ function DashboardCards({
         </Reveal>
       </div>
 
-      <Reveal delayMs={300}>
+      <Reveal index={4}>
         <PageSection title="สิ่งที่ต้องทำต่อ">
           <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
         </PageSection>
       </Reveal>
 
-      <Reveal delayMs={375}>
+      <Reveal index={5}>
         <PageSection
           title="ผลลัพธ์การเรียนรู้ (PLO)"
           description="ความสำเร็จตามผลลัพธ์การเรียนรู้ระดับหลักสูตร จากผลการเรียนของคุณ"

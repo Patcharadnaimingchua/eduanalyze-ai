@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
 import { PloInterpretationCard } from '@/components/aptitude-analysis/plo-interpretation-card';
@@ -96,10 +97,7 @@ function AptitudeAnalysisContent() {
         description="ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมสรุปผลตามเกณฑ์ที่กำหนด"
       />
 
-      <div
-        className="grid grid-cols-1 gap-6 lg:grid-cols-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '75ms', animationFillMode: 'both' }}
-      >
+      <Reveal index={1} className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <PloRadarChart
             radar={ploQuery.data.radar}
@@ -109,7 +107,7 @@ function AptitudeAnalysisContent() {
         <div className="lg:col-span-3">
           <PloInterpretationCard report={interpretation} />
         </div>
-      </div>
+      </Reveal>
     </DashboardShell>
   );
 }

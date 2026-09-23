@@ -13,6 +13,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CategoryProgressList } from '@/components/credit-checker/category-progress-list';
@@ -117,69 +118,81 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard
-          icon={FileCheck2}
-          label="หน่วยกิตสะสม"
-          value={report.creditsPassed}
-          suffix={`/ ${report.totalCreditsRequired}`}
-        />
-        <StatCard icon={Award} label="หน่วยกิตที่เหลือ" value={report.creditsRemaining} />
-        <StatCard
-          icon={GraduationCap}
-          label="วิชาบังคับที่ยังขาด"
-          value={report.graduationReadiness.missingRequiredCount}
-          suffix="วิชา"
-          badge={
-            report.graduationReadiness.isReady
-              ? { text: 'พร้อมสำเร็จการศึกษา', tone: 'positive' }
-              : { text: 'ยังไม่พร้อม', tone: 'neutral' }
-          }
-        />
+        <Reveal index={1}>
+          <StatCard
+            icon={FileCheck2}
+            label="หน่วยกิตสะสม"
+            value={report.creditsPassed}
+            suffix={`/ ${report.totalCreditsRequired}`}
+          />
+        </Reveal>
+        <Reveal index={2}>
+          <StatCard icon={Award} label="หน่วยกิตที่เหลือ" value={report.creditsRemaining} />
+        </Reveal>
+        <Reveal index={3}>
+          <StatCard
+            icon={GraduationCap}
+            label="วิชาบังคับที่ยังขาด"
+            value={report.graduationReadiness.missingRequiredCount}
+            suffix="วิชา"
+            badge={
+              report.graduationReadiness.isReady
+                ? { text: 'พร้อมสำเร็จการศึกษา', tone: 'positive' }
+                : { text: 'ยังไม่พร้อม', tone: 'neutral' }
+            }
+          />
+        </Reveal>
       </div>
 
-      <PageSection title="ต้องจัดการ">
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-          <div className={hasFailed ? 'lg:col-span-2' : 'lg:col-span-3'}>
-            <MissingCoursesList
-              courses={report.missingRequiredCourses}
-              failedCourseIds={failedCourseIds}
-            />
+      <Reveal index={4}>
+        <PageSection title="ต้องจัดการ">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+            <div className={hasFailed ? 'lg:col-span-2' : 'lg:col-span-3'}>
+              <MissingCoursesList
+                courses={report.missingRequiredCourses}
+                failedCourseIds={failedCourseIds}
+              />
+            </div>
+            {hasFailed && <FailedCoursesList courses={report.failedCourses} />}
           </div>
-          {hasFailed && <FailedCoursesList courses={report.failedCourses} />}
-        </div>
-      </PageSection>
+        </PageSection>
+      </Reveal>
 
-      <PageSection
-        title="ความคืบหน้าตามหมวด"
-        description={`ครบแล้ว ${completeCategories} จาก ${report.categoryProgress.length} หมวด`}
-      >
-        <CategoryProgressList categories={report.categoryProgress} />
-      </PageSection>
+      <Reveal index={5}>
+        <PageSection
+          title="ความคืบหน้าตามหมวด"
+          description={`ครบแล้ว ${completeCategories} จาก ${report.categoryProgress.length} หมวด`}
+        >
+          <CategoryProgressList categories={report.categoryProgress} />
+        </PageSection>
+      </Reveal>
 
-      <PageSection
-        title="แผนผังวิชาต่อเนื่อง"
-        description={`ลำดับวิชาก่อน-หลังของทุกวิชาในหลักสูตร (${curriculumCourseCount} วิชา)`}
-        actions={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFlowChart((v) => !v)}
-            aria-expanded={showFlowChart}
-            aria-controls={flowChartId}
-            className="gap-1.5"
-          >
-            {showFlowChart ? 'ซ่อนแผนผัง' : 'แสดงแผนผัง'}
-            <ChevronDown size={14} className={cn('transition-transform', showFlowChart && 'rotate-180')} />
-          </Button>
-        }
-      >
-        {showFlowChart && (
-          <div id={flowChartId}>
-            <PrerequisiteFlowChart report={report} />
-          </div>
-        )}
-      </PageSection>
+      <Reveal index={6}>
+        <PageSection
+          title="แผนผังวิชาต่อเนื่อง"
+          description={`ลำดับวิชาก่อน-หลังของทุกวิชาในหลักสูตร (${curriculumCourseCount} วิชา)`}
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFlowChart((v) => !v)}
+              aria-expanded={showFlowChart}
+              aria-controls={flowChartId}
+              className="gap-1.5"
+            >
+              {showFlowChart ? 'ซ่อนแผนผัง' : 'แสดงแผนผัง'}
+              <ChevronDown size={14} className={cn('transition-transform', showFlowChart && 'rotate-180')} />
+            </Button>
+          }
+        >
+          {showFlowChart && (
+            <div id={flowChartId}>
+              <PrerequisiteFlowChart report={report} />
+            </div>
+          )}
+        </PageSection>
+      </Reveal>
     </>
   );
 }

@@ -14,6 +14,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { CreditLimitRequestControl } from '@/components/learning-path/credit-limit-request-control';
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
@@ -141,7 +142,7 @@ function LearningPathContent() {
         description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและ Prerequisite ของคุณ"
       />
 
-      <Reveal delayMs={75}>
+      <Reveal index={1}>
         <PageSection
           title="จัดแผนเทอมหน้า"
           description={`ระบบจัดแผนที่แนะนำไว้ให้แล้ว — ลากวิชาหรือกดปุ่มย้ายเพื่อปรับ (${effectiveMinCredits}-${effectiveMaxCredits} หน่วยกิตต่อเทอม)`}
@@ -174,7 +175,7 @@ function LearningPathContent() {
         </PageSection>
       </Reveal>
 
-      <Reveal delayMs={150}>
+      <Reveal index={2}>
         <PageSection
           title="สิ่งที่ยังขาดก่อนจบ"
           description="วิชาบังคับและหมวดวิชาเลือกที่ยังไม่ครบตามหลักสูตร"
@@ -197,19 +198,5 @@ function LearningPathContent() {
         </PageSection>
       </Reveal>
     </DashboardShell>
-  );
-}
-
-function Reveal({
-  delayMs,
-  children,
-}: Readonly<{ delayMs: number; children: React.ReactNode }>) {
-  return (
-    <div
-      className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'both' }}
-    >
-      {children}
-    </div>
   );
 }

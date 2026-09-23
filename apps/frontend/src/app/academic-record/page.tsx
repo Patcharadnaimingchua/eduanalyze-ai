@@ -19,6 +19,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
@@ -239,10 +240,7 @@ function AcademicRecordContent() {
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '75ms', animationFillMode: 'both' }}
-        >
+        <Reveal index={1}>
           <StatCard
             icon={Star}
             label="เกรดเฉลี่ยสะสม"
@@ -255,25 +253,16 @@ function AcademicRecordContent() {
             }
             suffix="/ 4.0"
           />
-        </div>
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '150ms', animationFillMode: 'both' }}
-        >
+        </Reveal>
+        <Reveal index={2}>
           <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={Math.round(animatedCredits)} />
-        </div>
-        <div
-          className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-          style={{ animationDelay: '225ms', animationFillMode: 'both' }}
-        >
+        </Reveal>
+        <Reveal index={3}>
           <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={Math.round(animatedCourseCount)} />
-        </div>
+        </Reveal>
       </div>
 
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '300ms', animationFillMode: 'both' }}
-      >
+      <Reveal index={4}>
         <PageSection
           title="รายวิชาที่บันทึกไว้"
           description="เรียงจากภาคเรียนล่าสุด — กดชื่อภาคเรียนเพื่อพับหรือเปิดดูรายวิชา"
@@ -287,7 +276,7 @@ function AcademicRecordContent() {
             onChanged={refetchAll}
           />
         </PageSection>
-      </div>
+      </Reveal>
     </DashboardShell>
   );
 }

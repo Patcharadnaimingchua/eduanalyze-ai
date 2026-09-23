@@ -23,6 +23,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -181,97 +182,99 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
         description={`${course.code}: ${course.name}`}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>ให้คะแนนตัวเองในแต่ละ CLO</CardTitle>
-        </CardHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {serverError && (
-              <Alert variant="destructive">
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
-            )}
+      <Reveal index={1}>
+        <Card>
+          <CardHeader>
+            <CardTitle>ให้คะแนนตัวเองในแต่ละ CLO</CardTitle>
+          </CardHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              {serverError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{serverError}</AlertDescription>
+                </Alert>
+              )}
 
-            {fields.map((field, index) => {
-              const clo = clos.find((c) => c.id === field.cloId)!;
-              const currentScore = form.watch(`cloScores.${index}.score`);
-              return (
-                <section
-                  key={field.id}
-                  className="space-y-3 border-t border-slate-100 pt-4 first:border-t-0 first:pt-0"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-primary">{clo.code}</p>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{clo.description}</p>
-                    </div>
-                    <span className="shrink-0 rounded-md bg-slate-50 px-2.5 py-1 text-sm font-medium text-primary">
-                      ระดับ {currentScore}
-                    </span>
-                  </div>
-                  <div
-                    role="radiogroup"
-                    aria-label={`ระดับการประเมิน ${clo.code}`}
-                    className="grid grid-cols-1 gap-2 sm:grid-cols-5"
+              {fields.map((field, index) => {
+                const clo = clos.find((c) => c.id === field.cloId)!;
+                const currentScore = form.watch(`cloScores.${index}.score`);
+                return (
+                  <section
+                    key={field.id}
+                    className="space-y-3 border-t border-slate-100 pt-4 first:border-t-0 first:pt-0"
                   >
-                    {SELF_ASSESSMENT_LEVELS.map((level) => {
-                      const isSelected = currentScore === level.score;
-                      return (
-                        <Button
-                          key={level.score}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          variant={isSelected ? 'default' : 'outline'}
-                          className={`h-auto min-h-14 whitespace-normal border-slate-100 px-2 py-2 text-center ${
-                            isSelected
-                              ? 'shadow-sm ring-1 ring-primary/20'
-                              : 'text-primary hover:border-slate-200'
-                          }`}
-                          onClick={() =>
-                            form.setValue(`cloScores.${index}.score`, level.score, {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            })
-                          }
-                        >
-                          <span className="flex flex-col items-center gap-0.5 leading-tight">
-                            <span className="flex items-center gap-1 text-base font-semibold">
-                              {isSelected && <Check aria-hidden="true" size={14} strokeWidth={2.5} />}
-                              {level.score}
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-primary">{clo.code}</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{clo.description}</p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-slate-50 px-2.5 py-1 text-sm font-medium text-primary">
+                        ระดับ {currentScore}
+                      </span>
+                    </div>
+                    <div
+                      role="radiogroup"
+                      aria-label={`ระดับการประเมิน ${clo.code}`}
+                      className="grid grid-cols-1 gap-2 sm:grid-cols-5"
+                    >
+                      {SELF_ASSESSMENT_LEVELS.map((level) => {
+                        const isSelected = currentScore === level.score;
+                        return (
+                          <Button
+                            key={level.score}
+                            type="button"
+                            role="radio"
+                            aria-checked={isSelected}
+                            variant={isSelected ? 'default' : 'outline'}
+                            className={`h-auto min-h-14 whitespace-normal border-slate-100 px-2 py-2 text-center ${
+                              isSelected
+                                ? 'shadow-sm ring-1 ring-primary/20'
+                                : 'text-primary hover:border-slate-200'
+                            }`}
+                            onClick={() =>
+                              form.setValue(`cloScores.${index}.score`, level.score, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              })
+                            }
+                          >
+                            <span className="flex flex-col items-center gap-0.5 leading-tight">
+                              <span className="flex items-center gap-1 text-base font-semibold">
+                                {isSelected && <Check aria-hidden="true" size={14} strokeWidth={2.5} />}
+                                {level.score}
+                              </span>
+                              <span className="text-xs">{level.label}</span>
                             </span>
-                            <span className="text-xs">{level.label}</span>
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
 
-            <div className="space-y-2">
-              <label htmlFor="comment" className="text-sm font-medium text-primary">
-                ความคิดเห็นเพิ่มเติม (ถ้ามี)
-              </label>
-              <Textarea
-                id="comment"
-                {...form.register('comment')}
-                placeholder="แสดงความคิดเห็นเกี่ยวกับวิชานี้..."
-              />
-            </div>
+              <div className="space-y-2">
+                <label htmlFor="comment" className="text-sm font-medium text-primary">
+                  ความคิดเห็นเพิ่มเติม (ถ้ามี)
+                </label>
+                <Textarea
+                  id="comment"
+                  {...form.register('comment')}
+                  placeholder="แสดงความคิดเห็นเกี่ยวกับวิชานี้..."
+                />
+              </div>
 
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting
-                ? 'กำลังบันทึก...'
-                : existing
-                  ? 'บันทึกการแก้ไข'
-                  : 'บันทึกการประเมิน'}
-            </Button>
-          </CardContent>
-        </form>
-      </Card>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting
+                  ? 'กำลังบันทึก...'
+                  : existing
+                    ? 'บันทึกการแก้ไข'
+                    : 'บันทึกการประเมิน'}
+              </Button>
+            </CardContent>
+          </form>
+        </Card>
+      </Reveal>
     </DashboardShell>
   );
 }

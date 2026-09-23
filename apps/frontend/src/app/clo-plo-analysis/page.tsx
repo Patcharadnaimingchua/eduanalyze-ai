@@ -13,6 +13,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { OverallAchievementCard } from '@/components/clo-plo-analysis/overall-achievement-card';
 import { PloCard } from '@/components/clo-plo-analysis/plo-card';
@@ -165,41 +166,45 @@ function CloPloAnalysisContent() {
         description="ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ"
       />
 
-      <OverallAchievementCard
-        percent={overallPercent}
-        isAchieved={overallAchieved}
-        bandCounts={statusCounts.counts}
-        noDataCount={statusCounts.noDataCount}
-      />
+      <Reveal index={1}>
+        <OverallAchievementCard
+          percent={overallPercent}
+          isAchieved={overallAchieved}
+          bandCounts={statusCounts.counts}
+          noDataCount={statusCounts.noDataCount}
+        />
+      </Reveal>
 
-      <PageSection
-        title="ผลการวิเคราะห์ราย PLO"
-        description="คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง"
-        actions={
-          <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
-            <SelectTrigger aria-label="เรียงลำดับ PLO" className="w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="lowest">เรียง: ต้องพัฒนาก่อน</SelectItem>
-              <SelectItem value="highest">เรียง: คะแนนสูงสุด</SelectItem>
-              <SelectItem value="code">เรียงตาม PLO</SelectItem>
-            </SelectContent>
-          </Select>
-        }
-      >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {sortedRadar.map((plo) => (
-            <PloCard
-              key={plo.ploId}
-              plo={plo}
-              description={descriptionByPloId.get(plo.ploId) ?? null}
-              isAchieved={threshold !== null && plo.value !== null && plo.value >= threshold}
-              threshold={threshold}
-            />
-          ))}
-        </div>
-      </PageSection>
+      <Reveal index={2}>
+        <PageSection
+          title="ผลการวิเคราะห์ราย PLO"
+          description="คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง"
+          actions={
+            <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+              <SelectTrigger aria-label="เรียงลำดับ PLO" className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lowest">เรียง: ต้องพัฒนาก่อน</SelectItem>
+                <SelectItem value="highest">เรียง: คะแนนสูงสุด</SelectItem>
+                <SelectItem value="code">เรียงตาม PLO</SelectItem>
+              </SelectContent>
+            </Select>
+          }
+        >
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {sortedRadar.map((plo) => (
+              <PloCard
+                key={plo.ploId}
+                plo={plo}
+                description={descriptionByPloId.get(plo.ploId) ?? null}
+                isAchieved={threshold !== null && plo.value !== null && plo.value >= threshold}
+                threshold={threshold}
+              />
+            ))}
+          </div>
+        </PageSection>
+      </Reveal>
     </DashboardShell>
   );
 }
