@@ -347,7 +347,13 @@ export class AuthService {
     await this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: pending.userId },
-        data: { passwordHash },
+        // mustChangePassword: false — same as changePassword() above.
+        // Without this, an admin-created account (mustChangePassword:
+        // true, unusable starting hash) that sets its real password via
+        // this same endpoint (the "password setup" email reuses it) would
+        // still carry the flag, land back on ProtectedRoute's forced gate
+        // right after login, and be made to set a password a second time.
+        data: { passwordHash, mustChangePassword: false },
       });
       await this.passwordResetService.consume(pending.id, tx);
     });
