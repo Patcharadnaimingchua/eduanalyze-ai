@@ -78,7 +78,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
           side="bottom"
           sideOffset={4}
           avoidCollisions={false}
-          className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-md border bg-white text-popover-foreground shadow-md"
+          className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
         >
           <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2">
             <Search size={14} className="shrink-0 text-slate-400" />

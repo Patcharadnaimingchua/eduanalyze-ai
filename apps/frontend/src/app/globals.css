@@ -8,6 +8,8 @@
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
     /* Brand palette (login/register redesign) — primary/ring now match it
        directly since nothing else in the app had an established brand
        color yet; brand/brand-light are kept as separate named tokens for
