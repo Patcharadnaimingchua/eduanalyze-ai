@@ -576,6 +576,28 @@ export interface LearningPathReport {
   nextSemesterPlan: AvailableCourse[];
 }
 
+// ---- Credit Limit Request (GET/POST/DELETE /credit-limit-requests/me) ----
+// Self-declared, no approval workflow — student picks a fixed preset, it
+// takes effect immediately. One active request per student; POST replaces
+// any existing one. See the CreditLimitRequestType enum doc comment in
+// schema.prisma for the full rationale.
+
+export type CreditLimitRequestType = 'EXCEED_MAX' | 'BELOW_MIN';
+
+export interface CreditLimitRequest {
+  id: string;
+  studentProfileId: string;
+  type: CreditLimitRequestType;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCreditLimitRequestRequest {
+  type: CreditLimitRequestType;
+  reason: string;
+}
+
 // ---- My Academic Record (GET/POST/PATCH/DELETE /student-course-records) ----
 // Mirrors apps/backend's StudentCourseRecord Prisma model — raw rows, no
 // denormalized course/semester name (frontend joins client-side against

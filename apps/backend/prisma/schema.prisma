@@ -189,10 +189,35 @@ model StudentProfile {
   program    Program    @relation(fields: [programId], references: [id], onDelete: Restrict)
   curriculum Curriculum @relation(fields: [programId, curriculumId], references: [programId, id], onDelete: Restrict)
 
-  courseRecords StudentCourseRecord[]
-  assessments   CourseAssessment[]
+  courseRecords      StudentCourseRecord[]
+  assessments        CourseAssessment[]
+  creditLimitRequest StudentCreditLimitRequest?
 
   @@map("student_profiles")
+}
+
+// Self-declared, no approval workflow (Learning Path §"ขอปรับหน่วยกิตเกินเกณฑ์")
+// — student picks a fixed preset (23-25 credits, or below 9), the planner's
+// frontend warning threshold relaxes immediately. One active request per
+// student (@unique studentProfileId): requesting again replaces it, no
+// status/approvedBy fields since nothing reviews this. Delete the row to
+// cancel — no soft-delete, same as other mapping-style entities.
+enum CreditLimitRequestType {
+  EXCEED_MAX
+  BELOW_MIN
+}
+
+model StudentCreditLimitRequest {
+  id               String                 @id @default(uuid())
+  studentProfileId String                 @unique
+  type             CreditLimitRequestType
+  reason           String
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Restrict)
+
+  @@map("student_credit_limit_requests")
 }
 
 enum Role {

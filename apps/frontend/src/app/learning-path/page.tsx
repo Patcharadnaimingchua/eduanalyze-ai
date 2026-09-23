@@ -1,18 +1,21 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCourses } from '@/lib/api/academic-record';
 import { fetchCurriculum } from '@/lib/api/plo-achievement';
 import { fetchLearningPath } from '@/lib/api/learning-path';
+import { fetchMyCreditLimitRequest } from '@/lib/api/credit-limit-request';
+import { CREDIT_LIMIT_PRESETS, MIN_CREDITS_WARNING } from '@/lib/credit-limit-presets';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
+import { CreditLimitRequestControl } from '@/components/learning-path/credit-limit-request-control';
 import { DragDropPlanner } from '@/components/learning-path/drag-drop-planner';
 import { ElectiveCategoryList } from '@/components/learning-path/elective-category-list';
 import { LearningPathSkeleton } from '@/components/learning-path/learning-path-skeleton';
@@ -31,6 +34,7 @@ export default function LearningPathPage() {
 function LearningPathContent() {
   const { user } = useAuth();
   const isStudent = !!user?.roles.includes('STUDENT');
+  const queryClient = useQueryClient();
 
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
@@ -54,6 +58,11 @@ function LearningPathContent() {
     queryKey: ['curriculum', curriculumId],
     queryFn: () => fetchCurriculum(curriculumId!),
     enabled: !!curriculumId,
+  });
+  const creditLimitRequestQuery = useQuery({
+    queryKey: ['credit-limit-request-me'],
+    queryFn: fetchMyCreditLimitRequest,
+    enabled: !!studentProfileId,
   });
 
   // Bumping the key remounts the planner, which puts it back on the
@@ -84,7 +93,11 @@ function LearningPathContent() {
   }
 
   const isLoading =
-    profileQuery.isLoading || pathQuery.isLoading || coursesQuery.isLoading || curriculumQuery.isLoading;
+    profileQuery.isLoading ||
+    pathQuery.isLoading ||
+    coursesQuery.isLoading ||
+    curriculumQuery.isLoading ||
+    creditLimitRequestQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -111,6 +124,15 @@ function LearningPathContent() {
   }
 
   const path = pathQuery.data;
+  const creditLimitRequest = creditLimitRequestQuery.data ?? null;
+  const effectiveMaxCredits =
+    creditLimitRequest?.type === 'EXCEED_MAX'
+      ? (CREDIT_LIMIT_PRESETS.EXCEED_MAX.effectiveMax ?? curriculumQuery.data.maxCreditsPerSemester)
+      : curriculumQuery.data.maxCreditsPerSemester;
+  const effectiveMinCredits =
+    creditLimitRequest?.type === 'BELOW_MIN'
+      ? (CREDIT_LIMIT_PRESETS.BELOW_MIN.effectiveMin ?? MIN_CREDITS_WARNING)
+      : MIN_CREDITS_WARNING;
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
@@ -122,25 +144,32 @@ function LearningPathContent() {
       <Reveal delayMs={75}>
         <PageSection
           title="จัดแผนเทอมหน้า"
-          description={`ระบบจัดแผนที่แนะนำไว้ให้แล้ว — ลากวิชาหรือกดปุ่มย้ายเพื่อปรับ (ไม่เกิน ${curriculumQuery.data.maxCreditsPerSemester} หน่วยกิตต่อเทอม)`}
+          description={`ระบบจัดแผนที่แนะนำไว้ให้แล้ว — ลากวิชาหรือกดปุ่มย้ายเพื่อปรับ (${effectiveMinCredits}-${effectiveMaxCredits} หน่วยกิตต่อเทอม)`}
           actions={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setPlannerKey((k) => k + 1)}
-            >
-              <RotateCcw size={14} aria-hidden="true" />
-              รีเซ็ตเป็นแผนที่แนะนำ
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setPlannerKey((k) => k + 1)}
+              >
+                <RotateCcw size={14} aria-hidden="true" />
+                รีเซ็ตเป็นแผนที่แนะนำ
+              </Button>
+              <CreditLimitRequestControl
+                request={creditLimitRequest}
+                onChanged={() => queryClient.invalidateQueries({ queryKey: ['credit-limit-request-me'] })}
+              />
+            </div>
           }
         >
           <DragDropPlanner
             key={plannerKey}
             availableCourses={path.availableCourses}
             nextSemesterPlan={path.nextSemesterPlan}
-            maxCreditsPerSemester={curriculumQuery.data.maxCreditsPerSemester}
+            maxCreditsPerSemester={effectiveMaxCredits}
+            minCreditsWarning={effectiveMinCredits}
           />
         </PageSection>
       </Reveal>

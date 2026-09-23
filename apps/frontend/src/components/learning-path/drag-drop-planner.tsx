@@ -12,10 +12,12 @@ export function DragDropPlanner({
   availableCourses,
   nextSemesterPlan,
   maxCreditsPerSemester,
+  minCreditsWarning,
 }: Readonly<{
   availableCourses: AvailableCourse[];
   nextSemesterPlan: AvailableCourse[];
   maxCreditsPerSemester: number;
+  minCreditsWarning: number;
 }>) {
   const courseById = useMemo(() => {
     const map = new Map<string, AvailableCourse>();
@@ -34,6 +36,7 @@ export function DragDropPlanner({
 
   const totalCredits = planCourses.reduce((sum, c) => sum + c.credits, 0);
   const isOverLimit = totalCredits > maxCreditsPerSemester;
+  const isUnderMin = totalCredits < minCreditsWarning;
 
   // Which column is currently being dragged over, for the highlight
   // border/background below. A plain enter/leave state flickers because
@@ -87,7 +90,7 @@ export function DragDropPlanner({
             <span
               className={cn(
                 'text-sm font-medium tabular-nums',
-                isOverLimit ? 'text-destructive' : 'text-emerald-700',
+                isOverLimit || isUnderMin ? 'text-destructive' : 'text-emerald-700',
               )}
             >
               {totalCredits} / {maxCreditsPerSemester} หน่วยกิต
@@ -107,6 +110,11 @@ export function DragDropPlanner({
           {isOverLimit && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-xs font-medium text-destructive">
               เกินหน่วยกิตสูงสุดต่อเทอม ({maxCreditsPerSemester} หน่วยกิต)
+            </p>
+          )}
+          {isUnderMin && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-xs font-medium text-destructive">
+              ต่ำกว่าหน่วยกิตขั้นต่ำแนะนำ ({minCreditsWarning} หน่วยกิต)
             </p>
           )}
           {planCourses.length === 0 && (
