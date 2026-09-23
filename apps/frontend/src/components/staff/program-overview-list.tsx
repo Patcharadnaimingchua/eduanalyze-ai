@@ -33,11 +33,11 @@ export function ProgramOverviewList({ programs }: { programs: StaffOverviewProgr
                     ฉบับ {curriculum.version} (ปี {curriculum.effectiveYear})
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    <Badge tone="gray">{curriculum.studentCount} นักศึกษา</Badge>
-                    <Badge tone="gray">
+                    <Badge tone="neutral">{curriculum.studentCount} นักศึกษา</Badge>
+                    <Badge tone="neutral">
                       GPA เฉลี่ย {curriculum.averageGpa !== null ? curriculum.averageGpa.toFixed(2) : '—'}
                     </Badge>
-                    <Badge tone={curriculum.coursesWithoutClo > 0 ? 'red' : 'green'}>
+                    <Badge tone={curriculum.coursesWithoutClo > 0 ? 'danger' : 'success'}>
                       {curriculum.coursesWithoutClo}/{curriculum.totalCourses} วิชายังไม่มี CLO
                     </Badge>
                   </div>

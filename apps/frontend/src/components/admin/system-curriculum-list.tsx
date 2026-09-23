@@ -12,9 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 function StructureBadges({ curriculum }: { curriculum: SystemCurriculumEntry }) {
   return (
     <>
-      <Badge tone="gray">{curriculum.courseCount} วิชา</Badge>
-      <Badge tone="gray">{curriculum.cloCount} CLO</Badge>
-      <Badge tone="gray">{curriculum.ploCount} PLO</Badge>
+      <Badge tone="neutral">{curriculum.courseCount} วิชา</Badge>
+      <Badge tone="neutral">{curriculum.cloCount} CLO</Badge>
+      <Badge tone="neutral">{curriculum.ploCount} PLO</Badge>
     </>
   );
 }
@@ -32,21 +32,21 @@ function CurriculumRow({ curriculum }: { curriculum: SystemCurriculumEntry }) {
       <span className="flex flex-wrap items-center gap-2">
         {dataState === 'HAS_STUDENTS' ? (
           <>
-            <Badge tone="green">{curriculum.studentCount} นักศึกษา</Badge>
-            <Badge tone="gray">
+            <Badge tone="success">{curriculum.studentCount} นักศึกษา</Badge>
+            <Badge tone="neutral">
               GPA เฉลี่ย{' '}
               {curriculum.averageGpa === null ? '—' : curriculum.averageGpa.toFixed(2)}
             </Badge>
-            <Badge tone="gray">
+            <Badge tone="neutral">
               PLO เฉลี่ย{' '}
               {curriculum.averagePloValue === null
                 ? '—'
                 : `${Math.round(curriculum.averagePloValue)}%`}
             </Badge>
-            <Badge tone={curriculum.studentsAtRiskCount > 0 ? 'red' : 'gray'}>
+            <Badge tone={curriculum.studentsAtRiskCount > 0 ? 'danger' : 'neutral'}>
               เสี่ยง {curriculum.studentsAtRiskCount}
             </Badge>
-            <Badge tone={curriculum.graduationReadyCount > 0 ? 'green' : 'gray'}>
+            <Badge tone={curriculum.graduationReadyCount > 0 ? 'success' : 'neutral'}>
               พร้อมจบ {curriculum.graduationReadyCount}
             </Badge>
           </>

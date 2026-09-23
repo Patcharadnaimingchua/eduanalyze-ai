@@ -9,24 +9,24 @@ import { Badge } from '@/components/ui/badge';
 //
 // green = every item counted (validCount === totalCount, and at least one
 // item exists), amber = some but not all counted, gray = nothing counted
-// yet. Existing 4-tone Badge is enough — no need to extend BadgeTone.
+// yet. Existing tone vocabulary is enough — no need to extend SemanticTone.
 export function EvidenceCoverageBadge({
   coverage,
 }: {
   coverage: { validCount: number; totalCount: number };
 }) {
   if (coverage.totalCount === 0 || coverage.validCount === 0) {
-    return <Badge tone="gray">ยังไม่มีคะแนน 0/{coverage.totalCount}</Badge>;
+    return <Badge tone="neutral">ยังไม่มีคะแนน 0/{coverage.totalCount}</Badge>;
   }
   if (coverage.validCount === coverage.totalCount) {
     return (
-      <Badge tone="green">
+      <Badge tone="success">
         ครบ {coverage.validCount}/{coverage.totalCount}
       </Badge>
     );
   }
   return (
-    <Badge tone="amber">
+    <Badge tone="warning">
       บางส่วน {coverage.validCount}/{coverage.totalCount}
     </Badge>
   );

@@ -71,7 +71,7 @@ export function CourseListTable({
                   <td className="py-3 pr-4">{course.name}</td>
                   <td className="py-3 pr-4">{course.credits}</td>
                   <td className="py-3 pr-0">
-                    <Badge tone={course.isActive ? 'green' : 'gray'}>
+                    <Badge tone={course.isActive ? 'success' : 'neutral'}>
                       {course.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
                     </Badge>
                   </td>

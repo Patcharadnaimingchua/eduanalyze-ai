@@ -57,7 +57,7 @@ export function TwoFactorSection() {
             <CardDescription>ใช้แอป Authenticator (เช่น Google Authenticator, Authy) เพิ่มความปลอดภัยตอนเข้าสู่ระบบ</CardDescription>
           </div>
           {mode === 'view' && (
-            <Badge tone={enabled ? 'green' : 'gray'}>{enabled ? 'เปิดอยู่' : 'ปิดอยู่'}</Badge>
+            <Badge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'เปิดอยู่' : 'ปิดอยู่'}</Badge>
           )}
         </div>
       </CardHeader>

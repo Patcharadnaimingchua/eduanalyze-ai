@@ -3,20 +3,12 @@
 import { useState } from 'react';
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { assignUserRole, revokeUserRole } from '@/lib/api/user-management';
-import { ROLE_LABEL_TH } from '@/components/auth/require-role';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const ROLE_BADGE_TONE: Record<Role, BadgeTone> = {
-  STUDENT: 'gray',
-  INSTRUCTOR: 'green',
-  STAFF: 'gray',
-  ADMIN: 'amber',
-  SUPER_ADMIN: 'red',
-};
 
 // SUPER_ADMIN deliberately excluded — never grantable via API (advisor
 // feedback, see plan file "เรื่องที่ 2"), backend rejects it with 403

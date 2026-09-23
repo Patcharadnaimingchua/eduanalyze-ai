@@ -171,7 +171,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
                 <span>ฉบับหลักสูตร: {curriculum?.version ?? '—'}</span>
                 <span>ปีเข้าศึกษา: {profile.admissionYear}</span>
               </div>
-              <Badge tone={profile.isActive ? 'green' : 'gray'}>
+              <Badge tone={profile.isActive ? 'success' : 'neutral'}>
                 {profile.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
               </Badge>
             </CardContent>

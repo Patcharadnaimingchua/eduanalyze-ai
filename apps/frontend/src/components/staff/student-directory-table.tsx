@@ -99,7 +99,7 @@ export function StudentDirectoryTable({
                       )}
                     </td>
                     <td className="py-3 pr-4">
-                      <Badge tone={student.isActive ? 'green' : 'gray'}>
+                      <Badge tone={student.isActive ? 'success' : 'neutral'}>
                         {student.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
                       </Badge>
                     </td>

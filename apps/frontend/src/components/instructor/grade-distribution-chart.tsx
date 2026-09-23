@@ -2,19 +2,13 @@
 
 import type { Grade } from '@eduanalyze-ai/shared-types';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
-import { gradeBadgeTone, type GradeBadgeTone } from '@/lib/grade-badge-color';
+import { gradeBadgeTone } from '@/lib/grade-badge-color';
+import { BAR_TONE_CLASSES } from '@/lib/tone';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // No chart library in this project — hand-built DOM bars (same approach as
 // components/ui/progress.tsx), one column per Grade in GRADE_OPTIONS order.
-const BAR_TONE_CLASSES: Record<GradeBadgeTone, string> = {
-  green: 'bg-emerald-500',
-  amber: 'bg-amber-500',
-  red: 'bg-red-500',
-  gray: 'bg-slate-300',
-};
-
 export function GradeDistributionChart({
   distribution,
 }: {

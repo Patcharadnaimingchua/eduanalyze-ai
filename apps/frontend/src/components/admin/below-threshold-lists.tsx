@@ -29,7 +29,7 @@ export function BelowThresholdLists({
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             PLO ที่ต่ำกว่าเกณฑ์
-            {plos.length > 0 && <Badge tone="red">{plos.length}</Badge>}
+            {plos.length > 0 && <Badge tone="danger">{plos.length}</Badge>}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             นับว่ามีปัญหาเมื่อ CLO ที่ผูกกับ PLO นั้นไม่ผ่านเกณฑ์ตั้งแต่ครึ่งหนึ่งขึ้นไป
@@ -62,7 +62,7 @@ export function BelowThresholdLists({
                         เฉลี่ย {Math.round(plo.averageValue)}%
                       </span>
                     )}
-                    <Badge tone="red">
+                    <Badge tone="danger">
                       {plo.closBelowThreshold}/{plo.totalMeasuredClos} CLO ไม่ผ่าน
                     </Badge>
                   </span>
@@ -78,7 +78,7 @@ export function BelowThresholdLists({
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             CLO ที่ต่ำกว่าเกณฑ์
-            {clos.length > 0 && <Badge tone="red">{clos.length}</Badge>}
+            {clos.length > 0 && <Badge tone="danger">{clos.length}</Badge>}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             % นักศึกษาที่ได้เกรด B ขึ้นไปในวิชานั้น ต่ำกว่าเกณฑ์ของ CLO
@@ -105,7 +105,7 @@ export function BelowThresholdLists({
                         {clo.programCode}/{clo.curriculumVersion}
                       </span>
                     </span>
-                    <Badge tone="red">
+                    <Badge tone="danger">
                       {Math.round(clo.achievementPercent)}% &lt; {clo.threshold}%
                     </Badge>
                   </li>

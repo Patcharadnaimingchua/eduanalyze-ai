@@ -47,7 +47,7 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
             <div>
               <dt className="text-xs text-muted-foreground">ประเภท</dt>
               <dd>
-                <Badge tone={detail.isRequired ? 'green' : 'gray'}>
+                <Badge tone={detail.isRequired ? 'success' : 'neutral'}>
                   {detail.isRequired ? 'วิชาบังคับ' : 'วิชาเลือก'}
                 </Badge>
               </dd>

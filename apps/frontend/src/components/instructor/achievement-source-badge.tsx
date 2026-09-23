@@ -1,5 +1,6 @@
 import type { EvidenceSource } from '@eduanalyze-ai/shared-types';
 import { Badge } from '@/components/ui/badge';
+import type { SemanticTone } from '@/lib/tone';
 
 // States where a number came from, so a grade estimate can never be mistaken
 // for real evidence. The backend puts `source` on every AchievementResult and
@@ -8,11 +9,11 @@ import { Badge } from '@/components/ui/badge';
 //
 // Sibling of evidence-coverage-badge.tsx: the two answer different questions
 // ("computed from what?" vs "how much of it is in?") and are meant to sit
-// next to each other. Same 4-tone Badge, no new tone needed.
-const SOURCE_PRESENTATION: Record<EvidenceSource, { tone: 'green' | 'amber' | 'gray'; label: string }> = {
-  EVIDENCE_BASED: { tone: 'green', label: 'จากหลักฐานจริง' },
-  LEGACY_GRADE_ESTIMATE: { tone: 'amber', label: 'ประมาณจากเกรด' },
-  NO_EVIDENCE: { tone: 'gray', label: 'ยังไม่มีหลักฐาน' },
+// next to each other. Same shared tone vocabulary, no new tone needed.
+const SOURCE_PRESENTATION: Record<EvidenceSource, { tone: SemanticTone; label: string }> = {
+  EVIDENCE_BASED: { tone: 'success', label: 'จากหลักฐานจริง' },
+  LEGACY_GRADE_ESTIMATE: { tone: 'warning', label: 'ประมาณจากเกรด' },
+  NO_EVIDENCE: { tone: 'neutral', label: 'ยังไม่มีหลักฐาน' },
 };
 
 export function AchievementSourceBadge({ source }: Readonly<{ source: EvidenceSource }>) {

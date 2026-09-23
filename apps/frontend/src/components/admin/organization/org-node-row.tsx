@@ -45,7 +45,7 @@ export function OrgNodeRow({
           <span className="shrink-0 text-xs text-muted-foreground">{levelLabel}</span>
           <span className="shrink-0 font-mono text-sm text-muted-foreground">{item.code}</span>
           <span className="truncate text-sm font-medium text-primary">{item.name}</span>
-          <Badge tone={childCount > 0 ? 'green' : 'gray'}>
+          <Badge tone={childCount > 0 ? 'success' : 'neutral'}>
             {childCount} {childLabel}
           </Badge>
         </button>

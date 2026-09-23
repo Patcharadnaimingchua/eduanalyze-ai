@@ -51,7 +51,7 @@ function PreviewTable({ rows }: Readonly<{ rows: ParsedScoreRow[] }>) {
               </td>
               <td className="px-3 py-2">
                 {row.verdict === 'ready' ? (
-                  <Badge tone="green">พร้อมนำเข้า</Badge>
+                  <Badge tone="success">พร้อมนำเข้า</Badge>
                 ) : (
                   <span className="text-xs text-destructive">{row.error}</span>
                 )}

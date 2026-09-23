@@ -23,7 +23,7 @@ export function InstructorCourseCard({ course }: { course: InstructorCourseSumma
           <div className="flex items-center gap-2">
             <p className="text-sm text-muted-foreground">{course.studentCount} นักศึกษา</p>
             {course.atRiskStudents.length > 0 && (
-              <Badge tone="red">เสี่ยง {course.atRiskStudents.length}</Badge>
+              <Badge tone="danger">เสี่ยง {course.atRiskStudents.length}</Badge>
             )}
           </div>
         </CardContent>

@@ -3,6 +3,7 @@
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { useAuth } from '@/lib/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { SemanticTone } from '@/lib/tone';
 
 export const ROLE_LABEL_TH: Record<Role, string> = {
   STUDENT: 'นักศึกษา',
@@ -10,6 +11,14 @@ export const ROLE_LABEL_TH: Record<Role, string> = {
   STAFF: 'เจ้าหน้าที่',
   ADMIN: 'ผู้ดูแลระบบ',
   SUPER_ADMIN: 'ผู้ดูแลระบบสูงสุด',
+};
+
+export const ROLE_BADGE_TONE: Record<Role, SemanticTone> = {
+  STUDENT: 'neutral',
+  INSTRUCTOR: 'success',
+  STAFF: 'neutral',
+  ADMIN: 'warning',
+  SUPER_ADMIN: 'danger',
 };
 
 // Reproduces the inline-message role gate pattern copy-pasted across every

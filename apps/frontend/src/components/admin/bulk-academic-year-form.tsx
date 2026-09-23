@@ -14,7 +14,8 @@ import {
 } from '@/lib/validation/academic-year.schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
+import type { SemanticTone } from '@/lib/tone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
@@ -26,10 +27,10 @@ const STATUS_LABEL: Record<ResultStatus, string> = {
   failed: 'ผิดพลาด',
 };
 
-const STATUS_TONE: Record<ResultStatus, BadgeTone> = {
-  created: 'green',
-  skipped: 'gray',
-  failed: 'red',
+const STATUS_TONE: Record<ResultStatus, SemanticTone> = {
+  created: 'success',
+  skipped: 'neutral',
+  failed: 'danger',
 };
 
 export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {

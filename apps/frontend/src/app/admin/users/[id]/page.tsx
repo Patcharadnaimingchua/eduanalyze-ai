@@ -110,7 +110,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
               <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">สถานะบัญชี:</span>
-                  <Badge tone={userQuery.data.isActive ? 'green' : 'gray'}>
+                  <Badge tone={userQuery.data.isActive ? 'success' : 'neutral'}>
                     {userQuery.data.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
                   </Badge>
                 </div>

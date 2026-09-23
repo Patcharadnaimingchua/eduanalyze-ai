@@ -4,19 +4,11 @@ import Link from 'next/link';
 import type { AdminUserSummary, Role } from '@eduanalyze-ai/shared-types';
 import { usePagination } from '@/lib/use-pagination';
 import { useTableSort } from '@/lib/use-table-sort';
-import { ROLE_LABEL_TH } from '@/components/auth/require-role';
-import { Badge, type BadgeTone } from '@/components/ui/badge';
+import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
 import { SortHeader } from '@/components/ui/sort-header';
-
-const ROLE_BADGE_TONE: Record<Role, BadgeTone> = {
-  STUDENT: 'gray',
-  INSTRUCTOR: 'green',
-  STAFF: 'gray',
-  ADMIN: 'amber',
-  SUPER_ADMIN: 'red',
-};
 
 export function UserListTable({ users }: { users: AdminUserSummary[] }) {
   const sort = useTableSort(users, {
@@ -65,7 +57,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
                     </div>
                   </td>
                   <td className="py-3 pr-4">
-                    <Badge tone={user.isActive ? 'green' : 'gray'}>
+                    <Badge tone={user.isActive ? 'success' : 'neutral'}>
                       {user.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
                     </Badge>
                   </td>

@@ -103,7 +103,7 @@ function CurriculumCard({
             <span className="text-sm font-medium text-primary">
               ฉบับ {curriculum.version} (ปี {curriculum.effectiveYear})
             </span>
-            <Badge tone={curriculum.isOpenForRegistration ? 'green' : 'gray'}>
+            <Badge tone={curriculum.isOpenForRegistration ? 'success' : 'neutral'}>
               {curriculum.isOpenForRegistration ? 'เปิดรับลงทะเบียน' : 'ปิดรับลงทะเบียน'}
             </Badge>
           </div>

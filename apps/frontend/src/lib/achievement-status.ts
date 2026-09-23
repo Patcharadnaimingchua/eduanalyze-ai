@@ -1,4 +1,4 @@
-import type { BadgeTone } from '@/components/ui/badge';
+import type { SemanticTone } from '@/lib/tone';
 
 // Replaces the old fixed 80/60 bands (achievement-color.ts), which were
 // unrelated to the pass bar the rest of the app actually uses. The
@@ -16,12 +16,12 @@ const EXCEEDED_MARGIN = 15;
 export function achievementStatus(
   percent: number,
   threshold: number,
-): { label: string; tone: BadgeTone } {
+): { label: string; tone: SemanticTone } {
   if (percent >= threshold + EXCEEDED_MARGIN) {
-    return { label: 'EXCEEDED', tone: 'green' };
+    return { label: 'EXCEEDED', tone: 'success' };
   }
   if (percent >= threshold) {
-    return { label: 'ON TRACK', tone: 'green' };
+    return { label: 'ON TRACK', tone: 'success' };
   }
-  return { label: 'CRITICAL', tone: 'red' };
+  return { label: 'CRITICAL', tone: 'danger' };
 }

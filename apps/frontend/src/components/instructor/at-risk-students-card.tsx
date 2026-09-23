@@ -22,12 +22,12 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           นักศึกษากลุ่มเสี่ยง
           {criticalCount > 0 && (
-            <Badge tone="red">
+            <Badge tone="danger">
               {RISK_LEVEL_LABELS.CRITICAL} {criticalCount}
             </Badge>
           )}
           {watchCount > 0 && (
-            <Badge tone="amber">
+            <Badge tone="warning">
               {RISK_LEVEL_LABELS.WATCH} {watchCount}
             </Badge>
           )}

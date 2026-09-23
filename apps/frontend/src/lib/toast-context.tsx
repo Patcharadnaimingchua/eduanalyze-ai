@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Toast, type ToastTone } from '@/components/ui/toast';
+import { Toast } from '@/components/ui/toast';
+import type { ToastTone } from '@/lib/tone';
 
 interface ToastItem {
   id: number;
@@ -20,10 +21,10 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 const AUTO_DISMISS_MS: Record<ToastTone, number> = {
   success: 4000,
-  info: 4000,
+  neutral: 4000,
   // Errors stay longer — they carry more to read and usually mean the user
   // has to decide whether to retry.
-  error: 8000,
+  danger: 8000,
 };
 
 // Keeps a burst of writes (e.g. the roster's per-row saves) from stacking
@@ -63,8 +64,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const success = useCallback((message: string) => show('success', message), [show]);
-  const error = useCallback((message: string) => show('error', message), [show]);
-  const info = useCallback((message: string) => show('info', message), [show]);
+  const error = useCallback((message: string) => show('danger', message), [show]);
+  const info = useCallback((message: string) => show('neutral', message), [show]);
 
   useEffect(() => {
     const timers = timersRef.current;
@@ -76,8 +77,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   // Two regions, not one: an error has to interrupt a screen reader, a
   // success must not.
-  const polite = toasts.filter((t) => t.tone !== 'error');
-  const assertive = toasts.filter((t) => t.tone === 'error');
+  const polite = toasts.filter((t) => t.tone !== 'danger');
+  const assertive = toasts.filter((t) => t.tone === 'danger');
 
   return (
     <ToastContext.Provider value={{ success, error, info }}>
