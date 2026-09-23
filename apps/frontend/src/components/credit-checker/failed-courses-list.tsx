@@ -2,7 +2,7 @@ import type { CourseSummary } from '@eduanalyze-ai/shared-types';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function FailedCoursesList({ courses }: { courses: CourseSummary[] }) {
+export function FailedCoursesList({ courses }: Readonly<{ courses: CourseSummary[] }>) {
   if (courses.length === 0) return null;
 
   return (

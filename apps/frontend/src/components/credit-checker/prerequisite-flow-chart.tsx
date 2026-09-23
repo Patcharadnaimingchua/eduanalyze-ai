@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { ReactFlow, Background, Controls, type Edge, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { CreditCheckReport } from '@eduanalyze-ai/shared-types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { computeCourseDepths } from '@/lib/compute-course-depth';
 import {
   PrerequisiteFlowNode,
@@ -24,7 +24,7 @@ const LEGEND: { status: CourseNodeStatus; label: string; swatch: string }[] = [
   { status: 'locked', label: 'ยังลงไม่ได้ (ติดวิชาก่อน)', swatch: 'bg-slate-300' },
 ];
 
-export function PrerequisiteFlowChart({ report }: { report: CreditCheckReport }) {
+export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheckReport }>) {
   const { nodes, edges } = useMemo(() => {
     const passedIds = new Set(report.passedCourses.map((c) => c.courseId));
     const failedIds = new Set(report.failedCourses.map((c) => c.courseId));
@@ -90,18 +90,15 @@ export function PrerequisiteFlowChart({ report }: { report: CreditCheckReport })
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>แผนผังลำดับวิชาก่อน (Prerequisite Flow Chart)</CardTitle>
-        <div className="flex flex-wrap gap-3 pt-2">
+      <CardContent className="space-y-4 pt-6">
+        <ul className="flex flex-wrap gap-x-4 gap-y-2" aria-label="คำอธิบายสี">
           {LEGEND.map((item) => (
-            <div key={item.status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className={`h-2.5 w-2.5 rounded-full ${item.swatch}`} />
+            <li key={item.status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className={`h-2.5 w-2.5 rounded-full ${item.swatch}`} aria-hidden="true" />
               {item.label}
-            </div>
+            </li>
           ))}
-        </div>
-      </CardHeader>
-      <CardContent>
+        </ul>
         <div style={{ height: 520 }} className="overflow-hidden rounded-md border border-slate-100">
           <ReactFlow
             nodes={nodes}
