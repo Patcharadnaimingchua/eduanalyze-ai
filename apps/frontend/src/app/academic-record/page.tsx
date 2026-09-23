@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, FileCheck2, Star } from 'lucide-react';
+import { GraduationCap, FileCheck2, Plus, Star, X } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import {
   fetchAcademicYears,
@@ -18,10 +18,12 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
 import { RecordTimeline } from '@/components/academic-record/record-timeline';
+import { Button } from '@/components/ui/button';
 import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
@@ -128,6 +130,20 @@ function AcademicRecordContent() {
     return () => clearTimeout(timer);
   }, [highlightRecordId]);
 
+  // null = the student hasn't touched the toggle yet, in which case the form
+  // starts open only when there is nothing recorded (adding is then the
+  // only thing to do on this page). An explicit open also autofocuses it.
+  const [addFormToggle, setAddFormToggle] = useState<boolean | null>(null);
+  const addFormId = useId();
+  const addFormToggleRef = useRef<HTMLButtonElement>(null);
+
+  function closeAddForm() {
+    setAddFormToggle(false);
+    // The cancel button unmounts with the form — hand focus back to the
+    // toggle rather than letting it fall to <body>.
+    addFormToggleRef.current?.focus();
+  }
+
   function handleRecordCreated(newRecordId: string) {
     refetchAll();
     setHighlightRecordId(newRecordId);
@@ -159,6 +175,10 @@ function AcademicRecordContent() {
   if (isLoading) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-60" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </div>
         <StatCardsSkeleton count={3} />
         <ListSkeleton items={5} />
       </DashboardShell>
@@ -181,12 +201,42 @@ function AcademicRecordContent() {
     );
   }
 
+  const records = recordsQuery.data ?? [];
+  const isAddFormOpen = addFormToggle ?? records.length === 0;
+
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
       <PageHeader
         title="การติดตามผลการเรียน"
         description="บันทึกและจัดการรายวิชาที่คุณเรียนไปแล้ว"
+        actions={
+          <Button
+            ref={addFormToggleRef}
+            type="button"
+            variant={isAddFormOpen ? 'outline' : 'default'}
+            className="gap-1.5"
+            onClick={() => setAddFormToggle(!isAddFormOpen)}
+            aria-expanded={isAddFormOpen}
+            aria-controls={addFormId}
+          >
+            {isAddFormOpen ? <X size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+            {isAddFormOpen ? 'ปิดฟอร์ม' : 'เพิ่มรายวิชา'}
+          </Button>
+        }
       />
+
+      {isAddFormOpen && (
+        <div id={addFormId} className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
+          <AddRecordForm
+            studentProfileId={profileQuery.data.id}
+            courses={filteredCourses}
+            semesterOptions={joinedSemesters}
+            onCreated={handleRecordCreated}
+            onCancel={closeAddForm}
+            autoFocus={addFormToggle === true}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div
@@ -224,26 +274,19 @@ function AcademicRecordContent() {
         className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
         style={{ animationDelay: '300ms', animationFillMode: 'both' }}
       >
-        <AddRecordForm
-          studentProfileId={profileQuery.data.id}
-          courses={filteredCourses}
-          semesterOptions={joinedSemesters}
-          onCreated={handleRecordCreated}
-        />
-      </div>
-
-      <div
-        className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: '375ms', animationFillMode: 'both' }}
-      >
-        <RecordTimeline
-          records={recordsQuery.data ?? []}
-          courseMap={courseMap}
-          semesters={joinedSemesters}
-          gpaBySemester={gpa?.bySemester ?? []}
-          highlightRecordId={highlightRecordId}
-          onChanged={refetchAll}
-        />
+        <PageSection
+          title="รายวิชาที่บันทึกไว้"
+          description="เรียงจากภาคเรียนล่าสุด — กดชื่อภาคเรียนเพื่อพับหรือเปิดดูรายวิชา"
+        >
+          <RecordTimeline
+            records={records}
+            courseMap={courseMap}
+            semesters={joinedSemesters}
+            gpaBySemester={gpa?.bySemester ?? []}
+            highlightRecordId={highlightRecordId}
+            onChanged={refetchAll}
+          />
+        </PageSection>
       </div>
     </DashboardShell>
   );

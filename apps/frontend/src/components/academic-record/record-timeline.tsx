@@ -9,7 +9,7 @@ import { gradeBadgeClassName } from '@/lib/grade-badge-color';
 import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SemesterGroupHeader } from './semester-group-header';
 
@@ -21,6 +21,15 @@ interface SemesterGroup {
 interface RetakeInfo {
   isLatest: boolean;
   previousGrade?: Grade;
+}
+
+// Ref callback for the just-added row: the add form and stat cards sit
+// above the timeline, so without this the highlight usually plays below
+// the fold. 'nearest' leaves the page alone when the row is already visible.
+function revealRow(row: HTMLDivElement | null) {
+  if (!row) return;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  row.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
 }
 
 export function RecordTimeline({
@@ -166,10 +175,7 @@ export function RecordTimeline({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>รายวิชาที่บันทึกไว้</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {semestersWithRecords.length === 0 && (
           <p className="py-6 text-center text-muted-foreground">ยังไม่มีรายวิชาที่บันทึกไว้</p>
         )}
@@ -219,14 +225,18 @@ export function RecordTimeline({
                       return (
                         <div
                           key={record.id}
+                          ref={isHighlighted ? revealRow : undefined}
                           className={cn(
                             'flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3 transition-colors duration-500',
                             isExiting && 'animate-out fade-out-0 slide-out-to-top-4 duration-500',
                             isHighlighted && 'bg-emerald-50',
                           )}
                         >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-primary">
+                          {/* basis-48 + wrap (not truncate): on narrow screens the
+                              controls drop below the name instead of the name's
+                              nowrap width forcing the whole page wider. */}
+                          <div className="min-w-0 grow basis-48">
+                            <p className="text-sm font-medium text-primary">
                               {course?.code ?? '—'} — {course?.name ?? '—'}
                             </p>
                             <p className="text-xs text-muted-foreground">{record.credits} หน่วยกิต</p>

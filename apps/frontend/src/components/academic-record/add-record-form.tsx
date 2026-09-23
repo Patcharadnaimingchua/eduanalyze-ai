@@ -35,12 +35,20 @@ export function AddRecordForm({
   courses,
   semesterOptions,
   onCreated,
-}: {
+  onCancel,
+  autoFocus = false,
+}: Readonly<{
   studentProfileId: string;
   courses: CourseListItem[];
   semesterOptions: SemesterOption[];
   onCreated: (newRecordId: string) => void;
-}) {
+  // Omitted where the form is always shown (staff student page).
+  onCancel?: () => void;
+  // Also re-applies after each successful submit (the form remounts via
+  // formKey), which puts the student straight back on the first field for
+  // the next course.
+  autoFocus?: boolean;
+}>) {
   const [serverError, setServerError] = useState<string | null>(null);
   // Bumped on every successful submit to force the <Select>s to fully
   // remount (see key={formKey} below) — form.reset() alone correctly
@@ -98,7 +106,7 @@ export function AddRecordForm({
                     <FormLabel>ภาคเรียน</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger autoFocus={autoFocus}>
                           <SelectValue placeholder="เลือกภาคเรียน" />
                         </SelectTrigger>
                       </FormControl>
@@ -162,9 +170,21 @@ export function AddRecordForm({
               />
             </div>
 
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มรายวิชา'}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มรายวิชา'}
+              </Button>
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onCancel}
+                  disabled={form.formState.isSubmitting}
+                >
+                  ยกเลิก
+                </Button>
+              )}
+            </div>
           </CardContent>
         </form>
       </Form>
