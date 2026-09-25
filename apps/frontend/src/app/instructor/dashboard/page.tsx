@@ -12,6 +12,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
 import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
+import { CloAttentionCard } from '@/components/instructor/clo-attention-card';
 import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
 import { CourseInsightCard } from '@/components/instructor/course-insight-card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -106,6 +107,7 @@ function InstructorDashboardContent() {
             </div>
             <CourseInsightCard courses={courses} />
             <AtRiskStudentsCard courses={courses} />
+            <CloAttentionCard courses={courses} />
             {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
             <InstructorCourseGrid courses={courses} />
           </>
