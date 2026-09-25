@@ -38,6 +38,9 @@ const STUDENT_NAV_ITEMS: NavItem[] = [
 
 const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/instructor/dashboard' },
+  { label: 'รายวิชาที่สอน', icon: BookOpen, href: '/instructor/my-courses' },
+  { label: 'นักศึกษา', icon: Users, href: '/instructor/students' },
+  { label: 'ภาพรวมชั้นปี', icon: GraduationCap, href: '/instructor/year-levels' },
 ];
 
 // SUPER_ADMIN-only pages (e.g. academic-years) don't belong in plain
