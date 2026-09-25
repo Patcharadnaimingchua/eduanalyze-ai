@@ -42,20 +42,7 @@ export class StudentProfileService {
       );
     }
 
-    await this.programService.findActiveByIdOrThrow(programId, tx);
-    const curriculum = await this.curriculumService.findActiveByIdOrThrow(
-      curriculumId,
-      tx,
-    );
-
-    // The DB compound FK (programId, curriculumId) -> Curriculum(programId, id)
-    // would reject a mismatch anyway, but checking here first gives a clear
-    // error message instead of a raw Prisma foreign-key-violation.
-    if (curriculum.programId !== programId) {
-      throw new BadRequestException(
-        `Curriculum ${curriculumId} does not belong to program ${programId}`,
-      );
-    }
+    await this.validateProgramAndCurriculum(programId, curriculumId, tx);
 
     try {
       return await tx.studentProfile.create({
@@ -72,6 +59,32 @@ export class StudentProfileService {
       }
       throw error;
     }
+  }
+
+  // Shared by StudentProfileService.create and StudentInvitationService.create
+  // (CONVENTIONS.md §6) — the DB compound FK (programId, curriculumId) ->
+  // Curriculum(programId, id) would reject a mismatch anyway, but checking
+  // here first gives a clear error message instead of a raw Prisma
+  // foreign-key-violation, and lets an invitation fail fast at creation
+  // time rather than weeks later when the student actually registers.
+  async validateProgramAndCurriculum(
+    programId: string,
+    curriculumId: string,
+    tx: PrismaClientOrTx = this.prisma,
+  ) {
+    await this.programService.findActiveByIdOrThrow(programId, tx);
+    const curriculum = await this.curriculumService.findActiveByIdOrThrow(
+      curriculumId,
+      tx,
+    );
+
+    if (curriculum.programId !== programId) {
+      throw new BadRequestException(
+        `Curriculum ${curriculumId} does not belong to program ${programId}`,
+      );
+    }
+
+    return curriculum;
   }
 
   // Used by StudentCourseRecordService (and future self-service modules,
