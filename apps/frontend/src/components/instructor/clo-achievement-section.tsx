@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageSection } from '@/components/layout/page-section';
 import { achievementStatus } from '@/lib/achievement-status';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 
@@ -107,7 +108,7 @@ export function CloAchievementSection({
 
   return (
     <div className="space-y-5">
-      <div className="space-y-2">
+      <PageSection title="ผลสัมฤทธิ์ CLO โดยรวม">
         <div className="flex items-center gap-3">
           <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
           <Badge tone={courseStatus.tone}>{courseStatus.label}</Badge>
@@ -127,9 +128,9 @@ export function CloAchievementSection({
         <p className="text-xs text-muted-foreground">
           ตัวเลขนี้คำนวณจากเกรดรายวิชา (สัดส่วนนักศึกษาที่ได้ ≥ B) ไม่ใช่จากคะแนนหลักฐานรายชิ้น
         </p>
-      </div>
+      </PageSection>
 
-      <div className="space-y-2">
+      <PageSection title="รายการ CLO">
         {clos.map((clo) => {
           // Same course-level achievementPercent for every CLO (backend
           // limitation), but each CLO may set its own threshold.
@@ -211,11 +212,10 @@ export function CloAchievementSection({
             </div>
           );
         })}
-      </div>
+      </PageSection>
 
       {plos.length > 0 && (
-        <div className="space-y-2 border-t border-slate-100 pt-3">
-          <p className="text-sm font-medium text-primary">PLO ที่เกี่ยวข้อง</p>
+        <PageSection title="PLO ที่เกี่ยวข้อง" className="border-t border-slate-100 pt-3">
           {plos.map((plo) => (
             <div key={plo.ploId} className="space-y-1">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -232,14 +232,14 @@ export function CloAchievementSection({
               />
             </div>
           ))}
-        </div>
+        </PageSection>
       )}
 
       {scoredAssessmentClos.length > 0 && (
-        <div className="space-y-2 border-t border-slate-100 pt-3">
-          <p className="text-sm font-medium text-primary">
-            คะแนนประเมินตนเองเฉลี่ยต่อ CLO (1-5)
-          </p>
+        <PageSection
+          title="คะแนนประเมินตนเองเฉลี่ยต่อ CLO (1-5)"
+          className="border-t border-slate-100 pt-3"
+        >
           {scoredAssessmentClos.map((c) => (
             <div key={c.cloId} className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
@@ -254,7 +254,7 @@ export function CloAchievementSection({
               <span className="font-medium text-primary">{c.averageScore!.toFixed(1)}</span>
             </div>
           ))}
-        </div>
+        </PageSection>
       )}
     </div>
   );
