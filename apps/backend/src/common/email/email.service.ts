@@ -92,4 +92,25 @@ export class EmailService {
     `;
     await this.sendMail({ to, subject, html });
   }
+
+  // Sent when STAFF creates/resends a StudentInvitation — the link lands
+  // on /register?invitationToken=..., which pre-fills the academic fields
+  // but still runs through the ordinary self-service register() call
+  // (see AuthService.register), never a shortcut that creates the account
+  // itself.
+  async sendStudentInvitationEmail(
+    to: string,
+    token: string,
+    fullName: string,
+  ): Promise<void> {
+    const registerUrl = `${this.frontendUrl}/register?invitationToken=${token}`;
+    const subject = 'คำเชิญเข้าใช้งาน EduAnalyzeAI';
+    const html = `
+      <p>สวัสดีคุณ ${fullName}</p>
+      <p>เจ้าหน้าที่เชิญคุณเข้าใช้งานระบบ EduAnalyzeAI กรุณากดลิงก์ด้านล่างเพื่อสมัครสมาชิกด้วยอีเมลนี้</p>
+      <p><a href="${registerUrl}">สมัครสมาชิก</a></p>
+      <p>ลิงก์นี้ใช้ได้ครั้งเดียวและหมดอายุใน 7 วัน หากคุณไม่ได้คาดหวังอีเมลนี้ กรุณาเพิกเฉย</p>
+    `;
+    await this.sendMail({ to, subject, html });
+  }
 }

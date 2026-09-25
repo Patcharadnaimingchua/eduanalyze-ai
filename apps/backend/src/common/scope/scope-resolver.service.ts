@@ -226,6 +226,16 @@ export class ScopeResolverService {
             })
           )?.programId ?? null,
       },
+      studentInvitation: {
+        label: 'Student invitation',
+        findProgramId: async (id) =>
+          (
+            await this.prisma.studentInvitation.findUnique({
+              where: { id },
+              select: { programId: true },
+            })
+          )?.programId ?? null,
+      },
     };
     return lookups[entity];
   }

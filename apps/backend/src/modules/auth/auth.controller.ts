@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   UseGuards,
@@ -65,6 +66,22 @@ export class AuthController {
     const { accessToken, refreshToken } = await this.authService.register(dto);
     this.setRefreshCookie(response, refreshToken);
     return { accessToken };
+  }
+
+  // Public, unauthenticated — the register page calls this before the
+  // visitor has any account, to pre-fill the academic fields a
+  // StudentInvitation carries. Pre-fill only; AuthService.register still
+  // re-resolves the invitation itself from the token, never trusting
+  // whatever the client echoes back from this response.
+  @Get('invitation/:token')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Preview a StudentInvitation for the register page to pre-fill',
+  })
+  @ApiResponse({ status: 200, description: 'Invitation details' })
+  @ApiResponse({ status: 401, description: 'Invitation expired or invalid' })
+  getInvitationPreview(@Param('token') token: string) {
+    return this.authService.getInvitationPreview(token);
   }
 
   @Post('login')

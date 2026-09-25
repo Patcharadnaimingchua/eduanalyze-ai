@@ -12,7 +12,8 @@ export type ScopeTargetEntity =
   | 'courseCategory'
   | 'curriculumRequirement'
   | 'prerequisite'
-  | 'studentProfile';
+  | 'studentProfile'
+  | 'studentInvitation';
 
 export interface ScopeTargetSource {
   from: 'param' | 'body';

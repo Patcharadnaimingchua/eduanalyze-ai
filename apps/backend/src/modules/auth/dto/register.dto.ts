@@ -1,8 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUUID,
   Matches,
@@ -30,20 +31,35 @@ export class RegisterDto {
   @MaxLength(255)
   fullName!: string;
 
-  @ApiProperty({ example: '6512345678' })
+  // studentCode/programId/curriculumId/admissionYear are optional at the
+  // DTO level and required-unless-invitationToken-is-present at the
+  // service level (same convention as CreateUserDto.scope — the rule
+  // depends on another field's value, not just this one's type). When an
+  // invitationToken is present, AuthService.register ignores whatever the
+  // client sends here and uses the invitation's own stored values instead.
+  @ApiPropertyOptional({ example: 'a1b2c3...' })
+  @IsOptional()
+  @IsString()
+  invitationToken?: string;
+
+  @ApiPropertyOptional({ example: '6512345678' })
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  studentCode!: string;
+  studentCode?: string;
 
-  @ApiProperty({ example: 'a3f1c2e4-1234-4a5b-9c6d-7e8f9a0b1c2d' })
+  @ApiPropertyOptional({ example: 'a3f1c2e4-1234-4a5b-9c6d-7e8f9a0b1c2d' })
+  @IsOptional()
   @IsUUID()
-  programId!: string;
+  programId?: string;
 
-  @ApiProperty({ example: 'b4f1c2e4-1234-4a5b-9c6d-7e8f9a0b1c2d' })
+  @ApiPropertyOptional({ example: 'b4f1c2e4-1234-4a5b-9c6d-7e8f9a0b1c2d' })
+  @IsOptional()
   @IsUUID()
-  curriculumId!: string;
+  curriculumId?: string;
 
-  @ApiProperty({ example: 2026 })
+  @ApiPropertyOptional({ example: 2026 })
+  @IsOptional()
   @IsInt()
-  admissionYear!: number;
+  admissionYear?: number;
 }

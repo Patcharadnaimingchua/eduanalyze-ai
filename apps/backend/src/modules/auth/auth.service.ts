@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -16,6 +17,7 @@ import { UserAuthMethodService } from '../users/user-auth-method/user-auth-metho
 import { StudentProfileService } from '../users/student-profile/student-profile.service';
 import { GooglePendingRegistrationService } from './google-pending-registration.service';
 import { PendingInvitationService } from './pending-invitation.service';
+import { StudentInvitationService } from './student-invitation.service';
 import { PasswordResetService } from './password-reset.service';
 import { EmailService } from '../../common/email/email.service';
 import { TwoFactorService } from './two-factor.service';
@@ -53,6 +55,7 @@ export class AuthService {
     private readonly studentProfileService: StudentProfileService,
     private readonly googlePendingRegistrationService: GooglePendingRegistrationService,
     private readonly pendingInvitationService: PendingInvitationService,
+    private readonly studentInvitationService: StudentInvitationService,
     private readonly passwordResetService: PasswordResetService,
     private readonly emailService: EmailService,
     private readonly twoFactorService: TwoFactorService,
@@ -62,6 +65,54 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const passwordHash = await hashPassword(dto.password);
+
+    // Invited path: academic fields always come from the StudentInvitation
+    // row, never from dto — a tampered client body can't smuggle a
+    // different program/curriculum/studentCode through a valid token.
+    // Only email is cross-checked (a token can't be replayed against a
+    // different address) and only fullName is allowed to differ (the
+    // student may correct a typo staff made).
+    if (dto.invitationToken) {
+      const invitation = await this.studentInvitationService.findValidByToken(
+        dto.invitationToken,
+      );
+      if (invitation.email !== dto.email) {
+        throw new BadRequestException(
+          'Email must match the one this invitation was sent to',
+        );
+      }
+
+      const user = await this.createStudentAccount(
+        {
+          email: dto.email,
+          passwordHash,
+          fullName: dto.fullName,
+          provider: AuthProvider.PASSWORD,
+          providerUserId: null,
+          studentCode: invitation.studentCode,
+          programId: invitation.programId,
+          curriculumId: invitation.curriculumId,
+          admissionYear: invitation.admissionYear,
+        },
+        (tx) => this.studentInvitationService.consume(invitation.id, tx),
+      );
+      return this.issueTokenPair(user);
+    }
+
+    // Uninvited (fully self-service) path — unchanged from before
+    // invitations existed. class-validator only marks these @IsOptional
+    // at the DTO level (the requirement depends on invitationToken's
+    // presence, not on studentCode's own type), so it's enforced here.
+    if (
+      !dto.studentCode ||
+      !dto.programId ||
+      !dto.curriculumId ||
+      dto.admissionYear === undefined
+    ) {
+      throw new BadRequestException(
+        'studentCode, programId, curriculumId, and admissionYear are required without an invitationToken',
+      );
+    }
 
     const user = await this.createStudentAccount({
       email: dto.email,
@@ -267,6 +318,30 @@ export class AuthService {
       });
       await this.pendingInvitationService.consume(pending.id, tx);
     });
+  }
+
+  // Public, unauthenticated — backs GET /auth/invitation/:token so the
+  // register page can pre-fill before the visitor has any account at all.
+  // Only ever reads; findValidByToken already throws on missing/expired.
+  async getInvitationPreview(token: string) {
+    const invitation = await this.studentInvitationService.findValidByToken(
+      token,
+    );
+    // The FK guarantees this row exists — no null-check branch needed,
+    // unlike a client-supplied id.
+    const curriculum = (await this.prisma.curriculum.findUnique({
+      where: { id: invitation.curriculumId },
+      select: { version: true, program: { select: { code: true } } },
+    }))!;
+
+    return {
+      email: invitation.email,
+      fullName: invitation.fullName,
+      studentCode: invitation.studentCode,
+      programCode: curriculum.program.code,
+      curriculumVersion: curriculum.version,
+      admissionYear: invitation.admissionYear,
+    };
   }
 
   async getMe(userId: string) {
