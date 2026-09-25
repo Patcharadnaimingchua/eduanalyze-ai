@@ -18,6 +18,7 @@ import {
   updateProgram,
 } from '@/lib/api/organization';
 import { ListSkeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/lib/toast-context';
 import { AddOrgEntity, OrgNodeRow } from './org-node-row';
 import { CurriculumPanel } from './curriculum-panel';
 
@@ -37,6 +38,7 @@ const byCode = <T extends { code: string }>(a: T, b: T) => a.code.localeCompare(
 export function OrgTree() {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toast = useToast();
 
   const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
   const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
@@ -79,6 +81,7 @@ export function OrgTree() {
         onCreate={async (values) => {
           await createFaculty(values);
           await refetchAll();
+          toast.success('เพิ่มคณะแล้ว');
         }}
       />
 
@@ -98,10 +101,12 @@ export function OrgTree() {
             onUpdate={async (values) => {
               await updateFaculty(faculty.id, values);
               await refetchAll();
+              toast.success('บันทึกคณะแล้ว');
             }}
             onDeactivate={async () => {
               await deleteFaculty(faculty.id);
               await refetchAll();
+              toast.success('ปิดใช้งานคณะแล้ว');
             }}
           >
             {departments.map((department) => {
@@ -118,10 +123,12 @@ export function OrgTree() {
                   onUpdate={async (values) => {
                     await updateDepartment(department.id, values);
                     await refetchAll();
+                    toast.success('บันทึกภาควิชาแล้ว');
                   }}
                   onDeactivate={async () => {
                     await deleteDepartment(department.id);
                     await refetchAll();
+                    toast.success('ปิดใช้งานภาควิชาแล้ว');
                   }}
                 >
                   {programs.map((program) => {
@@ -138,10 +145,12 @@ export function OrgTree() {
                         onUpdate={async (values) => {
                           await updateProgram(program.id, values);
                           await refetchAll();
+                          toast.success('บันทึกสาขาแล้ว');
                         }}
                         onDeactivate={async () => {
                           await deleteProgram(program.id);
                           await refetchAll();
+                          toast.success('ปิดใช้งานสาขาแล้ว');
                         }}
                       >
                         <CurriculumPanel
@@ -157,6 +166,7 @@ export function OrgTree() {
                     onCreate={async (values) => {
                       await createProgram({ ...values, departmentId: department.id });
                       await refetchAll();
+                      toast.success('เพิ่มสาขาแล้ว');
                     }}
                   />
                 </OrgNodeRow>
@@ -167,6 +177,7 @@ export function OrgTree() {
               onCreate={async (values) => {
                 await createDepartment({ ...values, facultyId: faculty.id });
                 await refetchAll();
+                toast.success('เพิ่มภาควิชาแล้ว');
               }}
             />
           </OrgNodeRow>

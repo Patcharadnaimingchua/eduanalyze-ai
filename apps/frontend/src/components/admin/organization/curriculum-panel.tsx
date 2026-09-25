@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { CurriculumListItem } from '@eduanalyze-ai/shared-types';
 import { createCurriculum, deleteCurriculum, updateCurriculum } from '@/lib/api/organization';
 import { curriculumSchema, type CurriculumFormValues } from '@/lib/validation/organization.schema';
+import { useToast } from '@/lib/toast-context';
 import { describeOrgWriteError } from './org-errors';
 import { DeactivateButton } from './deactivate-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,6 +35,7 @@ export function CurriculumPanel({
   onChanged: () => void;
 }) {
   const [adding, setAdding] = useState(false);
+  const toast = useToast();
   const sorted = [...curricula].sort((a, b) => b.effectiveYear - a.effectiveYear);
 
   return (
@@ -54,6 +56,7 @@ export function CurriculumPanel({
           }}
           onSubmit={async (values) => {
             await createCurriculum({ ...values, programId });
+            toast.success('เพิ่มหลักสูตรแล้ว');
             setAdding(false);
             onChanged();
           }}
@@ -78,6 +81,7 @@ function CurriculumCard({
   const [editing, setEditing] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function toggleRegistration() {
     setToggling(true);
@@ -86,6 +90,7 @@ function CurriculumCard({
       await updateCurriculum(curriculum.id, {
         isOpenForRegistration: !curriculum.isOpenForRegistration,
       });
+      toast.success(curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียนแล้ว' : 'เปิดรับลงทะเบียนแล้ว');
       onChanged();
     } catch (error) {
       setToggleError(describeOrgWriteError(error, VERSION_CONFLICT));
@@ -125,6 +130,7 @@ function CurriculumCard({
             conflictMessage="ปิดใช้งานไม่ได้ เพราะยังมีนักศึกษา รายวิชา หมวดวิชา หรือ PLO ที่ใช้งานอยู่ในหลักสูตรนี้"
             onConfirm={async () => {
               await deleteCurriculum(curriculum.id);
+              toast.success('ปิดใช้งานหลักสูตรแล้ว');
               onChanged();
             }}
           />
@@ -150,6 +156,7 @@ function CurriculumCard({
             }}
             onSubmit={async (values) => {
               await updateCurriculum(curriculum.id, values);
+              toast.success('บันทึกหลักสูตรแล้ว');
               setEditing(false);
               onChanged();
             }}
