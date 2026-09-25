@@ -8,9 +8,11 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export default function InstructorYearLevelsPage() {
@@ -49,20 +51,14 @@ function InstructorYearLevelsContent() {
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">ภาพรวมชั้นปี</h1>
-          <p className="text-sm text-muted-foreground">
-            นักศึกษาที่เคยเรียนวิชาของคุณ แบ่งตามชั้นปี (ไม่รวมนักศึกษาทั้งหลักสูตร)
-          </p>
-        </div>
+        <Reveal index={0}>
+          <PageHeader
+            title="ภาพรวมชั้นปี"
+            description="นักศึกษาที่เคยเรียนวิชาของคุณ แบ่งตามชั้นปี (ไม่รวมนักศึกษาทั้งหลักสูตร)"
+          />
+        </Reveal>
 
-        {query.isLoading && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-lg" />
-            ))}
-          </div>
-        )}
+        {query.isLoading && <StatCardsSkeleton count={4} />}
 
         {query.isError && (
           <Alert variant="destructive">
@@ -78,72 +74,76 @@ function InstructorYearLevelsContent() {
 
         {query.data && totalStudents > 0 && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {buckets.map((bucket) => {
-                const isExpanded = expandedLevel === bucket.yearLevel;
-                return (
-                  <button
-                    key={bucket.yearLevel}
-                    type="button"
-                    onClick={() => setExpandedLevel(isExpanded ? null : bucket.yearLevel)}
-                    className={cn(
-                      'rounded-lg border p-4 text-left transition',
-                      isExpanded
-                        ? 'border-brand bg-brand-light'
-                        : 'border-slate-200 hover:border-brand',
-                    )}
-                  >
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      <GraduationCap className="h-4 w-4 text-brand" />
-                      {bucket.label}
-                    </div>
-                    <p className="mt-2 text-2xl font-semibold text-primary">
-                      {bucket.students.length}
-                    </p>
-                    <p className="text-xs text-muted-foreground">คน</p>
-                  </button>
-                );
-              })}
-            </div>
+            <Reveal index={1}>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {buckets.map((bucket) => {
+                  const isExpanded = expandedLevel === bucket.yearLevel;
+                  return (
+                    <button
+                      key={bucket.yearLevel}
+                      type="button"
+                      onClick={() => setExpandedLevel(isExpanded ? null : bucket.yearLevel)}
+                      className={cn(
+                        'rounded-lg border p-4 text-left transition',
+                        isExpanded
+                          ? 'border-brand bg-brand-light'
+                          : 'border-slate-200 hover:border-brand',
+                      )}
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <GraduationCap className="h-4 w-4 text-brand" />
+                        {bucket.label}
+                      </div>
+                      <p className="mt-2 text-2xl font-semibold text-primary">
+                        {bucket.students.length}
+                      </p>
+                      <p className="text-xs text-muted-foreground">คน</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </Reveal>
 
             {expandedLevel !== null && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    รายชื่อนักศึกษา — {buckets.find((b) => b.yearLevel === expandedLevel)?.label}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const bucket = buckets.find((b) => b.yearLevel === expandedLevel);
-                    if (!bucket || bucket.students.length === 0) {
+              <Reveal index={2}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      รายชื่อนักศึกษา — {buckets.find((b) => b.yearLevel === expandedLevel)?.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const bucket = buckets.find((b) => b.yearLevel === expandedLevel);
+                      if (!bucket || bucket.students.length === 0) {
+                        return (
+                          <p className="text-sm text-muted-foreground">
+                            ไม่มีนักศึกษาในชั้นปีนี้
+                          </p>
+                        );
+                      }
                       return (
-                        <p className="text-sm text-muted-foreground">
-                          ไม่มีนักศึกษาในชั้นปีนี้
-                        </p>
+                        <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
+                          {bucket.students.map((s) => (
+                            <li
+                              key={s.studentProfileId}
+                              className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                            >
+                              <span className="min-w-0">
+                                <span className="text-muted-foreground">{s.studentCode}</span>{' '}
+                                <span className="text-primary">{s.fullName}</span>
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                เข้าศึกษาปี {s.admissionYear}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       );
-                    }
-                    return (
-                      <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
-                        {bucket.students.map((s) => (
-                          <li
-                            key={s.studentProfileId}
-                            className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                          >
-                            <span className="min-w-0">
-                              <span className="text-muted-foreground">{s.studentCode}</span>{' '}
-                              <span className="text-primary">{s.fullName}</span>
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              เข้าศึกษาปี {s.admissionYear}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
+                    })()}
+                  </CardContent>
+                </Card>
+              </Reveal>
             )}
           </div>
         )}
