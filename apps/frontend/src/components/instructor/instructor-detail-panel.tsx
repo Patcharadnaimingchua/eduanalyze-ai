@@ -136,7 +136,7 @@ export function InstructorDetailPanel({
             mounting only while this tab is active already keeps it from
             firing requests when unused, same net effect. */}
         {activeTab === 'evidence' && isInstructor && (
-          <AssessmentEvidenceSection courseId={course.courseId} />
+          <AssessmentEvidenceSection courseId={course.courseId} clos={course.clos} />
         )}
 
         {activeTab === 'course' && <CourseInfoSection course={course} />}

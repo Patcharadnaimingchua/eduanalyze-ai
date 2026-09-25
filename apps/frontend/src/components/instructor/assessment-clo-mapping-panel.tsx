@@ -5,11 +5,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import type { CloAchievementEntry } from '@eduanalyze-ai/shared-types';
 import {
   createAssessmentCloMapping,
   fetchAssessmentCloMappings,
 } from '@/lib/api/assessment-evidence';
-import { fetchClos } from '@/lib/api/course-assessment';
 import {
   assessmentCloMappingSchema,
   type AssessmentCloMappingFormValues,
@@ -25,11 +25,17 @@ import { ListSkeleton } from '@/components/ui/skeleton';
 
 export function AssessmentCloMappingPanel({
   courseId,
+  clos,
   assessmentDefinitionId,
   selectedMappingId,
   onSelect,
 }: {
   courseId: string;
+  // Scoped to this course already (course.clos from GET /dashboard/instructor)
+  // — never fetched from GET /clos, which INSTRUCTOR is not authorized to
+  // call (that endpoint returns the unscoped system-wide catalog; see
+  // clo.controller.ts and PROJECT_CONTEXT.md §9).
+  clos: CloAchievementEntry[];
   assessmentDefinitionId: string;
   selectedMappingId: string | null;
   onSelect: (mappingId: string, cloId: string) => void;
@@ -41,15 +47,10 @@ export function AssessmentCloMappingPanel({
     queryKey: ['assessment-clo-mappings', assessmentDefinitionId],
     queryFn: () => fetchAssessmentCloMappings(assessmentDefinitionId, courseId),
   });
-  const closQuery = useQuery({ queryKey: ['clos'], queryFn: fetchClos });
 
-  const clos = useMemo(
-    () => (closQuery.data ?? []).filter((c) => c.courseId === courseId),
-    [closQuery.data, courseId],
-  );
-  const cloById = useMemo(() => new Map(clos.map((c) => [c.id, c])), [clos]);
+  const cloById = useMemo(() => new Map(clos.map((c) => [c.cloId, c])), [clos]);
   const cloOptions: ComboboxOption[] = clos.map((c) => ({
-    value: c.id,
+    value: c.cloId,
     label: `${c.code} — ${c.description}`,
     searchText: `${c.code} ${c.description}`,
   }));

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { CloAchievementEntry } from '@eduanalyze-ai/shared-types';
 import { AssessmentDefinitionPanel } from './assessment-definition-panel';
 import { AssessmentCloMappingPanel } from './assessment-clo-mapping-panel';
 import { StudentScoreEntryPanel } from './student-score-entry-panel';
@@ -15,7 +16,13 @@ import { StudentScoreEntryPanel } from './student-score-entry-panel';
 // Feeds the new assessment-evidence infrastructure only — never reads or
 // writes CourseAssessmentCloScore (the 1-5 self-assessment) or the
 // grade-based CloAchievementService/PloAchievementService.
-export function AssessmentEvidenceSection({ courseId }: { courseId: string }) {
+export function AssessmentEvidenceSection({
+  courseId,
+  clos,
+}: {
+  courseId: string;
+  clos: CloAchievementEntry[];
+}) {
   const [selectedDefinitionId, setSelectedDefinitionId] = useState<string | null>(null);
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(null);
 
@@ -39,6 +46,7 @@ export function AssessmentEvidenceSection({ courseId }: { courseId: string }) {
       {selectedDefinitionId && (
         <AssessmentCloMappingPanel
           courseId={courseId}
+          clos={clos}
           assessmentDefinitionId={selectedDefinitionId}
           selectedMappingId={selectedMappingId}
           onSelect={(mappingId) => selectMapping(mappingId)}
