@@ -6,8 +6,10 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
+import { InstructorCourseGridSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
+import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -48,14 +50,14 @@ function InstructorMyCoursesContent() {
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">รายวิชาที่สอน</h1>
-          <p className="text-sm text-muted-foreground">
-            รายวิชาทั้งหมดที่คุณได้รับมอบหมายให้สอนในภาคการศึกษานี้
-          </p>
-        </div>
+        <Reveal index={0}>
+          <PageHeader
+            title="รายวิชาที่สอน"
+            description="รายวิชาทั้งหมดที่คุณได้รับมอบหมายให้สอนในภาคการศึกษานี้"
+          />
+        </Reveal>
 
-        {dashboardQuery.isLoading && <InstructorDashboardSkeleton />}
+        {dashboardQuery.isLoading && <InstructorCourseGridSkeleton />}
 
         {dashboardQuery.isError && (
           <Alert variant="destructive">
@@ -72,7 +74,9 @@ function InstructorMyCoursesContent() {
         )}
 
         {dashboardQuery.data && courses.length > 0 && (
-          <InstructorCourseGrid courses={courses} />
+          <Reveal index={1}>
+            <InstructorCourseGrid courses={courses} />
+          </Reveal>
         )}
       </DashboardShell>
     </RequireRole>
