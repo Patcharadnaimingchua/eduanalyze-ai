@@ -11,6 +11,7 @@ import type { LoginResponse, Role } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import { primaryRoleFor } from '@/lib/role-priority';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
 import {
@@ -44,17 +45,6 @@ export default function LoginPage() {
   );
 }
 
-// Highest privilege first — a user with multiple roles (e.g. a bootstrapped
-// STUDENT+SUPER_ADMIN account) lands on the dashboard for their most
-// privileged role.
-const ROLE_REDIRECT_PRIORITY: Role[] = [
-  'SUPER_ADMIN',
-  'ADMIN',
-  'STAFF',
-  'INSTRUCTOR',
-  'STUDENT',
-];
-
 const ROLE_HOME: Record<Role, string> = {
   SUPER_ADMIN: '/admin/users',
   ADMIN: '/admin/users',
@@ -63,9 +53,12 @@ const ROLE_HOME: Record<Role, string> = {
   STUDENT: '/dashboard',
 };
 
+// A user with multiple roles (e.g. a bootstrapped STUDENT+SUPER_ADMIN
+// account) lands on the dashboard for their most privileged role — same
+// priority order as primaryRoleFor, so this and any badge/label elsewhere
+// in the app never disagree on which role is "primary" for the account.
 function resolveHomeRoute(roles: Role[]): string {
-  const highestRole = ROLE_REDIRECT_PRIORITY.find((role) => roles.includes(role));
-  return highestRole ? ROLE_HOME[highestRole] : '/dashboard';
+  return ROLE_HOME[primaryRoleFor(roles)];
 }
 
 function LoginPageContent() {

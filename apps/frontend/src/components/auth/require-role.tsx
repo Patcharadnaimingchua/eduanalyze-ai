@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { SemanticTone } from '@/lib/tone';
 
+export { primaryRoleFor } from '@/lib/role-priority';
+
 export const ROLE_LABEL_TH: Record<Role, string> = {
   STUDENT: 'นักศึกษา',
   INSTRUCTOR: 'อาจารย์',
@@ -20,14 +22,6 @@ export const ROLE_BADGE_TONE: Record<Role, SemanticTone> = {
   ADMIN: 'warning',
   SUPER_ADMIN: 'danger',
 };
-
-export function primaryRoleFor(roles: Role[]): Role {
-  if (roles.includes('SUPER_ADMIN')) return 'SUPER_ADMIN';
-  if (roles.includes('ADMIN')) return 'ADMIN';
-  if (roles.includes('INSTRUCTOR')) return 'INSTRUCTOR';
-  if (roles.includes('STAFF')) return 'STAFF';
-  return 'STUDENT';
-}
 
 // Reproduces the inline-message role gate pattern copy-pasted across every
 // STUDENT page (e.g. app/dashboard/page.tsx's `isStudent` check) as a
