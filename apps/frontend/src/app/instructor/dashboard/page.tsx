@@ -16,6 +16,9 @@ import { CloAttentionCard } from '@/components/instructor/clo-attention-card';
 import { PloCoverageCard } from '@/components/instructor/plo-coverage-card';
 import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
 import { CourseInsightCard } from '@/components/instructor/course-insight-card';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -67,12 +70,12 @@ function InstructorDashboardContent() {
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
-        <div>
-          <h1 className="text-2xl font-semibold text-primary">แดชบอร์ดอาจารย์</h1>
-          <p className="text-sm text-muted-foreground">
-            ภาพรวมผลการเรียนและ CLO Achievement ของรายวิชาที่คุณสอน
-          </p>
-        </div>
+        <Reveal index={0}>
+          <PageHeader
+            title="แดชบอร์ดอาจารย์"
+            description="ภาพรวมผลการเรียนและ CLO Achievement ของรายวิชาที่คุณสอน"
+          />
+        </Reveal>
 
         {dashboardQuery.isLoading && <InstructorDashboardSkeleton />}
 
@@ -93,25 +96,47 @@ function InstructorDashboardContent() {
         {dashboardQuery.data && courses.length > 0 && (
           <>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <StatCard icon={BookOpen} label="รายวิชาที่สอน" value={courses.length} suffix="วิชา" />
-              <StatCard
-                icon={Users}
-                label="นักศึกษา (นับตามรายวิชา)"
-                value={enrollments}
-                suffix="คน"
-              />
-              <StatCard
-                icon={Target}
-                label="ผลสัมฤทธิ์เฉลี่ย (เกรด B ขึ้นไป)"
-                value={achievement === null ? '—' : `${Math.round(achievement)}%`}
-              />
+              <Reveal index={1}>
+                <StatCard icon={BookOpen} label="รายวิชาที่สอน" value={courses.length} suffix="วิชา" />
+              </Reveal>
+              <Reveal index={2}>
+                <StatCard
+                  icon={Users}
+                  label="นักศึกษา (นับตามรายวิชา)"
+                  value={enrollments}
+                  suffix="คน"
+                />
+              </Reveal>
+              <Reveal index={3}>
+                <StatCard
+                  icon={Target}
+                  label="ผลสัมฤทธิ์เฉลี่ย (เกรด B ขึ้นไป)"
+                  value={achievement === null ? '—' : `${Math.round(achievement)}%`}
+                />
+              </Reveal>
             </div>
-            <CourseInsightCard courses={courses} />
-            <AtRiskStudentsCard courses={courses} />
-            <CloAttentionCard courses={courses} />
-            <PloCoverageCard courses={courses} />
-            {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
-            <InstructorCourseGrid courses={courses} />
+            <Reveal index={4}>
+              <CourseInsightCard courses={courses} />
+            </Reveal>
+            <Reveal index={5}>
+              <AtRiskStudentsCard courses={courses} />
+            </Reveal>
+            <Reveal index={6}>
+              <CloAttentionCard courses={courses} />
+            </Reveal>
+            <Reveal index={7}>
+              <PloCoverageCard courses={courses} />
+            </Reveal>
+            {courses.length >= 2 && (
+              <Reveal index={8}>
+                <CourseComparisonChart courses={courses} />
+              </Reveal>
+            )}
+            <Reveal index={courses.length >= 2 ? 9 : 8}>
+              <PageSection title="รายวิชาที่สอน">
+                <InstructorCourseGrid courses={courses} />
+              </PageSection>
+            </Reveal>
           </>
         )}
       </DashboardShell>
