@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -12,6 +13,7 @@ import {
   LineChart,
   ListChecks,
   LogOut,
+  Menu,
   Network,
   Target,
   Users,
@@ -20,6 +22,7 @@ import {
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 interface NavItem {
   label: string;
@@ -90,66 +93,93 @@ export function DashboardShell({
   const pathname = usePathname();
   const navItems = navItemsForRole(role);
   const shownIdentity = identityLabel ?? studentCode;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // A nav link inside the drawer should dismiss it, not leave it open over
+  // the newly-navigated page.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  const sidebarContent = (
+    <>
+      <div className="mb-8 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand">
+          <GraduationCap size={18} className="text-brand-light" />
+        </div>
+        <div>
+          <p className="text-sm font-medium leading-tight text-primary">EduAnalyze</p>
+          <p className="text-xs leading-tight text-muted-foreground">Academic Insights</p>
+        </div>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-1">
+        {navItems.map(({ label, icon: Icon, href }) => {
+          // Per-course pages have no nav entry of their own — keep the
+          // instructor overview highlighted while inside one.
+          const active =
+            pathname === href ||
+            (href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/'));
+
+          return (
+            <Link
+              key={label}
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
+                active ? 'bg-brand-light text-brand' : 'text-slate-600 hover:bg-slate-50',
+              )}
+            >
+              <Icon size={16} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={() => logout()}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
+        >
+          <LogOut size={16} />
+          Sign Out
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div className="flex min-h-screen bg-white">
-      <aside className="flex w-64 flex-col border-r border-slate-100 p-6">
-        <div className="mb-8 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand">
-            <GraduationCap size={18} className="text-brand-light" />
-          </div>
-          <div>
-            <p className="text-sm font-medium leading-tight text-primary">EduAnalyze</p>
-            <p className="text-xs leading-tight text-muted-foreground">Academic Insights</p>
-          </div>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map(({ label, icon: Icon, href }) => {
-            // Per-course pages have no nav entry of their own — keep the
-            // instructor overview highlighted while inside one.
-            const active =
-              pathname === href ||
-              (href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/'));
-
-            return (
-              <Link
-                key={label}
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition',
-                  active ? 'bg-brand-light text-brand' : 'text-slate-600 hover:bg-slate-50',
-                )}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
+      <aside className="hidden w-64 flex-col border-r border-slate-100 p-6 md:flex">
+        {sidebarContent}
       </aside>
 
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent side="left" className="md:hidden">
+          {sidebarContent}
+        </SheetContent>
+      </Sheet>
+
       <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-end border-b border-slate-100 px-8 py-4">
+        <header className="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:justify-end md:px-8">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex items-center justify-center rounded-lg p-2 text-slate-600 hover:bg-slate-50 md:hidden"
+            aria-label="เปิดเมนู"
+          >
+            <Menu size={20} />
+          </button>
           <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
             {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
             <span className="font-medium text-primary">{fullName}</span>
           </Link>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
