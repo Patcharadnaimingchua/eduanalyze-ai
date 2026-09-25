@@ -36,3 +36,41 @@ export function aggregateInstructorPlos(courses: InstructorCourseSummary[]): Rad
     }))
     .sort((a, b) => a.code.localeCompare(b.code));
 }
+
+export interface PloCourseContribution {
+  courseId: string;
+  code: string;
+  name: string;
+  achievementPercent: number; // this course's own PLO achievement, not the weighted average above
+  // CoursePloEntry has no PLO-specific threshold (a PLO's percent is a
+  // weighted average of its constituent CLOs' pass rates, not a single
+  // bar of its own) — the course's own achievementThreshold is the same
+  // bar CloAttentionCard judges this course's CLOs against.
+  achievementThreshold: number;
+}
+
+// Reverse-index of the same courses[].plos[] data aggregateInstructorPlos()
+// reads — "which courses feed this PLO" instead of "one number per PLO".
+// Sorted worst-first, matching CourseComparisonChart's convention.
+export function coursesByPlo(
+  courses: InstructorCourseSummary[],
+): Map<string, PloCourseContribution[]> {
+  const map = new Map<string, PloCourseContribution[]>();
+  for (const course of courses) {
+    for (const plo of course.plos) {
+      const list = map.get(plo.ploId) ?? [];
+      list.push({
+        courseId: course.courseId,
+        code: course.code,
+        name: course.name,
+        achievementPercent: plo.achievementPercent,
+        achievementThreshold: course.achievementThreshold,
+      });
+      map.set(plo.ploId, list);
+    }
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => a.achievementPercent - b.achievementPercent);
+  }
+  return map;
+}

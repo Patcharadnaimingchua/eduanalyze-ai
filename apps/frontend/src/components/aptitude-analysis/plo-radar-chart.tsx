@@ -25,6 +25,8 @@ export function PloRadarChart({
   title = 'Radar ความสำเร็จตาม PLO',
   threshold,
   footer,
+  selectedPloId,
+  onSelectPlo,
 }: {
   radar: RadarPoint[];
   size?: number;
@@ -36,6 +38,12 @@ export function PloRadarChart({
   // visual noise at that size).
   threshold?: number;
   footer?: ReactNode;
+  // Both optional and unused by the two student callers (/aptitude-analysis,
+  // Dashboard's PloRadarCard) — instructor's PloCoverageCard is the only
+  // caller that passes them, to let a point's own hit-circle double as a
+  // click target alongside its pill-row selector.
+  selectedPloId?: string | null;
+  onSelectPlo?: (ploId: string) => void;
 }) {
   const total = radar.length;
   const center = size / 2;
@@ -145,7 +153,14 @@ export function PloRadarChart({
               <TooltipTrigger asChild>
                 {/* Transparent oversized circle as the hover hit-target —
                     the visible r=3 dot below stays the same size as before. */}
-                <circle cx={p.x} cy={p.y} r={9} fill="transparent" />
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={9}
+                  fill="transparent"
+                  onClick={() => onSelectPlo?.(radar[i].ploId)}
+                  className={onSelectPlo ? 'cursor-pointer' : undefined}
+                />
               </TooltipTrigger>
               <TooltipContent>
                 {radar[i].code}: {formatFiveScale(radar[i].value, 'ไม่มีข้อมูล')}
@@ -161,6 +176,21 @@ export function PloRadarChart({
               className="pointer-events-none animate-radar-dot fill-brand motion-reduce:animate-none"
             />
           ))}
+          {selectedPloId != null &&
+            dataPoints.map(
+              (p, i) =>
+                radar[i].ploId === selectedPloId && (
+                  <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={6}
+                    aria-hidden="true"
+                    className="pointer-events-none fill-none stroke-brand"
+                    strokeWidth={2}
+                  />
+                ),
+            )}
 
           {/* Labels */}
           {radar.map((plo, i) => {
