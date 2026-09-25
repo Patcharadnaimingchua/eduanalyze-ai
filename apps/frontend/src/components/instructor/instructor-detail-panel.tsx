@@ -124,6 +124,7 @@ export function InstructorDetailPanel({
           <StudentRosterTable
             courseId={course.courseId}
             courseCode={course.code}
+            clos={course.clos}
             roster={rosterQuery.data}
             isLoading={rosterQuery.isLoading}
             isError={rosterQuery.isError}

@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { Download, Search } from 'lucide-react';
-import type { Grade, RiskLevel, StudentRosterEntry } from '@eduanalyze-ai/shared-types';
+import type {
+  CloAchievementEntry,
+  Grade,
+  RiskLevel,
+  StudentRosterEntry,
+} from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
@@ -60,6 +65,7 @@ function describeWriteError(error: unknown) {
 export function StudentRosterTable({
   courseId,
   courseCode,
+  clos,
   roster,
   isLoading,
   isError,
@@ -67,6 +73,7 @@ export function StudentRosterTable({
 }: {
   courseId: string;
   courseCode: string;
+  clos: CloAchievementEntry[];
   roster: StudentRosterEntry[] | undefined;
   isLoading: boolean;
   isError: boolean;
@@ -356,15 +363,23 @@ export function StudentRosterTable({
         </div>
         {/* self-start stops the grid stretching this cell to the row
             height, which would leave sticky with nothing to scroll past. */}
-        {selectedStudentId && (
-          <div className="lg:sticky lg:top-4 lg:self-start">
-            <StudentTimelineCard
-              courseId={courseId}
-              studentProfileId={selectedStudentId}
-              onClose={() => setSelectedStudentId(null)}
-            />
-          </div>
-        )}
+        {selectedStudentId &&
+          (() => {
+            const selected = visibleRoster.find((s) => s.studentProfileId === selectedStudentId);
+            if (!selected) return null;
+            return (
+              <div className="lg:sticky lg:top-4 lg:self-start">
+                <StudentTimelineCard
+                  courseId={courseId}
+                  courseCode={courseCode}
+                  studentProfileId={selectedStudentId}
+                  studentCourseRecordId={selected.studentCourseRecordId}
+                  clos={clos}
+                  onClose={() => setSelectedStudentId(null)}
+                />
+              </div>
+            );
+          })()}
       </div>
     </div>
   );
