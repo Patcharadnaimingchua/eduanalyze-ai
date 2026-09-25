@@ -1,7 +1,8 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -12,6 +13,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ScopeGuard } from '../../common/guards/scope.guard';
 import { RequestUser } from '../auth/request-user.interface';
+import { RiskLevel } from '../academic-record/student-course-record/grade-point.constant';
 import { DashboardService } from './dashboard.service';
 
 @ApiTags('dashboard')
@@ -47,6 +49,33 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Instructor dashboard report' })
   getInstructorDashboard(@CurrentUser() user: RequestUser) {
     return this.dashboardService.getInstructorDashboard(user);
+  }
+
+  // No client-supplied courseId to validate against another user —
+  // courseId here is only an optional narrowing filter, resolved against
+  // this instructor's own course set inside the service. Same posture as
+  // getInstructorDashboard above: @Roles('INSTRUCTOR') alone is enough.
+  @Get('instructor/students')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR')
+  @ApiBearerAuth('access-token')
+  @ApiQuery({ name: 'courseId', required: false })
+  @ApiQuery({ name: 'riskLevel', required: false, enum: ['CRITICAL', 'WATCH', 'NORMAL'] })
+  @ApiOperation({
+    summary:
+      "Student Monitoring — one row per (student, course) pair across ALL of the instructor's own courses, filterable by course/risk level",
+  })
+  @ApiResponse({ status: 200, description: 'Instructor students report' })
+  getInstructorStudents(
+    @CurrentUser() user: RequestUser,
+    @Query('courseId') courseId?: string,
+    @Query('riskLevel') riskLevelParam?: RiskLevel,
+  ) {
+    return this.dashboardService.getInstructorStudents(
+      user,
+      courseId,
+      riskLevelParam,
+    );
   }
 
   @Get('staff')

@@ -875,6 +875,51 @@ export interface InstructorDashboardReport {
   courses: InstructorCourseSummary[];
 }
 
+// ---- GET /dashboard/instructor/students ----
+// One row per (student, course) pair across ALL of the instructor's
+// courses — unlike StudentRosterEntry (single-course only), a student
+// taking two of the instructor's courses appears here twice, once per
+// course context.
+export interface InstructorStudentEntry {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  grade: Grade;
+  riskLevel: RiskLevel;
+}
+
+export interface InstructorStudentsReport {
+  // For the filter dropdown — every course this instructor teaches,
+  // regardless of any courseId/riskLevel filter already applied to
+  // `students` below.
+  courses: { courseId: string; code: string; name: string }[];
+  students: InstructorStudentEntry[];
+}
+
+// ---- GET /dashboard/instructor/year-levels ----
+export interface YearLevelBucket {
+  // 1-4; students admitted earlier than 4 years ago collapse into
+  // bucket 4 ("ปี 4 ขึ้นไป") rather than an unbounded number of buckets.
+  yearLevel: number;
+  label: string;
+  students: {
+    studentProfileId: string;
+    studentCode: string;
+    fullName: string;
+    admissionYear: number;
+  }[];
+}
+
+export interface InstructorYearLevelsReport {
+  // Derived as MAX(year) among active AcademicYear rows — there is no
+  // stored "current academic year" field in the schema.
+  currentAcademicYear: number;
+  buckets: YearLevelBucket[];
+}
+
 // clos here shares one course-level achievementPercent across every entry
 // (a backend/schema limitation, not a frontend bug) — do not try to derive
 // per-CLO percentages from it.

@@ -1,6 +1,8 @@
 import type {
   CourseCloAchievementReport,
   InstructorDashboardReport,
+  InstructorStudentsReport,
+  RiskLevel,
   StudentInstructorTimeline,
   StudentRosterEntry,
 } from '@eduanalyze-ai/shared-types';
@@ -8,6 +10,16 @@ import { apiClient } from '../api-client';
 
 export async function fetchInstructorDashboard() {
   const { data } = await apiClient.get<InstructorDashboardReport>('/dashboard/instructor');
+  return data;
+}
+
+export async function fetchInstructorStudents(params: {
+  courseId?: string;
+  riskLevel?: RiskLevel;
+}) {
+  const { data } = await apiClient.get<InstructorStudentsReport>('/dashboard/instructor/students', {
+    params,
+  });
   return data;
 }
 

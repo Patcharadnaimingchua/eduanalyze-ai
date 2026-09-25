@@ -29,6 +29,8 @@ import {
   CurriculumDataState,
   InstructorCourseSummary,
   InstructorDashboardReport,
+  InstructorStudentEntry,
+  InstructorStudentsReport,
   ProblematicCloEntry,
   ProblematicPloEntry,
   RecentCourse,
@@ -277,6 +279,95 @@ export class DashboardService {
     );
 
     return { courses: courseSummaries };
+  }
+
+  // Flat list across ALL of the instructor's own courses at once, unlike
+  // getStudentRosterForCourse (single-course only) — for filtering by
+  // course/risk without leaving the page. Self-scoped like
+  // getInstructorDashboard (no client-supplied :courseId to validate
+  // against another user — courseId here is only an optional narrowing
+  // filter, checked against the instructor's own course set below, never
+  // trusted directly), so @Roles('INSTRUCTOR') alone is sufficient, no
+  // extra guard needed.
+  async getInstructorStudents(
+    user: RequestUser,
+    courseId?: string,
+    riskLevelFilter?: RiskLevel,
+  ): Promise<InstructorStudentsReport> {
+    const courses = await this.courseService.findMyCourses(user.userId);
+    const courseById = new Map(courses.map((c) => [c.id, c]));
+
+    // An unrecognized/foreign courseId silently yields zero rows rather
+    // than a 403 — this is a self-service list filter, not record access.
+    const courseIds = courseId
+      ? courseById.has(courseId)
+        ? [courseId]
+        : []
+      : courses.map((c) => c.id);
+
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForCourses(
+        courseIds,
+      );
+
+    // Deduped PER COURSE, not globally per student — a student taking two
+    // of this instructor's courses needs two rows, one per course context.
+    const recordsByCourse = groupBy(records, (r) => r.courseId);
+    const latestPerCoursePerStudent = [...recordsByCourse.entries()].flatMap(
+      ([cId, courseRecords]) => {
+        const latest =
+          this.studentCourseRecordService.dedupeLatestPerStudent(
+            courseRecords,
+          );
+        return [...latest.values()].map((attempt) => ({
+          courseId: cId,
+          attempt,
+        }));
+      },
+    );
+
+    const studentProfileIds = new Set(
+      latestPerCoursePerStudent.map(({ attempt }) => attempt.studentProfileId),
+    );
+    const profiles =
+      studentProfileIds.size > 0
+        ? await this.prisma.studentProfile.findMany({
+            where: { id: { in: [...studentProfileIds] } },
+            select: {
+              id: true,
+              studentCode: true,
+              user: { select: { fullName: true } },
+            },
+          })
+        : [];
+    const profileById = new Map(profiles.map((p) => [p.id, p]));
+
+    const students: InstructorStudentEntry[] = latestPerCoursePerStudent
+      .map(({ courseId: cId, attempt }) => {
+        const profile = profileById.get(attempt.studentProfileId)!;
+        const course = courseById.get(cId)!;
+        return {
+          studentProfileId: attempt.studentProfileId,
+          studentCode: profile.studentCode,
+          fullName: profile.user.fullName,
+          courseId: cId,
+          courseCode: course.code,
+          courseName: course.name,
+          grade: attempt.grade,
+          riskLevel: riskLevel(attempt.grade),
+        };
+      })
+      .filter((s) => !riskLevelFilter || s.riskLevel === riskLevelFilter)
+      .sort((a, b) => a.studentCode.localeCompare(b.studentCode));
+
+    return {
+      courses: courses.map((c) => ({
+        courseId: c.id,
+        code: c.code,
+        name: c.name,
+      })),
+      students,
+    };
   }
 
   async getCurriculumDashboard(
