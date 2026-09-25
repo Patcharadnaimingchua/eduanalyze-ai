@@ -134,9 +134,11 @@ export function PloRadarChart({
               color-opacity utilities require to work. */}
           <polygon
             points={polygonPoints}
-            className="fill-brand stroke-brand"
+            className="animate-radar-shape fill-brand stroke-brand motion-reduce:animate-none"
             fillOpacity={0.2}
             strokeWidth={2}
+            pathLength={1}
+            strokeDasharray={1}
           />
           {dataPoints.map((p, i) => (
             <Tooltip key={radar[i].ploId}>
@@ -151,7 +153,13 @@ export function PloRadarChart({
             </Tooltip>
           ))}
           {dataPoints.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={3} className="pointer-events-none fill-brand" />
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={3}
+              className="pointer-events-none animate-radar-dot fill-brand motion-reduce:animate-none"
+            />
           ))}
 
           {/* Labels */}

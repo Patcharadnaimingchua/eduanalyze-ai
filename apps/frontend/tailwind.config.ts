@@ -66,11 +66,27 @@ const config: Config = {
           '60%': { transform: 'scale(1.25)' },
           '100%': { transform: 'scale(1)' },
         },
+        // Pair with pathLength={1} strokeDasharray={1} on the SVG shape.
+        'radar-draw': {
+          from: { strokeDashoffset: '1' },
+          to: { strokeDashoffset: '0' },
+        },
+        'radar-fill': {
+          from: { fillOpacity: '0' },
+          to: { fillOpacity: '0.2' },
+        },
+        'radar-dot': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.5s ease-in-out infinite',
         // Delayed so it lands after the toast's 300ms slide-in.
         pop: 'pop 400ms ease-out 200ms both',
+        // Outline draws first, then the fill and vertex dots settle in.
+        'radar-shape': 'radar-draw 900ms ease-out both, radar-fill 500ms ease-out 600ms both',
+        'radar-dot': 'radar-dot 300ms ease-out 800ms both',
       },
     },
   },
