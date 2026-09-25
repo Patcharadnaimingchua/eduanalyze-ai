@@ -11,6 +11,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { InstructorCourseSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
+import { CourseTabStrip } from '@/components/instructor/course-tab-strip';
 import {
   InstructorDetailPanel,
   parseInstructorTab,
@@ -86,6 +87,14 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
           <ArrowLeft size={14} />
           กลับไปภาพรวม
         </Link>
+
+        {dashboardQuery.data && (
+          <CourseTabStrip
+            courses={dashboardQuery.data.courses}
+            activeCourseId={courseId}
+            tabParam={tabParam}
+          />
+        )}
 
         {dashboardQuery.isLoading && <InstructorCourseSkeleton />}
 
