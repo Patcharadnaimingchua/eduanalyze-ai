@@ -4,6 +4,8 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { OrgTree } from '@/components/admin/organization/org-tree';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -33,13 +35,15 @@ function OrganizationAdminContent() {
 
   return (
     <DashboardShell role="SUPER_ADMIN" identityLabel={user.email} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">โครงสร้างองค์กร</h1>
-        <p className="text-sm text-muted-foreground">
-          จัดการคณะ ภาควิชา สาขา และหลักสูตร — การปิดใช้งานทำได้เมื่อไม่มีข้อมูลที่ใช้งานอยู่ภายใต้รายการนั้น
-        </p>
-      </div>
-      <OrgTree />
+      <Reveal index={0}>
+        <PageHeader
+          title="โครงสร้างองค์กร"
+          description="จัดการคณะ ภาควิชา สาขา และหลักสูตร — การปิดใช้งานทำได้เมื่อไม่มีข้อมูลที่ใช้งานอยู่ภายใต้รายการนั้น"
+        />
+      </Reveal>
+      <Reveal index={1}>
+        <OrgTree />
+      </Reveal>
     </DashboardShell>
   );
 }
