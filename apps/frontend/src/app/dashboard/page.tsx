@@ -141,7 +141,11 @@ function DashboardCards({
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
             value={`${Math.round(animatedProgress)}%`}
             footer={
-              <Progress value={animatedProgress} label="ความพร้อมสำหรับการสำเร็จการศึกษา" />
+              <Progress
+                value={animatedProgress}
+                label="ความพร้อมสำหรับการสำเร็จการศึกษา"
+                barClassName="transition-none"
+              />
             }
           />
         </Reveal>
