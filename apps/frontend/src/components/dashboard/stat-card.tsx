@@ -18,7 +18,7 @@ interface StatCardProps {
 // .creditsMet → "On Track"), never a placeholder number.
 export function StatCard({ icon: Icon, label, value, suffix, badge, footer }: StatCardProps) {
   return (
-    <Card className="h-full">
+    <Card className="h-full transition-[transform,box-shadow] duration-200 ease-out md:hover:-translate-y-0.5 md:hover:shadow-md">
       <CardContent className="pt-6">
         <div className="mb-3 flex items-start justify-between">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-light">
