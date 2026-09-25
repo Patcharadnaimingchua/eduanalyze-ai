@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourses } from '@/lib/api/academic-record';
 import { fetchPrerequisites } from '@/lib/api/staff';
+import { PageSection } from '@/components/layout/page-section';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -21,8 +22,7 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-primary">ข้อมูลรายวิชา</h3>
+      <PageSection title="ข้อมูลรายวิชา">
         {isLoading && (
           <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -54,10 +54,9 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
             </div>
           </dl>
         )}
-      </section>
+      </PageSection>
 
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold text-primary">วิชาที่ต้องผ่านก่อน (Prerequisite)</h3>
+      <PageSection title="วิชาที่ต้องผ่านก่อน (Prerequisite)">
         {!isLoading && !isError && prerequisites.length === 0 && (
           <p className="text-sm text-muted-foreground">รายวิชานี้ไม่มีวิชาที่ต้องผ่านก่อน</p>
         )}
@@ -74,7 +73,7 @@ export function CourseInfoSection({ course }: { course: InstructorCourseSummary 
             })}
           </ul>
         )}
-      </section>
+      </PageSection>
     </div>
   );
 }
