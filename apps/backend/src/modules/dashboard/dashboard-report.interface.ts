@@ -102,17 +102,19 @@ export interface InstructorStudentsReport {
   students: InstructorStudentEntry[];
 }
 
-export interface YearLevelBucket {
+export interface YearLevelStudent {
+  studentProfileId: string;
+  studentCode: string;
+  fullName: string;
+  admissionYear: number;
+}
+
+export interface YearLevelBucket<T extends YearLevelStudent = YearLevelStudent> {
   // 1-4; students admitted earlier than 4 years ago collapse into
   // bucket 4 ("ปี 4 ขึ้นไป") rather than an unbounded number of buckets.
   yearLevel: number;
   label: string;
-  students: {
-    studentProfileId: string;
-    studentCode: string;
-    fullName: string;
-    admissionYear: number;
-  }[];
+  students: T[];
 }
 
 export interface InstructorYearLevelsReport {

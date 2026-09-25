@@ -44,6 +44,7 @@ import {
   SystemCurriculumEntry,
   SystemCurriculumOverviewReport,
   YearLevelBucket,
+  YearLevelStudent,
 } from './dashboard-report.interface';
 import { RadarPoint } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 
@@ -386,10 +387,7 @@ export class DashboardService {
 
   // Students grouped by year level (1-4), scoped to only students who
   // have taken a course with THIS instructor — never program/curriculum
-  // -wide. currentAcademicYear has no dedicated field in the schema
-  // (AcademicYear.isActive is a soft-delete flag, not a "current" flag),
-  // so it's derived as MAX(year) among active AcademicYear rows.
-  // Constant 4 queries regardless of course/student count: findMyCourses,
+  // -wide. Constant 4 queries regardless of course/student count: findMyCourses,
   // findActiveRecordsForCourses, studentProfile.findMany,
   // academicYear.findAll — everything else is a single in-memory pass,
   // mirroring PloAchievementService.calculateForCurriculum's
@@ -421,36 +419,50 @@ export class DashboardService {
           })
         : [];
 
-    const academicYears = await this.academicYearService.findAll();
-    const currentAcademicYear =
-      academicYears.length > 0
-        ? Math.max(...academicYears.map((y) => y.year))
-        : new Date().getFullYear();
+    const currentAcademicYear = await this.resolveCurrentAcademicYear();
+    return {
+      currentAcademicYear,
+      buckets: this.bucketByYearLevel(
+        profiles.map((profile) => ({
+          studentProfileId: profile.id,
+          studentCode: profile.studentCode,
+          fullName: profile.user.fullName,
+          admissionYear: profile.admissionYear,
+        })),
+        currentAcademicYear,
+      ),
+    };
+  }
 
-    const buckets = new Map<number, YearLevelBucket['students']>();
-    for (const profile of profiles) {
-      const rawLevel = currentAcademicYear - profile.admissionYear + 1;
+  // No stored "current academic year" in the schema (AcademicYear.isActive
+  // is a soft-delete flag), so it's MAX(year) among active rows.
+  private async resolveCurrentAcademicYear(): Promise<number> {
+    const academicYears = await this.academicYearService.findAll();
+    return academicYears.length > 0
+      ? Math.max(...academicYears.map((y) => y.year))
+      : new Date().getFullYear();
+  }
+
+  private bucketByYearLevel<T extends YearLevelStudent>(
+    students: T[],
+    currentAcademicYear: number,
+  ): YearLevelBucket<T>[] {
+    const buckets = new Map<number, T[]>();
+    for (const student of students) {
+      const rawLevel = currentAcademicYear - student.admissionYear + 1;
       const yearLevel = Math.min(Math.max(rawLevel, 1), 4);
       const bucket = buckets.get(yearLevel) ?? [];
-      bucket.push({
-        studentProfileId: profile.id,
-        studentCode: profile.studentCode,
-        fullName: profile.user.fullName,
-        admissionYear: profile.admissionYear,
-      });
+      bucket.push(student);
       buckets.set(yearLevel, bucket);
     }
 
-    return {
-      currentAcademicYear,
-      buckets: [1, 2, 3, 4].map((yearLevel) => ({
-        yearLevel,
-        label: YEAR_LEVEL_LABELS[yearLevel],
-        students: (buckets.get(yearLevel) ?? []).sort((a, b) =>
-          a.studentCode.localeCompare(b.studentCode),
-        ),
-      })),
-    };
+    return [1, 2, 3, 4].map((yearLevel) => ({
+      yearLevel,
+      label: YEAR_LEVEL_LABELS[yearLevel],
+      students: (buckets.get(yearLevel) ?? []).sort((a, b) =>
+        a.studentCode.localeCompare(b.studentCode),
+      ),
+    }));
   }
 
   async getCurriculumDashboard(
