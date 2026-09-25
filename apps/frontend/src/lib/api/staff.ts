@@ -10,6 +10,7 @@ import type {
   InstructorListItem,
   Prerequisite,
   StaffOverviewReport,
+  StaffYearLevelsReport,
   StaffStudentRiskEntry,
   StudentCourseRecord,
   StudentProfileSummary,
@@ -144,5 +145,10 @@ export async function fetchStaffStudentRisk() {
   const { data } = await apiClient.get<StaffStudentRiskEntry[]>(
     '/dashboard/staff/students',
   );
+  return data;
+}
+
+export async function fetchStaffYearLevels() {
+  const { data } = await apiClient.get<StaffYearLevelsReport>('/dashboard/staff/year-levels');
   return data;
 }

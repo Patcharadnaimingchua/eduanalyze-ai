@@ -63,6 +63,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
 const STAFF_NAV_ITEMS: NavItem[] = [
   { label: 'แดชบอร์ด', icon: LayoutGrid, href: '/staff/dashboard' },
   { label: 'ทำเนียบนักศึกษา', icon: Users, href: '/staff/students' },
+  { label: 'ภาพรวมชั้นปี', icon: GraduationCap, href: '/staff/year-levels' },
   { label: 'ข้อมูลหลักสูตร', icon: BookOpen, href: '/staff/curriculum' },
 ];
 
