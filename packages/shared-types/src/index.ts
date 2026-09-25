@@ -9,10 +9,15 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
-  studentCode: string;
-  programId: string;
-  curriculumId: string;
-  admissionYear: number;
+  // Required unless invitationToken is set — when it is, the server
+  // ignores these four and uses the StudentInvitation's own stored values
+  // instead (see AuthService.register). Optional here only so the invited
+  // flow can omit them entirely.
+  studentCode?: string;
+  programId?: string;
+  curriculumId?: string;
+  admissionYear?: number;
+  invitationToken?: string;
 }
 
 export interface LoginRequest {
@@ -240,6 +245,48 @@ export interface StaffOverviewReport {
   // Capped worst-first preview — counts below cover the whole scope.
   atRiskStudents: StaffAtRiskStudent[];
   atRiskSummary: { critical: number; watch: number };
+}
+
+// ---- POST/GET /student-invitations — STAFF bulk-invites prospective
+// STUDENTs. A row here is a token-gated draft, never itself an account —
+// see PROJECT_CONTEXT.md §17 "NO REG IMPORT" and the schema.prisma comment
+// on StudentInvitation for why. The invited person still self-registers
+// via POST /auth/register with invitationToken set.
+
+export interface CreateStudentInvitationRequest {
+  email: string;
+  fullName: string;
+  studentCode: string;
+  programId: string;
+  curriculumId: string;
+  admissionYear: number;
+}
+
+export interface StudentInvitationListEntry {
+  id: string;
+  email: string;
+  fullName: string;
+  studentCode: string;
+  programId: string;
+  curriculumId: string;
+  admissionYear: number;
+  expiresAt: string;
+  createdAt: string;
+  program: { code: string; name: string };
+}
+
+// GET /auth/invitation/:token — public, unauthenticated preview so the
+// register page can pre-fill before the visitor has any account. Program/
+// curriculum are surfaced by human-readable code/version, not raw ids —
+// register() still re-resolves everything from the token server-side
+// regardless of what the client echoes back.
+export interface StudentInvitationPreview {
+  email: string;
+  fullName: string;
+  studentCode: string;
+  programCode: string;
+  curriculumVersion: string;
+  admissionYear: number;
 }
 
 // ---- GET /dashboard/curricula — SUPER_ADMIN system-wide view across

@@ -6,6 +6,7 @@ import type {
   CreateCourseRequest,
   CreateCurriculumRequirementRequest,
   CreatePrerequisiteRequest,
+  CreateStudentInvitationRequest,
   CurriculumRequirement,
   InstructorListItem,
   Prerequisite,
@@ -13,6 +14,7 @@ import type {
   StaffYearLevelsReport,
   StaffStudentRiskEntry,
   StudentCourseRecord,
+  StudentInvitationListEntry,
   StudentProfileSummary,
   UpdateCourseCategoryRequest,
   UpdateCourseRequest,
@@ -144,6 +146,28 @@ export async function fetchStaffOverview() {
 export async function fetchStaffStudentRisk() {
   const { data } = await apiClient.get<StaffStudentRiskEntry[]>(
     '/dashboard/staff/students',
+  );
+  return data;
+}
+
+export async function createStudentInvitation(dto: CreateStudentInvitationRequest) {
+  const { data } = await apiClient.post<{ email: string; studentCode: string }>(
+    '/student-invitations',
+    dto,
+  );
+  return data;
+}
+
+export async function fetchStudentInvitations() {
+  const { data } = await apiClient.get<StudentInvitationListEntry[]>(
+    '/student-invitations',
+  );
+  return data;
+}
+
+export async function resendStudentInvitation(id: string) {
+  const { data } = await apiClient.post<{ resent: boolean; email: string }>(
+    `/student-invitations/${id}/resend`,
   );
   return data;
 }

@@ -16,6 +16,7 @@ import {
   Menu,
   Network,
   Target,
+  UserPlus,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -65,6 +66,7 @@ const STAFF_NAV_ITEMS: NavItem[] = [
   { label: 'ทำเนียบนักศึกษา', icon: Users, href: '/staff/students' },
   { label: 'ภาพรวมชั้นปี', icon: GraduationCap, href: '/staff/year-levels' },
   { label: 'ข้อมูลหลักสูตร', icon: BookOpen, href: '/staff/curriculum' },
+  { label: 'เชิญนักศึกษาใหม่', icon: UserPlus, href: '/staff/student-invitations' },
 ];
 
 function navItemsForRole(role: Role): NavItem[] {
