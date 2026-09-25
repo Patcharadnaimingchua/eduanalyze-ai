@@ -1,14 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
-import type { CloAchievementEntry, CoursePloEntry, CourseCloAchievementReport } from '@eduanalyze-ai/shared-types';
+import { useMemo, useState } from 'react';
+import type {
+  CloAchievementEntry,
+  CoursePloEntry,
+  CourseCloAchievementReport,
+  Grade,
+  StudentRosterEntry,
+} from '@eduanalyze-ai/shared-types';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
+import { GRADE_LABELS } from '@/lib/grade-label';
+import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { achievementStatus } from '@/lib/achievement-status';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
+
+// Mirrors ACHIEVED_GRADES in
+// apps/backend/src/modules/academic-record/student-course-record/grade-point.constant.ts
+// — keep in sync if that changes. Duplicated rather than shared because the
+// grade-based achievementPercent above is already computed this same way
+// server-side; this just reproduces the per-student split from data the
+// roster already carries, without a new endpoint.
+const ACHIEVED_GRADES = new Set<Grade>(['A', 'B_PLUS', 'B']);
 
 interface CourseAssessmentSummary {
   courseId: string;
@@ -28,6 +45,8 @@ export function CloAchievementSection({
   evidenceCoverage,
   evidenceTotal,
   evidenceError,
+  roster,
+  onViewRoster,
 }: Readonly<{
   achievementPercent: number;
   achievementThreshold: number;
@@ -45,8 +64,21 @@ export function CloAchievementSection({
   evidenceCoverage: Map<string, number> | undefined;
   evidenceTotal: number | undefined;
   evidenceError: boolean;
+  // Same roster the Gradebook tab fetches — reused here (no new request)
+  // so a CRITICAL CLO row can drill down into who's behind, per grade.
+  roster: StudentRosterEntry[] | undefined;
+  onViewRoster: () => void;
 }>) {
+  const [expandedCloId, setExpandedCloId] = useState<string | null>(null);
   const courseStatus = achievementStatus(achievementPercent, achievementThreshold);
+
+  // Grade-based achievement has no per-CLO breakdown (see ACHIEVED_GRADES
+  // comment above) — the same failing-student list applies to every
+  // CRITICAL CLO in this course, computed once here rather than per row.
+  const failingStudents = useMemo(
+    () => (roster ?? []).filter((s) => !ACHIEVED_GRADES.has(s.grade)),
+    [roster],
+  );
 
   const scoredAssessmentClos = useMemo(
     () => courseAssessment.clos.filter((c) => c.averageScore !== null && c.scoreCount > 0),
@@ -102,34 +134,80 @@ export function CloAchievementSection({
           // Same course-level achievementPercent for every CLO (backend
           // limitation), but each CLO may set its own threshold.
           const cloStatus = achievementStatus(achievementPercent, clo.threshold);
+          const isCritical = cloStatus.tone === 'danger';
+          const isExpanded = expandedCloId === clo.cloId;
           return (
-            <div
-              key={clo.cloId}
-              className="flex items-start justify-between gap-3 rounded-md bg-slate-50 px-3 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
-                <p className="text-sm text-primary">{clo.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
-                </p>
+            <div key={clo.cloId} className="rounded-md bg-slate-50 px-3 py-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
+                  <p className="text-sm text-primary">{clo.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
+                  </p>
+                  {isCritical && roster && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-1 h-auto px-0 text-xs text-brand hover:bg-transparent hover:underline"
+                      onClick={() => setExpandedCloId(isExpanded ? null : clo.cloId)}
+                    >
+                      {isExpanded ? 'ซ่อนรายชื่อ' : `ดูรายชื่อนักศึกษาที่ยังไม่ผ่าน (${failingStudents.length} คน)`}
+                    </Button>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
+                  {evidenceError ? (
+                    <span className="text-xs text-destructive">โหลดหลักฐานไม่สำเร็จ</span>
+                  ) : (
+                    evidenceTotal !== undefined &&
+                    evidenceCoverage !== undefined && (
+                      <EvidenceCoverageBadge
+                        coverage={{
+                          validCount: evidenceCoverage.get(clo.cloId) ?? 0,
+                          totalCount: evidenceTotal,
+                        }}
+                      />
+                    )
+                  )}
+                </div>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
-                {evidenceError ? (
-                  <span className="text-xs text-destructive">โหลดหลักฐานไม่สำเร็จ</span>
-                ) : (
-                  evidenceTotal !== undefined &&
-                  evidenceCoverage !== undefined && (
-                    <EvidenceCoverageBadge
-                      coverage={{
-                        validCount: evidenceCoverage.get(clo.cloId) ?? 0,
-                        totalCount: evidenceTotal,
-                      }}
-                    />
-                  )
-                )}
-              </div>
+
+              {isExpanded && (
+                <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
+                  <p className="text-xs text-muted-foreground">
+                    รายชื่อนี้คำนวณจากเกรดรวมวิชา (เหมือนกันทุก CLO ที่ยังไม่ผ่านในวิชานี้)
+                    ไม่ใช่คะแนนเฉพาะ CLO นี้ — schema ยังไม่รองรับคะแนนแยกต่อ CLO ในฝั่งเกรด
+                  </p>
+                  {failingStudents.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่าเกณฑ์</p>
+                  ) : (
+                    <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
+                      {failingStudents.map((s) => (
+                        <li
+                          key={s.studentProfileId}
+                          className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm"
+                        >
+                          <span className="min-w-0">
+                            <span className="text-muted-foreground">{s.studentCode}</span>{' '}
+                            <span className="text-primary">{s.fullName}</span>
+                          </span>
+                          <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onViewRoster}
+                    className="text-xs text-brand hover:underline"
+                  >
+                    ไปที่ Gradebook →
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

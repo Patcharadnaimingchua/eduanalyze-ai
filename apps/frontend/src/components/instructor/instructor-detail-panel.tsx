@@ -117,6 +117,8 @@ export function InstructorDetailPanel({
             evidenceCoverage={evidenceCoverageQuery.data}
             evidenceTotal={rosterQuery.data?.length}
             evidenceError={evidenceCoverageQuery.isError}
+            roster={rosterQuery.data}
+            onViewRoster={() => onTabChange('roster')}
           />
         )}
 
