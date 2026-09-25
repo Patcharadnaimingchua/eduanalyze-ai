@@ -173,10 +173,25 @@ export class StudentInvitationService {
   // §10/CONVENTIONS §3a: SUPER_ADMIN sees every pending invitation;
   // STAFF/ADMIN see only the ones targeting a program their scope
   // covers — same query-level filter as StudentProfileService.findAllScoped.
+  // `select` (not `include`) deliberately omits tokenHash — a listing
+  // response has no business exposing it, even hashed.
   async findAllInScope(user: RequestUser) {
+    const select = {
+      id: true,
+      email: true,
+      fullName: true,
+      studentCode: true,
+      programId: true,
+      curriculumId: true,
+      admissionYear: true,
+      expiresAt: true,
+      createdAt: true,
+      program: { select: { code: true, name: true } },
+    };
+
     if (user.roles.includes('SUPER_ADMIN')) {
       return this.prisma.studentInvitation.findMany({
-        include: { program: { select: { code: true, name: true } } },
+        select,
         orderBy: { createdAt: 'desc' },
       });
     }
@@ -185,7 +200,7 @@ export class StudentInvitationService {
     );
     return this.prisma.studentInvitation.findMany({
       where: { programId: { in: programIds } },
-      include: { program: { select: { code: true, name: true } } },
+      select,
       orderBy: { createdAt: 'desc' },
     });
   }
