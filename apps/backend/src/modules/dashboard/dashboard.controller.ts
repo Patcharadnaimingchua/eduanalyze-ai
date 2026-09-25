@@ -117,6 +117,19 @@ export class DashboardController {
     return this.dashboardService.getStaffStudentRisk(user);
   }
 
+  @Get('staff/year-levels')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Staff Year Level Overview — active students in scope grouped by year level (1-4), each with GPA and risk level',
+  })
+  @ApiResponse({ status: 200, description: 'Staff year-levels report' })
+  getStaffYearLevels(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getStaffYearLevels(user);
+  }
+
   // No ScopeGuard by design — this is the system-wide view, and
   // SUPER_ADMIN is the only role that has one. Same posture as the
   // SUPER_ADMIN-only cohort/curriculum routes on PloAchievementController.

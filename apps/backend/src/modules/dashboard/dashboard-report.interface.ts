@@ -124,6 +124,17 @@ export interface InstructorYearLevelsReport {
   buckets: YearLevelBucket[];
 }
 
+export interface StaffYearLevelStudent extends YearLevelStudent {
+  gpa: number | null;
+  riskLevel: RiskLevel;
+  atRiskCourseCount: number;
+}
+
+export interface StaffYearLevelsReport {
+  currentAcademicYear: number;
+  buckets: YearLevelBucket<StaffYearLevelStudent>[];
+}
+
 export interface CurriculumDashboardReport extends CurriculumPloAchievementReport {
   // Module 7 hasn't started — same null-not-omitted reasoning as above.
   aiCurriculumSummary: null;

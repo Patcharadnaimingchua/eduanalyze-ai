@@ -922,6 +922,17 @@ export interface InstructorYearLevelsReport {
   buckets: YearLevelBucket[];
 }
 
+export interface StaffYearLevelStudent extends YearLevelStudent {
+  gpa: number | null;
+  riskLevel: RiskLevel;
+  atRiskCourseCount: number;
+}
+
+export interface StaffYearLevelsReport {
+  currentAcademicYear: number;
+  buckets: YearLevelBucket<StaffYearLevelStudent>[];
+}
+
 // clos here shares one course-level achievementPercent across every entry
 // (a backend/schema limitation, not a frontend bug) — do not try to derive
 // per-CLO percentages from it.

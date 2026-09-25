@@ -40,6 +40,7 @@ import {
   StaffOverviewCurriculum,
   StaffOverviewReport,
   StaffStudentRiskEntry,
+  StaffYearLevelsReport,
   StudentDashboardReport,
   SystemCurriculumEntry,
   SystemCurriculumOverviewReport,
@@ -429,6 +430,56 @@ export class DashboardService {
           fullName: profile.user.fullName,
           admissionYear: profile.admissionYear,
         })),
+        currentAcademicYear,
+      ),
+    };
+  }
+
+  // Same buckets as the instructor view, but the population is every
+  // active student in the Programs this STAFF covers — the same
+  // getCoveredProgramIds scoping as the rest of /dashboard/staff, so this
+  // page and the directory can never disagree about who is in scope.
+  // Suspended students are left out, matching getStaffOverview's counts.
+  async getStaffYearLevels(user: RequestUser): Promise<StaffYearLevelsReport> {
+    const programIds = await this.scopeResolverService.getCoveredProgramIds(
+      user.userId,
+    );
+    const currentAcademicYear = await this.resolveCurrentAcademicYear();
+    if (programIds.length === 0) {
+      return {
+        currentAcademicYear,
+        buckets: this.bucketByYearLevel([], currentAcademicYear),
+      };
+    }
+
+    const profiles = await this.prisma.studentProfile.findMany({
+      where: { programId: { in: programIds }, isActive: true },
+      select: {
+        id: true,
+        studentCode: true,
+        admissionYear: true,
+        user: { select: { fullName: true } },
+      },
+    });
+    const riskByStudent = await this.computeStudentRisk(
+      profiles.map((profile) => profile.id),
+    );
+
+    return {
+      currentAcademicYear,
+      buckets: this.bucketByYearLevel(
+        profiles.map((profile) => {
+          const risk = riskByStudent.get(profile.id)!;
+          return {
+            studentProfileId: profile.id,
+            studentCode: profile.studentCode,
+            fullName: profile.user.fullName,
+            admissionYear: profile.admissionYear,
+            gpa: risk.gpa,
+            riskLevel: risk.riskLevel,
+            atRiskCourseCount: risk.atRiskCourseCount,
+          };
+        }),
         currentAcademicYear,
       ),
     };
