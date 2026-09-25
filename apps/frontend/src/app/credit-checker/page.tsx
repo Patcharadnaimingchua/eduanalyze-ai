@@ -8,6 +8,7 @@ import type { CreditCheckReport } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCreditCheck } from '@/lib/api/credit-checker';
 import { useAuth } from '@/lib/auth-context';
+import { useCelebrateOnce } from '@/lib/use-celebrate-once';
 import { cn } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -20,6 +21,7 @@ import { CategoryProgressList } from '@/components/credit-checker/category-progr
 import { MissingCoursesList } from '@/components/credit-checker/missing-courses-list';
 import { FailedCoursesList } from '@/components/credit-checker/failed-courses-list';
 import { Button } from '@/components/ui/button';
+import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 // React Flow is the heaviest dependency on this page and the chart starts
@@ -109,6 +111,10 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
   const completeCategories = report.categoryProgress.filter((c) => c.isComplete).length;
   const curriculumCourseCount =
     report.passedCourses.length + report.failedCourses.length + report.notYetStudiedCourses.length;
+  const celebrateReady = useCelebrateOnce(
+    `celebrate:credit-ready:${report.studentProfileId}`,
+    report.graduationReadiness.isReady,
+  );
 
   return (
     <>
@@ -129,7 +135,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         <Reveal index={2}>
           <StatCard icon={Award} label="หน่วยกิตที่เหลือ" value={report.creditsRemaining} />
         </Reveal>
-        <Reveal index={3}>
+        <Reveal index={3} className="relative">
           <StatCard
             icon={GraduationCap}
             label="วิชาบังคับที่ยังขาด"
@@ -141,6 +147,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
                 : { text: 'ยังไม่พร้อม', tone: 'neutral' }
             }
           />
+          {celebrateReady && <ConfettiBurst delayMs={500} />}
         </Reveal>
       </div>
 

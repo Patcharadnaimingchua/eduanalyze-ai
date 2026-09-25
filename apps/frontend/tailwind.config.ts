@@ -79,6 +79,18 @@ const config: Config = {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        // --x/--y/--r are set per piece by ConfettiBurst.
+        confetti: {
+          '0%': { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: '1' },
+          '35%': {
+            transform: 'translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(calc(var(--r) * 0.4))',
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'translate(calc(-50% + var(--x) * 1.3), calc(-50% + var(--y) + 160px)) rotate(var(--r))',
+            opacity: '0',
+          },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.5s ease-in-out infinite',
@@ -87,6 +99,7 @@ const config: Config = {
         // Outline draws first, then the fill and vertex dots settle in.
         'radar-shape': 'radar-draw 900ms ease-out both, radar-fill 500ms ease-out 600ms both',
         'radar-dot': 'radar-dot 300ms ease-out 800ms both',
+        confetti: 'confetti 1400ms cubic-bezier(0.2, 0.7, 0.4, 1) both',
       },
     },
   },

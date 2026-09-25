@@ -6,6 +6,7 @@ import { Award, FileCheck2, Star } from 'lucide-react';
 import type { StudentDashboardResponse } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile, fetchStudentDashboard } from '@/lib/api/dashboard';
 import { useAuth } from '@/lib/auth-context';
+import { useCelebrateOnce } from '@/lib/use-celebrate-once';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -18,6 +19,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
+import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -103,6 +105,10 @@ function DashboardCards({
     duration: 900,
     decimals: 0,
   });
+  const celebrateReadiness = useCelebrateOnce(
+    `celebrate:dashboard-readiness:${dashboard.studentProfileId}`,
+    dashboard.curriculumProgressPercent >= 100,
+  );
 
   return (
     <>
@@ -135,7 +141,7 @@ function DashboardCards({
             }
           />
         </Reveal>
-        <Reveal index={3}>
+        <Reveal index={3} className="relative">
           <StatCard
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
@@ -148,6 +154,8 @@ function DashboardCards({
               />
             }
           />
+          {/* Lands as the count-up (900ms) reaches 100%. */}
+          {celebrateReadiness && <ConfettiBurst delayMs={1100} />}
         </Reveal>
       </div>
 
