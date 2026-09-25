@@ -73,9 +73,10 @@ model Program {
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
 
-  curricula       Curriculum[]
-  userScopes      UserScope[]
-  studentProfiles StudentProfile[]
+  curricula          Curriculum[]
+  userScopes         UserScope[]
+  studentProfiles    StudentProfile[]
+  studentInvitations StudentInvitation[]
 
   // No @@unique([departmentId, name])/@@unique([departmentId, code]) here
   // on purpose — see Faculty.code comment above. Real constraints: two
@@ -105,11 +106,12 @@ model Curriculum {
   programId String
   program   Program @relation(fields: [programId], references: [id], onDelete: Restrict)
 
-  studentProfiles StudentProfile[]
-  categories      CourseCategory[]
-  courses         Course[]
-  requirements    CurriculumRequirement[]
-  plos            Plo[]
+  studentProfiles    StudentProfile[]
+  categories         CourseCategory[]
+  courses            Course[]
+  requirements       CurriculumRequirement[]
+  plos               Plo[]
+  studentInvitations StudentInvitation[]
 
   // No @@unique([programId, version]) here on purpose — see Faculty.code
   // comment above. Real constraint: partial unique index on (programId,
@@ -132,15 +134,16 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  userRoles            UserRole[]
-  scopes               UserScope[]
-  studentProfile       StudentProfile?
-  authMethods          UserAuthMethod[]
-  pendingInvitation    PendingInvitation?
-  passwordResetToken   PasswordResetToken?
-  twoFactorCredential  TwoFactorCredential?
-  courseInstructor     CourseInstructor[]
-  enteredCourseRecords StudentCourseRecord[]
+  userRoles              UserRole[]
+  scopes                 UserScope[]
+  studentProfile         StudentProfile?
+  authMethods            UserAuthMethod[]
+  pendingInvitation      PendingInvitation?
+  passwordResetToken     PasswordResetToken?
+  twoFactorCredential    TwoFactorCredential?
+  courseInstructor       CourseInstructor[]
+  enteredCourseRecords   StudentCourseRecord[]
+  sentStudentInvitations StudentInvitation[]
 
   @@map("users")
 }
@@ -286,6 +289,38 @@ model PendingInvitation {
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@map("pending_invitations")
+}
+
+// STAFF-initiated pre-account draft for an incoming STUDENT — same
+// token-hash+TTL shape as PendingInvitation/GooglePendingRegistration, but
+// deliberately has NO FK to User (unlike PendingInvitation): §17 "NO REG
+// IMPORT" forbids any second code path that creates a STUDENT User row, so
+// this row must not exist as a User yet, only as data waiting to be handed
+// to AuthService.createStudentAccount when the invited person actually
+// registers (mirrors how GooglePendingRegistration is consumed via
+// createStudentAccount's extraTxStep). 7-day TTL — longer than
+// PendingInvitation's 48h since a whole incoming cohort won't all check
+// email within 2 days.
+model StudentInvitation {
+  id              String   @id @default(uuid())
+  tokenHash       String   @unique
+  email           String
+  fullName        String
+  studentCode     String
+  programId       String
+  curriculumId    String
+  admissionYear   Int
+  invitedByUserId String
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  program    Program    @relation(fields: [programId], references: [id], onDelete: Restrict)
+  // Compound FK mirrors StudentProfile's — same reason: a curriculum only
+  // really "belongs" to a program via this pair, not curriculumId alone.
+  curriculum Curriculum @relation(fields: [programId, curriculumId], references: [programId, id], onDelete: Restrict)
+  invitedBy  User       @relation(fields: [invitedByUserId], references: [id], onDelete: Restrict)
+
+  @@map("student_invitations")
 }
 
 // Gates password-reset for an existing User with a password already set —
