@@ -37,7 +37,7 @@ export function Toast({
         className={cn(
           'mt-0.5 h-4 w-4 shrink-0',
           TOAST_ICON_CLASSES[tone],
-          tone === 'success' && 'animate-pop',
+          tone === 'success' && 'animate-pop motion-reduce:animate-none',
         )}
       />
       <p className="flex-1 text-sm">{message}</p>
