@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
+import { FolderOpen, Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { fetchCourses } from '@/lib/api/academic-record';
@@ -9,12 +10,17 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
 import { CurriculumPicker } from '@/components/staff/curriculum-picker';
 import { CourseCategoryForm } from '@/components/staff/course-category-form';
 import { CourseCategoryCard } from '@/components/staff/course-category-card';
 import { CourseForm } from '@/components/staff/course-form';
 import { CourseListTable } from '@/components/staff/course-list-table';
 import { CourseDetailPanel, type CourseDetailTab } from '@/components/staff/course-detail-panel';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StaffCurriculumPage() {
@@ -45,6 +51,8 @@ function StaffCurriculumContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [showCourseForm, setShowCourseForm] = useState(false);
 
   const curriculumId = searchParams.get('curriculumId');
   const categoryId = searchParams.get('categoryId');
@@ -79,6 +87,37 @@ function StaffCurriculumContent() {
     queryClient.invalidateQueries({ queryKey: ['courses'] });
   }
 
+  function handleCategoryCreated() {
+    setShowCategoryForm(false);
+    refetchAll();
+  }
+
+  function handleCourseCreated() {
+    setShowCourseForm(false);
+    refetchAll();
+  }
+
+  function formToggle(open: boolean, onToggle: () => void, label: string) {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant={open ? 'outline' : 'default'}
+        className="gap-1.5"
+        onClick={onToggle}
+      >
+        {open ? (
+          'ยกเลิก'
+        ) : (
+          <>
+            <Plus size={16} />
+            {label}
+          </>
+        )}
+      </Button>
+    );
+  }
+
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -102,48 +141,80 @@ function StaffCurriculumContent() {
 
   return (
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">ข้อมูลหลักสูตร</h1>
-        <p className="text-sm text-muted-foreground">
-          จัดการหมวดวิชา รายวิชา วิชาที่เป็นตัวก่อน และอาจารย์ผู้สอน ภายในขอบเขตของคุณ
-        </p>
-      </div>
+      <Reveal index={0}>
+        <PageHeader
+          title="ข้อมูลหลักสูตร"
+          description="จัดการหมวดวิชา รายวิชา วิชาที่เป็นตัวก่อน และอาจารย์ผู้สอน ภายในขอบเขตของคุณ"
+        />
+      </Reveal>
 
-      <CurriculumPicker
-        curriculumId={curriculumId}
-        onSelect={(id) => setParams({ curriculumId: id, categoryId: null, courseId: null, tab: null })}
-      />
+      <Reveal index={1}>
+        <CurriculumPicker
+          curriculumId={curriculumId}
+          onSelect={(id) => setParams({ curriculumId: id, categoryId: null, courseId: null, tab: null })}
+        />
+      </Reveal>
 
       {curriculumId && (
-        <>
-          <CourseCategoryForm curriculumId={curriculumId} onCreated={refetchAll} />
+        <Reveal index={2}>
+          <PageSection
+            title="หมวดวิชา"
+            actions={formToggle(
+              showCategoryForm,
+              () => setShowCategoryForm((open) => !open),
+              'เพิ่มหมวดวิชา',
+            )}
+          >
+            {showCategoryForm && (
+              <CourseCategoryForm curriculumId={curriculumId} onCreated={handleCategoryCreated} />
+            )}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {categoriesInCurriculum.map((category) => (
-              <CourseCategoryCard
-                key={category.id}
-                category={category}
-                requirement={requirementByCategoryId.get(category.id)}
-                isSelected={category.id === categoryId}
-                onSelect={() =>
-                  setParams({ categoryId: category.id, courseId: null, tab: null })
-                }
-                onChanged={refetchAll}
-              />
-            ))}
-          </div>
-        </>
+            {categoriesQuery.data && categoriesInCurriculum.length === 0 ? (
+              <EmptyState icon={FolderOpen} description="ยังไม่มีหมวดวิชาในหลักสูตรนี้" />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {categoriesInCurriculum.map((category) => (
+                  <CourseCategoryCard
+                    key={category.id}
+                    category={category}
+                    requirement={requirementByCategoryId.get(category.id)}
+                    isSelected={category.id === categoryId}
+                    onSelect={() =>
+                      setParams({ categoryId: category.id, courseId: null, tab: null })
+                    }
+                    onChanged={refetchAll}
+                  />
+                ))}
+              </div>
+            )}
+          </PageSection>
+        </Reveal>
       )}
 
       {categoryId && (
-        <>
-          <CourseForm curriculumId={curriculumId!} categoryId={categoryId} onCreated={refetchAll} />
-          <CourseListTable
-            courses={coursesInCategory}
-            selectedCourseId={courseId}
-            onSelect={(id) => setParams({ courseId: id, tab: 'prerequisites' })}
-          />
-        </>
+        <Reveal>
+          <PageSection
+            title="รายวิชาในหมวด"
+            actions={formToggle(
+              showCourseForm,
+              () => setShowCourseForm((open) => !open),
+              'เพิ่มรายวิชา',
+            )}
+          >
+            {showCourseForm && (
+              <CourseForm
+                curriculumId={curriculumId!}
+                categoryId={categoryId}
+                onCreated={handleCourseCreated}
+              />
+            )}
+            <CourseListTable
+              courses={coursesInCategory}
+              selectedCourseId={courseId}
+              onSelect={(id) => setParams({ courseId: id, tab: 'prerequisites' })}
+            />
+          </PageSection>
+        </Reveal>
       )}
 
       {selectedCourse && (
