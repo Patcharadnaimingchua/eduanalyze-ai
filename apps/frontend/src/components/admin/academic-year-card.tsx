@@ -19,6 +19,7 @@ import {
 import { semesterSchema, type SemesterFormValues } from '@/lib/validation/semester.schema';
 import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,7 @@ export function AcademicYearCard({
   onChanged: () => void;
 }) {
   const [confirmingYearDelete, setConfirmingYearDelete] = useState(false);
+  const toast = useToast();
   const [confirmingSemesterId, setConfirmingSemesterId] = useState<string | null>(null);
   const [editingYear, setEditingYear] = useState(false);
   const [editingSemesterId, setEditingSemesterId] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await deleteAcademicYear(academicYear.id);
+      toast.success('ลบปีการศึกษาแล้ว');
       onChanged();
     } catch (error) {
       setConfirmingYearDelete(false);
@@ -87,6 +90,7 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await deleteSemester(id);
+      toast.success('ลบภาคเรียนแล้ว');
       onChanged();
     } catch (error) {
       setConfirmingSemesterId(null);
@@ -104,6 +108,7 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await createSemester({ ...values, academicYearId: academicYear.id });
+      toast.success('เพิ่มภาคเรียนแล้ว');
       form.reset({ term: undefined });
       onChanged();
     } catch {
@@ -120,6 +125,7 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await updateAcademicYear(academicYear.id, values);
+      toast.success('บันทึกปีการศึกษาแล้ว');
       setEditingYear(false);
       onChanged();
     } catch (error) {
@@ -140,6 +146,7 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await updateSemester(id, values);
+      toast.success('บันทึกภาคเรียนแล้ว');
       setEditingSemesterId(null);
       onChanged();
     } catch (error) {

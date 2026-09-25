@@ -13,6 +13,7 @@ import {
   type BulkAcademicYearFormValues,
 } from '@/lib/validation/academic-year.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { SemanticTone } from '@/lib/tone';
@@ -35,6 +36,7 @@ const STATUS_TONE: Record<ResultStatus, SemanticTone> = {
 
 export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
   const [results, setResults] = useState<ResultRow[] | null>(null);
+  const toast = useToast();
   const form = useForm<BulkAcademicYearFormValues>({
     resolver: zodResolver(bulkAcademicYearSchema),
     defaultValues: { startYear: undefined },
@@ -44,6 +46,10 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
     setResults(null);
     const rows = await bulkGenerateAcademicYears(values.startYear, YEARS_TO_CREATE);
     setResults(rows);
+    const created = rows.filter((r) => r.status === 'created').length;
+    const failed = rows.filter((r) => r.status === 'failed').length;
+    if (failed > 0) toast.error(`สร้างไม่สำเร็จ ${failed} รายการ — ดูรายละเอียดในตาราง`);
+    else toast.success(`สร้างปีการศึกษาแล้ว ${created} รายการ`);
     onCreated();
   }
 

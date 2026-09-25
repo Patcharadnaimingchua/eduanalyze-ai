@@ -8,6 +8,7 @@ import type { CourseListItem, Prerequisite } from '@eduanalyze-ai/shared-types';
 import { createPrerequisite, deletePrerequisite, fetchPrerequisites } from '@/lib/api/staff';
 import { prerequisiteSchema, type PrerequisiteFormValues } from '@/lib/validation/prerequisite.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
@@ -20,6 +21,7 @@ export function PrerequisiteSection({
   coursesInCurriculum: CourseListItem[];
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ export function PrerequisiteSection({
     setServerError(null);
     try {
       await createPrerequisite({ courseId, prerequisiteCourseId: values.prerequisiteCourseId });
+      toast.success('เพิ่มวิชาตัวก่อนแล้ว');
       form.reset({ prerequisiteCourseId: '' });
       prerequisitesQuery.refetch();
     } catch {
@@ -53,6 +56,7 @@ export function PrerequisiteSection({
     setServerError(null);
     try {
       await deletePrerequisite(id);
+      toast.success('ลบวิชาตัวก่อนแล้ว');
       setConfirmingId(null);
       prerequisitesQuery.refetch();
     } catch {

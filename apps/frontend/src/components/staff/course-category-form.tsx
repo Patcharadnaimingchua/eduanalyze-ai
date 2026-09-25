@@ -10,6 +10,7 @@ import {
   type CourseCategoryFormValues,
 } from '@/lib/validation/course-category.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ export function CourseCategoryForm({
   onCreated: () => void;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
   const form = useForm<CourseCategoryFormValues>({
     resolver: zodResolver(courseCategorySchema),
     defaultValues: { name: '', code: '' },
@@ -36,6 +38,7 @@ export function CourseCategoryForm({
         name: values.name,
         code: values.code || undefined,
       });
+      toast.success('เพิ่มหมวดวิชาแล้ว');
       form.reset({ name: '', code: '' });
       onCreated();
     } catch (error) {

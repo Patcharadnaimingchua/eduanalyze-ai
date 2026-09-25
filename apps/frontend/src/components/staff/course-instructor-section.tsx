@@ -15,12 +15,14 @@ import {
   type CourseInstructorFormValues,
 } from '@/lib/validation/course-instructor.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 
 export function CourseInstructorSection({ courseId }: { courseId: string }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const toast = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -43,6 +45,7 @@ export function CourseInstructorSection({ courseId }: { courseId: string }) {
     setServerError(null);
     try {
       await createCourseInstructor({ courseId, userId: values.userId });
+      toast.success('เพิ่มอาจารย์ผู้สอนแล้ว');
       form.reset({ userId: '' });
       assignmentsQuery.refetch();
     } catch {
@@ -55,6 +58,7 @@ export function CourseInstructorSection({ courseId }: { courseId: string }) {
     setServerError(null);
     try {
       await deleteCourseInstructor(id);
+      toast.success('ถอนอาจารย์ผู้สอนแล้ว');
       setConfirmingId(null);
       assignmentsQuery.refetch();
     } catch {

@@ -17,6 +17,7 @@ import {
 } from '@/lib/validation/curriculum-requirement.schema';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +40,7 @@ export function CourseCategoryCard({
   onChanged: () => void;
 }) {
   const [confirmingCategoryDelete, setConfirmingCategoryDelete] = useState(false);
+  const toast = useToast();
   const [confirmingRequirementDelete, setConfirmingRequirementDelete] = useState(false);
   const [editingRequirement, setEditingRequirement] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -57,6 +59,7 @@ export function CourseCategoryCard({
     setServerError(null);
     try {
       await deleteCourseCategory(category.id);
+      toast.success('ลบหมวดวิชาแล้ว');
       onChanged();
     } catch (error) {
       setConfirmingCategoryDelete(false);
@@ -76,6 +79,7 @@ export function CourseCategoryCard({
     setServerError(null);
     try {
       await deleteCurriculumRequirement(requirement.id);
+      toast.success('ลบเกณฑ์หน่วยกิตแล้ว');
       onChanged();
     } catch {
       setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
@@ -90,6 +94,7 @@ export function CourseCategoryCard({
     try {
       if (requirement) {
         await updateCurriculumRequirement(requirement.id, values);
+        toast.success('บันทึกเกณฑ์หน่วยกิตแล้ว');
         setEditingRequirement(false);
       } else {
         await createCurriculumRequirement({
@@ -97,6 +102,7 @@ export function CourseCategoryCard({
           categoryId: category.id,
           ...values,
         });
+        toast.success('บันทึกเกณฑ์หน่วยกิตแล้ว');
       }
       onChanged();
     } catch {

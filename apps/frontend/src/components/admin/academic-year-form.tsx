@@ -10,6 +10,7 @@ import {
   type AcademicYearFormValues,
 } from '@/lib/validation/academic-year.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 
 export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
   const form = useForm<AcademicYearFormValues>({
     resolver: zodResolver(academicYearSchema),
     defaultValues: { year: undefined },
@@ -26,6 +28,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
     setServerError(null);
     try {
       await createAcademicYear(values);
+      toast.success('เพิ่มปีการศึกษาแล้ว');
       form.reset({ year: undefined });
       onCreated();
     } catch (error) {

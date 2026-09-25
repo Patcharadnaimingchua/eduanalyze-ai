@@ -7,6 +7,7 @@ import { isAxiosError } from 'axios';
 import { createCourse } from '@/lib/api/staff';
 import { courseSchema, type CourseFormValues } from '@/lib/validation/course.schema';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ export function CourseForm({
   onCreated: () => void;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
     defaultValues: { code: '', name: '', nameEn: '', credits: undefined, description: '', isRequired: true },
@@ -40,6 +42,7 @@ export function CourseForm({
         description: values.description || undefined,
         isRequired: values.isRequired,
       });
+      toast.success('เพิ่มรายวิชาแล้ว');
       form.reset({ code: '', name: '', nameEn: '', credits: undefined, description: '', isRequired: true });
       onCreated();
     } catch (error) {
