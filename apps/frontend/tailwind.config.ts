@@ -61,9 +61,16 @@ const config: Config = {
           from: { transform: 'translateX(-100%)' },
           to: { transform: 'translateX(100%)' },
         },
+        pop: {
+          '0%': { transform: 'scale(0)' },
+          '60%': { transform: 'scale(1.25)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.5s ease-in-out infinite',
+        // Delayed so it lands after the toast's 300ms slide-in.
+        pop: 'pop 400ms ease-out 200ms both',
       },
     },
   },

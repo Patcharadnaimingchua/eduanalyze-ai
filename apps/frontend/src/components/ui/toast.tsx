@@ -33,7 +33,13 @@ export function Toast({
           : 'animate-in slide-in-from-right-full fade-in duration-300',
       )}
     >
-      <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', TOAST_ICON_CLASSES[tone])} />
+      <Icon
+        className={cn(
+          'mt-0.5 h-4 w-4 shrink-0',
+          TOAST_ICON_CLASSES[tone],
+          tone === 'success' && 'animate-pop',
+        )}
+      />
       <p className="flex-1 text-sm">{message}</p>
       <button
         type="button"
