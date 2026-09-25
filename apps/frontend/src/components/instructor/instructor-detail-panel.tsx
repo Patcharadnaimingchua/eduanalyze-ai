@@ -5,6 +5,8 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/layout/page-header';
+import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
 import { CourseResultsSection } from './course-results-section';
 import { CloAchievementSection } from './clo-achievement-section';
@@ -91,92 +93,105 @@ export function InstructorDetailPanel({
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-4 pt-6">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{course.code}</p>
-          <p className="text-lg font-medium text-primary">{course.name}</p>
-        </div>
+    <>
+      <Reveal index={0}>
+        <PageHeader title={course.name} description={course.code} />
+      </Reveal>
 
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100">
-          {TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onTabChange(key)}
-              className={cn(
-                'border-b-2 px-3 py-2 text-sm font-medium transition',
-                activeTab === key
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-slate-500 hover:text-primary',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      <Reveal index={1}>
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <div className="flex gap-2 overflow-x-auto border-b border-slate-100">
+              {TABS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onTabChange(key)}
+                  className={cn(
+                    'border-b-2 px-3 py-2 text-sm font-medium transition',
+                    activeTab === key
+                      ? 'border-brand text-brand'
+                      : 'border-transparent text-slate-500 hover:text-primary',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <CourseInfoSection course={course} />
-            <CourseResultsSection
-              distribution={course.gradeDistribution}
-              trend={course.semesterTrend}
-            />
-          </div>
-        )}
+            {activeTab === 'overview' && (
+              <Reveal index={0}>
+                <div className="space-y-6">
+                  <CourseInfoSection course={course} />
+                  <CourseResultsSection
+                    distribution={course.gradeDistribution}
+                    trend={course.semesterTrend}
+                  />
+                </div>
+              </Reveal>
+            )}
 
-        {activeTab === 'clo' && (
-          <CloAchievementSection
-            achievementPercent={course.achievementPercent}
-            achievementThreshold={course.achievementThreshold}
-            clos={course.clos}
-            plos={course.plos}
-            courseAssessment={course.courseAssessment}
-            detail={cloQuery.data}
-            isLoading={cloQuery.isLoading}
-            isError={cloQuery.isError}
-            evidenceCoverage={evidenceCoverageQuery.data}
-            evidenceTotal={rosterQuery.data?.length}
-            evidenceError={evidenceCoverageQuery.isError}
-            roster={rosterQuery.data}
-            onViewRoster={() => onTabChange('gradebook')}
-          />
-        )}
+            {activeTab === 'clo' && (
+              <Reveal index={0}>
+                <CloAchievementSection
+                  achievementPercent={course.achievementPercent}
+                  achievementThreshold={course.achievementThreshold}
+                  clos={course.clos}
+                  plos={course.plos}
+                  courseAssessment={course.courseAssessment}
+                  detail={cloQuery.data}
+                  isLoading={cloQuery.isLoading}
+                  isError={cloQuery.isError}
+                  evidenceCoverage={evidenceCoverageQuery.data}
+                  evidenceTotal={rosterQuery.data?.length}
+                  evidenceError={evidenceCoverageQuery.isError}
+                  roster={rosterQuery.data}
+                  onViewRoster={() => onTabChange('gradebook')}
+                />
+              </Reveal>
+            )}
 
-        {/* Same table both tabs — onChanged toggles editable (student-roster-table.tsx's
-            `editable = !!onChanged`): omitted here for a read-only search/filter/timeline
-            view, passed below for the same rows with grade-edit and delete enabled. */}
-        {activeTab === 'students' && (
-          <StudentRosterTable
-            courseId={course.courseId}
-            courseCode={course.code}
-            clos={course.clos}
-            roster={rosterQuery.data}
-            isLoading={rosterQuery.isLoading}
-            isError={rosterQuery.isError}
-          />
-        )}
+            {/* Same table both tabs — onChanged toggles editable (student-roster-table.tsx's
+                `editable = !!onChanged`): omitted here for a read-only search/filter/timeline
+                view, passed below for the same rows with grade-edit and delete enabled. */}
+            {activeTab === 'students' && (
+              <Reveal index={0}>
+                <StudentRosterTable
+                  courseId={course.courseId}
+                  courseCode={course.code}
+                  clos={course.clos}
+                  roster={rosterQuery.data}
+                  isLoading={rosterQuery.isLoading}
+                  isError={rosterQuery.isError}
+                />
+              </Reveal>
+            )}
 
-        {activeTab === 'gradebook' && (
-          <StudentRosterTable
-            courseId={course.courseId}
-            courseCode={course.code}
-            clos={course.clos}
-            roster={rosterQuery.data}
-            isLoading={rosterQuery.isLoading}
-            isError={rosterQuery.isError}
-            onChanged={isInstructor ? handleGradebookChanged : undefined}
-          />
-        )}
+            {activeTab === 'gradebook' && (
+              <Reveal index={0}>
+                <StudentRosterTable
+                  courseId={course.courseId}
+                  courseCode={course.code}
+                  clos={course.clos}
+                  roster={rosterQuery.data}
+                  isLoading={rosterQuery.isLoading}
+                  isError={rosterQuery.isError}
+                  onChanged={isInstructor ? handleGradebookChanged : undefined}
+                />
+              </Reveal>
+            )}
 
-        {/* Own internal queries (not the enabled-per-tab pattern above) —
-            mounting only while this tab is active already keeps it from
-            firing requests when unused, same net effect. */}
-        {activeTab === 'evidence' && isInstructor && (
-          <AssessmentEvidenceSection courseId={course.courseId} clos={course.clos} />
-        )}
-      </CardContent>
-    </Card>
+            {/* Own internal queries (not the enabled-per-tab pattern above) —
+                mounting only while this tab is active already keeps it from
+                firing requests when unused, same net effect. */}
+            {activeTab === 'evidence' && isInstructor && (
+              <Reveal index={0}>
+                <AssessmentEvidenceSection courseId={course.courseId} clos={course.clos} />
+              </Reveal>
+            )}
+          </CardContent>
+        </Card>
+      </Reveal>
+    </>
   );
 }

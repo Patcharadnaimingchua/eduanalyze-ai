@@ -55,18 +55,23 @@ export function InstructorCourseGridSkeleton() {
   );
 }
 
+// Mirrors InstructorDetailPanel's layout: a header bar outside the Card
+// (now PageHeader — course name/code), then a Card holding the tab-strip
+// pills and the active tab's content block.
 export function InstructorCourseSkeleton() {
   return (
-    <Card>
-      <CardContent className="space-y-4 pt-6">
-        <Skeleton className="h-5 w-56" />
-        <div className="flex gap-4">
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-6 w-28" />
-          <Skeleton className="h-6 w-28" />
-        </div>
-        <Skeleton className="h-56 w-full" />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-64" />
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex gap-4">
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+          </div>
+          <Skeleton className="h-56 w-full" />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
