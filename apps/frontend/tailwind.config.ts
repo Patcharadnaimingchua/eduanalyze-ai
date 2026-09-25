@@ -54,6 +54,17 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // Defined here rather than globals.css so they work with variants
+      // (e.g. `before:animate-shimmer`).
+      keyframes: {
+        shimmer: {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s ease-in-out infinite',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

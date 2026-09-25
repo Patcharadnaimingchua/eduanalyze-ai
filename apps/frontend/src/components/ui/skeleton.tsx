@@ -5,7 +5,16 @@ import { Card, CardContent } from '@/components/ui/card';
 // profile-skeleton.tsx, etc.) — was previously redefined locally as
 // `Block` in 5 separate files.
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-md bg-slate-100', className)} />;
+  return (
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-md bg-slate-100',
+        'before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer',
+        'before:bg-gradient-to-r before:from-transparent before:via-white/70 before:to-transparent',
+        className,
+      )}
+    />
+  );
 }
 
 // Generic table placeholder — header row + N data rows, each split evenly
