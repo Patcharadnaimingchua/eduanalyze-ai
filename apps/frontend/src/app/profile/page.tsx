@@ -31,6 +31,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { TwoFactorSection } from '@/components/auth/two-factor-section';
 import { primaryRoleFor, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -181,6 +182,10 @@ function ProfileContent() {
   return (
     <DashboardShell role={primaryRole} identityLabel={identityLabel} fullName={user.fullName}>
       <Reveal index={0}>
+        <PageHeader title="ข้อมูลส่วนตัว" />
+      </Reveal>
+
+      <Reveal index={1}>
         <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-white to-white shadow-sm">
           <CardContent className="flex flex-col gap-5 p-5 sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -225,7 +230,7 @@ function ProfileContent() {
         departmentsQuery.data &&
         programsQuery.data &&
         curriculaQuery.data && (
-          <Reveal index={1}>
+          <Reveal index={2}>
             <ProfileEducationCard
               profile={profileQuery.data}
               faculties={facultiesQuery.data}
@@ -236,7 +241,7 @@ function ProfileContent() {
           </Reveal>
         )}
 
-      <Reveal index={2} className="space-y-3">
+      <Reveal index={3} className="space-y-3">
         <p className="text-sm text-muted-foreground">
           ต้องการเปลี่ยนรหัสผ่าน?{' '}
           <Link href="/forgot-password" className="text-primary hover:underline">
