@@ -9,6 +9,9 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
 import { UserRolesSection } from '@/components/admin/user-roles-section';
 import { UserScopesSection } from '@/components/admin/user-scopes-section';
 import { Badge } from '@/components/ui/badge';
@@ -85,60 +88,79 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
         กลับไปรายชื่อผู้ใช้งาน
       </Link>
 
-      {userQuery.isLoading && <ListSkeleton items={3} />}
-      {userQuery.isError && (
-        <p className="text-sm text-destructive">ไม่พบผู้ใช้งาน หรือไม่มีสิทธิ์เข้าถึง</p>
+      {userQuery.isLoading && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <ListSkeleton items={3} />
+        </div>
       )}
+      {userQuery.isError && <PageLoadError message="ไม่พบผู้ใช้งาน หรือไม่มีสิทธิ์เข้าถึง" />}
 
       {userQuery.data && (
         <>
+          <Reveal index={0}>
+            <PageHeader
+              title={userQuery.data.fullName}
+              description={userQuery.data.email}
+              actions={
+                <Badge tone={userQuery.data.isActive ? 'success' : 'neutral'}>
+                  {userQuery.data.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
+                </Badge>
+              }
+            />
+          </Reveal>
+
           {serverError && (
             <Alert variant="destructive">
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลบัญชี</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-lg font-medium text-primary">{userQuery.data.fullName}</p>
-                <p className="text-sm text-muted-foreground">{userQuery.data.email}</p>
-              </div>
-              <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">สถานะบัญชี:</span>
-                  <Badge tone={userQuery.data.isActive ? 'success' : 'neutral'}>
-                    {userQuery.data.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
-                  </Badge>
+          <Reveal index={1}>
+            <Card>
+              <CardHeader>
+                <CardTitle>สถานะบัญชี</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">
+                    {userQuery.data.isActive
+                      ? 'บัญชีนี้เข้าสู่ระบบได้ตามปกติ'
+                      : 'บัญชีนี้ถูกระงับ ไม่สามารถเข้าสู่ระบบได้'}
+                  </span>
+                  {isSelf ? (
+                    <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>
+                  ) : (
+                    <Button type="button" variant="outline" size="sm" disabled={busy} onClick={handleToggleActive}>
+                      {userQuery.data.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งานอีกครั้ง'}
+                    </Button>
+                  )}
                 </div>
-                {isSelf ? (
-                  <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>
-                ) : (
-                  <Button type="button" variant="outline" size="sm" disabled={busy} onClick={handleToggleActive}>
-                    {userQuery.data.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งานอีกครั้ง'}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Reveal>
 
-          <UserRolesSection
-            userId={userId}
-            roles={userQuery.data.roles}
-            requesterIsSuperAdmin={requesterIsSuperAdmin}
-            isSelf={isSelf}
-            onChanged={refetch}
-          />
+          <Reveal index={2}>
+            <UserRolesSection
+              userId={userId}
+              roles={userQuery.data.roles}
+              requesterIsSuperAdmin={requesterIsSuperAdmin}
+              isSelf={isSelf}
+              onChanged={refetch}
+            />
+          </Reveal>
 
-          <UserScopesSection
-            userId={userId}
-            scopes={userQuery.data.scopes}
-            isSelf={isSelf}
-            onChanged={refetch}
-          />
+          <Reveal index={3}>
+            <UserScopesSection
+              userId={userId}
+              scopes={userQuery.data.scopes}
+              isSelf={isSelf}
+              onChanged={refetch}
+            />
+          </Reveal>
         </>
       )}
     </DashboardShell>

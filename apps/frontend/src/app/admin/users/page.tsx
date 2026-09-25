@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateUserResponse } from '@eduanalyze-ai/shared-types';
 import { fetchUsers } from '@/lib/api/user-management';
@@ -8,6 +9,9 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
 import { CreateUserForm } from '@/components/admin/create-user-form';
 import { UserListTable } from '@/components/admin/user-list-table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -29,6 +33,7 @@ function AdminUsersContent() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [createdUser, setCreatedUser] = useState<CreateUserResponse | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const usersQuery = useQuery({ queryKey: ['admin-users'], queryFn: fetchUsers });
 
@@ -45,6 +50,11 @@ function AdminUsersContent() {
 
   const requesterIsSuperAdmin = user.roles.includes('SUPER_ADMIN');
 
+  function handleCreated(result: CreateUserResponse) {
+    setCreatedUser(result);
+    setShowCreateForm(false);
+  }
+
   function handleAcknowledge() {
     setCreatedUser(null);
     queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -56,14 +66,33 @@ function AdminUsersContent() {
       identityLabel={user.email}
       fullName={user.fullName}
     >
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">ผู้ใช้งาน</h1>
-        <p className="text-sm text-muted-foreground">
-          จัดการบัญชีอาจารย์ เจ้าหน้าที่ และผู้ดูแลระบบ
-        </p>
-      </div>
+      <Reveal index={0}>
+        <PageHeader
+          title="ผู้ใช้งาน"
+          description="จัดการบัญชีอาจารย์ เจ้าหน้าที่ และผู้ดูแลระบบ"
+          actions={
+            !createdUser && (
+              <Button
+                type="button"
+                variant={showCreateForm ? 'outline' : 'default'}
+                className="gap-1.5"
+                onClick={() => setShowCreateForm((open) => !open)}
+              >
+                {showCreateForm ? (
+                  'ยกเลิก'
+                ) : (
+                  <>
+                    <Plus size={16} />
+                    สร้างบัญชี
+                  </>
+                )}
+              </Button>
+            )
+          }
+        />
+      </Reveal>
 
-      {createdUser ? (
+      {createdUser && (
         <Card className={createdUser.passwordSetupEmailSent ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}>
           <CardContent className="space-y-4 pt-6">
             <p className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}>
@@ -88,24 +117,28 @@ function AdminUsersContent() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <CreateUserForm requesterIsSuperAdmin={requesterIsSuperAdmin} onCreated={setCreatedUser} />
       )}
 
-      {usersQuery.isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TableSkeleton cols={4} rows={6} />
-          </CardContent>
-        </Card>
+      {showCreateForm && !createdUser && (
+        <Reveal>
+          <CreateUserForm requesterIsSuperAdmin={requesterIsSuperAdmin} onCreated={handleCreated} />
+        </Reveal>
       )}
-      {usersQuery.isError && (
-        <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
-      )}
-      {usersQuery.data && <UserListTable users={usersQuery.data} />}
+
+      <Reveal index={1}>
+        {usersQuery.isLoading && (
+          <Card>
+            <CardHeader>
+              <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TableSkeleton cols={4} rows={6} />
+            </CardContent>
+          </Card>
+        )}
+        {usersQuery.isError && <PageLoadError />}
+        {usersQuery.data && <UserListTable users={usersQuery.data} />}
+      </Reveal>
     </DashboardShell>
   );
 }
