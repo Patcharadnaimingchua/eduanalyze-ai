@@ -3,6 +3,7 @@ import { Clo, Course, Grade, Prisma, StudentProfile } from '@prisma/client';
 import { RequestUser } from '../auth/request-user.interface';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ScopeResolverService } from '../../common/scope/scope-resolver.service';
+import { AcademicYearService } from '../academic-record/academic-year/academic-year.service';
 import {
   CreditCheckCurriculumTree,
   CreditCheckerService,
@@ -31,6 +32,7 @@ import {
   InstructorDashboardReport,
   InstructorStudentEntry,
   InstructorStudentsReport,
+  InstructorYearLevelsReport,
   ProblematicCloEntry,
   ProblematicPloEntry,
   RecentCourse,
@@ -41,6 +43,7 @@ import {
   StudentDashboardReport,
   SystemCurriculumEntry,
   SystemCurriculumOverviewReport,
+  YearLevelBucket,
 } from './dashboard-report.interface';
 import { RadarPoint } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 
@@ -52,6 +55,16 @@ const STAFF_AT_RISK_LIMIT = 20;
 // this counts as at risk, and a null GPA does not ("no data" is not
 // "at risk").
 const AT_RISK_GPA_THRESHOLD = 2.0;
+
+// Bucket 4 is a catch-all "4 and beyond" band, not a literal 4th year —
+// keeps the UI to a fixed set of buckets regardless of how long a
+// student has actually been enrolled.
+const YEAR_LEVEL_LABELS: Record<number, string> = {
+  1: 'ปี 1',
+  2: 'ปี 2',
+  3: 'ปี 3',
+  4: 'ปี 4 ขึ้นไป',
+};
 
 type CurriculumWithProgram = Prisma.CurriculumGetPayload<{
   include: { program: { select: { code: true; name: true } } };
@@ -98,6 +111,7 @@ export class DashboardService {
     private readonly courseAssessmentService: CourseAssessmentService,
     private readonly prisma: PrismaService,
     private readonly scopeResolverService: ScopeResolverService,
+    private readonly academicYearService: AcademicYearService,
   ) {}
 
   async getStudentDashboard(
@@ -367,6 +381,75 @@ export class DashboardService {
         name: c.name,
       })),
       students,
+    };
+  }
+
+  // Students grouped by year level (1-4), scoped to only students who
+  // have taken a course with THIS instructor — never program/curriculum
+  // -wide. currentAcademicYear has no dedicated field in the schema
+  // (AcademicYear.isActive is a soft-delete flag, not a "current" flag),
+  // so it's derived as MAX(year) among active AcademicYear rows.
+  // Constant 4 queries regardless of course/student count: findMyCourses,
+  // findActiveRecordsForCourses, studentProfile.findMany,
+  // academicYear.findAll — everything else is a single in-memory pass,
+  // mirroring PloAchievementService.calculateForCurriculum's
+  // cohortComparison bucketing rather than calculateForCohort's known
+  // N-query-per-cohort pattern.
+  async getInstructorYearLevels(
+    user: RequestUser,
+  ): Promise<InstructorYearLevelsReport> {
+    const courses = await this.courseService.findMyCourses(user.userId);
+    const courseIds = courses.map((c) => c.id);
+
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForCourses(
+        courseIds,
+      );
+    const latestByStudent =
+      this.studentCourseRecordService.dedupeLatestPerStudent(records);
+
+    const profiles =
+      latestByStudent.size > 0
+        ? await this.prisma.studentProfile.findMany({
+            where: { id: { in: [...latestByStudent.keys()] } },
+            select: {
+              id: true,
+              studentCode: true,
+              admissionYear: true,
+              user: { select: { fullName: true } },
+            },
+          })
+        : [];
+
+    const academicYears = await this.academicYearService.findAll();
+    const currentAcademicYear =
+      academicYears.length > 0
+        ? Math.max(...academicYears.map((y) => y.year))
+        : new Date().getFullYear();
+
+    const buckets = new Map<number, YearLevelBucket['students']>();
+    for (const profile of profiles) {
+      const rawLevel = currentAcademicYear - profile.admissionYear + 1;
+      const yearLevel = Math.min(Math.max(rawLevel, 1), 4);
+      const bucket = buckets.get(yearLevel) ?? [];
+      bucket.push({
+        studentProfileId: profile.id,
+        studentCode: profile.studentCode,
+        fullName: profile.user.fullName,
+        admissionYear: profile.admissionYear,
+      });
+      buckets.set(yearLevel, bucket);
+    }
+
+    return {
+      currentAcademicYear,
+      buckets: [1, 2, 3, 4].map((yearLevel) => ({
+        yearLevel,
+        label: YEAR_LEVEL_LABELS[yearLevel],
+        students: (buckets.get(yearLevel) ?? []).sort((a, b) =>
+          a.studentCode.localeCompare(b.studentCode),
+        ),
+      })),
     };
   }
 

@@ -78,6 +78,19 @@ export class DashboardController {
     );
   }
 
+  @Get('instructor/year-levels')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      "Year Level Overview — students grouped by year level (1-4), scoped to only students who have taken a course with this instructor",
+  })
+  @ApiResponse({ status: 200, description: 'Instructor year-levels report' })
+  getInstructorYearLevels(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getInstructorYearLevels(user);
+  }
+
   @Get('staff')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('STAFF')

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AcademicYearModule } from '../academic-record/academic-year/academic-year.module';
 import { CreditCheckerModule } from '../academic-record/credit-checker/credit-checker.module';
 import { LearningPathModule } from '../academic-record/learning-path/learning-path.module';
 import { StudentCourseRecordModule } from '../academic-record/student-course-record/student-course-record.module';
@@ -12,6 +13,7 @@ import { DashboardService } from './dashboard.service';
 
 @Module({
   imports: [
+    AcademicYearModule,
     CreditCheckerModule,
     StudentCourseRecordModule,
     PloAchievementModule,

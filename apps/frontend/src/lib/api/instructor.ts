@@ -2,6 +2,7 @@ import type {
   CourseCloAchievementReport,
   InstructorDashboardReport,
   InstructorStudentsReport,
+  InstructorYearLevelsReport,
   RiskLevel,
   StudentInstructorTimeline,
   StudentRosterEntry,
@@ -20,6 +21,13 @@ export async function fetchInstructorStudents(params: {
   const { data } = await apiClient.get<InstructorStudentsReport>('/dashboard/instructor/students', {
     params,
   });
+  return data;
+}
+
+export async function fetchInstructorYearLevels() {
+  const { data } = await apiClient.get<InstructorYearLevelsReport>(
+    '/dashboard/instructor/year-levels',
+  );
   return data;
 }
 
