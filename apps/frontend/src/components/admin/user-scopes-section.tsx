@@ -11,6 +11,7 @@ import { scopeSchema, type ScopeFormValues } from '@/lib/validation/scope.schema
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/lib/toast-context';
 import { Form } from '@/components/ui/form';
 import { ScopeSelector } from './scope-selector';
 
@@ -34,6 +35,7 @@ export function UserScopesSection({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
 
   // Same query keys as ScopeSelector — shares the cache, no duplicate fetch.
   const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
@@ -60,6 +62,7 @@ export function UserScopesSection({
     setServerError(null);
     try {
       await createUserScope(userId, values);
+      toast.success('เพิ่มขอบเขตความรับผิดชอบแล้ว');
       form.reset({ level: undefined, targetId: '' });
       onChanged();
     } catch {
@@ -72,6 +75,7 @@ export function UserScopesSection({
     setServerError(null);
     try {
       await deleteUserScope(userId, scopeId);
+      toast.success('ถอนขอบเขตความรับผิดชอบแล้ว');
       setConfirmingId(null);
       onChanged();
     } catch {

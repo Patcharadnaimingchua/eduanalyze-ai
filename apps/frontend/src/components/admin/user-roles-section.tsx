@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { assignUserRole, revokeUserRole } from '@/lib/api/user-management';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
+import { useToast } from '@/lib/toast-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -32,6 +33,7 @@ export function UserRolesSection({
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
 
   // ADMIN may only assign/revoke STAFF (backend-enforced) — narrowing the
   // dropdown here means an ADMIN never even attempts (and gets 403'd by)
@@ -46,6 +48,7 @@ export function UserRolesSection({
     setServerError(null);
     try {
       await assignUserRole(userId, { role: selectedRole as Role });
+      toast.success(`เพิ่มบทบาท ${ROLE_LABEL_TH[selectedRole as Role]} แล้ว`);
       setSelectedRole('');
       onChanged();
     } catch {
@@ -60,6 +63,7 @@ export function UserRolesSection({
     setServerError(null);
     try {
       await revokeUserRole(userId, role);
+      toast.success(`ถอนบทบาท ${ROLE_LABEL_TH[role]} แล้ว`);
       setConfirmingRole(null);
       onChanged();
     } catch {

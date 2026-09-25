@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { fetchUser, updateUserActiveStatus } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -35,6 +36,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
 
   const userQuery = useQuery({
     queryKey: ['admin-users', userId],
@@ -66,6 +68,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
     setServerError(null);
     try {
       await updateUserActiveStatus(userId, { isActive: !userQuery.data.isActive });
+      toast.success(userQuery.data.isActive ? 'ระงับการใช้งานบัญชีแล้ว' : 'เปิดใช้งานบัญชีอีกครั้งแล้ว');
       refetch();
     } catch {
       setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
