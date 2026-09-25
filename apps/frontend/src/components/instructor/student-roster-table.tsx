@@ -52,6 +52,23 @@ function exportRosterCsv(
   downloadCsv(`gradebook-${courseCode}-${today}${isFiltered ? '-filtered' : ''}.csv`, csv);
 }
 
+// downloadCsv's Blob/URL.createObjectURL path can throw in constrained
+// environments (e.g. an iframe sandbox) — this had no feedback at all
+// before, success or failure.
+function exportRosterCsvWithToast(
+  courseCode: string,
+  rows: StudentRosterEntry[],
+  isFiltered: boolean,
+  toast: ReturnType<typeof useToast>,
+) {
+  try {
+    exportRosterCsv(courseCode, rows, isFiltered);
+    toast.success('ส่งออก CSV แล้ว');
+  } catch {
+    toast.error('ส่งออก CSV ไม่สำเร็จ');
+  }
+}
+
 function describeWriteError(error: unknown) {
   if (isAxiosError(error)) {
     if (error.response?.status === 403) return 'คุณไม่มีสิทธิ์แก้ไขผลการเรียนของรายวิชานี้';
@@ -176,7 +193,7 @@ export function StudentRosterTable({
           variant="outline"
           size="sm"
           disabled={visibleRoster.length === 0}
-          onClick={() => exportRosterCsv(courseCode, sort.sorted, isFiltered)}
+          onClick={() => exportRosterCsvWithToast(courseCode, sort.sorted, isFiltered, toast)}
         >
           <Download className="mr-1.5 h-3.5 w-3.5" />
           ส่งออก CSV

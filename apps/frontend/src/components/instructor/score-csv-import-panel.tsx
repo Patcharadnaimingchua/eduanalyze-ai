@@ -11,6 +11,7 @@ import {
   type ReadyScoreRow,
 } from '@/lib/assessment-score-import';
 import { ASSESSMENT_SCORE_STATUS_LABELS } from '@/lib/grade-label';
+import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -111,6 +112,7 @@ export function ScoreCsvImportPanel({
   const [formatError, setFormatError] = useState<string | null>(null);
   const [results, setResults] = useState<ImportResultRow[] | null>(null);
   const [importing, setImporting] = useState(false);
+  const toast = useToast();
 
   async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -137,8 +139,19 @@ export function ScoreCsvImportPanel({
     const ready = rows.filter((row): row is ReadyScoreRow => row.verdict === 'ready');
     setImporting(true);
     try {
-      setResults(await executeScoreImport(ready, { courseId, assessmentCloMappingId }));
+      const imported = await executeScoreImport(ready, { courseId, assessmentCloMappingId });
+      setResults(imported);
       onImported();
+      const failedCount = imported.filter((r) => r.outcome === 'failed').length;
+      if (failedCount === 0) {
+        toast.success(`นำเข้าคะแนน ${imported.length} รายการสำเร็จ`);
+      } else {
+        toast.error(`นำเข้าสำเร็จ ${imported.length - failedCount} รายการ ผิดพลาด ${failedCount} รายการ`);
+      }
+    } catch {
+      // Previously silent — importing just reset to false with no results
+      // and no error shown at all.
+      toast.error('นำเข้าไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setImporting(false);
     }
