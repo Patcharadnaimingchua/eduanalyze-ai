@@ -46,7 +46,7 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
             {coursesWithRisk.map((course) => (
               <div key={course.courseId} className="space-y-2">
                 <Link
-                  href={`/instructor/courses/${course.courseId}?tab=roster`}
+                  href={`/instructor/courses/${course.courseId}?tab=gradebook`}
                   className="text-sm font-medium text-brand hover:underline"
                 >
                   {course.code} {course.name}

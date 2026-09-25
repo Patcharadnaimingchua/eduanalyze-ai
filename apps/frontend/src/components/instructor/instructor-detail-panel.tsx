@@ -12,22 +12,39 @@ import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
 
-export type InstructorTab = 'grades' | 'clo' | 'roster' | 'evidence' | 'course';
+export type InstructorTab = 'overview' | 'students' | 'gradebook' | 'clo' | 'evidence';
 
-// Split by the question each one answers: raw grades (day-to-day teaching)
-// vs threshold attainment (curriculum QA). 'grades' absorbed the old
-// standalone 'trend' tab, so stale ?tab=trend links fall back onto the tab
-// that now contains the trend chart.
+// Overview/Students/Gradebook/CLO-PLO/Assessment Evidence — Students and
+// Gradebook render the SAME StudentRosterTable (see the two branches
+// below), toggled only by whether onChanged is passed: Students is the
+// read-only search/filter/timeline view, Gradebook is the same table with
+// inline grade-edit and delete enabled. Overview absorbed the old standalone
+// 'grades' (distribution/trend charts) and 'course' (metadata/prerequisites)
+// tabs — both are read-only/summary-shaped content with no tab of their own
+// anymore.
 const TABS: { key: InstructorTab; label: string }[] = [
-  { key: 'grades', label: 'ผลการเรียน' },
-  { key: 'clo', label: 'ผลลัพธ์การเรียนรู้' },
-  { key: 'roster', label: 'Gradebook' },
+  { key: 'overview', label: 'Overview' },
+  { key: 'students', label: 'Students' },
+  { key: 'gradebook', label: 'Gradebook' },
+  { key: 'clo', label: 'CLO-PLO' },
   { key: 'evidence', label: 'Assessment Evidence' },
-  { key: 'course', label: 'ข้อมูลรายวิชา' },
 ];
 
+// Backward-compat for bookmarked/shared links from before the 5-tab
+// restructure: ?tab=grades and ?tab=trend (the older standalone tab grades
+// absorbed) fall back onto Overview; ?tab=roster (renamed) falls back onto
+// Gradebook, since that's the tab that kept the editable behavior.
+const LEGACY_TAB_ALIASES: Record<string, InstructorTab> = {
+  grades: 'overview',
+  trend: 'overview',
+  course: 'overview',
+  roster: 'gradebook',
+};
+
 export function parseInstructorTab(value: string | null): InstructorTab {
-  return TABS.find((tab) => tab.key === value)?.key ?? 'grades';
+  if (value && TABS.some((tab) => tab.key === value)) return value as InstructorTab;
+  if (value && value in LEGACY_TAB_ALIASES) return LEGACY_TAB_ALIASES[value];
+  return 'overview';
 }
 
 // Both queries here are lazy — enabled only once their tab is actually
@@ -55,7 +72,9 @@ export function InstructorDetailPanel({
   const rosterQuery = useQuery({
     queryKey: ['course-roster', course.courseId],
     queryFn: () => fetchCourseRoster(course.courseId),
-    enabled: isInstructor && (activeTab === 'roster' || activeTab === 'clo'),
+    enabled:
+      isInstructor &&
+      (activeTab === 'students' || activeTab === 'gradebook' || activeTab === 'clo'),
   });
 
   // Evidence coverage sits beside the grade-based numbers on the CLO tab so
@@ -97,11 +116,14 @@ export function InstructorDetailPanel({
           ))}
         </div>
 
-        {activeTab === 'grades' && (
-          <CourseResultsSection
-            distribution={course.gradeDistribution}
-            trend={course.semesterTrend}
-          />
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <CourseInfoSection course={course} />
+            <CourseResultsSection
+              distribution={course.gradeDistribution}
+              trend={course.semesterTrend}
+            />
+          </div>
         )}
 
         {activeTab === 'clo' && (
@@ -118,11 +140,25 @@ export function InstructorDetailPanel({
             evidenceTotal={rosterQuery.data?.length}
             evidenceError={evidenceCoverageQuery.isError}
             roster={rosterQuery.data}
-            onViewRoster={() => onTabChange('roster')}
+            onViewRoster={() => onTabChange('gradebook')}
           />
         )}
 
-        {activeTab === 'roster' && (
+        {/* Same table both tabs — onChanged toggles editable (student-roster-table.tsx's
+            `editable = !!onChanged`): omitted here for a read-only search/filter/timeline
+            view, passed below for the same rows with grade-edit and delete enabled. */}
+        {activeTab === 'students' && (
+          <StudentRosterTable
+            courseId={course.courseId}
+            courseCode={course.code}
+            clos={course.clos}
+            roster={rosterQuery.data}
+            isLoading={rosterQuery.isLoading}
+            isError={rosterQuery.isError}
+          />
+        )}
+
+        {activeTab === 'gradebook' && (
           <StudentRosterTable
             courseId={course.courseId}
             courseCode={course.code}
@@ -140,8 +176,6 @@ export function InstructorDetailPanel({
         {activeTab === 'evidence' && isInstructor && (
           <AssessmentEvidenceSection courseId={course.courseId} clos={course.clos} />
         )}
-
-        {activeTab === 'course' && <CourseInfoSection course={course} />}
       </CardContent>
     </Card>
   );
