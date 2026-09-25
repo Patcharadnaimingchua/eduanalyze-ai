@@ -10,8 +10,10 @@ import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER } from '@/lib/risk-level';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
 import { StudentDirectoryTable } from '@/components/staff/student-directory-table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
@@ -77,12 +79,11 @@ function StaffStudentsContent() {
 
   return (
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
-      <div>
-        <h1 className="text-2xl font-semibold text-primary">ทำเนียบนักศึกษา</h1>
-        <p className="text-sm text-muted-foreground">นักศึกษาในขอบเขตความรับผิดชอบของคุณ</p>
-      </div>
+      <Reveal index={0}>
+        <PageHeader title="ทำเนียบนักศึกษา" description="นักศึกษาในขอบเขตความรับผิดชอบของคุณ" />
+      </Reveal>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <Reveal index={1} className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="ค้นหาชื่อหรือรหัสนักศึกษา..."
           value={search}
@@ -112,30 +113,28 @@ function StaffStudentsContent() {
             แสดง {filteredStudents.length} จาก {allStudents.length} คน
           </span>
         )}
-      </div>
+      </Reveal>
 
-      {studentsQuery.isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>ทำเนียบนักศึกษา</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TableSkeleton cols={6} rows={6} />
-          </CardContent>
-        </Card>
-      )}
-      {studentsQuery.isError && (
-        <Alert variant="destructive">
-          <AlertDescription>ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
-        </Alert>
-      )}
-      {studentsQuery.data && (
-        <StudentDirectoryTable
-          students={filteredStudents}
-          programs={programsQuery.data ?? []}
-          curricula={curriculaQuery.data ?? []}
-        />
-      )}
+      <Reveal index={2}>
+        {studentsQuery.isLoading && (
+          <Card>
+            <CardHeader>
+              <CardTitle>ทำเนียบนักศึกษา</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TableSkeleton cols={6} rows={6} />
+            </CardContent>
+          </Card>
+        )}
+        {studentsQuery.isError && <PageLoadError />}
+        {studentsQuery.data && (
+          <StudentDirectoryTable
+            students={filteredStudents}
+            programs={programsQuery.data ?? []}
+            curricula={curriculaQuery.data ?? []}
+          />
+        )}
+      </Reveal>
     </DashboardShell>
   );
 }
