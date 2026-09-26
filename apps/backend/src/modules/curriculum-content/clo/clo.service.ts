@@ -44,12 +44,7 @@ export class CloService {
   }
 
   async update(id: string, dto: UpdateCloDto) {
-    const clo = await this.findOne(id);
-
-    if (dto.courseId) {
-      await this.courseService.findActiveByIdOrThrow(dto.courseId);
-    }
-    const courseId = dto.courseId ?? clo.courseId;
+    const { courseId } = await this.findOne(id);
 
     if (dto.code) {
       await this.assertCodeAvailable(courseId, dto.code, id);

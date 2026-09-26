@@ -43,12 +43,7 @@ export class PloService {
   }
 
   async update(id: string, dto: UpdatePloDto) {
-    const plo = await this.findOne(id);
-
-    if (dto.curriculumId) {
-      await this.curriculumService.findActiveByIdOrThrow(dto.curriculumId);
-    }
-    const curriculumId = dto.curriculumId ?? plo.curriculumId;
+    const { curriculumId } = await this.findOne(id);
 
     if (dto.code) {
       await this.assertCodeAvailable(curriculumId, dto.code, id);

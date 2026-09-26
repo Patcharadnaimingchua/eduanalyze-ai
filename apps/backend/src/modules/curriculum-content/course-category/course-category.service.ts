@@ -48,12 +48,7 @@ export class CourseCategoryService {
   }
 
   async update(id: string, dto: UpdateCourseCategoryDto) {
-    const category = await this.findOne(id);
-
-    if (dto.curriculumId) {
-      await this.curriculumService.findActiveByIdOrThrow(dto.curriculumId);
-    }
-    const curriculumId = dto.curriculumId ?? category.curriculumId;
+    const { curriculumId } = await this.findOne(id);
 
     if (dto.name) {
       await this.assertNameAvailable(curriculumId, dto.name, id);

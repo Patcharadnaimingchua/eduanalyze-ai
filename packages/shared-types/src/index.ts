@@ -164,14 +164,14 @@ export interface CreateDepartmentRequest {
   code: string;
   facultyId: string;
 }
-export type UpdateDepartmentRequest = Partial<CreateDepartmentRequest>;
+export type UpdateDepartmentRequest = Partial<Omit<CreateDepartmentRequest, 'facultyId'>>;
 
 export interface CreateProgramRequest {
   name: string;
   code: string;
   departmentId: string;
 }
-export type UpdateProgramRequest = Partial<CreateProgramRequest>;
+export type UpdateProgramRequest = Partial<Omit<CreateProgramRequest, 'departmentId'>>;
 
 export interface CreateCurriculumRequest {
   programId: string;
@@ -182,7 +182,7 @@ export interface CreateCurriculumRequest {
   defaultAchievementThreshold?: number;
   maxCreditsPerSemester?: number;
 }
-export type UpdateCurriculumRequest = Partial<CreateCurriculumRequest>;
+export type UpdateCurriculumRequest = Partial<Omit<CreateCurriculumRequest, 'programId'>>;
 
 // ---- GET /dashboard/staff — STAFF's program/curriculum overview,
 // scoped to their assigned org scope.
@@ -1234,4 +1234,4 @@ export interface CreateCourseRequest {
   categoryId: string;
 }
 
-export type UpdateCourseRequest = Partial<CreateCourseRequest>;
+export type UpdateCourseRequest = Partial<Omit<CreateCourseRequest, 'curriculumId'>>;

@@ -47,13 +47,9 @@ export class DepartmentService {
   }
 
   async update(id: string, dto: UpdateDepartmentDto) {
-    const department = await this.findOne(id);
+    const { facultyId } = await this.findOne(id);
 
-    if (dto.facultyId) {
-      await this.facultyService.findActiveByIdOrThrow(dto.facultyId);
-    }
     if (dto.code) {
-      const facultyId = dto.facultyId ?? department.facultyId;
       await this.assertCodeAvailable(facultyId, dto.code, id);
     }
 

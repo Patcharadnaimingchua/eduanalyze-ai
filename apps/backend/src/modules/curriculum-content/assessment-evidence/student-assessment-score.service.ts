@@ -15,7 +15,7 @@ export class StudentAssessmentScoreService {
       dto.assessmentCloMappingId,
       dto.courseId,
     );
-    await this.assertStudentCourseRecordExists(dto.studentCourseRecordId);
+    await this.assertStudentCourseRecordInCourse(dto.studentCourseRecordId, dto.courseId);
     this.assertScorePresenceMatchesStatus(dto.status, dto.score);
 
     const key = {
@@ -49,13 +49,25 @@ export class StudentAssessmentScoreService {
     });
   }
 
-  private async assertStudentCourseRecordExists(studentCourseRecordId: string) {
+  // The guard only proves the caller may act on courseId, so the record must
+  // be checked against that same course — 404 like assertBelongsToCourse, so
+  // another course's record ids can't be probed.
+  private async assertStudentCourseRecordInCourse(
+    studentCourseRecordId: string,
+    courseId: string,
+  ) {
     const record = await this.prisma.studentCourseRecord.findUnique({
       where: { id: studentCourseRecordId },
+      select: { courseId: true, isActive: true },
     });
-    if (!record || !record.isActive) {
+    if (!record?.isActive) {
       throw new NotFoundException(
         `Active student course record ${studentCourseRecordId} not found`,
+      );
+    }
+    if (record.courseId !== courseId) {
+      throw new NotFoundException(
+        `Student course record ${studentCourseRecordId} not found in course ${courseId}`,
       );
     }
   }

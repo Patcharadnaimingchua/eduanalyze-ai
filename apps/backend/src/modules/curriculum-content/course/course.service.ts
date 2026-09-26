@@ -69,12 +69,7 @@ export class CourseService {
   }
 
   async update(id: string, dto: UpdateCourseDto) {
-    const course = await this.findOne(id);
-
-    if (dto.curriculumId) {
-      await this.curriculumService.findActiveByIdOrThrow(dto.curriculumId);
-    }
-    const curriculumId = dto.curriculumId ?? course.curriculumId;
+    const { curriculumId } = await this.findOne(id);
 
     if (dto.categoryId) {
       const category = await this.courseCategoryService.findActiveByIdOrThrow(
