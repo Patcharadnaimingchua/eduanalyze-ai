@@ -16,7 +16,11 @@
     "prisma:generate": "npm run prisma:generate --workspace=apps/backend",
     "prisma:migrate": "npm run prisma:migrate --workspace=apps/backend",
     "lint": "npm run lint --workspace=apps/backend && npm run lint --workspace=apps/frontend",
-    "test:backend": "npm run test --workspace=apps/backend"
+    "test:backend": "npm run test --workspace=apps/backend",
+    "docker:rebuild": "docker compose up -d --build",
+    "docker:rebuild:frontend": "docker compose up -d --build frontend",
+    "docker:rebuild:backend": "docker compose up -d --build backend",
+    "docker:check-fresh": "bash scripts/check-docker-freshness.sh"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -5,7 +5,17 @@
 #
 # The full stack (all 3 services, backend+frontend built as images) is for
 # testing an actual containerized deploy, not the everyday dev loop:
-#   docker compose up --build
+#   npm run docker:rebuild            (both images)
+#   npm run docker:rebuild:frontend   (frontend only)
+#   npm run docker:rebuild:backend    (backend only)
+#
+# backend/frontend have NO volume mount and run a production build
+# (`next build`/`nest build` baked into the image at build time) — editing
+# source and then running plain `docker compose up -d` silently reuses the
+# stale image with NO error or warning. Always pass --build (the npm
+# scripts above do this for you) after changing backend/frontend source.
+# Run `npm run docker:check-fresh` if unsure whether a running image is
+# already stale.
 #
 # Postgres is published on host port 5433, never 5432 — a pre-existing
 # Homebrew Postgres install may already be using 5432, and this project's
