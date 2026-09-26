@@ -72,6 +72,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
       refetch();
     } catch {
       setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusy(false);
     }

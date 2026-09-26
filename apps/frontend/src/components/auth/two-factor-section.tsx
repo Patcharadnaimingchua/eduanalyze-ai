@@ -14,6 +14,7 @@ import {
   type TwoFactorEnableFormValues,
 } from '@/lib/validation/two-factor.schema';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -269,6 +270,7 @@ function TwoFactorDisableFlow({
   onCancel: () => void;
   onDisabled: () => void;
 }) {
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<TwoFactorDisableFormValues>({
     resolver: zodResolver(twoFactorDisableSchema),
@@ -279,6 +281,7 @@ function TwoFactorDisableFlow({
     setServerError(null);
     try {
       await disableTwoFactor(values);
+      toast.success('ปิดใช้งาน 2FA สำเร็จ');
       onDisabled();
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {

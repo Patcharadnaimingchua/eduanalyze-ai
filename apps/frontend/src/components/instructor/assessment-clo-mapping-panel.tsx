@@ -14,6 +14,7 @@ import {
   assessmentCloMappingSchema,
   type AssessmentCloMappingFormValues,
 } from '@/lib/validation/assessment-clo-mapping.schema';
+import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ export function AssessmentCloMappingPanel({
   onSelect: (mappingId: string, cloId: string) => void;
 }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const mappingsQuery = useQuery({
@@ -69,6 +71,7 @@ export function AssessmentCloMappingPanel({
         queryKey: ['assessment-clo-mappings', assessmentDefinitionId],
       });
       onSelect(created.id, created.cloId);
+      toast.success('ผูก CLO แล้ว');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('การประเมินนี้ผูกกับ CLO นี้ไว้แล้ว');

@@ -11,6 +11,7 @@ import {
   creditLimitRequestSchema,
   type CreditLimitRequestFormValues,
 } from '@/lib/validation/credit-limit-request.schema';
+import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ export function CreditLimitRequestControl({
   request: CreditLimitRequest | null;
   onChanged: () => void;
 }>) {
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -40,6 +42,7 @@ export function CreditLimitRequestControl({
     try {
       await deleteCreditLimitRequest();
       onChanged();
+      toast.success('ยกเลิกคำขอปรับหน่วยกิตแล้ว');
     } catch {
       setCancelError('ยกเลิกคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
@@ -102,6 +105,7 @@ function CreditLimitRequestForm({
   onCancel: () => void;
   onSubmitted: () => void;
 }>) {
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<CreditLimitRequestFormValues>({
     resolver: zodResolver(creditLimitRequestSchema),
@@ -113,6 +117,7 @@ function CreditLimitRequestForm({
     try {
       await upsertCreditLimitRequest(values);
       onSubmitted();
+      toast.success('ส่งคำขอปรับหน่วยกิตแล้ว');
     } catch {
       setServerError('ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     }

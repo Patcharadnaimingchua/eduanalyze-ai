@@ -7,6 +7,7 @@ import { isAxiosError } from 'axios';
 import type { ChangePasswordRequest } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import {
   changePasswordSchema,
   type ChangePasswordFormValues,
@@ -45,6 +46,7 @@ export function ChangePasswordForm({
   onSuccess?: () => void;
 }) {
   const { refreshUser } = useAuth();
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
@@ -61,6 +63,7 @@ export function ChangePasswordForm({
       await apiClient.patch('/auth/change-password', payload);
       form.reset({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
       await refreshUser();
+      toast.success('เปลี่ยนรหัสผ่านสำเร็จ');
       onSuccess?.();
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {

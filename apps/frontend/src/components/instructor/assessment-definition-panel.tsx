@@ -15,6 +15,7 @@ import {
   type AssessmentDefinitionFormValues,
 } from '@/lib/validation/assessment-definition.schema';
 import { formatSemesterLabel } from '@/lib/grade-label';
+import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ export function AssessmentDefinitionPanel({
   onSelect: (definitionId: string) => void;
 }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const definitionsQuery = useQuery({
@@ -76,6 +78,7 @@ export function AssessmentDefinitionPanel({
       form.reset({ title: '', kind: '', maxScore: 100, semesterId: '' });
       await queryClient.invalidateQueries({ queryKey: ['assessment-definitions', courseId] });
       onSelect(created.id);
+      toast.success('เพิ่มการประเมินแล้ว');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 400) {
         setServerError('ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');

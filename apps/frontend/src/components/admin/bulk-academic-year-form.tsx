@@ -44,13 +44,17 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
 
   async function onSubmit(values: BulkAcademicYearFormValues) {
     setResults(null);
-    const rows = await bulkGenerateAcademicYears(values.startYear, YEARS_TO_CREATE);
-    setResults(rows);
-    const created = rows.filter((r) => r.status === 'created').length;
-    const failed = rows.filter((r) => r.status === 'failed').length;
-    if (failed > 0) toast.error(`สร้างไม่สำเร็จ ${failed} รายการ — ดูรายละเอียดในตาราง`);
-    else toast.success(`สร้างปีการศึกษาแล้ว ${created} รายการ`);
-    onCreated();
+    try {
+      const rows = await bulkGenerateAcademicYears(values.startYear, YEARS_TO_CREATE);
+      setResults(rows);
+      const created = rows.filter((r) => r.status === 'created').length;
+      const failed = rows.filter((r) => r.status === 'failed').length;
+      if (failed > 0) toast.error(`สร้างไม่สำเร็จ ${failed} รายการ — ดูรายละเอียดในตาราง`);
+      else toast.success(`สร้างปีการศึกษาแล้ว ${created} รายการ`);
+      onCreated();
+    } catch {
+      toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    }
   }
 
   const createdCount = results?.filter((r) => r.status === 'created').length ?? 0;

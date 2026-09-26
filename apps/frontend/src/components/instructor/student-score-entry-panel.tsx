@@ -132,6 +132,7 @@ export function StudentScoreEntryPanel({
         queryKey: ['student-assessment-scores', assessmentCloMappingId],
       });
       form.reset(form.getValues());
+      toast.success(`บันทึกคะแนน ${dirtyRows.length} รายการสำเร็จ`);
     } catch {
       setServerError('บันทึกคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
