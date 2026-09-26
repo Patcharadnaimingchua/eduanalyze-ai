@@ -192,3 +192,29 @@ const effectiveScopes = scopes.filter(
          s.program?.isActive !== false,
 );
 ```
+
+## 9. Update DTO — Immutable Parent Keys (hierarchy entities)
+
+`ScopeGuard` only resolves and checks the entity's *current* parent (from `:id`). If an Update DTO is `PartialType(CreateXDto)`, it silently also accepts a new parent id — and unless the service does something smarter than "does this parent exist", a caller can re-parent an in-scope entity onto an out-of-scope parent, moving it past `ScopeGuard` entirely. This is the same class of bug as trusting a client-sent id without validating the relationship (PROJECT_CONTEXT.md §33 rule 13), just on `update()` instead of `create()`.
+
+**Default rule: the parent id is immutable on PATCH.** Omit it from the Update DTO with `OmitType` (same `@nestjs/swagger` import the DTO already uses for `PartialType`, so the Swagger schema stays accurate) rather than adding a new-parent scope check:
+
+```ts
+export class UpdateProgramDto extends PartialType(
+  OmitType(CreateProgramDto, ['departmentId'] as const),
+) {}
+```
+
+With the global `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })` (§5), a PATCH body containing the parent key now gets a clean 400 before it reaches any service — the service's `update()` no longer needs (and should delete) any "does the new parent exist" branch; it just keeps reading the parent off the stored row:
+
+```ts
+// before — dead once the DTO omits departmentId, delete it
+if (dto.departmentId) { await this.departmentService.findActiveByIdOrThrow(dto.departmentId); }
+const departmentId = dto.departmentId ?? program.departmentId;
+// after
+const { departmentId } = program;
+```
+
+This is the default, not an absolute rule — an entity can keep one *sibling-scoped* key mutable when moving between siblings under the same parent is a legitimate operation with its own validation already in place (e.g. `Course.categoryId`: moving a course between categories inside the same curriculum doesn't cross a scope boundary, so it stays on the DTO while `curriculumId` itself is omitted).
+
+**Before applying this default, check whether any real caller sends the parent key on update** (grep the frontend `lib/api/*.ts` + every form that calls it) — if nothing does, omitting it is a pure attack-surface reduction with no behavior change for real usage. If something legitimately needs to re-parent, that's a product decision to build as its own explicit endpoint with scope checks on *both* the old and the new parent — never by leaving the field mutable on the general update path.

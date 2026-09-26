@@ -228,3 +228,30 @@ Business logic อื่นๆ (anti-account-takeover, expired/reused token) ผ
 ทดสอบ end-to-end ผ่าน browser เสร็จแล้ว (CSV round-trip, validation errors per row, idempotent upsert, coverage badge count, per-student evidence score) — tsc+lint ผ่าน SonarQube new_violations=0
 
 **Known limitation จาก Phase 2.1 (ยังไม่แก้ เป็นงานแยก)**: CLO mapping panel ที่สอบแสดง UUID ดิบแทนรหัส CLO (เช่น `d9dc5581-f002-4206-afab-70c181e40268` แทน `CLO1`) — โค้ดมี fallback `{clo?.code ?? mapping.cloId}` ซึ่งแสดงว่า `GET /clos` ไม่คืน CLO ของรายวิชานี้ให้ครบ (ปัญหาเดิมของ Phase 2.1 ไม่ใช่ของ Phase 2.2) — ต้องเช็ค endpoint นั้นว่า query parameter/scoping ถูกต้องไหม (แยกงาน หลังจากความจำเป็นจริงกลับมา)
+
+## Authorization gaps — parent-id immutability + cross-course score write — เสร็จสมบูรณ์ (2026-09-26, commit `6397d89`)
+
+**พบระหว่าง full-project audit**: ตรวจโค้ดจริงพบ 2 ช่องโหว่ authorization
+
+1. **PATCH re-parent ข้าม scope ได้**: `ScopeGuard` เช็คแค่ parent *ปัจจุบัน* ของ entity (resolve จาก `:id`) แต่ Update DTO ทั้ง 7 ตัวเป็น `PartialType(Create…Dto)` จึงรับ parent id ใหม่ได้ และ service เช็คแค่ว่า parent ใหม่ *มีอยู่จริง* เท่านั้น ไม่เช็คว่าอยู่ใน scope ของผู้เรียก — ADMIN/STAFF จึงย้าย program/curriculum/course/ฯลฯ ที่ตัวเองมีสิทธิ์ไปอยู่ใต้ parent นอก scope ได้ (ยังกระทบ data integrity ด้วย เพราะย้าย course/CLO/PLO/category ข้าม curriculum จะทำให้ student record และ CLO-PLO mapping เดิมเพี้ยน)
+2. **Instructor เขียนคะแนนข้ามวิชาได้**: `StudentAssessmentScoreService.upsert` เช็คว่า mapping เป็นของ `dto.courseId` แต่เช็คแค่ว่า `studentCourseRecordId` *มีอยู่จริง* เท่านั้น ไม่เช็คว่า record นั้นเป็นของ course เดียวกัน
+
+**แก้แล้ว**:
+- **Parent id immutable ตอน PATCH ทั้ง 7 entity** (department/program/curriculum/course/course-category/clo/plo): ใช้ `OmitType` ตัด parent key ออกจาก Update DTO แต่ละตัว (`UpdateProgramDto = PartialType(OmitType(CreateProgramDto, ['departmentId']))` ฯลฯ) แล้วลบ branch re-parent ที่ตายแล้วออกจาก service ทั้ง 7 ตัว — **ตรวจแล้วว่าไม่มี UI ไหนเคยส่ง parent id ตอน PATCH เลย** (org-tree/curriculum-panel ส่งแค่ name/code/version เดิม) จึงเป็นการปิด attack surface ที่ไม่มีใครใช้งานจริงอยู่แล้ว ไม่ใช่ breaking change — PATCH ที่มี parent id ตอนนี้ได้ 400 แทนการ re-parent เงียบๆ (`UpdateCourseDto` ยังคง `categoryId` ไว้ได้ — ย้ายหมวดภายใน curriculum เดียวกันยังเป็น use case ที่ถูกต้อง ไม่ใช่ scope violation)
+- **Score write บังคับเช็ค courseId**: เพิ่ม `assertStudentCourseRecordInCourse(id, courseId)` แทน `assertStudentCourseRecordExists(id)` เดิมใน `student-assessment-score.service.ts` — record ที่เป็นของ course อื่นได้ `NotFoundException` (ไม่ใช่ `ForbiddenException` — ตาม CONVENTIONS.md §3a: "exists but not yours" ต้องแยกไม่ออกจาก "ไม่มีอยู่จริง" เพื่อกัน information disclosure) mirror pattern เดียวกับ `AssessmentDefinitionService.assertBelongsToCourse` ที่มีอยู่แล้ว
+
+**Tests ใหม่**: `scope-resolver.service.spec.ts` (isCovered hierarchy), `update-dto-parent-immutability.spec.ts` (table-driven ทั้ง 7 DTO ยืนยันว่า parent key ถูก reject, `categoryId` ยังผ่าน), `student-assessment-score.service.spec.ts` (cross-course reject, same-course accept) — รวม 60 unit tests ผ่าน (35 เดิม + 25 ใหม่), tsc clean, curl จริงยืนยันแล้วว่า edit form เดิม (org-tree, curriculum-panel) ยังบันทึกได้ปกติ
+
+**Behavior change ที่ต้องรู้**: PATCH ที่มี parent id ตอนนี้ตอบ 400 แทนการ re-parent เงียบๆ ทุก role รวม SUPER_ADMIN — ถ้าต้องการ re-parent จริงในอนาคต ต้องออกแบบเป็น endpoint แยกที่เช็ค scope ทั้ง parent เก่าและใหม่ ไม่ใช่กลับไปเปิด field เดิมใน Update DTO
+
+## Toast feedback gaps — audit ทั่วโปรเจกต์ + ปิดครบ 11 จุด — เสร็จสมบูรณ์ (2026-09-26, commits `8832850`, `a507adb`)
+
+**Audit**: ตรวจทุกจุดที่มี mutation (POST/PATCH/PUT/DELETE) ทั่ว frontend เทียบกับว่ามี `toast.success`/`toast.error` (`@/lib/toast-context`) ครบไหม พบ 11 จุดที่ขาด (9 no-success + 2 no-error) แก้ครบทั้งหมดเป็น 2 รอบ:
+
+**รอบแรก (`8832850`)**: `StudentScoreEntryPanel` CSV template download (wrap try/catch + success/error toast), `ForgotPasswordPage` (wrap try/catch + success/error toast คู่กับ inline alert เดิม)
+
+**รอบสอง (`a507adb`) — 7 no-success + 2 no-error**:
+- Success toast เพิ่มใหม่: `student-score-entry-panel.tsx` (บันทึกคะแนน), `change-password-form.tsx`, `two-factor-section.tsx` (ปิดใช้งาน 2FA), `assessment-definition-panel.tsx`, `assessment-clo-mapping-panel.tsx`, `credit-limit-request-control.tsx` (ทั้ง submit และ cancel — 2 จุดในไฟล์เดียว)
+- Error toast เพิ่มใหม่: `app/admin/users/[id]/page.tsx` toggle-active (เดิมมีแค่ inline `Alert`, error case เงียบทาง toast), `bulk-academic-year-form.tsx` (เดิมไม่มี try/catch เลย — ถ้า fetch ภายในล้มเหลวจะเงียบสนิททั้ง success/error)
+
+**ทดสอบ**: tsc+lint clean ทั้งสองรอบ, browser test จริงครบทุกจุด (mutation จริงสำหรับ success cases, route interception จำลอง network failure สำหรับ error cases, mock response ที่ network layer สำหรับ change-password/2FA-disable เพื่อไม่แตะรหัสผ่าน/2FA จริงของบัญชี demo) — DB snapshot ก่อนเริ่ม, ล้างข้อมูลทดสอบทั้งหมดหลังตรวจสอบเสร็จ (assessment definition/mapping/scores ที่สร้างเพื่อทดสอบ, คืนสถานะ active ของ user ที่ toggle ทดสอบ, ลบปีการศึกษาทดสอบ)
