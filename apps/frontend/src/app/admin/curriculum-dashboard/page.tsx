@@ -13,6 +13,7 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
 import { BelowThresholdLists } from '@/components/admin/below-threshold-lists';
 import { CurriculumComparisonChart } from '@/components/admin/curriculum-comparison-chart';
+import { CurriculumTierSummary } from '@/components/admin/curriculum-tier-summary';
 import { SystemCurriculumList } from '@/components/admin/system-curriculum-list';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
@@ -106,13 +107,17 @@ function CurriculumDashboardContent() {
           </Reveal>
 
           <Reveal index={2}>
+            <CurriculumTierSummary curricula={data.curricula} />
+          </Reveal>
+
+          <Reveal index={3}>
             <BelowThresholdLists
               plos={data.problematicPlos}
               clos={data.problematicClos}
             />
           </Reveal>
 
-          <Reveal index={3}>
+          <Reveal index={4}>
             {comparable.length >= MIN_CURRICULA_TO_COMPARE ? (
               <CurriculumComparisonChart curricula={comparable} threshold={null} />
             ) : (
@@ -128,7 +133,7 @@ function CurriculumDashboardContent() {
             )}
           </Reveal>
 
-          <Reveal index={4}>
+          <Reveal index={5}>
             <SystemCurriculumList curricula={data.curricula} />
           </Reveal>
         </>
