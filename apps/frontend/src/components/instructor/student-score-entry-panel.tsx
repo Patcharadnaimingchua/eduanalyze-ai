@@ -17,6 +17,7 @@ import {
   ASSESSMENT_SCORE_STATUS_LABELS,
   ASSESSMENT_SCORE_STATUS_OPTIONS,
 } from '@/lib/grade-label';
+import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,7 @@ export function StudentScoreEntryPanel({
   assessmentCloMappingId: string;
 }>) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -140,16 +142,21 @@ export function StudentScoreEntryPanel({
   // Exports what's on screen now, so the file round-trips straight back
   // through import after editing in a spreadsheet.
   function onDownloadTemplate() {
-    const csv = toCsv(
-      SCORE_CSV_HEADERS,
-      form.getValues('rows').map((row) => [
-        row.studentCode,
-        row.fullName,
-        row.status === 'GRADED' ? row.score : '',
-        ASSESSMENT_SCORE_STATUS_LABELS[row.status],
-      ]),
-    );
-    downloadCsv(`assessment-scores-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    try {
+      const csv = toCsv(
+        SCORE_CSV_HEADERS,
+        form.getValues('rows').map((row) => [
+          row.studentCode,
+          row.fullName,
+          row.status === 'GRADED' ? row.score : '',
+          ASSESSMENT_SCORE_STATUS_LABELS[row.status],
+        ]),
+      );
+      downloadCsv(`assessment-scores-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+      toast.success('ดาวน์โหลดเทมเพลตแล้ว');
+    } catch {
+      toast.error('ดาวน์โหลดเทมเพลตไม่สำเร็จ');
+    }
   }
 
   async function onImported() {

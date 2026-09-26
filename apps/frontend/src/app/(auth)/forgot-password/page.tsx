@@ -9,6 +9,7 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordFormValues,
 } from '@/lib/validation/forgot-password.schema';
+import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/form';
 
 export default function ForgotPasswordPage() {
+  const toast = useToast();
   const [submitted, setSubmitted] = useState(false);
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -40,8 +42,13 @@ export default function ForgotPasswordPage() {
     // Backend always returns the same response whether or not the email
     // exists (prevents account enumeration) — so this UI never branches
     // on the result, only on request success vs. network failure.
-    await apiClient.post('/auth/forgot-password', values);
-    setSubmitted(true);
+    try {
+      await apiClient.post('/auth/forgot-password', values);
+      setSubmitted(true);
+      toast.success('ส่งคำขอสำเร็จ');
+    } catch {
+      toast.error('ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    }
   }
 
   return (
