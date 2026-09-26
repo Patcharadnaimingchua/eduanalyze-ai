@@ -58,6 +58,7 @@ const SUPER_ADMIN_NAV_ITEMS: NavItem[] = [
 ];
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
+  { label: 'ภาพรวมขอบเขต', icon: LayoutGrid, href: '/admin/overview' },
   { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
 ];
 

@@ -359,6 +359,56 @@ export interface SystemCurriculumOverviewReport {
   problematicClos: ProblematicCloEntry[];
 }
 
+// ---- GET /dashboard/admin/scope-overview — ADMIN's scoped counterpart to
+// the system-wide curriculum dashboard above. Mirrors
+// dashboard-report.interface.ts.
+
+// Lighter than SystemCurriculumEntry (no GPA/radar) — only enough to place
+// a curriculum into resolveDataState()'s 3 tiers.
+export interface AdminScopeCurriculumEntry {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  programCode: string;
+  programName: string;
+  dataState: CurriculumDataState;
+  studentCount: number;
+  courseCount: number;
+  ploCount: number;
+}
+
+export interface AdminScopeProgram {
+  programId: string;
+  code: string;
+  name: string;
+  departmentName: string;
+  facultyName: string;
+}
+
+export interface AdminScopeOverviewReport {
+  scope: {
+    facultyCount: number;
+    departmentCount: number;
+    programCount: number;
+    programs: AdminScopeProgram[];
+  };
+  // Students hold no UserScope row (their scope is implicit via
+  // StudentProfile.programId) — counted separately from the other roles.
+  userCounts: {
+    staff: number;
+    instructor: number;
+    admin: number;
+    student: number;
+  };
+  curricula: {
+    totalCount: number;
+    hasStudentsCount: number;
+    structureOnlyCount: number;
+    emptyCount: number;
+    entries: AdminScopeCurriculumEntry[];
+  };
+}
+
 // ---- GET /student-profiles/me — the logged-in STUDENT's own profile.
 // Dashboard needs studentProfileId, which /auth/me does not expose
 // (CurrentUserResponse is identity-only, not academic-record data) — this

@@ -293,3 +293,51 @@ export interface StaffOverviewReport {
   atRiskStudents: StaffAtRiskStudent[];
   atRiskSummary: { critical: number; watch: number };
 }
+
+// Lighter than SystemCurriculumEntry (no GPA/radar) — this overview only
+// needs enough to place a curriculum into resolveDataState()'s 3 tiers.
+export interface AdminScopeCurriculumEntry {
+  curriculumId: string;
+  version: string;
+  effectiveYear: number;
+  programCode: string;
+  programName: string;
+  dataState: CurriculumDataState;
+  studentCount: number;
+  courseCount: number;
+  ploCount: number;
+}
+
+export interface AdminScopeProgram {
+  programId: string;
+  code: string;
+  name: string;
+  departmentName: string;
+  facultyName: string;
+}
+
+export interface AdminScopeOverviewReport {
+  scope: {
+    facultyCount: number;
+    departmentCount: number;
+    programCount: number;
+    programs: AdminScopeProgram[];
+  };
+  // Students never hold a UserScope row (their scope is implicit via
+  // StudentProfile.programId) — counted separately from the other three
+  // roles, which are always counted via the requester's own UserScope
+  // ancestry (ScopeResolverService.buildUserScopeOrFilter).
+  userCounts: {
+    staff: number;
+    instructor: number;
+    admin: number;
+    student: number;
+  };
+  curricula: {
+    totalCount: number;
+    hasStudentsCount: number;
+    structureOnlyCount: number;
+    emptyCount: number;
+    entries: AdminScopeCurriculumEntry[];
+  };
+}

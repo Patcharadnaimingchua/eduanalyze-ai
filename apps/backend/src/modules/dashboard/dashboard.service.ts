@@ -26,6 +26,8 @@ import {
   PloWithMappings,
 } from '../curriculum-content/plo-achievement/plo-achievement.service';
 import {
+  AdminScopeCurriculumEntry,
+  AdminScopeOverviewReport,
   CurriculumDashboardReport,
   CurriculumDataState,
   InstructorCourseSummary,
@@ -676,6 +678,160 @@ export class DashboardService {
       curricula: entries,
       problematicPlos,
       problematicClos,
+    };
+  }
+
+  // ADMIN's scoped counterpart to getSystemCurriculumOverview — same
+  // resolveDataState() 3-tier classification, narrowed to the Programs the
+  // requester's own UserScope covers, and without the GPA/radar fields
+  // (this overview only needs counts). Fixed query count regardless of how
+  // many programs/curricula/users are in scope: 1 (programs) + 3 in one
+  // Promise.all (role counts / student count / curricula) + 3 in a second
+  // Promise.all (per-curriculum count groupBys) = 7 total, mirroring
+  // getSystemCurriculumOverview's "batch once, never loop per curriculum"
+  // discipline.
+  async getAdminScopeOverview(user: RequestUser): Promise<AdminScopeOverviewReport> {
+    const programIds = await this.scopeResolverService.getCoveredProgramIds(
+      user.userId,
+    );
+    if (programIds.length === 0) {
+      return {
+        scope: { facultyCount: 0, departmentCount: 0, programCount: 0, programs: [] },
+        userCounts: { staff: 0, instructor: 0, admin: 0, student: 0 },
+        curricula: {
+          totalCount: 0,
+          hasStudentsCount: 0,
+          structureOnlyCount: 0,
+          emptyCount: 0,
+          entries: [],
+        },
+      };
+    }
+
+    const programs = await this.prisma.program.findMany({
+      where: { id: { in: programIds }, isActive: true },
+      include: { department: { include: { faculty: true } } },
+    });
+
+    const facultyIds = new Set(programs.map((p) => p.department.facultyId));
+    const departmentIds = new Set(programs.map((p) => p.departmentId));
+
+    // Students hold no UserScope row (their scope is implicit via
+    // StudentProfile.programId), so STAFF/INSTRUCTOR/ADMIN are counted via
+    // the requester's own UserScope ancestry while STUDENT is counted via
+    // programIds — two structurally different queries, not one.
+    const userScopeFilter =
+      await this.scopeResolverService.buildUserScopeOrFilter(user.userId);
+    const [roleCounts, studentCount, curricula] = await Promise.all([
+      this.prisma.userRole.groupBy({
+        by: ['role'],
+        where: {
+          role: { in: ['STAFF', 'INSTRUCTOR', 'ADMIN'] },
+          user: { isActive: true, scopes: { some: { OR: userScopeFilter } } },
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.studentProfile.count({
+        where: { programId: { in: programIds }, isActive: true },
+      }),
+      this.prisma.curriculum.findMany({
+        where: { programId: { in: programIds }, isActive: true },
+        include: { program: { select: { code: true, name: true } } },
+        orderBy: [{ program: { code: 'asc' } }, { version: 'asc' }],
+      }),
+    ]);
+
+    const roleCountByRole = new Map(
+      roleCounts.map((entry) => [entry.role, entry._count._all]),
+    );
+
+    const curriculumIds = curricula.map((curriculum) => curriculum.id);
+    const [studentCounts, courseCounts, ploCounts] = await Promise.all([
+      this.prisma.studentProfile.groupBy({
+        by: ['curriculumId'],
+        where: { curriculumId: { in: curriculumIds }, isActive: true },
+        _count: { _all: true },
+      }),
+      this.prisma.course.groupBy({
+        by: ['curriculumId'],
+        where: { curriculumId: { in: curriculumIds }, isActive: true },
+        _count: { _all: true },
+      }),
+      this.prisma.plo.groupBy({
+        by: ['curriculumId'],
+        where: { curriculumId: { in: curriculumIds }, isActive: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const studentCountByCurriculum = new Map(
+      studentCounts.map((entry) => [entry.curriculumId, entry._count._all]),
+    );
+    const courseCountByCurriculum = new Map(
+      courseCounts.map((entry) => [entry.curriculumId, entry._count._all]),
+    );
+    const ploCountByCurriculum = new Map(
+      ploCounts.map((entry) => [entry.curriculumId, entry._count._all]),
+    );
+
+    let hasStudentsCount = 0;
+    let structureOnlyCount = 0;
+    let emptyCount = 0;
+    const curriculumEntries: AdminScopeCurriculumEntry[] = curricula.map(
+      (curriculum) => {
+        const curriculumStudentCount =
+          studentCountByCurriculum.get(curriculum.id) ?? 0;
+        const courseCount = courseCountByCurriculum.get(curriculum.id) ?? 0;
+        const ploCount = ploCountByCurriculum.get(curriculum.id) ?? 0;
+        const dataState = resolveDataState(
+          curriculumStudentCount,
+          courseCount,
+          ploCount,
+        );
+        if (dataState === 'HAS_STUDENTS') hasStudentsCount += 1;
+        else if (dataState === 'STRUCTURE_ONLY') structureOnlyCount += 1;
+        else emptyCount += 1;
+
+        return {
+          curriculumId: curriculum.id,
+          version: curriculum.version,
+          effectiveYear: curriculum.effectiveYear,
+          programCode: curriculum.program.code,
+          programName: curriculum.program.name,
+          dataState,
+          studentCount: curriculumStudentCount,
+          courseCount,
+          ploCount,
+        };
+      },
+    );
+
+    return {
+      scope: {
+        facultyCount: facultyIds.size,
+        departmentCount: departmentIds.size,
+        programCount: programs.length,
+        programs: programs.map((program) => ({
+          programId: program.id,
+          code: program.code,
+          name: program.name,
+          departmentName: program.department.name,
+          facultyName: program.department.faculty.name,
+        })),
+      },
+      userCounts: {
+        staff: roleCountByRole.get('STAFF') ?? 0,
+        instructor: roleCountByRole.get('INSTRUCTOR') ?? 0,
+        admin: roleCountByRole.get('ADMIN') ?? 0,
+        student: studentCount,
+      },
+      curricula: {
+        totalCount: curricula.length,
+        hasStudentsCount,
+        structureOnlyCount,
+        emptyCount,
+        entries: curriculumEntries,
+      },
     };
   }
 

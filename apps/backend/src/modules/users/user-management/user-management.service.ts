@@ -144,7 +144,7 @@ export class UserManagementService {
 
     const users = await this.userService.findAll({
       userRoles: { none: { role: 'STUDENT' } },
-      scopes: { some: { OR: await this.buildScopeOrFilter(requester.userId) } },
+      scopes: { some: { OR: await this.scopeResolverService.buildUserScopeOrFilter(requester.userId) } },
     });
     return users.map((user) => this.toSummary(user));
   }
@@ -180,7 +180,7 @@ export class UserManagementService {
 
     const user = await this.userService.findOneWhere({
       id,
-      scopes: { some: { OR: await this.buildScopeOrFilter(requester.userId) } },
+      scopes: { some: { OR: await this.scopeResolverService.buildUserScopeOrFilter(requester.userId) } },
     });
     return this.toSummary(user);
   }
@@ -251,44 +251,4 @@ export class UserManagementService {
     }
   }
 
-  // Fetches the requester's own effective scopes (small, bounded — their
-  // own data, not "all users") and expands each into the 3-way nested
-  // clause needed because UserScope's facultyId/departmentId/programId
-  // are XOR'd — a DEPARTMENT-level scope has facultyId:null, so it must
-  // also match child Programs via program.departmentId, not just
-  // departmentId directly. Genuinely query-level per CONVENTIONS §3a: the
-  // DB does the user filtering, this only pre-computes the WHERE clause
-  // from the requester's own small scope set.
-  private async buildScopeOrFilter(
-    requesterId: string,
-  ): Promise<Prisma.UserScopeWhereInput[]> {
-    const effectiveScopes = await this.scopeResolverService.getEffectiveScopes(
-      requesterId,
-    );
-
-    // Non-null assertions below are safe by the XOR invariant UserScope is
-    // constructed under (UserScopeService.assignScope): a FACULTY-level
-    // row always has facultyId set, a DEPARTMENT-level row always has
-    // departmentId set, etc. — TS can't infer that from the `level` branch
-    // alone since EffectiveScope's fields are independently `string | null`.
-    return effectiveScopes.flatMap((scope): Prisma.UserScopeWhereInput[] => {
-      if (scope.level === 'FACULTY') {
-        return [
-          { level: 'FACULTY', facultyId: scope.facultyId! },
-          { level: 'DEPARTMENT', department: { facultyId: scope.facultyId! } },
-          {
-            level: 'PROGRAM',
-            program: { department: { facultyId: scope.facultyId! } },
-          },
-        ];
-      }
-      if (scope.level === 'DEPARTMENT') {
-        return [
-          { level: 'DEPARTMENT', departmentId: scope.departmentId! },
-          { level: 'PROGRAM', program: { departmentId: scope.departmentId! } },
-        ];
-      }
-      return [{ level: 'PROGRAM', programId: scope.programId! }];
-    });
-  }
 }

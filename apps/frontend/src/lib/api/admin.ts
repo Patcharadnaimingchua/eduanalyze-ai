@@ -1,5 +1,6 @@
 import type {
   AcademicYear,
+  AdminScopeOverviewReport,
   CreateAcademicYearRequest,
   CreateSemesterRequest,
   Semester,
@@ -36,6 +37,13 @@ export async function updateSemester(id: string, dto: UpdateSemesterRequest) {
 export async function fetchSystemCurriculumOverview() {
   const { data } = await apiClient.get<SystemCurriculumOverviewReport>(
     '/dashboard/curricula',
+  );
+  return data;
+}
+
+export async function fetchAdminScopeOverview() {
+  const { data } = await apiClient.get<AdminScopeOverviewReport>(
+    '/dashboard/admin/scope-overview',
   );
   return data;
 }

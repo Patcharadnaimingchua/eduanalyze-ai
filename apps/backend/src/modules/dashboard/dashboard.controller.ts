@@ -161,4 +161,20 @@ export class DashboardController {
   getCurriculumDashboard(@Param('curriculumId') curriculumId: string) {
     return this.dashboardService.getCurriculumDashboard(curriculumId);
   }
+
+  // Self-scoped, same posture as the STAFF dashboard routes above — scope
+  // comes from the caller's own userId (via ScopeResolverService), not a
+  // client-supplied id, so no ScopeGuard/@ScopeTarget is needed.
+  @Get('admin/scope-overview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      "ADMIN Scope Overview — the Faculty/Department/Program footprint the requester's own UserScope covers, user counts by role within it, and the same 3-tier curriculum classification as the system-wide dashboard, narrowed to scope",
+  })
+  @ApiResponse({ status: 200, description: 'Admin scope overview report' })
+  getAdminScopeOverview(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getAdminScopeOverview(user);
+  }
 }

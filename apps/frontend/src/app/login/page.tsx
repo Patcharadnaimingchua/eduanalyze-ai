@@ -47,7 +47,7 @@ export default function LoginPage() {
 
 const ROLE_HOME: Record<Role, string> = {
   SUPER_ADMIN: '/admin/users',
-  ADMIN: '/admin/users',
+  ADMIN: '/admin/overview',
   STAFF: '/staff/dashboard',
   INSTRUCTOR: '/instructor/dashboard',
   STUDENT: '/dashboard',
