@@ -7,16 +7,19 @@ import { cn } from '@/lib/utils';
 export function EmptyState({
   icon: Icon,
   description,
+  action,
   className,
 }: {
   icon: LucideIcon;
   description: ReactNode;
+  action?: ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn('flex flex-col items-center gap-2 py-8 text-center', className)}>
       <Icon size={28} className="text-slate-300" aria-hidden="true" />
       <p className="text-muted-foreground">{description}</p>
+      {action}
     </div>
   );
 }

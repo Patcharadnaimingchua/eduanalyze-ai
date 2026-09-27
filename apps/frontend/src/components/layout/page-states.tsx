@@ -5,6 +5,7 @@ import type { CurrentUserResponse } from '@eduanalyze-ai/shared-types';
 import { primaryRoleFor } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 
 // Rendered inside the shell with the viewer's own role, so a non-student who
@@ -23,13 +24,22 @@ export function StudentOnlyPage({ user }: { user: CurrentUserResponse }) {
 
 export function PageLoadError({
   message = 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+  onRetry,
 }: {
   message?: string;
+  onRetry?: () => void;
 }) {
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
-      <AlertDescription>{message}</AlertDescription>
+      <AlertDescription className="flex items-center justify-between gap-3">
+        <span>{message}</span>
+        {onRetry && (
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+            ลองใหม่
+          </Button>
+        )}
+      </AlertDescription>
     </Alert>
   );
 }
