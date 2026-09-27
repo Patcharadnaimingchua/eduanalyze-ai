@@ -118,16 +118,13 @@ export function CourseCategoryCard({
       )}
       onClick={onSelect}
     >
-      <CardHeader
-        className="flex-row items-center justify-between space-y-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>
           {category.name}
           {category.code && <span className="ml-2 text-sm text-muted-foreground">({category.code})</span>}
         </CardTitle>
         {confirmingCategoryDelete ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
             <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={handleDeleteCategory}>
               ยืนยันลบ
             </Button>
@@ -136,12 +133,20 @@ export function CourseCategoryCard({
             </Button>
           </div>
         ) : (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingCategoryDelete(true)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmingCategoryDelete(true);
+            }}
+          >
             ลบหมวดวิชา
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-3" onClick={(e) => e.stopPropagation()}>
+      <CardContent className="space-y-3">
         {serverError && (
           <Alert variant="destructive">
             <AlertDescription>{serverError}</AlertDescription>
@@ -155,7 +160,7 @@ export function CourseCategoryCard({
               {requirement.minCourses != null && ` (${requirement.minCourses} วิชา)`}
             </span>
             {confirmingRequirementDelete ? (
-              <div className="flex gap-2">
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={handleDeleteRequirement}>
                   ยืนยัน
                 </Button>
@@ -164,7 +169,7 @@ export function CourseCategoryCard({
                 </Button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setEditingRequirement(true)}>
                   แก้ไข
                 </Button>
@@ -176,7 +181,11 @@ export function CourseCategoryCard({
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitRequirement)} className="flex items-end gap-3">
+            <form
+              onSubmit={form.handleSubmit(onSubmitRequirement)}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-end gap-3"
+            >
               <FormField
                 control={form.control}
                 name="minCredits"
