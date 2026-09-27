@@ -6,12 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import type { LoginResponse, Role } from '@eduanalyze-ai/shared-types';
+import { Mail, ShieldCheck } from 'lucide-react';
+import type { LoginResponse } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-import { primaryRoleFor } from '@/lib/role-priority';
+import { resolveHomeRoute } from '@/lib/dashboard-routes';
+import { HOVER_LIFT } from '@/lib/motion';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
 import {
@@ -24,6 +25,7 @@ import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { OtpInput } from '@/components/ui/otp-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -35,6 +37,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
+const BRAND_COPY = {
+  title: 'ยินดีต้อนรับกลับมา',
+  description:
+    'เข้าสู่ระบบเพื่อติดตามความก้าวหน้าทางการเรียน วิเคราะห์ผลลัพธ์การเรียนรู้ CLO/PLO และวางแผนเส้นทางสู่ความสำเร็จของคุณ',
+};
+
 export default function LoginPage() {
   return (
     // useSearchParams (for the Google-callback ?pendingToken=&requires2fa=1
@@ -45,27 +53,10 @@ export default function LoginPage() {
   );
 }
 
-const ROLE_HOME: Record<Role, string> = {
-  SUPER_ADMIN: '/admin/users',
-  ADMIN: '/admin/overview',
-  STAFF: '/staff/dashboard',
-  INSTRUCTOR: '/instructor/dashboard',
-  STUDENT: '/dashboard',
-};
-
-// A user with multiple roles (e.g. a bootstrapped STUDENT+SUPER_ADMIN
-// account) lands on the dashboard for their most privileged role — same
-// priority order as primaryRoleFor, so this and any badge/label elsewhere
-// in the app never disagree on which role is "primary" for the account.
-function resolveHomeRoute(roles: Role[]): string {
-  return ROLE_HOME[primaryRoleFor(roles)];
-}
-
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -146,7 +137,12 @@ function LoginPageContent() {
 
   if (pendingToken) {
     return (
-      <AuthSplitLayout>
+      <AuthSplitLayout {...BRAND_COPY}>
+        <div className="mb-4 flex justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light">
+            <ShieldCheck size={24} className="text-brand" aria-hidden="true" />
+          </div>
+        </div>
         <h2 className="mb-1 text-center text-xl font-medium">ยืนยันตัวตนสองขั้นตอน</h2>
         <p className="mb-5 text-center text-sm text-muted-foreground">
           กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)
@@ -261,7 +257,7 @@ function LoginPageContent() {
   }
 
   return (
-    <AuthSplitLayout>
+    <AuthSplitLayout {...BRAND_COPY}>
       <h2 className="mb-5 text-center text-xl font-medium">เข้าสู่ระบบ</h2>
 
       <AuthModeTabs active="login" />
@@ -307,29 +303,11 @@ function LoginPageContent() {
               <FormItem>
                 <FormLabel>รหัสผ่าน</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Lock
-                      size={16}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      className={cn(
-                        'pl-9 pr-9',
-                        serverError && 'animate-shake border-destructive',
-                      )}
-                      {...field}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+                  <PasswordInput
+                    autoComplete="current-password"
+                    className={cn(serverError && 'animate-shake border-destructive')}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -342,7 +320,11 @@ function LoginPageContent() {
             </Link>
           </div>
 
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            className={cn('w-full', HOVER_LIFT)}
+            disabled={form.formState.isSubmitting}
+          >
             {form.formState.isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </Button>
         </form>

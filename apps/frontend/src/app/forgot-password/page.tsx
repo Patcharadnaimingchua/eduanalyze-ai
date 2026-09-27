@@ -10,17 +10,13 @@ import {
   type ForgotPasswordFormValues,
 } from '@/lib/validation/forgot-password.schema';
 import { useToast } from '@/lib/toast-context';
+import { cn } from '@/lib/utils';
+import { HOVER_LIFT } from '@/lib/motion';
+import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { Reveal } from '@/components/layout/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -29,6 +25,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+
+const BRAND_COPY = {
+  title: 'ลืมรหัสผ่าน ไม่ใช่ปัญหา',
+  description:
+    'เราจะช่วยคุณกลับเข้าสู่ระบบอย่างปลอดภัย เพียงกรอกอีเมลที่ใช้สมัครสมาชิก แล้วทำตามขั้นตอนในอีเมลที่เราส่งให้',
+};
 
 export default function ForgotPasswordPage() {
   const toast = useToast();
@@ -52,23 +54,31 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">ลืมรหัสผ่าน</CardTitle>
-        <CardDescription>กรอกอีเมลที่ใช้สมัครสมาชิก</CardDescription>
-      </CardHeader>
+    <AuthSplitLayout {...BRAND_COPY}>
+      <Reveal index={0}>
+        <h2 className="mb-1 text-center text-xl font-medium">ลืมรหัสผ่าน</h2>
+        <p className="mb-5 text-center text-sm text-muted-foreground">
+          กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้คุณ
+        </p>
+      </Reveal>
+
       {submitted ? (
-        <CardContent>
+        <Reveal index={1}>
           <Alert>
             <AlertDescription>
               หากมีบัญชีที่ใช้อีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้แล้ว
             </AlertDescription>
           </Alert>
-        </CardContent>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            <Link href="/login" className="font-medium text-brand hover:underline">
+              กลับไปเข้าสู่ระบบ
+            </Link>
+          </p>
+        </Reveal>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Reveal index={1}>
               <FormField
                 control={form.control}
                 name="email"
@@ -82,20 +92,25 @@ export default function ForgotPasswordPage() {
                   </FormItem>
                 )}
               />
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            </Reveal>
+
+            <Reveal index={2} className="flex flex-col gap-3">
+              <Button
+                type="submit"
+                className={cn('w-full', HOVER_LIFT)}
+                disabled={form.formState.isSubmitting}
+              >
                 {form.formState.isSubmitting ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
-                <Link href="/login" className="text-primary hover:underline">
-                  กลับไปหน้าเข้าสู่ระบบ
+                <Link href="/login" className="font-medium text-brand hover:underline">
+                  กลับไปเข้าสู่ระบบ
                 </Link>
               </p>
-            </CardFooter>
+            </Reveal>
           </form>
         </Form>
       )}
-    </Card>
+    </AuthSplitLayout>
   );
 }

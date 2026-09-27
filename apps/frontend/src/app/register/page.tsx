@@ -10,6 +10,8 @@ import type { AccessTokenResponse, RegisterRequest } from '@eduanalyze-ai/shared
 import { apiClient } from '@/lib/api-client';
 import { fetchInvitationPreview } from '@/lib/api/auth';
 import { useAuth } from '@/lib/auth-context';
+import { cn } from '@/lib/utils';
+import { HOVER_LIFT } from '@/lib/motion';
 import { registerSchema, type RegisterFormValues } from '@/lib/validation/register.schema';
 import {
   invitedRegisterSchema,
@@ -20,8 +22,10 @@ import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Reveal } from '@/components/layout/reveal';
 import {
   Form,
   FormControl,
@@ -30,6 +34,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+
+const BRAND_COPY = {
+  title: 'เริ่มต้นเส้นทางแห่งความสำเร็จ',
+  description:
+    'สมัครสมาชิกวันนี้ เพื่อเข้าถึงระบบติดตามผลการเรียนที่ครอบคลุม พร้อมการวิเคราะห์ศักยภาพที่จะช่วยให้คุณเติบโตในแบบที่ใช่สำหรับตัวเอง',
+};
 
 export default function RegisterPage() {
   return (
@@ -43,7 +53,7 @@ export default function RegisterPage() {
 
 function RegisterFallback() {
   return (
-    <AuthSplitLayout>
+    <AuthSplitLayout {...BRAND_COPY}>
       <div className="space-y-3">
         <Skeleton className="mx-auto h-6 w-40" />
         <Skeleton className="h-10 w-full" />
@@ -68,7 +78,7 @@ function RegisterPageContent() {
 
   if (invitationToken && invitationQuery.isLoading) {
     return (
-      <AuthSplitLayout>
+      <AuthSplitLayout {...BRAND_COPY}>
         <div className="space-y-3">
           <Skeleton className="mx-auto h-6 w-40" />
           <Skeleton className="h-10 w-full" />
@@ -141,7 +151,7 @@ function InvitedRegisterForm({
   }
 
   return (
-    <AuthSplitLayout>
+    <AuthSplitLayout {...BRAND_COPY}>
       <h2 className="mb-1 text-center text-xl font-medium">สมัครสมาชิกด้วยคำเชิญ</h2>
       <p className="mb-5 text-center text-sm text-muted-foreground">
         ตั้งรหัสผ่านเพื่อเริ่มใช้งาน ข้อมูลหลักสูตรถูกกรอกไว้ล่วงหน้าโดยเจ้าหน้าที่
@@ -195,7 +205,7 @@ function InvitedRegisterForm({
               <FormItem>
                 <FormLabel>รหัสผ่าน</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
+                  <PasswordInput autoComplete="new-password" showStrength {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -208,14 +218,18 @@ function InvitedRegisterForm({
               <FormItem>
                 <FormLabel>ยืนยันรหัสผ่านอีกครั้ง</FormLabel>
                 <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
+                  <PasswordInput autoComplete="new-password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            className={cn('w-full', HOVER_LIFT)}
+            disabled={form.formState.isSubmitting}
+          >
             {form.formState.isSubmitting ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
           </Button>
         </form>
@@ -274,11 +288,15 @@ function ManualRegisterForm() {
   }
 
   return (
-    <AuthSplitLayout>
-      <h2 className="mb-1 text-center text-xl font-medium">สมัครสมาชิก</h2>
-      <p className="mb-5 text-center text-sm text-muted-foreground">สำหรับนิสิต/นักศึกษาเท่านั้น</p>
+    <AuthSplitLayout {...BRAND_COPY}>
+      <Reveal index={0}>
+        <h2 className="mb-1 text-center text-xl font-medium">สมัครสมาชิก</h2>
+        <p className="mb-5 text-center text-sm text-muted-foreground">
+          สำหรับนิสิต/นักศึกษาเท่านั้น
+        </p>
 
-      <AuthModeTabs active="register" />
+        <AuthModeTabs active="register" />
+      </Reveal>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -287,104 +305,124 @@ function ManualRegisterForm() {
               <AlertDescription>{serverError}</AlertDescription>
             </Alert>
           )}
-          <FormField
-            control={form.control}
-            name="fullName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ชื่อ-นามสกุล</FormLabel>
-                <FormControl>
-                  <Input autoComplete="name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>อีเมล</FormLabel>
-                <FormControl>
-                  <Input type="email" autoComplete="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>รหัสผ่าน</FormLabel>
-                <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ยืนยันรหัสผ่านอีกครั้ง</FormLabel>
-                <FormControl>
-                  <Input type="password" autoComplete="new-password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="studentCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="admissionYear"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ปีที่เข้าศึกษา (พ.ศ.)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
-          <DependentOrgSelect />
+          <Reveal index={2} className="space-y-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              ข้อมูลบัญชี
+            </p>
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ชื่อ-นามสกุล</FormLabel>
+                  <FormControl>
+                    <Input autoComplete="name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>อีเมล</FormLabel>
+                  <FormControl>
+                    <Input type="email" autoComplete="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>รหัสผ่าน</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="new-password" showStrength {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ยืนยันรหัสผ่านอีกครั้ง</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="new-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Reveal>
 
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
-          </Button>
+          <Reveal index={4} className="space-y-4">
+            <p className="pt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+              ข้อมูลการศึกษา
+            </p>
+            <FormField
+              control={form.control}
+              name="studentCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="admissionYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ปีที่เข้าศึกษา (พ.ศ.)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DependentOrgSelect />
+          </Reveal>
+
+          <Reveal index={6}>
+            <Button
+              type="submit"
+              className={cn('w-full', HOVER_LIFT)}
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
+            </Button>
+          </Reveal>
         </form>
       </Form>
 
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-400">หรือสมัครด้วย</span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
+      <Reveal index={6}>
+        <div className="my-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs text-slate-400">หรือสมัครด้วย</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
-      <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
-        <Button type="button" variant="outline" className="w-full">
-          Google
-        </Button>
-      </a>
+        <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
+          <Button type="button" variant="outline" className={cn('w-full', HOVER_LIFT)}>
+            Google
+          </Button>
+        </a>
+      </Reveal>
     </AuthSplitLayout>
   );
 }

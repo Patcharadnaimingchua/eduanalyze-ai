@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const LENGTH = 6;
@@ -23,6 +23,10 @@ export function OtpInput({
 }) {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const digits = Array.from({ length: LENGTH }, (_, i) => value[i] ?? '');
+  // Which box just received a digit, so it gets the entry-pop animation
+  // once — cleared after the animation finishes so retyping the same box
+  // (e.g. backspace then retype) restarts it instead of a no-op class toggle.
+  const [pulseIndex, setPulseIndex] = useState<number | null>(null);
 
   function setDigit(index: number, digit: string) {
     const next = digits.slice();
@@ -33,8 +37,14 @@ export function OtpInput({
   function handleChange(index: number, raw: string) {
     const digit = raw.replace(/\D/g, '').slice(-1);
     setDigit(index, digit);
-    if (digit && index < LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
+    if (digit) {
+      setPulseIndex(index);
+      window.setTimeout(() => {
+        setPulseIndex((current) => (current === index ? null : current));
+      }, 220);
+      if (index < LENGTH - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
     }
   }
 
@@ -70,8 +80,14 @@ export function OtpInput({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           className={cn(
-            'h-12 w-10 rounded-md border border-input bg-background text-center text-lg font-semibold ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-            hasError && 'border-destructive',
+            'h-12 w-10 rounded-md border text-center text-lg font-semibold ring-offset-background transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50',
+            digit
+              ? 'border-slate-300 bg-gradient-to-b from-white to-brand-light/50 text-primary'
+              : 'border-input bg-gradient-to-b from-white to-slate-50',
+            'focus-visible:outline-none focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_hsl(var(--brand)/0.18),0_0_14px_3px_hsl(var(--brand)/0.35)]',
+            hasError &&
+              'border-destructive focus-visible:border-destructive focus-visible:shadow-[0_0_0_3px_hsl(var(--destructive)/0.18),0_0_14px_3px_hsl(var(--destructive)/0.35)]',
+            pulseIndex === index && 'animate-otp-digit-pop motion-reduce:animate-none',
           )}
         />
       ))}

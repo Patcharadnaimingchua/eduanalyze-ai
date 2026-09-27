@@ -19,6 +19,14 @@ import { ChangePasswordForm } from './change-password-form';
 // route — covers every deep link and reload automatically. The real
 // enforcement is on the backend (JwtAuthGuard); this is just so a blocked
 // user sees a form instead of a page that 403s underneath them.
+// Forced password-change gate — keeps the generic welcome copy this panel
+// showed before brand copy became per-page.
+const BRAND_COPY = {
+  title: 'ยินดีต้อนรับสู่พื้นที่เรียนรู้ที่ใช่สำหรับคุณ',
+  description:
+    'เข้าถึงระบบติดตามผลการเรียนที่ครอบคลุม การวิเคราะห์ CLO/PLO และการวิเคราะห์ศักยภาพความถนัด เพื่อขับเคลื่อนความสำเร็จของนิสิต/นักศึกษา',
+};
+
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { status, user } = useAuth();
   const router = useRouter();
@@ -49,7 +57,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (user?.mustChangePassword) {
     return (
-      <AuthSplitLayout>
+      <AuthSplitLayout {...BRAND_COPY}>
         <ChangePasswordForm
           title="ตั้งรหัสผ่านใหม่"
           description="บัญชีนี้ยังใช้รหัสผ่านชั่วคราวอยู่ กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งานต่อ"

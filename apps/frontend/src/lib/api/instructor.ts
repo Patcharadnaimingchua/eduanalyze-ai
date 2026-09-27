@@ -1,5 +1,6 @@
 import type {
   CourseCloAchievementReport,
+  InstructorCourseTimelineReport,
   InstructorDashboardReport,
   InstructorStudentsReport,
   InstructorYearLevelsReport,
@@ -11,6 +12,13 @@ import { apiClient } from '../api-client';
 
 export async function fetchInstructorDashboard() {
   const { data } = await apiClient.get<InstructorDashboardReport>('/dashboard/instructor');
+  return data;
+}
+
+export async function fetchInstructorCourseTimeline() {
+  const { data } = await apiClient.get<InstructorCourseTimelineReport>(
+    '/dashboard/instructor/course-timeline',
+  );
   return data;
 }
 

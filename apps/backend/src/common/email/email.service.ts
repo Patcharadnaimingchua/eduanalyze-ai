@@ -44,6 +44,12 @@ export class EmailService {
       port,
       secure: port === 465, // 587 (default, Gmail) uses STARTTLS, not implicit TLS
       auth: user ? { user, pass } : undefined,
+      // nodemailer's defaults (2 min connect, 10 min socket) let one stalled
+      // SMTP server hold an awaiting HTTP request open for minutes. A normal
+      // Gmail handshake takes 1-2 s, so these leave ample margin.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
   }
 

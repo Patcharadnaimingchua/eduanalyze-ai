@@ -29,6 +29,21 @@ export type LatestCourseAttempt = Prisma.StudentCourseRecordGetPayload<{
   include: { semester: { include: { academicYear: true } } };
 }>;
 
+// Sibling of LatestCourseAttempt with the extra joins the instructor
+// course-timeline needs (admissionYear for year-level, course code/name
+// plus curriculum/program for the "which curriculum is this" label — a
+// course's code is only unique WITHIN one curriculum, so two different
+// curricula can have their own course row with the same code) — kept
+// separate so findActiveRecordsForCourse(s)'s existing callers don't pay
+// for joins they don't use.
+export type LatestCourseAttemptWithProfile = Prisma.StudentCourseRecordGetPayload<{
+  include: {
+    semester: { include: { academicYear: true } };
+    studentProfile: true;
+    course: { include: { curriculum: { include: { program: true } } } };
+  };
+}>;
+
 export interface StudentRosterEntry {
   studentProfileId: string;
   // The specific latest-attempt record id — additive field (Phase 2.1
@@ -70,6 +85,33 @@ export interface SemesterAchievement {
   semesterTerm: SemesterTerm;
   studentCount: number; // excludes W/I, same base as CloAchievementService
   achievementPercent: number; // % graded B or above
+}
+
+// groupCoursesByYearAndSemester's return shape — Academic Year -> Semester
+// -> Course, for the instructor "My Courses" timeline view.
+export interface InstructorCourseTimelineCourse {
+  courseId: string;
+  code: string;
+  name: string;
+  // A course's code is only unique WITHIN one curriculum, so the same
+  // code can appear under two different curricula — these two fields let
+  // the UI label which one this row is, instead of assuming a code alone
+  // identifies a subject.
+  programCode: string;
+  curriculumYear: number;
+  studentCount: number; // everyone enrolled, unlike SemesterAchievement (no W/I exclusion)
+  predominantYearLevel: number; // 1-4, mode across this group's students
+}
+
+export interface InstructorCourseTimelineSemester {
+  semesterId: string;
+  semesterTerm: SemesterTerm;
+  courses: InstructorCourseTimelineCourse[];
+}
+
+export interface InstructorCourseTimelineYear {
+  academicYear: number;
+  semesters: InstructorCourseTimelineSemester[];
 }
 
 export interface StudentInstructorTimelineEntry {
@@ -444,6 +486,25 @@ export class StudentCourseRecordService {
     });
   }
 
+  // Sibling of findActiveRecordsForCourses with the extra joins the
+  // instructor course-timeline needs — kept separate rather than widening
+  // findActiveRecordsForCourses's include, since that method's other
+  // callers (dashboard.service.ts's other reports, plo-achievement.service.ts)
+  // don't want the added studentProfile/course joins.
+  async findActiveRecordsForCoursesWithStudentProfile(
+    courseIds: string[],
+  ): Promise<LatestCourseAttemptWithProfile[]> {
+    if (courseIds.length === 0) return [];
+    return this.prisma.studentCourseRecord.findMany({
+      where: { courseId: { in: courseIds }, isActive: true },
+      include: {
+        semester: { include: { academicYear: true } },
+        studentProfile: true,
+        course: { include: { curriculum: { include: { program: true } } } },
+      },
+    });
+  }
+
   // Pure — extracted out of getLatestAttemptsPerStudent so
   // getInstructorDashboard can fetch findActiveRecordsForCourse once and
   // derive both the deduped map (grade distribution, at-risk) and
@@ -492,6 +553,106 @@ export class StudentCourseRecordService {
         if (a.academicYear !== b.academicYear) return a.academicYear - b.academicYear;
         return SEMESTER_TERM_RANK[a.semesterTerm] - SEMESTER_TERM_RANK[b.semesterTerm];
       });
+  }
+
+  // Pure — one level deeper than summarizeBySemester (which groups one
+  // course's records by semester for a trend chart). This groups an
+  // instructor's records across ALL their courses by
+  // (academicYear, semesterId, courseId) for the "My Courses" timeline
+  // view. Unlike summarizeBySemester, does NOT exclude W/I — studentCount
+  // here means "enrolled this term", not an achievement metric, so every
+  // active record counts toward it and toward the year-level mode.
+  groupCoursesByYearAndSemester(
+    records: LatestCourseAttemptWithProfile[],
+  ): InstructorCourseTimelineYear[] {
+    const cells = new Map<string, LatestCourseAttemptWithProfile[]>();
+    for (const record of records) {
+      const key = `${record.semester.academicYear.year}::${record.semesterId}::${record.courseId}`;
+      const group = cells.get(key) ?? [];
+      group.push(record);
+      cells.set(key, group);
+    }
+
+    const courseRows = Array.from(cells.values()).map((group) => {
+      const first = group[0];
+      const yearLevels = group.map((r) =>
+        this.resolveYearLevelAt(first.semester.academicYear.year, r.studentProfile.admissionYear),
+      );
+      return {
+        academicYear: first.semester.academicYear.year,
+        semesterId: first.semesterId,
+        semesterTerm: first.semester.term,
+        courseId: first.courseId,
+        code: first.course.code,
+        name: first.course.name,
+        programCode: first.course.curriculum.program.code,
+        curriculumYear: first.course.curriculum.effectiveYear,
+        studentCount: group.length,
+        predominantYearLevel: this.modeOf(yearLevels),
+      };
+    });
+
+    const byYear = new Map<number, Map<string, InstructorCourseTimelineCourse[]>>();
+    const semesterTermByYearSemester = new Map<string, SemesterTerm>();
+    for (const row of courseRows) {
+      const semesters = byYear.get(row.academicYear) ?? new Map<string, InstructorCourseTimelineCourse[]>();
+      const courses = semesters.get(row.semesterId) ?? [];
+      courses.push({
+        courseId: row.courseId,
+        code: row.code,
+        name: row.name,
+        programCode: row.programCode,
+        curriculumYear: row.curriculumYear,
+        studentCount: row.studentCount,
+        predominantYearLevel: row.predominantYearLevel,
+      });
+      semesters.set(row.semesterId, courses);
+      byYear.set(row.academicYear, semesters);
+      semesterTermByYearSemester.set(row.semesterId, row.semesterTerm);
+    }
+
+    return Array.from(byYear.entries())
+      .sort(([a], [b]) => b - a) // academicYear DESC — current term first
+      .map(([academicYear, semesters]) => ({
+        academicYear,
+        semesters: Array.from(semesters.entries())
+          .sort(
+            ([semesterIdA], [semesterIdB]) =>
+              SEMESTER_TERM_RANK[semesterTermByYearSemester.get(semesterIdA)!] -
+              SEMESTER_TERM_RANK[semesterTermByYearSemester.get(semesterIdB)!],
+          )
+          .map(([semesterId, courses]) => ({
+            semesterId,
+            semesterTerm: semesterTermByYearSemester.get(semesterId)!,
+            courses: courses.sort((a, b) => a.code.localeCompare(b.code)),
+          })),
+      }));
+  }
+
+  // Same clamp formula as DashboardService's bucketByYearLevel, just
+  // parameterized by the GROUP's own academic year instead of always
+  // "current" — a course-semester cell from three years ago should bucket
+  // students by what year-level they were THEN, not now.
+  private resolveYearLevelAt(academicYearOfSemester: number, admissionYear: number): number {
+    const raw = academicYearOfSemester - admissionYear + 1;
+    return Math.min(Math.max(raw, 1), 4);
+  }
+
+  // Ties broken by smallest yearLevel first — deterministic, and a more
+  // natural default than Map insertion order ("earlier in the program"
+  // reads better as a tie-break than an arbitrary one).
+  private modeOf(values: number[]): number {
+    const counts = new Map<number, number>();
+    for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+    let best = values[0];
+    let bestCount = 0;
+    for (const [value, count] of [...counts.entries()].sort((a, b) => a[0] - b[0])) {
+      if (count > bestCount) {
+        best = value;
+        bestCount = count;
+      }
+    }
+    return best;
   }
 
   // §9: INSTRUCTOR can view "Student ที่เกี่ยวข้องกับ Course ที่ตัวเองรับผิดชอบ".

@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchInstructorDashboard } from '@/lib/api/instructor';
+import { fetchInstructorCourseTimeline } from '@/lib/api/instructor';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { InstructorCourseGridSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
-import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
+import { InstructorCourseTimelineSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
+import { InstructorCourseTimeline } from '@/components/instructor/instructor-course-timeline';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,12 +25,12 @@ function InstructorMyCoursesContent() {
   const { user } = useAuth();
   const isInstructor = !!user?.roles.includes('INSTRUCTOR');
 
-  // Same query key as /instructor/dashboard — React Query serves this from
-  // cache with zero extra network round trips when navigating between the
-  // two pages, so there's no need for a shared fetch hook to avoid refetching.
-  const dashboardQuery = useQuery({
-    queryKey: ['instructor-dashboard'],
-    queryFn: fetchInstructorDashboard,
+  // Own query key/endpoint — this view only needs enrollment + year-level
+  // data, not the CLO/PLO/Course-Assessment payload /instructor/dashboard
+  // carries, so it doesn't share instructor-dashboard's cache entry.
+  const timelineQuery = useQuery({
+    queryKey: ['instructor-course-timeline'],
+    queryFn: fetchInstructorCourseTimeline,
     enabled: isInstructor,
   });
 
@@ -45,7 +45,7 @@ function InstructorMyCoursesContent() {
     );
   }
 
-  const courses = dashboardQuery.data?.courses ?? [];
+  const years = timelineQuery.data?.years ?? [];
 
   return (
     <RequireRole role="INSTRUCTOR">
@@ -53,13 +53,13 @@ function InstructorMyCoursesContent() {
         <Reveal index={0}>
           <PageHeader
             title="รายวิชาที่สอน"
-            description="รายวิชาทั้งหมดที่คุณได้รับมอบหมายให้สอนในภาคการศึกษานี้"
+            description="รายวิชาที่คุณได้รับมอบหมายให้สอน จัดกลุ่มตามปีการศึกษาและภาคการศึกษา"
           />
         </Reveal>
 
-        {dashboardQuery.isLoading && <InstructorCourseGridSkeleton />}
+        {timelineQuery.isLoading && <InstructorCourseTimelineSkeleton />}
 
-        {dashboardQuery.isError && (
+        {timelineQuery.isError && (
           <Alert variant="destructive">
             <AlertDescription>
               ไม่สามารถโหลดข้อมูลรายวิชาได้ กรุณาลองใหม่อีกครั้ง
@@ -67,16 +67,29 @@ function InstructorMyCoursesContent() {
           </Alert>
         )}
 
-        {dashboardQuery.data && courses.length === 0 && (
+        {timelineQuery.data && years.length === 0 && (
           <Alert>
             <AlertDescription>ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน</AlertDescription>
           </Alert>
         )}
 
-        {dashboardQuery.data && courses.length > 0 && (
-          <Reveal index={1}>
-            <InstructorCourseGrid courses={courses} />
-          </Reveal>
+        {timelineQuery.data && years.length > 0 && (
+          <>
+            <Reveal index={1}>
+              <Alert>
+                <AlertDescription>
+                  รายการภาคการศึกษาด้านล่างแสดงตามประวัติการลงทะเบียนเรียนจริงของนักศึกษาในแต่ละวิชา
+                  หากคุณเพิ่งได้รับมอบหมายให้สอนวิชาใดวิชาหนึ่ง
+                  ระบบอาจแสดงภาคการศึกษาย้อนหลังที่คุณไม่ได้เป็นผู้สอนด้วย
+                  เนื่องจากระบบยังไม่ได้บันทึกว่าอาจารย์แต่ละท่านสอนวิชานั้นในภาคใดบ้าง
+                </AlertDescription>
+              </Alert>
+            </Reveal>
+
+            <Reveal index={2}>
+              <InstructorCourseTimeline years={years} />
+            </Reveal>
+          </>
         )}
       </DashboardShell>
     </RequireRole>

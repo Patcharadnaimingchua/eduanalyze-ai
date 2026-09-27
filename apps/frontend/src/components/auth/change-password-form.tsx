@@ -13,7 +13,7 @@ import {
   type ChangePasswordFormValues,
 } from '@/lib/validation/change-password.schema';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Card,
@@ -95,7 +95,7 @@ export function ChangePasswordForm({
                 <FormItem>
                   <FormLabel>รหัสผ่านปัจจุบัน</FormLabel>
                   <FormControl>
-                    <Input type="password" autoComplete="current-password" {...field} />
+                    <PasswordInput autoComplete="current-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,7 +108,7 @@ export function ChangePasswordForm({
                 <FormItem>
                   <FormLabel>รหัสผ่านใหม่</FormLabel>
                   <FormControl>
-                    <Input type="password" autoComplete="new-password" {...field} />
+                    <PasswordInput autoComplete="new-password" showStrength {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,7 +121,7 @@ export function ChangePasswordForm({
                 <FormItem>
                   <FormLabel>ยืนยันรหัสผ่านใหม่อีกครั้ง</FormLabel>
                   <FormControl>
-                    <Input type="password" autoComplete="new-password" {...field} />
+                    <PasswordInput autoComplete="new-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -972,6 +972,38 @@ export interface InstructorDashboardReport {
   courses: InstructorCourseSummary[];
 }
 
+// ---- GET /dashboard/instructor/course-timeline ----
+// "My Courses" grouped by academic year -> semester -> course, for the
+// teaching schedule view. Separate from InstructorDashboardReport above —
+// no CLO/PLO/Course-Assessment data here, just enrollment + year-level.
+export interface InstructorCourseTimelineCourse {
+  courseId: string;
+  code: string;
+  name: string;
+  // A course's code is only unique WITHIN one curriculum — these two
+  // fields let the UI label which curriculum this row belongs to, since
+  // the same code can legitimately appear under a different curriculum.
+  programCode: string;
+  curriculumYear: number;
+  studentCount: number; // everyone enrolled this term — no W/I exclusion
+  predominantYearLevel: number; // 1-4, mode across this group's students
+}
+
+export interface InstructorCourseTimelineSemester {
+  semesterId: string;
+  semesterTerm: SemesterTerm;
+  courses: InstructorCourseTimelineCourse[];
+}
+
+export interface InstructorCourseTimelineYear {
+  academicYear: number;
+  semesters: InstructorCourseTimelineSemester[];
+}
+
+export interface InstructorCourseTimelineReport {
+  years: InstructorCourseTimelineYear[];
+}
+
 // ---- GET /dashboard/instructor/students ----
 // One row per (student, course) pair across ALL of the instructor's
 // courses — unlike StudentRosterEntry (single-course only), a student

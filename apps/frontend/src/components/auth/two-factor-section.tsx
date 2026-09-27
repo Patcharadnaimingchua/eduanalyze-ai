@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { Check, Copy, ShieldCheck } from 'lucide-react';
+import { Check, Copy, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { disableTwoFactor, enableTwoFactor, setupTwoFactor } from '@/lib/api/two-factor';
 import {
   twoFactorDisableSchema,
@@ -15,9 +15,10 @@ import {
 } from '@/lib/validation/two-factor.schema';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { OtpInput } from '@/components/ui/otp-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -77,6 +78,8 @@ export function TwoFactorSection() {
           </div>
         )}
 
+        {(mode === 'setup' || mode === 'recoveryCodes') && <TwoFactorStepper mode={mode} />}
+
         {mode === 'setup' && (
           <TwoFactorSetupFlow
             onCancel={() => setMode('view')}
@@ -99,6 +102,51 @@ export function TwoFactorSection() {
   );
 }
 
+// Purely derived from the existing `mode` state — no new state, no prop
+// drilling into the flow components below. Kept private/local since this
+// is the only multi-step flow in the app right now; a shared component
+// would be premature abstraction.
+function TwoFactorStepper({ mode }: Readonly<{ mode: Mode }>) {
+  const steps = [
+    { n: 1, label: 'สแกน QR' },
+    { n: 2, label: 'ยืนยันรหัส' },
+    { n: 3, label: 'บันทึกรหัสสำรอง' },
+  ];
+
+  return (
+    <ol className="flex items-center">
+      {steps.map((s, i) => {
+        const done = mode === 'recoveryCodes' ? s.n < 3 : s.n < 2;
+        const current = mode === 'recoveryCodes' ? s.n === 3 : s.n === 2;
+        let circleTone = 'border-slate-300 text-slate-400';
+        if (done) circleTone = 'border-emerald-500 bg-emerald-500 text-white';
+        else if (current) circleTone = 'border-brand bg-brand text-white';
+        return (
+          <li key={s.n} className="flex flex-1 items-center gap-2 last:flex-none">
+            <span
+              className={cn(
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors duration-200',
+                circleTone,
+              )}
+            >
+              {done ? <Check size={12} strokeWidth={3} /> : s.n}
+            </span>
+            <span
+              className={cn(
+                'text-xs',
+                done || current ? 'font-medium text-primary' : 'text-muted-foreground',
+              )}
+            >
+              {s.label}
+            </span>
+            {i < steps.length - 1 && <span className="mx-1 h-px flex-1 bg-slate-200" aria-hidden="true" />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function TwoFactorSetupFlow({
   onCancel,
   onEnabled,
@@ -108,6 +156,7 @@ function TwoFactorSetupFlow({
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   const setupQuery = useQuery({ queryKey: ['two-factor-setup'], queryFn: setupTwoFactor });
   const form = useForm<TwoFactorEnableFormValues>({
     resolver: zodResolver(twoFactorEnableSchema),
@@ -131,6 +180,12 @@ function TwoFactorSetupFlow({
     }
   }
 
+  async function handleCopySecret(secret: string) {
+    await navigator.clipboard.writeText(secret);
+    setSecretCopied(true);
+    setTimeout(() => setSecretCopied(false), 2000);
+  }
+
   if (setupQuery.isLoading) {
     return (
       <div className="space-y-4">
@@ -148,26 +203,41 @@ function TwoFactorSetupFlow({
     <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          1. เปิดแอป Authenticator แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
+          เปิดแอป Authenticator แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
         </p>
-        <div className="relative inline-block">
-          {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
-          <img
-            src={setupQuery.data.qrCodeDataUrl}
-            alt="QR code สำหรับตั้งค่า 2FA"
-            className={`h-44 w-44 rounded-md border transition-colors duration-300 ${
-              verified ? 'border-emerald-400' : 'border-slate-200'
-            }`}
-          />
-          {verified && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-white/80 animate-in fade-in zoom-in duration-300">
-              <ShieldCheck className="h-12 w-12 text-emerald-600" />
+        <div className="flex flex-col items-center gap-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="relative inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
+              <img
+                src={setupQuery.data.qrCodeDataUrl}
+                alt="QR code สำหรับตั้งค่า 2FA"
+                className={`h-40 w-40 rounded-lg border transition-colors duration-300 ${
+                  verified ? 'border-emerald-400' : 'border-slate-200'
+                }`}
+              />
+              {verified && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/80 animate-in fade-in zoom-in duration-300">
+                  <ShieldCheck className="h-12 w-12 text-emerald-600" />
+                </div>
+              )}
             </div>
-          )}
+          </div>
+          <p className="text-xs text-muted-foreground">สแกนด้วยแอป Authenticator</p>
         </div>
-        <p className="break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-muted-foreground">
-          {setupQuery.data.secret}
-        </p>
+        <div className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2">
+          <p className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground">
+            {setupQuery.data.secret}
+          </p>
+          <button
+            type="button"
+            onClick={() => handleCopySecret(setupQuery.data.secret)}
+            className="shrink-0 text-slate-400 transition-colors duration-150 hover:text-brand motion-safe:active:scale-90"
+            aria-label={secretCopied ? 'คัดลอกรหัสลับแล้ว' : 'คัดลอกรหัสลับ'}
+          >
+            {secretCopied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+          </button>
+        </div>
       </div>
 
       <Form {...form}>
@@ -182,7 +252,7 @@ function TwoFactorSetupFlow({
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>2. กรอกรหัส 6 หลักจากแอป</FormLabel>
+                <FormLabel>กรอกรหัส 6 หลักจากแอป</FormLabel>
                 <FormControl>
                   <OtpInput
                     value={field.value}
@@ -231,10 +301,7 @@ function TwoFactorRecoveryCodesReveal({
         <AlertDescription>เปิดใช้งาน 2FA สำเร็จ</AlertDescription>
       </Alert>
       <div>
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-amber-900">
-            รหัสสำรอง (Recovery Codes) — เก็บไว้ในที่ปลอดภัย จะแสดงเพียงครั้งเดียว
-          </p>
+        <div className="mb-2 flex items-center justify-end">
           <Button type="button" variant="outline" size="sm" onClick={handleCopyAll}>
             {copied ? (
               <>
@@ -247,10 +314,23 @@ function TwoFactorRecoveryCodesReveal({
             )}
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 font-mono text-sm">
-          {recoveryCodes.map((code) => (
-            <span key={code}>{code}</span>
-          ))}
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="mb-3 flex items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+            <p className="text-sm font-semibold text-amber-900">
+              เก็บรหัสสำรองเหล่านี้ไว้ในที่ปลอดภัย — ระบบจะแสดงเพียงครั้งเดียว
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {recoveryCodes.map((code) => (
+              <span
+                key={code}
+                className="rounded-md border border-amber-200 bg-white px-3 py-2 text-center font-mono text-sm text-slate-700 shadow-sm"
+              >
+                {code}
+              </span>
+            ))}
+          </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
           ใช้รหัสเหล่านี้แทนแอป Authenticator ได้ครั้งละ 1 รหัส ถ้าทำมือถือหายหรือเข้าแอปไม่ได้
@@ -307,7 +387,7 @@ function TwoFactorDisableFlow({
             <FormItem className="max-w-sm">
               <FormLabel>กรอกรหัสผ่านปัจจุบันเพื่อยืนยัน</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} />
+                <PasswordInput autoComplete="current-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

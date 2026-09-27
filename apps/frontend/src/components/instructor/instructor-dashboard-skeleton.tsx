@@ -55,6 +55,32 @@ export function InstructorCourseGridSkeleton() {
   );
 }
 
+// Stacked-section placeholder for InstructorCourseTimeline (My Courses'
+// grouped-by-year/semester view) — doesn't reuse InstructorCourseGridSkeleton
+// above, whose grid-of-cards shape doesn't match this page's sectioned list.
+export function InstructorCourseTimelineSkeleton() {
+  return (
+    <div className="space-y-8">
+      {Array.from({ length: 2 }).map((_, yearIndex) => (
+        <div key={yearIndex} className="space-y-4">
+          <Skeleton className="h-6 w-40" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <div className="space-y-2 rounded-md border border-slate-200 p-3">
+              {Array.from({ length: 3 }).map((_, rowIndex) => (
+                <div key={rowIndex} className="flex items-center justify-between gap-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Mirrors InstructorDetailPanel's layout: a header bar outside the Card
 // (now PageHeader — course name/code), then a Card holding the tab-strip
 // pills and the active tab's content block.

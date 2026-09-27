@@ -6,7 +6,10 @@ import { CourseCloAchievementReport } from '../curriculum-content/clo-achievemen
 import { CoursePloAchievementReport } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 import { CurriculumPloAchievementReport } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 import { CourseAssessmentService } from '../curriculum-content/course-assessment/course-assessment.service';
-import { SemesterAchievement } from '../academic-record/student-course-record/student-course-record.service';
+import {
+  SemesterAchievement,
+  InstructorCourseTimelineYear,
+} from '../academic-record/student-course-record/student-course-record.service';
 import { RiskLevel } from '../academic-record/student-course-record/grade-point.constant';
 
 export interface RecentCourse {
@@ -78,6 +81,13 @@ export interface InstructorCourseSummary {
 
 export interface InstructorDashboardReport {
   courses: InstructorCourseSummary[];
+}
+
+// "My Courses" grouped by Academic Year -> Semester, for the teaching
+// schedule view — separate from InstructorDashboardReport's flat list
+// (which carries CLO/PLO achievement this view doesn't need).
+export interface InstructorCourseTimelineReport {
+  years: InstructorCourseTimelineYear[];
 }
 
 // One row per (student, course) pair across ALL of the instructor's

@@ -31,6 +31,7 @@ import {
   CurriculumDashboardReport,
   CurriculumDataState,
   InstructorCourseSummary,
+  InstructorCourseTimelineReport,
   InstructorDashboardReport,
   InstructorStudentEntry,
   InstructorStudentsReport,
@@ -297,6 +298,24 @@ export class DashboardService {
     );
 
     return { courses: courseSummaries };
+  }
+
+  // Self-scoped, like getInstructorDashboard — but a separate endpoint
+  // rather than an added field on InstructorDashboardReport, since this
+  // view needs none of that report's CLO/PLO/Course-Assessment
+  // computation and a shared shape would force every "My Courses" fetch
+  // to pay for both.
+  async getInstructorCourseTimeline(
+    user: RequestUser,
+  ): Promise<InstructorCourseTimelineReport> {
+    const courses = await this.courseService.findMyCourses(user.userId);
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForCoursesWithStudentProfile(
+        courses.map((course) => course.id),
+      );
+    return {
+      years: this.studentCourseRecordService.groupCoursesByYearAndSemester(records),
+    };
   }
 
   // Flat list across ALL of the instructor's own courses at once, unlike

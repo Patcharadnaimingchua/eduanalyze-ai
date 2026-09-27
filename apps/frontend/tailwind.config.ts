@@ -79,6 +79,13 @@ const config: Config = {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        // Digit-entry feedback on OtpInput — quick bounce, not the
+        // from-zero `pop` above (that one's for badges appearing).
+        'otp-digit-pop': {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.08)' },
+          '100%': { transform: 'scale(1)' },
+        },
         // --x/--y/--r are set per piece by ConfettiBurst.
         confetti: {
           '0%': { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: '1' },
@@ -99,6 +106,7 @@ const config: Config = {
         // Outline draws first, then the fill and vertex dots settle in.
         'radar-shape': 'radar-draw 900ms ease-out both, radar-fill 500ms ease-out 600ms both',
         'radar-dot': 'radar-dot 300ms ease-out 800ms both',
+        'otp-digit-pop': 'otp-digit-pop 220ms ease-out',
         confetti: 'confetti 1400ms cubic-bezier(0.2, 0.7, 0.4, 1) both',
       },
     },

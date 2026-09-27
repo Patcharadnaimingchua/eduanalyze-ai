@@ -51,6 +51,23 @@ export class DashboardController {
     return this.dashboardService.getInstructorDashboard(user);
   }
 
+  // "My Courses" grouped by academic year -> semester for the teaching
+  // schedule view — a separate endpoint from getInstructorDashboard above
+  // rather than an added field on its response (see dashboard.service.ts
+  // for why). Same self-scoped posture: no ScopeGuard needed.
+  @Get('instructor/course-timeline')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      "Instructor course timeline — the current instructor's own courses grouped by academic year -> semester, with each course's predominant student year level",
+  })
+  @ApiResponse({ status: 200, description: 'Instructor course timeline report' })
+  getInstructorCourseTimeline(@CurrentUser() user: RequestUser) {
+    return this.dashboardService.getInstructorCourseTimeline(user);
+  }
+
   // No client-supplied courseId to validate against another user —
   // courseId here is only an optional narrowing filter, resolved against
   // this instructor's own course set inside the service. Same posture as

@@ -399,12 +399,13 @@ export class AuthService {
 
     if (user.passwordHash) {
       const token = await this.passwordResetService.create(user.id);
-      // Swallow send failures here too — letting one propagate would turn
-      // "SMTP is down" into a 500 only when the account exists (silence on
-      // a not-found email never reaches this branch at all), which is
-      // itself an account-enumeration side channel via response shape.
-      // EmailService.sendMail already logs the failure.
-      await this.emailService
+      // Not awaited: waiting on the SMTP send made this response ~100x
+      // slower only when the account exists — an account-enumeration side
+      // channel via timing, just as letting a send failure propagate would
+      // be one via response shape. The .catch must stay attached: an
+      // unhandled rejection crashes Node 22 by default. EmailService.sendMail
+      // already logs the failure.
+      void this.emailService
         .sendPasswordSetupEmail(user.email, token, 'reset')
         .catch(() => undefined);
     }
