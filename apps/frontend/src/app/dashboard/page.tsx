@@ -78,7 +78,13 @@ function DashboardContent() {
   if (profileQuery.isError || dashboardQuery.isError || !dashboardQuery.data) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError message="ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง" />
+        <PageLoadError
+          message="ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง"
+          onRetry={() => {
+            profileQuery.refetch();
+            dashboardQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

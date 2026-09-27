@@ -168,8 +168,15 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
           </Card>
         </div>
       )}
-      {forbidden && <PageLoadError message="ไม่มีสิทธิ์เข้าถึงนักศึกษาคนนี้" />}
-      {profileQuery.isError && !forbidden && <PageLoadError message="ไม่พบนักศึกษา" />}
+      {forbidden && (
+        <PageLoadError
+          message="ไม่มีสิทธิ์เข้าถึงนักศึกษาคนนี้"
+          onRetry={() => profileQuery.refetch()}
+        />
+      )}
+      {profileQuery.isError && !forbidden && (
+        <PageLoadError message="ไม่พบนักศึกษา" onRetry={() => profileQuery.refetch()} />
+      )}
 
       {profile && (
         <>

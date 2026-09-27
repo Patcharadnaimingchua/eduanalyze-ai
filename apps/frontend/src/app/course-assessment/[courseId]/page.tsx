@@ -160,7 +160,14 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   ) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            coursesQuery.refetch();
+            closQuery.refetch();
+            assessmentQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

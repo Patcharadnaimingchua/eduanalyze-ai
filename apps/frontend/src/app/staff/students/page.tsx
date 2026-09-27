@@ -126,7 +126,7 @@ function StaffStudentsContent() {
             </CardContent>
           </Card>
         )}
-        {studentsQuery.isError && <PageLoadError />}
+        {studentsQuery.isError && <PageLoadError onRetry={() => studentsQuery.refetch()} />}
         {studentsQuery.data && (
           <StudentDirectoryTable
             students={filteredStudents}

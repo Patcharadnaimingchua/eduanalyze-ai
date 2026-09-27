@@ -56,7 +56,7 @@ function StaffYearLevelsContent() {
 
       {query.isLoading && <StatCardsSkeleton count={4} />}
 
-      {query.isError && <PageLoadError />}
+      {query.isError && <PageLoadError onRetry={() => query.refetch()} />}
 
       {query.data && totalStudents === 0 && (
         <Reveal index={1}>

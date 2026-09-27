@@ -67,7 +67,7 @@ function StaffDashboardContent() {
             ))}
           </div>
         )}
-        {studentsQuery.isError && <PageLoadError />}
+        {studentsQuery.isError && <PageLoadError onRetry={() => studentsQuery.refetch()} />}
         {studentsQuery.data && <StaffDashboardSummary students={studentsQuery.data} />}
       </Reveal>
 
@@ -88,7 +88,7 @@ function StaffDashboardContent() {
           description="จำนวนนักศึกษา, GPA เฉลี่ย, และวิชาที่ยังไม่มี CLO ต่อหลักสูตร"
         >
           {overviewQuery.isLoading && <ListSkeleton items={3} />}
-          {overviewQuery.isError && <PageLoadError />}
+          {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
           {overviewQuery.data && <ProgramOverviewList programs={overviewQuery.data.programs} />}
         </PageSection>
       </Reveal>

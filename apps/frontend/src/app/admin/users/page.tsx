@@ -136,7 +136,7 @@ function AdminUsersContent() {
             </CardContent>
           </Card>
         )}
-        {usersQuery.isError && <PageLoadError />}
+        {usersQuery.isError && <PageLoadError onRetry={() => usersQuery.refetch()} />}
         {usersQuery.data && <UserListTable users={usersQuery.data} />}
       </Reveal>
     </DashboardShell>

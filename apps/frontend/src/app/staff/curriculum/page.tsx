@@ -170,7 +170,24 @@ function StaffCurriculumContent() {
             )}
 
             {categoriesQuery.data && categoriesInCurriculum.length === 0 ? (
-              <EmptyState icon={FolderOpen} description="ยังไม่มีหมวดวิชาในหลักสูตรนี้" />
+              <EmptyState
+                icon={FolderOpen}
+                description="ยังไม่มีหมวดวิชาในหลักสูตรนี้"
+                action={
+                  !showCategoryForm && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setShowCategoryForm(true)}
+                    >
+                      <Plus size={16} />
+                      เพิ่มหมวดวิชา
+                    </Button>
+                  )
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {categoriesInCurriculum.map((category) => (

@@ -197,7 +197,16 @@ function AcademicRecordContent() {
   ) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            recordsQuery.refetch();
+            gpaQuery.refetch();
+            coursesQuery.refetch();
+            academicYearsQuery.refetch();
+            semestersQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

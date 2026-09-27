@@ -128,12 +128,34 @@ function AcademicYearsAdminContent() {
             </div>
           )}
 
-          {(yearsQuery.isError || semestersQuery.isError) && <PageLoadError />}
+          {(yearsQuery.isError || semestersQuery.isError) && (
+            <PageLoadError
+              onRetry={() => {
+                yearsQuery.refetch();
+                semestersQuery.refetch();
+              }}
+            />
+          )}
 
           {yearsQuery.data && semestersQuery.data && (
             <div className="space-y-4">
               {yearsQuery.data.length === 0 ? (
-                <EmptyState icon={CalendarX2} description="ยังไม่มีปีการศึกษาในระบบ" />
+                <EmptyState
+                  icon={CalendarX2}
+                  description="ยังไม่มีปีการศึกษาในระบบ"
+                  action={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setOpenForm('single')}
+                    >
+                      <Plus size={16} />
+                      เพิ่มปีการศึกษา
+                    </Button>
+                  }
+                />
               ) : (
                 [...yearsQuery.data]
                   .sort((a, b) => b.year - a.year)

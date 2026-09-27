@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
-import { MailX } from 'lucide-react';
+import { MailX, Plus } from 'lucide-react';
 import type { StudentInvitationListEntry } from '@eduanalyze-ai/shared-types';
 import { resendStudentInvitation } from '@/lib/api/staff';
 import { useToast } from '@/lib/toast-context';
@@ -20,9 +20,11 @@ function formatExpiry(iso: string): string {
 export function StudentInvitationList({
   invitations,
   onChanged,
+  onInviteClick,
 }: Readonly<{
   invitations: StudentInvitationListEntry[];
   onChanged: () => void;
+  onInviteClick?: () => void;
 }>) {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const toast = useToast();
@@ -45,7 +47,20 @@ export function StudentInvitationList({
   }
 
   if (invitations.length === 0) {
-    return <EmptyState icon={MailX} description="ยังไม่มีคำเชิญที่ค้างอยู่" />;
+    return (
+      <EmptyState
+        icon={MailX}
+        description="ยังไม่มีคำเชิญที่ค้างอยู่"
+        action={
+          onInviteClick && (
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onInviteClick}>
+              <Plus size={16} />
+              เชิญนักศึกษา
+            </Button>
+          )
+        }
+      />
+    );
   }
 
   return (

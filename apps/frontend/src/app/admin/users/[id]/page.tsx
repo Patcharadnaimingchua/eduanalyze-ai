@@ -101,7 +101,12 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
           <ListSkeleton items={3} />
         </div>
       )}
-      {userQuery.isError && <PageLoadError message="ไม่พบผู้ใช้งาน หรือไม่มีสิทธิ์เข้าถึง" />}
+      {userQuery.isError && (
+        <PageLoadError
+          message="ไม่พบผู้ใช้งาน หรือไม่มีสิทธิ์เข้าถึง"
+          onRetry={() => userQuery.refetch()}
+        />
+      )}
 
       {userQuery.data && (
         <>

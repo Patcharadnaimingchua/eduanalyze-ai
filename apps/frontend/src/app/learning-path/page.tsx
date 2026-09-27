@@ -119,7 +119,14 @@ function LearningPathContent() {
   ) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            pathQuery.refetch();
+            coursesQuery.refetch();
+            curriculumQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

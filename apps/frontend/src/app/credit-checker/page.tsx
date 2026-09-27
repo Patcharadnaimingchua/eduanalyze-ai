@@ -87,7 +87,12 @@ function CreditCheckerContent() {
   if (profileQuery.isError || reportQuery.isError || !profileQuery.data || !reportQuery.data) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            reportQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

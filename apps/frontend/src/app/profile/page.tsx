@@ -171,7 +171,15 @@ function ProfileContent() {
   if (hasError) {
     return (
       <DashboardShell role={primaryRole} identityLabel={user.email} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            facultiesQuery.refetch();
+            departmentsQuery.refetch();
+            programsQuery.refetch();
+            curriculaQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

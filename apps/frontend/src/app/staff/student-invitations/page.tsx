@@ -80,7 +80,12 @@ function StaffStudentInvitationsContent() {
       </Reveal>
 
       {overviewQuery.isLoading && <Skeleton className="h-32 w-full" />}
-      {overviewQuery.isError && <PageLoadError message="ไม่สามารถโหลดข้อมูลสาขาที่คุณดูแลได้" />}
+      {overviewQuery.isError && (
+        <PageLoadError
+          message="ไม่สามารถโหลดข้อมูลสาขาที่คุณดูแลได้"
+          onRetry={() => overviewQuery.refetch()}
+        />
+      )}
 
       {showCsvPanel && overviewQuery.data && (
         <Reveal>
@@ -95,11 +100,12 @@ function StaffStudentInvitationsContent() {
       <Reveal index={1}>
         <PageSection title="คำเชิญที่ค้างอยู่">
           {invitationsQuery.isLoading && <Skeleton className="h-40 w-full" />}
-          {invitationsQuery.isError && <PageLoadError />}
+          {invitationsQuery.isError && <PageLoadError onRetry={() => invitationsQuery.refetch()} />}
           {invitationsQuery.data && (
             <StudentInvitationList
               invitations={invitationsQuery.data}
               onChanged={refetchInvitations}
+              onInviteClick={() => setShowCsvPanel(true)}
             />
           )}
         </PageSection>

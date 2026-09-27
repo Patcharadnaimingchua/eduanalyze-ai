@@ -80,7 +80,13 @@ function AptitudeAnalysisContent() {
   ) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            ploQuery.refetch();
+            curriculumQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

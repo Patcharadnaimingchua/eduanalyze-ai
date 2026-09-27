@@ -152,7 +152,14 @@ function CloPloAnalysisContent() {
   ) {
     return (
       <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <PageLoadError />
+        <PageLoadError
+          onRetry={() => {
+            profileQuery.refetch();
+            achievementQuery.refetch();
+            plosQuery.refetch();
+            curriculumQuery.refetch();
+          }}
+        />
       </DashboardShell>
     );
   }

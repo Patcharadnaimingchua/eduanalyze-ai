@@ -57,7 +57,7 @@ function AdminOverviewContent() {
       </Reveal>
 
       {overviewQuery.isLoading && <StatCardsSkeleton count={3} />}
-      {overviewQuery.isError && <PageLoadError />}
+      {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
 
       {isEmptyScope && (
         <Reveal index={1}>

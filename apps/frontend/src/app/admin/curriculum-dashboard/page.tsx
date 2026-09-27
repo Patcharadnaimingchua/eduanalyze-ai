@@ -66,7 +66,7 @@ function CurriculumDashboardContent() {
       </Reveal>
 
       {overviewQuery.isLoading && <StatCardsSkeleton count={3} />}
-      {overviewQuery.isError && <PageLoadError />}
+      {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
 
       {data && (
         <>
