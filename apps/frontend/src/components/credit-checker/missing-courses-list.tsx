@@ -15,8 +15,25 @@ function tileIcon(course: MissingCourse, isFailed: boolean) {
   return course.isPrerequisiteSatisfied ? BookOpen : AlertTriangle;
 }
 
-function CourseTile({ course, isFailed }: Readonly<{ course: MissingCourse; isFailed: boolean }>) {
+function CourseTile({
+  course,
+  isFailed,
+  courseById,
+  passedCourseIds,
+}: Readonly<{
+  course: MissingCourse;
+  isFailed: boolean;
+  courseById: ReadonlyMap<string, CourseSummary>;
+  passedCourseIds: ReadonlySet<string>;
+}>) {
   const Icon = tileIcon(course, isFailed);
+  const missingPrereqs =
+    !isFailed && !course.isPrerequisiteSatisfied
+      ? course.prerequisiteCourseIds
+          .filter((id) => !passedCourseIds.has(id))
+          .map((id) => courseById.get(id))
+          .filter((c): c is CourseSummary => !!c)
+      : [];
   return (
     <li className="flex items-start gap-3 rounded-lg border border-slate-100 p-3">
       <Icon
@@ -34,7 +51,11 @@ function CourseTile({ course, isFailed }: Readonly<{ course: MissingCourse; isFa
         <p className="text-xs text-muted-foreground">
           {course.credits} หน่วยกิต
           {isFailed && ' · สอบตกแล้ว — ต้องลงทะเบียนใหม่'}
-          {!isFailed && !course.isPrerequisiteSatisfied && ' · ยังไม่ผ่านวิชาที่ต้องเรียนก่อน'}
+          {!isFailed && !course.isPrerequisiteSatisfied && (
+            missingPrereqs.length > 0
+              ? ` · ต้องผ่าน ${missingPrereqs.map((c) => c.code).join(', ')} ก่อน`
+              : ' · ยังไม่ผ่านวิชาที่ต้องเรียนก่อน'
+          )}
         </p>
       </div>
     </li>
@@ -47,9 +68,13 @@ function CourseTile({ course, isFailed }: Readonly<{ course: MissingCourse; isFa
 export function MissingCoursesList({
   courses,
   failedCourseIds,
+  courseById,
+  passedCourseIds,
 }: Readonly<{
   courses: MissingCourse[];
   failedCourseIds?: ReadonlySet<string>;
+  courseById: ReadonlyMap<string, CourseSummary>;
+  passedCourseIds: ReadonlySet<string>;
 }>) {
   const available = courses.filter((c) => c.isPrerequisiteSatisfied);
   const locked = courses.filter((c) => !c.isPrerequisiteSatisfied);
@@ -84,7 +109,13 @@ export function MissingCoursesList({
             </h4>
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {available.map((course) => (
-                <CourseTile key={course.courseId} course={course} isFailed={isFailed(course)} />
+                <CourseTile
+                  key={course.courseId}
+                  course={course}
+                  isFailed={isFailed(course)}
+                  courseById={courseById}
+                  passedCourseIds={passedCourseIds}
+                />
               ))}
             </ul>
           </div>
@@ -107,7 +138,13 @@ export function MissingCoursesList({
             {showLocked && (
               <ul id={lockedListId} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {locked.map((course) => (
-                  <CourseTile key={course.courseId} course={course} isFailed={isFailed(course)} />
+                  <CourseTile
+                    key={course.courseId}
+                    course={course}
+                    isFailed={isFailed(course)}
+                    courseById={courseById}
+                    passedCourseIds={passedCourseIds}
+                  />
                 ))}
               </ul>
             )}

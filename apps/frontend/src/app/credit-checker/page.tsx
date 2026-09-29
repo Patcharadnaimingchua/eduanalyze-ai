@@ -1,10 +1,11 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
-import { Award, ChevronDown, FileCheck2, GraduationCap } from 'lucide-react';
-import type { CreditCheckReport } from '@eduanalyze-ai/shared-types';
+import { Award, ChevronDown, FileCheck2, GraduationCap, Map as MapIcon } from 'lucide-react';
+import type { CourseSummary, CreditCheckReport } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCreditCheck } from '@/lib/api/credit-checker';
 import { useAuth } from '@/lib/auth-context';
@@ -112,6 +113,22 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
     () => new Set(report.failedCourses.map((c) => c.courseId)),
     [report.failedCourses],
   );
+  const passedCourseIds = useMemo(
+    () => new Set(report.passedCourses.map((c) => c.courseId)),
+    [report.passedCourses],
+  );
+  // Prerequisite ids can point at any course in the curriculum, not just
+  // the ones already surfaced as missing — union every bucket the report
+  // gives us so a lookup never comes back empty.
+  const courseById = useMemo(() => {
+    const all: CourseSummary[] = [
+      ...report.passedCourses,
+      ...report.failedCourses,
+      ...report.notYetStudiedCourses,
+      ...report.missingRequiredCourses,
+    ];
+    return new Map(all.map((c) => [c.courseId, c]));
+  }, [report.passedCourses, report.failedCourses, report.notYetStudiedCourses, report.missingRequiredCourses]);
   const hasFailed = report.failedCourses.length > 0;
   const completeCategories = report.categoryProgress.filter((c) => c.isComplete).length;
   const curriculumCourseCount =
@@ -157,12 +174,24 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
       </div>
 
       <Reveal index={4}>
-        <PageSection title="ต้องจัดการ">
+        <PageSection
+          title="ต้องจัดการ"
+          actions={
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link href="/learning-path">
+                <MapIcon size={14} aria-hidden="true" />
+                ไปที่แผนการเรียน
+              </Link>
+            </Button>
+          }
+        >
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className={hasFailed ? 'lg:col-span-2' : 'lg:col-span-3'}>
               <MissingCoursesList
                 courses={report.missingRequiredCourses}
                 failedCourseIds={failedCourseIds}
+                courseById={courseById}
+                passedCourseIds={passedCourseIds}
               />
             </div>
             {hasFailed && <FailedCoursesList courses={report.failedCourses} />}

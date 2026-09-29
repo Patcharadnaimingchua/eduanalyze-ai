@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
 import type {
   ProblematicCloEntry,
@@ -7,6 +8,11 @@ import type {
 } from '@eduanalyze-ai/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Same rationale as system-curriculum-list.tsx: no per-PLO/per-course route
+// exists, so every row links to the org structure page where the
+// curriculum lives — still a real, keyboard/screen-reader-reachable <a>.
+const ORG_STRUCTURE_HREF = '/admin/organization';
 
 const CLO_DISPLAY_LIMIT = 15;
 
@@ -45,27 +51,29 @@ export function BelowThresholdLists({
           ) : (
             <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
               {plos.map((plo) => (
-                <li
-                  key={plo.ploId}
-                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                >
-                  <span className="min-w-0">
-                    <span className="font-medium text-primary">{plo.code}</span>{' '}
-                    <span className="text-muted-foreground">{plo.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {plo.programCode}/{plo.curriculumVersion}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    {plo.averageValue !== null && (
-                      <span className="text-xs text-muted-foreground">
-                        เฉลี่ย {Math.round(plo.averageValue)}%
+                <li key={plo.ploId}>
+                  <Link
+                    href={ORG_STRUCTURE_HREF}
+                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm transition hover:bg-slate-50"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-medium text-primary">{plo.code}</span>{' '}
+                      <span className="text-muted-foreground">{plo.name}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {plo.programCode}/{plo.curriculumVersion}
                       </span>
-                    )}
-                    <Badge tone="danger">
-                      {plo.closBelowThreshold}/{plo.totalMeasuredClos} CLO ไม่ผ่าน
-                    </Badge>
-                  </span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {plo.averageValue !== null && (
+                        <span className="text-xs text-muted-foreground">
+                          เฉลี่ย {Math.round(plo.averageValue)}%
+                        </span>
+                      )}
+                      <Badge tone="danger">
+                        {plo.closBelowThreshold}/{plo.totalMeasuredClos} CLO ไม่ผ่าน
+                      </Badge>
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -94,20 +102,22 @@ export function BelowThresholdLists({
             <div className="space-y-2">
               <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
                 {clos.slice(0, CLO_DISPLAY_LIMIT).map((clo) => (
-                  <li
-                    key={clo.cloId}
-                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                  >
-                    <span className="min-w-0">
-                      <span className="text-muted-foreground">{clo.courseCode}</span>{' '}
-                      <span className="font-medium text-primary">{clo.code}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {clo.programCode}/{clo.curriculumVersion}
+                  <li key={clo.cloId}>
+                    <Link
+                      href={ORG_STRUCTURE_HREF}
+                      className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm transition hover:bg-slate-50"
+                    >
+                      <span className="min-w-0">
+                        <span className="text-muted-foreground">{clo.courseCode}</span>{' '}
+                        <span className="font-medium text-primary">{clo.code}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {clo.programCode}/{clo.curriculumVersion}
+                        </span>
                       </span>
-                    </span>
-                    <Badge tone="danger">
-                      {Math.round(clo.achievementPercent)}% &lt; {clo.threshold}%
-                    </Badge>
+                      <Badge tone="danger">
+                        {Math.round(clo.achievementPercent)}% &lt; {clo.threshold}%
+                      </Badge>
+                    </Link>
                   </li>
                 ))}
               </ul>

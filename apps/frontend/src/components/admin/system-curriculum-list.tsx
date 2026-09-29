@@ -1,9 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { FolderOpen, Users } from 'lucide-react';
 import type { SystemCurriculumEntry } from '@eduanalyze-ai/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// No per-curriculum route exists (org-tree.tsx has no query-param
+// deep-link support) — every row links to the org structure page itself,
+// where the curriculum lives inside its program's CurriculumPanel. Still
+// a real <a> (keyboard-reachable, right-click "open in new tab", announced
+// as a link by a screen reader), just not a focused deep link.
+const ORG_STRUCTURE_HREF = '/admin/organization';
 
 // Three tiers, not one empty state. A curriculum nobody has enrolled in
 // yet and a curriculum that was never built read very differently to
@@ -23,40 +31,45 @@ function CurriculumRow({ curriculum }: { curriculum: SystemCurriculumEntry }) {
   const { dataState } = curriculum;
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm">
-      <span className="min-w-0">
-        <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
-        <span className="text-muted-foreground">ฉบับ {curriculum.version}</span>
-        <span className="ml-2 text-xs text-muted-foreground">{curriculum.programName}</span>
-      </span>
-      <span className="flex flex-wrap items-center gap-2">
-        {dataState === 'HAS_STUDENTS' ? (
-          <>
-            <Badge tone="success">{curriculum.studentCount} นักศึกษา</Badge>
-            <Badge tone="neutral">
-              GPA เฉลี่ย{' '}
-              {curriculum.averageGpa === null ? '—' : curriculum.averageGpa.toFixed(2)}
-            </Badge>
-            <Badge tone="neutral">
-              PLO เฉลี่ย{' '}
-              {curriculum.averagePloValue === null
-                ? '—'
-                : `${Math.round(curriculum.averagePloValue)}%`}
-            </Badge>
-            <Badge tone={curriculum.studentsAtRiskCount > 0 ? 'danger' : 'neutral'}>
-              เสี่ยง {curriculum.studentsAtRiskCount}
-            </Badge>
-            <Badge tone={curriculum.graduationReadyCount > 0 ? 'success' : 'neutral'}>
-              พร้อมจบ {curriculum.graduationReadyCount}
-            </Badge>
-          </>
-        ) : (
-          <>
-            <StructureBadges curriculum={curriculum} />
-            <span className="text-xs text-muted-foreground">ยังไม่มีนักศึกษาในหลักสูตรนี้</span>
-          </>
-        )}
-      </span>
+    <li>
+      <Link
+        href={ORG_STRUCTURE_HREF}
+        className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm transition hover:bg-slate-100"
+      >
+        <span className="min-w-0">
+          <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
+          <span className="text-muted-foreground">ฉบับ {curriculum.version}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{curriculum.programName}</span>
+        </span>
+        <span className="flex flex-wrap items-center gap-2">
+          {dataState === 'HAS_STUDENTS' ? (
+            <>
+              <Badge tone="success">{curriculum.studentCount} นักศึกษา</Badge>
+              <Badge tone="neutral">
+                GPA เฉลี่ย{' '}
+                {curriculum.averageGpa === null ? '—' : curriculum.averageGpa.toFixed(2)}
+              </Badge>
+              <Badge tone="neutral">
+                PLO เฉลี่ย{' '}
+                {curriculum.averagePloValue === null
+                  ? '—'
+                  : `${Math.round(curriculum.averagePloValue)}%`}
+              </Badge>
+              <Badge tone={curriculum.studentsAtRiskCount > 0 ? 'danger' : 'neutral'}>
+                เสี่ยง {curriculum.studentsAtRiskCount}
+              </Badge>
+              <Badge tone={curriculum.graduationReadyCount > 0 ? 'success' : 'neutral'}>
+                พร้อมจบ {curriculum.graduationReadyCount}
+              </Badge>
+            </>
+          ) : (
+            <>
+              <StructureBadges curriculum={curriculum} />
+              <span className="text-xs text-muted-foreground">ยังไม่มีนักศึกษาในหลักสูตรนี้</span>
+            </>
+          )}
+        </span>
+      </Link>
     </li>
   );
 }
@@ -126,12 +139,14 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
           <CardContent>
             <ul className="flex flex-wrap gap-2">
               {empty.map((curriculum) => (
-                <li
-                  key={curriculum.curriculumId}
-                  className="rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground"
-                >
-                  <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
-                  ฉบับ {curriculum.version}
+                <li key={curriculum.curriculumId}>
+                  <Link
+                    href={ORG_STRUCTURE_HREF}
+                    className="block rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100"
+                  >
+                    <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
+                    ฉบับ {curriculum.version}
+                  </Link>
                 </li>
               ))}
             </ul>
