@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { NEXT_PARAM } from '@/lib/safe-next-path';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuthSplitLayout } from './auth-split-layout';
 import { ChangePasswordForm } from './change-password-form';
@@ -28,14 +29,23 @@ const BRAND_COPY = {
 };
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { status, user } = useAuth();
+  const { status, user, signedOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
+  // window.location.search rather than useSearchParams, which would force a
+  // Suspense boundary onto every protected page. replace, so Back from the
+  // login form doesn't land on this protected URL again.
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login');
+      if (signedOut) {
+        router.replace('/login');
+        return;
+      }
+      const next = `${pathname}${window.location.search}`;
+      router.replace(`/login?${NEXT_PARAM}=${encodeURIComponent(next)}`);
     }
-  }, [status, router]);
+  }, [status, signedOut, router, pathname]);
 
   if (status === 'loading') {
     // Fires before the page shell (sidebar/topbar) mounts — the shell needs

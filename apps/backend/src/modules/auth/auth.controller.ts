@@ -308,7 +308,9 @@ export class AuthController {
     }
 
     this.setRefreshCookie(response, result.refreshToken);
-    response.redirect(frontendUrl!);
+    // /login (not the / hub) signs the refresh cookie in and forwards to the
+    // role's dashboard, or to the page the user started from.
+    response.redirect(`${frontendUrl}/login`);
   }
 
   @Post('google/complete-registration')

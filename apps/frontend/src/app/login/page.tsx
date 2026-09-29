@@ -11,7 +11,8 @@ import type { LoginResponse } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
-import { resolveHomeRoute } from '@/lib/dashboard-routes';
+import { resolvePostLoginRoute } from '@/lib/dashboard-routes';
+import { GOOGLE_NEXT_STORAGE_KEY, NEXT_PARAM, sanitizeNextPath } from '@/lib/safe-next-path';
 import { HOVER_LIFT } from '@/lib/motion';
 import { verifyTwoFactor } from '@/lib/api/two-factor';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/login.schema';
@@ -24,6 +25,7 @@ import {
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { OtpInput } from '@/components/ui/otp-input';
@@ -56,7 +58,8 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, status, user } = useAuth();
+  const nextParam = searchParams.get(NEXT_PARAM);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -93,6 +96,33 @@ function LoginPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Single exit point for every way of signing in (password, 2FA, and a
+  // Google return, which lands here already authenticated via the refresh
+  // cookie) — and it also moves an already-signed-in visitor off /login.
+  // Google can't carry ?next= through its round-trip, so that one is parked
+  // in sessionStorage by the Google button below and read back here once.
+  useEffect(() => {
+    if (status !== 'authenticated' || !user) return;
+    let storedNext: string | null = null;
+    try {
+      storedNext = sessionStorage.getItem(GOOGLE_NEXT_STORAGE_KEY);
+      sessionStorage.removeItem(GOOGLE_NEXT_STORAGE_KEY);
+    } catch {
+      // Storage blocked — fall back to ?next= / home.
+    }
+    router.replace(resolvePostLoginRoute(nextParam ?? storedNext, user.roles));
+  }, [status, user, nextParam, router]);
+
+  function rememberNextForGoogle() {
+    try {
+      const safeNext = sanitizeNextPath(nextParam);
+      if (safeNext) sessionStorage.setItem(GOOGLE_NEXT_STORAGE_KEY, safeNext);
+      else sessionStorage.removeItem(GOOGLE_NEXT_STORAGE_KEY);
+    } catch {
+      // Storage blocked — Google sign-in still works, it just lands on home.
+    }
+  }
+
   async function onSubmitCredentials(values: LoginFormValues) {
     setServerError(null);
     try {
@@ -101,8 +131,7 @@ function LoginPageContent() {
         setPendingToken(data.pendingToken);
         return;
       }
-      const user = await login(data.accessToken);
-      router.push(resolveHomeRoute(user.roles));
+      await login(data.accessToken);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -124,8 +153,7 @@ function LoginPageContent() {
         // success) — kept only so the discriminated union is exhaustive.
         return;
       }
-      const user = await login(data.accessToken);
-      router.push(resolveHomeRoute(user.roles));
+      await login(data.accessToken);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('รหัสยืนยันไม่ถูกต้องหรือหมดอายุ — ลองเข้าสู่ระบบใหม่อีกครั้ง');
@@ -133,6 +161,19 @@ function LoginPageContent() {
         setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       }
     }
+  }
+
+  // Session check still running, or signed in and about to be redirected —
+  // don't flash a login form at someone who is already in.
+  if (status === 'loading' || status === 'authenticated') {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+    );
   }
 
   if (pendingToken) {
@@ -336,7 +377,7 @@ function LoginPageContent() {
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
+      <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`} onClick={rememberNextForGoogle}>
         <Button type="button" variant="outline" className="w-full gap-2">
           <GoogleIcon />
           Google

@@ -18,6 +18,9 @@ interface AuthContextValue {
   // returns the loaded user so the caller can decide where to redirect.
   login: (accessToken: string) => Promise<CurrentUserResponse>;
   logout: () => Promise<void>;
+  // True after an explicit sign-out (vs. a session that expired): the next
+  // person at this browser must not be sent back to the previous user's page.
+  signedOut: boolean;
   // Re-fetches /auth/me without touching the access token — used after a
   // password change so `user.mustChangePassword` reflects reality without
   // a full page reload.
@@ -29,6 +32,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUserResponse | null>(null);
   const [status, setStatus] = useState<AuthStatus>('loading');
+  const [signedOut, setSignedOut] = useState(false);
   const router = useRouter();
 
   const loadCurrentUser = useCallback(async () => {
@@ -41,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (accessToken: string) => {
       setAccessToken(accessToken);
+      setSignedOut(false);
       return loadCurrentUser();
     },
     [loadCurrentUser],
@@ -52,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setAccessToken(null);
       setUser(null);
+      setSignedOut(true);
       setStatus('unauthenticated');
       router.push('/login');
     }
@@ -86,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         status,
+        signedOut,
         login,
         logout,
         refreshUser: async () => {
