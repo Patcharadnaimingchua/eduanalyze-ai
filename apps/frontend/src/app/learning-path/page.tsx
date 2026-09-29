@@ -6,7 +6,13 @@ import { RotateCcw } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCourses } from '@/lib/api/academic-record';
 import { fetchCurriculum } from '@/lib/api/plo-achievement';
-import { fetchLearningPath } from '@/lib/api/learning-path';
+import {
+  deleteMyLearningPathPlan,
+  fetchLearningPath,
+  fetchMyLearningPathPlan,
+} from '@/lib/api/learning-path';
+import { UNSAVED_PLAN_RESET_CONFIRM_MESSAGE } from '@/lib/learning-path-plan';
+import { useToast } from '@/lib/toast-context';
 import { fetchMyCreditLimitRequest } from '@/lib/api/credit-limit-request';
 import { CREDIT_LIMIT_PRESETS, MIN_CREDITS_WARNING } from '@/lib/credit-limit-presets';
 import { useAuth } from '@/lib/auth-context';
@@ -36,6 +42,7 @@ function LearningPathContent() {
   const { user } = useAuth();
   const isStudent = !!user?.roles.includes('STUDENT');
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const profileQuery = useQuery({
     queryKey: ['student-profile-me'],
@@ -66,9 +73,32 @@ function LearningPathContent() {
     enabled: !!studentProfileId,
   });
 
-  // Bumping the key remounts the planner, which puts it back on the
-  // recommended plan — the planner keeps its own state otherwise.
+  const savedPlanQuery = useQuery({
+    queryKey: ['learning-path-plan-me'],
+    queryFn: fetchMyLearningPathPlan,
+    enabled: !!studentProfileId,
+  });
+
+  // Bumping the key remounts the planner (re-seeding from the saved plan or
+  // the recommendation) — the planner keeps its own state otherwise.
   const [plannerKey, setPlannerKey] = useState(0);
+  const [plannerDirty, setPlannerDirty] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  async function resetPlan() {
+    if (plannerDirty && !window.confirm(UNSAVED_PLAN_RESET_CONFIRM_MESSAGE)) return;
+    setResetting(true);
+    try {
+      await deleteMyLearningPathPlan();
+      // Wait for the refetch so the remounted planner seeds from "no saved plan".
+      await queryClient.invalidateQueries({ queryKey: ['learning-path-plan-me'] });
+      setPlannerKey((k) => k + 1);
+    } catch {
+      toast.error('รีเซ็ตแผนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setResetting(false);
+    }
+  }
 
   const courseCountByCategory = useMemo(() => {
     const map = new Map<string, number>();
@@ -98,7 +128,8 @@ function LearningPathContent() {
     pathQuery.isLoading ||
     coursesQuery.isLoading ||
     curriculumQuery.isLoading ||
-    creditLimitRequestQuery.isLoading;
+    creditLimitRequestQuery.isLoading ||
+    savedPlanQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -113,6 +144,7 @@ function LearningPathContent() {
     pathQuery.isError ||
     coursesQuery.isError ||
     curriculumQuery.isError ||
+    savedPlanQuery.isError ||
     !profileQuery.data ||
     !pathQuery.data ||
     !curriculumQuery.data
@@ -125,6 +157,7 @@ function LearningPathContent() {
             pathQuery.refetch();
             coursesQuery.refetch();
             curriculumQuery.refetch();
+            savedPlanQuery.refetch();
           }}
         />
       </DashboardShell>
@@ -160,7 +193,8 @@ function LearningPathContent() {
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                onClick={() => setPlannerKey((k) => k + 1)}
+                disabled={resetting}
+                onClick={resetPlan}
               >
                 <RotateCcw size={14} aria-hidden="true" />
                 รีเซ็ตเป็นแผนที่แนะนำ
@@ -178,6 +212,9 @@ function LearningPathContent() {
             nextSemesterPlan={path.nextSemesterPlan}
             maxCreditsPerSemester={effectiveMaxCredits}
             minCreditsWarning={effectiveMinCredits}
+            savedPlanIds={savedPlanQuery.data?.courseIds ?? null}
+            onSaved={() => queryClient.invalidateQueries({ queryKey: ['learning-path-plan-me'] })}
+            onDirtyChange={setPlannerDirty}
           />
         </PageSection>
       </Reveal>

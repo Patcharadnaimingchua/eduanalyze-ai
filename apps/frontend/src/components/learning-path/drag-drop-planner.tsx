@@ -1,8 +1,12 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AvailableCourse } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
+import { saveMyLearningPathPlan } from '@/lib/api/learning-path';
+import { isPlanDirty, resolveInitialPlan } from '@/lib/learning-path-plan';
+import { useToast } from '@/lib/toast-context';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CourseDragCard } from './course-drag-card';
 
@@ -13,12 +17,19 @@ export function DragDropPlanner({
   nextSemesterPlan,
   maxCreditsPerSemester,
   minCreditsWarning,
+  savedPlanIds,
+  onSaved,
+  onDirtyChange,
 }: Readonly<{
   availableCourses: AvailableCourse[];
   nextSemesterPlan: AvailableCourse[];
   maxCreditsPerSemester: number;
   minCreditsWarning: number;
+  savedPlanIds: string[] | null;
+  onSaved: () => Promise<unknown> | void;
+  onDirtyChange: (isDirty: boolean) => void;
 }>) {
+  const toast = useToast();
   const courseById = useMemo(() => {
     const map = new Map<string, AvailableCourse>();
     for (const course of [...nextSemesterPlan, ...availableCourses]) {
@@ -27,9 +38,53 @@ export function DragDropPlanner({
     return map;
   }, [nextSemesterPlan, availableCourses]);
 
-  // Reset to the recommended plan is done by the page remounting this
-  // component (new `key`), so the initial value is all that is needed here.
-  const [planIds, setPlanIds] = useState<string[]>(() => nextSemesterPlan.map((c) => c.courseId));
+  // Seeded once on mount (saved plan, else the recommendation). Reset is done
+  // by the page remounting this component (new `key`), and a background
+  // refetch of the saved plan must never overwrite what the student is editing.
+  const [initial] = useState(() =>
+    resolveInitialPlan(
+      savedPlanIds,
+      availableCourses.map((c) => c.courseId),
+      nextSemesterPlan.map((c) => c.courseId),
+    ),
+  );
+  const [planIds, setPlanIds] = useState<string[]>(initial.planIds);
+  const [baselineIds, setBaselineIds] = useState<string[]>(initial.planIds);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const isDirty = isPlanDirty(baselineIds, planIds);
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  onDirtyChangeRef.current = onDirtyChange;
+
+  useEffect(() => {
+    onDirtyChangeRef.current(isDirty);
+    return () => onDirtyChangeRef.current(false);
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
+
+  async function savePlan() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveMyLearningPathPlan({ courseIds: planIds });
+      setBaselineIds(planIds);
+      await onSaved();
+      toast.success('บันทึกแผนเทอมหน้าแล้ว');
+    } catch {
+      setSaveError('บันทึกแผนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const planCourses = planIds.map((id) => courseById.get(id)).filter((c): c is AvailableCourse => !!c);
   const otherCourses = availableCourses.filter((c) => !planIds.includes(c.courseId));
@@ -82,7 +137,27 @@ export function DragDropPlanner({
   // the list can then be dragged straight onto it. Its own max height keeps
   // an over-full plan scrollable instead of running off-screen.
   return (
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p
+          className={cn(
+            'text-xs',
+            saveError ? 'text-destructive' : 'text-muted-foreground',
+          )}
+          role={saveError ? 'alert' : undefined}
+        >
+          {saveError ??
+            (isDirty
+              ? 'มีการแก้ไขที่ยังไม่ได้บันทึก'
+              : initial.droppedCount > 0
+                ? `นำ ${initial.droppedCount} วิชาที่ลงไม่ได้แล้วออกจากแผนที่บันทึกไว้`
+                : 'แผนตรงกับที่บันทึกไว้')}
+        </p>
+        <Button type="button" size="sm" onClick={savePlan} disabled={saving || !isDirty}>
+          {saving ? 'กำลังบันทึก...' : 'บันทึกแผน'}
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <Card className="lg:sticky lg:top-6">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
@@ -158,6 +233,7 @@ export function DragDropPlanner({
           ))}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

@@ -673,6 +673,17 @@ export interface LearningPathReport {
   nextSemesterPlan: AvailableCourse[];
 }
 
+// ---- Learning Path plan (GET/PUT/DELETE /learning-path-plan/me) ----
+// The student's saved next-semester plan: course ids in display order.
+// GET returns null when nothing is saved (client falls back to the
+// recommended nextSemesterPlan). PUT replaces the whole list.
+
+export interface LearningPathPlan {
+  courseIds: string[];
+}
+
+export type SaveLearningPathPlanRequest = LearningPathPlan;
+
 // ---- Credit Limit Request (GET/POST/DELETE /credit-limit-requests/me) ----
 // Self-declared, no approval workflow — student picks a fixed preset, it
 // takes effect immediately. One active request per student; POST replaces

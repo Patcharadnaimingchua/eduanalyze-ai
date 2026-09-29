@@ -195,8 +195,27 @@ model StudentProfile {
   courseRecords      StudentCourseRecord[]
   assessments        CourseAssessment[]
   creditLimitRequest StudentCreditLimitRequest?
+  plannedCourses     StudentPlannedCourse[]
 
   @@map("student_profiles")
+}
+
+// The student's saved "next semester" plan from Learning Path — one flat
+// list (the planner only plans a single term), replaced wholesale on save.
+// Ephemeral working data, so both FKs cascade instead of Restrict.
+model StudentPlannedCourse {
+  id               String   @id @default(uuid())
+  studentProfileId String
+  courseId         String
+  position         Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  course         Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, courseId])
+  @@map("student_planned_courses")
 }
 
 // Self-declared, no approval workflow (Learning Path §"ขอปรับหน่วยกิตเกินเกณฑ์")
@@ -439,6 +458,7 @@ model Course {
   instructors           CourseInstructor[]
   assessments           CourseAssessment[]
   assessmentDefinitions AssessmentDefinition[]
+  plannedBy             StudentPlannedCourse[]
 
   // No @@unique([curriculumId, code]) here on purpose — see Faculty.code
   // comment above. Real constraint: partial unique index on (curriculumId,
