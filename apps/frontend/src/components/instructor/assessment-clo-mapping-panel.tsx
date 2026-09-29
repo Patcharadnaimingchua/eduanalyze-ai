@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,6 +45,8 @@ export function AssessmentCloMappingPanel({
   const queryClient = useQueryClient();
   const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [formOpenOverride, setFormOpenOverride] = useState<boolean | null>(null);
+  const formId = useId();
 
   const mappingsQuery = useQuery({
     queryKey: ['assessment-clo-mappings', assessmentDefinitionId],
@@ -70,6 +73,7 @@ export function AssessmentCloMappingPanel({
       await queryClient.invalidateQueries({
         queryKey: ['assessment-clo-mappings', assessmentDefinitionId],
       });
+      setFormOpenOverride(false);
       onSelect(created.id, created.cloId);
       toast.success('ผูก CLO แล้ว');
     } catch (error) {
@@ -84,6 +88,7 @@ export function AssessmentCloMappingPanel({
   }
 
   const mappings = mappingsQuery.data ?? [];
+  const formOpen = formOpenOverride ?? (!!mappingsQuery.data && mappings.length === 0);
 
   return (
     <div className="space-y-4">
@@ -125,9 +130,22 @@ export function AssessmentCloMappingPanel({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>ผูก CLO เพิ่ม</CardTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setFormOpenOverride(!formOpen)}
+            aria-expanded={formOpen}
+            aria-controls={formId}
+            className="gap-1.5"
+          >
+            {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
+            <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
+          </Button>
         </CardHeader>
+        <div id={formId} hidden={!formOpen}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
@@ -198,6 +216,7 @@ export function AssessmentCloMappingPanel({
             </CardContent>
           </form>
         </Form>
+        </div>
       </Card>
     </div>
   );

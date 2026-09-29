@@ -61,6 +61,10 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
   function selectTab(tab: InstructorTab, mode: 'push' | 'replace' = 'push') {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
+    if (tab !== 'evidence') {
+      params.delete('def');
+      params.delete('clo');
+    }
     router[mode](`${pathname}?${params.toString()}`, { scroll: false });
   }
 

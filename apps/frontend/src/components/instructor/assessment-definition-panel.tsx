@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +40,9 @@ export function AssessmentDefinitionPanel({
   const queryClient = useQueryClient();
   const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
+  // null = follow the default (open only while the list is empty); the
+  // user's own toggle wins after that.
+  const [formOpenOverride, setFormOpenOverride] = useState<boolean | null>(null);
 
   const definitionsQuery = useQuery({
     queryKey: ['assessment-definitions', courseId],
@@ -77,6 +81,7 @@ export function AssessmentDefinitionPanel({
       const created = await createAssessmentDefinition({ ...values, courseId });
       form.reset({ title: '', kind: '', maxScore: 100, semesterId: '' });
       await queryClient.invalidateQueries({ queryKey: ['assessment-definitions', courseId] });
+      setFormOpenOverride(false);
       onSelect(created.id);
       toast.success('เพิ่มการประเมินแล้ว');
     } catch (error) {
@@ -89,6 +94,8 @@ export function AssessmentDefinitionPanel({
   }
 
   const definitions = definitionsQuery.data ?? [];
+  const formOpen = formOpenOverride ?? (!!definitionsQuery.data && definitions.length === 0);
+  const formId = useId();
 
   return (
     <div className="space-y-4">
@@ -126,9 +133,22 @@ export function AssessmentDefinitionPanel({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>เพิ่มการประเมินใหม่</CardTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setFormOpenOverride(!formOpen)}
+            aria-expanded={formOpen}
+            aria-controls={formId}
+            className="gap-1.5"
+          >
+            {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
+            <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
+          </Button>
         </CardHeader>
+        <div id={formId} hidden={!formOpen}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
@@ -210,6 +230,7 @@ export function AssessmentDefinitionPanel({
             </CardContent>
           </form>
         </Form>
+        </div>
       </Card>
     </div>
   );
