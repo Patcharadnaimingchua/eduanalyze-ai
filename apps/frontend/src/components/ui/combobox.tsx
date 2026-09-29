@@ -98,6 +98,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
               <button
                 key={option.value}
                 type="button"
+                title={option.label}
                 onClick={() => {
                   onValueChange(option.value);
                   setOpen(false);

@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { fetchUser, updateUserActiveStatus } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -128,6 +129,17 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
             </Alert>
           )}
 
+          {roleNeedsScope(userQuery.data.roles) && userQuery.data.scopes.length === 0 && (
+            <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+              <AlertDescription>
+                ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ — {MISSING_SCOPE_WARNING}{' '}
+                <a href="#user-scopes" className="font-medium underline">
+                  ไปที่การกำหนดขอบเขต
+                </a>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Reveal index={1}>
             <Card>
               <CardHeader>
@@ -156,6 +168,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
             <UserRolesSection
               userId={userId}
               roles={userQuery.data.roles}
+              hasScopes={userQuery.data.scopes.length > 0}
               requesterIsSuperAdmin={requesterIsSuperAdmin}
               isSelf={isSelf}
               onChanged={refetch}
@@ -163,12 +176,14 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
           </Reveal>
 
           <Reveal index={3}>
+            <div id="user-scopes" className="scroll-mt-6">
             <UserScopesSection
               userId={userId}
               scopes={userQuery.data.scopes}
               isSelf={isSelf}
               onChanged={refetch}
             />
+            </div>
           </Reveal>
         </>
       )}

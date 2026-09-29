@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateUserResponse } from '@eduanalyze-ai/shared-types';
@@ -83,7 +84,7 @@ function AdminUsersContent() {
                 ) : (
                   <>
                     <Plus size={16} />
-                    สร้างบัญชี
+                    เพิ่มผู้ใช้งาน
                   </>
                 )}
               </Button>
@@ -96,7 +97,7 @@ function AdminUsersContent() {
         <Card className={createdUser.passwordSetupEmailSent ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}>
           <CardContent className="space-y-4 pt-6">
             <p className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}>
-              สร้างบัญชีสำเร็จ — {createdUser.fullName} ({createdUser.email})
+              เพิ่มผู้ใช้งานสำเร็จ — {createdUser.fullName} ({createdUser.email})
             </p>
             {createdUser.passwordSetupEmailSent ? (
               <Alert>
@@ -112,9 +113,17 @@ function AdminUsersContent() {
                 </AlertDescription>
               </Alert>
             )}
-            <Button type="button" onClick={handleAcknowledge}>
-              รับทราบ ปิดหน้าต่างนี้
-            </Button>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button type="button" onClick={handleAcknowledge}>
+                รับทราบ ปิดหน้าต่างนี้
+              </Button>
+              <Link
+                href={`/admin/users/${createdUser.id}`}
+                className="text-sm font-medium text-brand hover:underline"
+              >
+                ไปที่หน้าผู้ใช้เพื่อจัดการบทบาทและขอบเขต
+              </Link>
+            </div>
           </CardContent>
         </Card>
       )}

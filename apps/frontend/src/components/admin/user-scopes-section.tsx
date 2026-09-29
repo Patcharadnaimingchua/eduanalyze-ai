@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import type { UserScope } from '@eduanalyze-ai/shared-types';
 import { createUserScope, deleteUserScope } from '@/lib/api/user-management';
-import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organization';
+import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
+import { useScopeTargetName } from '@/lib/use-scope-target-name';
 import { scopeSchema, type ScopeFormValues } from '@/lib/validation/scope.schema';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,12 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/lib/toast-context';
 import { Form } from '@/components/ui/form';
 import { ScopeSelector } from './scope-selector';
-
-const LEVEL_LABELS: Record<UserScope['level'], string> = {
-  FACULTY: 'คณะ',
-  DEPARTMENT: 'ภาควิชา',
-  PROGRAM: 'หลักสูตร',
-};
 
 export function UserScopesSection({
   userId,
@@ -37,21 +31,7 @@ export function UserScopesSection({
   const [serverError, setServerError] = useState<string | null>(null);
   const toast = useToast();
 
-  // Same query keys as ScopeSelector — shares the cache, no duplicate fetch.
-  const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
-  const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
-  const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
-
-  function resolveTargetName(scope: UserScope): string {
-    const targetId = scope.facultyId ?? scope.departmentId ?? scope.programId;
-    const list =
-      scope.level === 'FACULTY'
-        ? facultiesQuery.data
-        : scope.level === 'DEPARTMENT'
-          ? departmentsQuery.data
-          : programsQuery.data;
-    return list?.find((item) => item.id === targetId)?.name ?? '—';
-  }
+  const resolveTargetName = useScopeTargetName();
 
   const form = useForm<ScopeFormValues>({
     resolver: zodResolver(scopeSchema),
@@ -107,7 +87,7 @@ export function UserScopesSection({
                 className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm"
               >
                 <span>
-                  {LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
+                  {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
                 </span>
                 {isSelf ? (
                   <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>

@@ -91,7 +91,7 @@ export function CreateUserForm({
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('อีเมลนี้ถูกใช้งานแล้ว');
       } else if (isAxiosError(error) && error.response?.status === 403) {
-        setServerError('คุณไม่มีสิทธิ์สร้างบัญชีนี้ (นอกขอบเขตความรับผิดชอบของคุณ)');
+        setServerError('คุณไม่มีสิทธิ์เพิ่มผู้ใช้งานนี้ (นอกขอบเขตความรับผิดชอบของคุณ)');
       } else {
         setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       }
@@ -168,14 +168,14 @@ export function CreateUserForm({
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                สร้างบัญชี: <span className="font-medium text-primary">เจ้าหน้าที่ (STAFF)</span>
+                เพิ่มผู้ใช้งานบทบาท: <span className="font-medium text-primary">เจ้าหน้าที่ (STAFF)</span>
               </p>
             )}
 
             {scopeVisible && <ScopeSelector levelFieldName="scopeLevel" targetFieldName="scopeTargetId" />}
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังสร้าง...' : 'สร้างผู้ใช้งาน'}
+              {form.formState.isSubmitting ? 'กำลังเพิ่ม...' : 'เพิ่มผู้ใช้งาน'}
             </Button>
           </CardContent>
         </form>

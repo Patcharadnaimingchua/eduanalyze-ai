@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFormContext } from 'react-hook-form';
 import {
@@ -7,6 +8,7 @@ import {
   fetchFaculties,
   fetchPrograms,
 } from '@/lib/api/organization';
+import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
 import {
   FormControl,
   FormField,
@@ -14,13 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const LEVEL_LABELS: Record<string, string> = {
-  FACULTY: 'คณะ',
-  DEPARTMENT: 'ภาควิชา',
-  PROGRAM: 'หลักสูตร',
-};
 
 // Picks exactly one of Faculty/Department/Program (not always drilling
 // down to Curriculum like DependentOrgSelect does for student
@@ -44,14 +41,46 @@ export function ScopeSelector({
   const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
   const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
 
-  const targetOptions =
-    level === 'FACULTY'
-      ? (facultiesQuery.data ?? [])
-      : level === 'DEPARTMENT'
-        ? (departmentsQuery.data ?? [])
-        : level === 'PROGRAM'
-          ? (programsQuery.data ?? [])
-          : [];
+  // Names alone are ambiguous (two faculties can each have a "วิศวกรรมคอมพิวเตอร์"
+  // program), so each option carries its parent chain and code, and all of it
+  // is searchable. Inactive nodes are left out: the backend rejects them.
+  const targetOptions = useMemo<ComboboxOption[]>(() => {
+    const faculties = facultiesQuery.data ?? [];
+    const departments = departmentsQuery.data ?? [];
+    const programs = programsQuery.data ?? [];
+    const facultyName = new Map(faculties.map((f) => [f.id, f.name]));
+    const departmentById = new Map(departments.map((d) => [d.id, d]));
+
+    function option(id: string, name: string, code: string, context: string[]): ComboboxOption {
+      const contextText = context.filter(Boolean).join(' › ');
+      return {
+        value: id,
+        label: contextText ? `${name} (${code}) · ${contextText}` : `${name} (${code})`,
+        searchText: `${name} ${code} ${contextText}`,
+      };
+    }
+
+    if (level === 'FACULTY') {
+      return faculties.filter((f) => f.isActive).map((f) => option(f.id, f.name, f.code, []));
+    }
+    if (level === 'DEPARTMENT') {
+      return departments
+        .filter((d) => d.isActive)
+        .map((d) => option(d.id, d.name, d.code, [facultyName.get(d.facultyId) ?? '']));
+    }
+    if (level === 'PROGRAM') {
+      return programs
+        .filter((p) => p.isActive)
+        .map((p) => {
+          const department = departmentById.get(p.departmentId);
+          return option(p.id, p.name, p.code, [
+            department ? (facultyName.get(department.facultyId) ?? '') : '',
+            department?.name ?? '',
+          ]);
+        });
+    }
+    return [];
+  }, [level, facultiesQuery.data, departmentsQuery.data, programsQuery.data]);
 
   return (
     <div className="flex gap-3">
@@ -74,7 +103,7 @@ export function ScopeSelector({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {Object.entries(LEVEL_LABELS).map(([value, label]) => (
+                {Object.entries(SCOPE_LEVEL_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>
@@ -90,22 +119,19 @@ export function ScopeSelector({
         control={control}
         name={targetFieldName}
         render={({ field }) => (
-          <FormItem className="flex-1">
+          <FormItem className="min-w-[26rem] flex-1">
             <FormLabel>หน่วยงาน</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || undefined} disabled={!level}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="เลือกหน่วยงาน" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {targetOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {option.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Combobox
+                options={targetOptions}
+                value={field.value || undefined}
+                onValueChange={field.onChange}
+                disabled={!level}
+                placeholder="เลือกหน่วยงาน"
+                searchPlaceholder="ค้นหาชื่อ รหัส หรือคณะ..."
+                emptyText="ไม่พบหน่วยงานที่ตรงกับคำค้นหา"
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

@@ -5,6 +5,7 @@ import type { Role } from '@eduanalyze-ai/shared-types';
 import { assignUserRole, revokeUserRole } from '@/lib/api/user-management';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { useToast } from '@/lib/toast-context';
+import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,12 +20,14 @@ const ALL_ASSIGNABLE_ROLES: Role[] = ['INSTRUCTOR', 'STAFF', 'ADMIN'];
 export function UserRolesSection({
   userId,
   roles,
+  hasScopes,
   requesterIsSuperAdmin,
   isSelf,
   onChanged,
 }: {
   userId: string;
   roles: Role[];
+  hasScopes: boolean;
   requesterIsSuperAdmin: boolean;
   isSelf: boolean;
   onChanged: () => void;
@@ -42,8 +45,18 @@ export function UserRolesSection({
     (role) => !roles.includes(role),
   );
 
+  // Warn only — assigning stays allowed (backend keeps role and scope
+  // independent, and a scope can be added right after).
+  const warnMissingScope = !!selectedRole && !hasScopes && roleNeedsScope([selectedRole as Role]);
+
   async function handleAssign() {
     if (!selectedRole) return;
+    if (
+      warnMissingScope &&
+      !window.confirm(`ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ\n${MISSING_SCOPE_WARNING}\n\nต้องการเพิ่มบทบาทต่อหรือไม่?`)
+    ) {
+      return;
+    }
     setBusy(true);
     setServerError(null);
     try {
@@ -147,6 +160,11 @@ export function UserRolesSection({
               เพิ่มบทบาท
             </Button>
           </div>
+        )}
+        {warnMissingScope && (
+          <p className="text-xs text-amber-700" role="status">
+            ผู้ใช้นี้ยังไม่มีขอบเขต — {MISSING_SCOPE_WARNING} (เพิ่มได้ที่การ์ด &ldquo;ขอบเขต&rdquo; ด้านล่าง)
+          </p>
         )}
       </CardContent>
     </Card>
