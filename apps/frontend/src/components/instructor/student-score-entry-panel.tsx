@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssessmentScoreStatus } from '@eduanalyze-ai/shared-types';
@@ -13,6 +13,7 @@ import {
 import { fetchCourseRoster } from '@/lib/api/instructor';
 import { SCORE_CSV_HEADERS } from '@/lib/assessment-score-import';
 import { toCsv, downloadCsv } from '@/lib/csv';
+import { shouldReseedScoreForm } from '@/lib/score-form-guard';
 import {
   ASSESSMENT_SCORE_STATUS_LABELS,
   ASSESSMENT_SCORE_STATUS_OPTIONS,
@@ -40,10 +41,12 @@ export function StudentScoreEntryPanel({
   courseId,
   assessmentDefinitionId,
   assessmentCloMappingId,
+  onDirtyChange,
 }: Readonly<{
   courseId: string;
   assessmentDefinitionId: string;
   assessmentCloMappingId: string;
+  onDirtyChange?: (isDirty: boolean) => void;
 }>) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -83,16 +86,42 @@ export function StudentScoreEntryPanel({
   }, [selectedMapping, definitionsQuery.data, assessmentDefinitionId]);
 
   const form = useForm<{ rows: ScoreRow[] }>({ defaultValues: { rows: [] } });
-  const { fields, replace } = useFieldArray({ control: form.control, name: 'rows' });
+  const { fields } = useFieldArray({ control: form.control, name: 'rows' });
 
-  // Seed once both roster and existing scores have loaded — re-seeds
-  // (and drops any unsaved edits) whenever the selected mapping changes,
-  // since assessmentCloMappingId is a queryKey dependency of scoresQuery.
+  const isDirty = form.formState.isDirty;
+  const isDirtyRef = useRef(false);
+  isDirtyRef.current = isDirty;
+  // Set while save/import is refreshing server data, the only times a
+  // reseed over dirty edits is intended.
+  const forceReseedRef = useRef(false);
+  const seededMappingIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
+
+  // Seed once both roster and existing scores have loaded. A mapping switch
+  // is confirmed by the parent before it reaches here, so the reseed on
+  // switch is intentional; a background refetch while dirty is skipped.
   useEffect(() => {
     if (!rosterQuery.data || !scoresQuery.data) return;
+    const mappingChanged = seededMappingIdRef.current !== assessmentCloMappingId;
+    if (!shouldReseedScoreForm(isDirtyRef.current, forceReseedRef.current || mappingChanged)) return;
+    seededMappingIdRef.current = assessmentCloMappingId;
     const scoreByRecordId = new Map(scoresQuery.data.map((s) => [s.studentCourseRecordId, s]));
-    replace(
-      rosterQuery.data.map((student) => {
+    // reset (not replace) so the seeded rows become the clean baseline that
+    // dirty tracking compares against.
+    form.reset({
+      rows: rosterQuery.data.map((student) => {
         const existing = scoreByRecordId.get(student.studentCourseRecordId);
         return {
           studentProfileId: student.studentProfileId,
@@ -103,7 +132,7 @@ export function StudentScoreEntryPanel({
           score: existing?.score ?? '',
         };
       }),
-    );
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rosterQuery.data, scoresQuery.data]);
 
@@ -115,6 +144,7 @@ export function StudentScoreEntryPanel({
   async function onSave() {
     setServerError(null);
     setSaving(true);
+    forceReseedRef.current = true;
     try {
       const rows = form.getValues('rows');
       const dirtyIndexes = form.formState.dirtyFields.rows ?? [];
@@ -136,6 +166,7 @@ export function StudentScoreEntryPanel({
     } catch {
       setServerError('บันทึกคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
+      forceReseedRef.current = false;
       setSaving(false);
     }
   }
@@ -161,9 +192,14 @@ export function StudentScoreEntryPanel({
   }
 
   async function onImported() {
-    await queryClient.invalidateQueries({
-      queryKey: ['student-assessment-scores', assessmentCloMappingId],
-    });
+    forceReseedRef.current = true;
+    try {
+      await queryClient.invalidateQueries({
+        queryKey: ['student-assessment-scores', assessmentCloMappingId],
+      });
+    } finally {
+      forceReseedRef.current = false;
+    }
   }
 
   const isLoading = rosterQuery.isLoading || scoresQuery.isLoading;

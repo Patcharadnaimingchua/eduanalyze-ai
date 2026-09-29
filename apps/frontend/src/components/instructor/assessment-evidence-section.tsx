@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
 import type { CloAchievementEntry } from '@eduanalyze-ai/shared-types';
 import { AssessmentDefinitionPanel } from './assessment-definition-panel';
 import { AssessmentCloMappingPanel } from './assessment-clo-mapping-panel';
@@ -26,12 +27,25 @@ export function AssessmentEvidenceSection({
   const [selectedDefinitionId, setSelectedDefinitionId] = useState<string | null>(null);
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(null);
 
+  const [hasUnsavedScores, setHasUnsavedScores] = useState(false);
+
+  // Unsaved score edits live only in the score panel's form; leaving it for
+  // another assessment/CLO discards them, so ask first.
+  function confirmDiscardUnsaved(): boolean {
+    return !hasUnsavedScores || window.confirm(UNSAVED_SCORES_CONFIRM_MESSAGE);
+  }
+
   function selectDefinition(definitionId: string) {
+    if (definitionId === selectedDefinitionId) return;
+    if (!confirmDiscardUnsaved()) return;
     setSelectedDefinitionId(definitionId);
     setSelectedMappingId(null);
+    setHasUnsavedScores(false);
   }
 
   function selectMapping(mappingId: string) {
+    if (mappingId === selectedMappingId) return;
+    if (!confirmDiscardUnsaved()) return;
     setSelectedMappingId(mappingId);
   }
 
@@ -58,6 +72,7 @@ export function AssessmentEvidenceSection({
           courseId={courseId}
           assessmentDefinitionId={selectedDefinitionId}
           assessmentCloMappingId={selectedMappingId}
+          onDirtyChange={setHasUnsavedScores}
         />
       )}
     </div>
