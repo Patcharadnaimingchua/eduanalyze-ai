@@ -119,6 +119,20 @@ export function InstructorDetailPanel({
               ))}
             </div>
 
+            {/* Gradebook already tells the instructor this table is grade-fix-only
+                (student-roster-table.tsx:182-186) — the one thing missing is where
+                to actually enter scores, so this only adds that pointer. */}
+            {activeTab === 'gradebook' && (
+              <p className="text-xs text-muted-foreground">
+                กรอกคะแนนสอบ/ควิซจริงที่แท็บ Assessment Evidence
+              </p>
+            )}
+            {activeTab === 'evidence' && (
+              <p className="text-xs text-muted-foreground">
+                กรอกคะแนนสอบ/ควิซและผูกกับ CLO ที่นี่
+              </p>
+            )}
+
             {activeTab === 'overview' && (
               <Reveal index={0}>
                 <div className="space-y-6">
