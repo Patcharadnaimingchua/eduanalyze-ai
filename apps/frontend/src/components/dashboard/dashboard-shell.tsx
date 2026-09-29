@@ -13,6 +13,7 @@ import {
   LineChart,
   ListChecks,
   LogOut,
+  Repeat,
   Menu,
   Network,
   Target,
@@ -23,6 +24,10 @@ import {
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import { homeRouteForRole } from '@/lib/dashboard-routes';
+import { ROLE_PRIORITY } from '@/lib/role-priority';
+import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
+import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 interface NavItem {
@@ -36,7 +41,7 @@ const STUDENT_NAV_ITEMS: NavItem[] = [
   { label: 'การติดตามผลการเรียน', icon: LineChart, href: '/academic-record' },
   { label: 'ตรวจสอบหน่วยกิต', icon: ListChecks, href: '/credit-checker' },
   { label: 'การวิเคราะห์ CLO/PLO', icon: Network, href: '/clo-plo-analysis' },
-  { label: 'วัดความถนัด', icon: Target, href: '/aptitude-analysis' },
+  { label: 'สรุปความถนัด', icon: Target, href: '/aptitude-analysis' },
   { label: 'แผนการเรียน', icon: CalendarRange, href: '/learning-path' },
 ];
 
@@ -93,7 +98,10 @@ export function DashboardShell({
   role?: Role;
   children: React.ReactNode;
 }) {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  // Each page renders the shell as one role, so a multi-role account needs a
+  // way over to its other roles' menus.
+  const otherRoles = ROLE_PRIORITY.filter((r) => r !== role && user?.roles.includes(r));
   const pathname = usePathname();
   const navItems = navItemsForRole(role);
   const shownIdentity = identityLabel ?? studentCode;
@@ -142,6 +150,22 @@ export function DashboardShell({
         })}
       </nav>
 
+      {otherRoles.length > 0 && (
+        <div className="mb-3 flex flex-col gap-1 border-t border-slate-100 pt-4">
+          <p className="px-3 pb-1 text-xs font-medium text-muted-foreground">สลับบทบาท</p>
+          {otherRoles.map((otherRole) => (
+            <Link
+              key={otherRole}
+              href={homeRouteForRole(otherRole)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              <Repeat size={16} />
+              {ROLE_LABEL_TH[otherRole]}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">
         <button
           type="button"
@@ -180,6 +204,7 @@ export function DashboardShell({
           <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
             {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
             <span className="font-medium text-primary">{fullName}</span>
+            <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
           </Link>
         </header>
 
