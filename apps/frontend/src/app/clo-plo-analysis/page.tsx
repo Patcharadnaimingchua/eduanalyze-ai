@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
@@ -12,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
@@ -171,6 +173,11 @@ function CloPloAnalysisContent() {
       <PageHeader
         title="การวิเคราะห์ CLO/PLO"
         description="ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/aptitude-analysis">ดูสรุปความถนัด</Link>
+          </Button>
+        }
       />
 
       <Reveal index={1}>

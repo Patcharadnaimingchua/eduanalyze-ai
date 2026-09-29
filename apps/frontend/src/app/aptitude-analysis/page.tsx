@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchStudentPloAchievement, fetchCurriculum } from '@/lib/api/plo-achievement';
@@ -8,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
+import { Button } from '@/components/ui/button';
 import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { PloRadarChart } from '@/components/aptitude-analysis/plo-radar-chart';
@@ -99,8 +101,13 @@ function AptitudeAnalysisContent() {
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
       <PageHeader
-        title="วัดความถนัด"
-        description="ภาพรวมผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) พร้อมสรุปผลตามเกณฑ์ที่กำหนด"
+        title="สรุปความถนัด"
+        description="สรุปจุดเด่นและจุดที่ควรพัฒนาจากผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) ของคุณ ไม่ต้องทำแบบทดสอบเพิ่ม"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/clo-plo-analysis">ดูรายละเอียดราย PLO/CLO</Link>
+          </Button>
+        }
       />
 
       <Reveal index={1} className="grid grid-cols-1 gap-6 lg:grid-cols-5">

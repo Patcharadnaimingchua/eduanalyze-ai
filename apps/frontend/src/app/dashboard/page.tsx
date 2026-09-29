@@ -176,9 +176,14 @@ function DashboardCards({
           title="ผลลัพธ์การเรียนรู้ (PLO)"
           description="ความสำเร็จตามผลลัพธ์การเรียนรู้ระดับหลักสูตร จากผลการเรียนของคุณ"
           actions={
-            <Button asChild variant="outline" size="sm">
-              <Link href="/aptitude-analysis">ดูการวิเคราะห์ฉบับเต็ม</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/aptitude-analysis">ดูสรุปความถนัด</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/clo-plo-analysis">ดูรายละเอียดราย PLO/CLO</Link>
+              </Button>
+            </div>
           }
         >
           <PloRadarCard radar={dashboard.radar} />
