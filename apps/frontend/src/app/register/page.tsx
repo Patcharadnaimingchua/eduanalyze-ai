@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GOOGLE_LOGIN_ENABLED } from '@/lib/feature-flags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Reveal } from '@/components/layout/reveal';
 import {
@@ -410,19 +411,21 @@ function ManualRegisterForm() {
         </form>
       </Form>
 
-      <Reveal index={6}>
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs text-slate-400">หรือสมัครด้วย</span>
-          <div className="h-px flex-1 bg-slate-200" />
-        </div>
+      {GOOGLE_LOGIN_ENABLED && (
+        <Reveal index={6}>
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400">หรือสมัครด้วย</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
 
-        <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
-          <Button type="button" variant="outline" className={cn('w-full', HOVER_LIFT)}>
-            Google
-          </Button>
-        </a>
-      </Reveal>
+          <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>
+            <Button type="button" variant="outline" className={cn('w-full', HOVER_LIFT)}>
+              Google
+            </Button>
+          </a>
+        </Reveal>
+      )}
     </AuthSplitLayout>
   );
 }

@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
+import { GOOGLE_LOGIN_ENABLED } from '@/lib/feature-flags';
 import { OtpInput } from '@/components/ui/otp-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -376,18 +377,22 @@ function LoginPageContent() {
         </form>
       </Form>
 
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs text-slate-400">หรือเข้าสู่ระบบด้วย</span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
+      {GOOGLE_LOGIN_ENABLED && (
+        <>
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs text-slate-400">หรือเข้าสู่ระบบด้วย</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
 
-      <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`} onClick={rememberNextForGoogle}>
-        <Button type="button" variant="outline" className="w-full gap-2">
-          <GoogleIcon />
-          Google
-        </Button>
-      </a>
+          <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`} onClick={rememberNextForGoogle}>
+            <Button type="button" variant="outline" className="w-full gap-2">
+              <GoogleIcon />
+              Google
+            </Button>
+          </a>
+        </>
+      )}
     </AuthSplitLayout>
   );
 }
