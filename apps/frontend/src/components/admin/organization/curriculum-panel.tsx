@@ -16,6 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const VERSION_CONFLICT = 'เวอร์ชันหลักสูตรนี้มีอยู่แล้วในสาขานี้';
+const TOGGLE_CONFLICT =
+  'ไม่สามารถเปลี่ยนสถานะเปิดรับลงทะเบียนได้ อาจมีการเปลี่ยนแปลงจากที่อื่นพร้อมกัน กรุณารีเฟรชหน้านี้';
+const OPEN_REGISTRATION_CONFIRM =
+  'การเปิดรับลงทะเบียนฉบับนี้จะปิดรับลงทะเบียนฉบับอื่นในสาขานี้โดยอัตโนมัติ ดำเนินการต่อหรือไม่?';
 
 const FIELDS: { name: keyof CurriculumFormValues; label: string; type: 'text' | 'number' }[] = [
   { name: 'version', label: 'เวอร์ชัน', type: 'text' },
@@ -84,6 +88,12 @@ function CurriculumCard({
   const toast = useToast();
 
   async function toggleRegistration() {
+    // Opening this curriculum silently closes any other one in the same
+    // program (backend auto-unset) — closing has no such side effect, so
+    // only the open direction needs a confirm.
+    if (!curriculum.isOpenForRegistration && !window.confirm(OPEN_REGISTRATION_CONFIRM)) {
+      return;
+    }
     setToggling(true);
     setToggleError(null);
     try {
@@ -93,7 +103,11 @@ function CurriculumCard({
       toast.success(curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียนแล้ว' : 'เปิดรับลงทะเบียนแล้ว');
       onChanged();
     } catch (error) {
-      setToggleError(describeOrgWriteError(error, VERSION_CONFLICT));
+      // This PATCH never sends `version`, so it can't actually hit the
+      // version-conflict path (assertVersionAvailable only runs when
+      // dto.version is set) — a distinct message so a future 409 here
+      // doesn't show the wrong reason.
+      setToggleError(describeOrgWriteError(error, TOGGLE_CONFLICT));
     } finally {
       setToggling(false);
     }
@@ -118,8 +132,8 @@ function CurriculumCard({
           </p>
         </div>
         <div className="flex items-start gap-1">
-          <Button type="button" variant="ghost" size="sm" disabled={toggling} onClick={toggleRegistration}>
-            {curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียน' : 'เปิดรับลงทะเบียน'}
+          <Button type="button" variant="outline" size="sm" disabled={toggling} onClick={toggleRegistration}>
+            {curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียน' : 'ตั้งเป็นฉบับที่เปิดรับ'}
           </Button>
           {!editing && (
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
