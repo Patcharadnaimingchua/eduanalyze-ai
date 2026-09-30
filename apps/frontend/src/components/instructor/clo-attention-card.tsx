@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ClipboardX } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { achievementStatus } from '@/lib/achievement-status';
+import { formatFiveScale } from '@/lib/five-scale';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -40,7 +41,7 @@ export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCour
                     {course.code} {course.name}
                   </Link>
                   <span className="text-xs text-muted-foreground">
-                    ผลสัมฤทธิ์วิชานี้ {Math.round(course.achievementPercent)}%
+                    ผลสัมฤทธิ์วิชานี้ {formatFiveScale(course.achievementPercent)} / 5.0
                   </span>
                 </div>
                 <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">

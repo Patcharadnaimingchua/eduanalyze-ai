@@ -113,7 +113,7 @@ export function CloAchievementSection({
           <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
           <Badge tone={courseStatus.tone}>{courseStatus.label}</Badge>
           <span className="shrink-0 text-sm font-medium text-primary">
-            {formatFiveScale(achievementPercent)}
+            {formatFiveScale(achievementPercent)} / 5.0
           </span>
         </div>
         {isLoading && <Skeleton className="h-3 w-40" />}
@@ -179,8 +179,7 @@ export function CloAchievementSection({
               {isExpanded && (
                 <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
                   <p className="text-xs text-muted-foreground">
-                    รายชื่อนี้คำนวณจากเกรดรวมวิชา (เหมือนกันทุก CLO ที่ยังไม่ผ่านในวิชานี้)
-                    ไม่ใช่คะแนนเฉพาะ CLO นี้ — schema ยังไม่รองรับคะแนนแยกต่อ CLO ในฝั่งเกรด
+                    รายชื่อนี้คำนวณจากเกรดรวมวิชา (เหมือนกันทุก CLO ที่ยังไม่ผ่านในวิชานี้) ไม่ใช่คะแนนเฉพาะ CLO นี้
                   </p>
                   {failingStudents.length === 0 ? (
                     <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่าเกณฑ์</p>
