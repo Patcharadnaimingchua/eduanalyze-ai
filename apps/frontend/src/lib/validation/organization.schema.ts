@@ -17,6 +17,9 @@ export const curriculumSchema = z.object({
   effectiveYear: intField('ปีที่เริ่มใช้'),
   totalCredits: intField('หน่วยกิตรวม').min(1, 'หน่วยกิตรวมต้องมากกว่า 0'),
   maxCreditsPerSemester: intField('หน่วยกิตสูงสุดต่อภาค').min(1, 'ต้องมากกว่า 0'),
+  durationYears: intField('ระยะเวลาหลักสูตร')
+    .min(1, 'ระยะเวลาหลักสูตรต้องอยู่ระหว่าง 1-8 ปี')
+    .max(8, 'ระยะเวลาหลักสูตรต้องอยู่ระหว่าง 1-8 ปี'),
   defaultAchievementThreshold: intField('เกณฑ์ผ่าน')
     .min(0, 'เกณฑ์ผ่านต้องอยู่ระหว่าง 0-100')
     .max(100, 'เกณฑ์ผ่านต้องอยู่ระหว่าง 0-100'),

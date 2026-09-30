@@ -26,6 +26,7 @@ const FIELDS: { name: keyof CurriculumFormValues; label: string; type: 'text' | 
   { name: 'effectiveYear', label: 'ปีที่เริ่มใช้', type: 'number' },
   { name: 'totalCredits', label: 'หน่วยกิตรวม', type: 'number' },
   { name: 'maxCreditsPerSemester', label: 'หน่วยกิตสูงสุด/ภาค', type: 'number' },
+  { name: 'durationYears', label: 'ระยะเวลาหลักสูตร (ปี)', type: 'number' },
   { name: 'defaultAchievementThreshold', label: 'เกณฑ์ผ่าน CLO (%)', type: 'number' },
 ];
 
@@ -56,6 +57,7 @@ export function CurriculumPanel({
             effectiveYear: new Date().getFullYear() + 543,
             totalCredits: 0,
             maxCreditsPerSemester: 22,
+            durationYears: 4,
             defaultAchievementThreshold: 70,
           }}
           onSubmit={async (values) => {
@@ -127,7 +129,7 @@ function CurriculumCard({
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            {curriculum.totalCredits} หน่วยกิตรวม · สูงสุด {curriculum.maxCreditsPerSemester} หน่วยกิต/ภาค ·
+            {curriculum.totalCredits} หน่วยกิตรวม · {curriculum.durationYears} ปี · สูงสุด {curriculum.maxCreditsPerSemester} หน่วยกิต/ภาค ·
             เกณฑ์ผ่าน CLO {curriculum.defaultAchievementThreshold}%
           </p>
         </div>
@@ -166,6 +168,7 @@ function CurriculumCard({
               effectiveYear: curriculum.effectiveYear,
               totalCredits: curriculum.totalCredits,
               maxCreditsPerSemester: curriculum.maxCreditsPerSemester,
+              durationYears: curriculum.durationYears,
               defaultAchievementThreshold: curriculum.defaultAchievementThreshold,
             }}
             onSubmit={async (values) => {

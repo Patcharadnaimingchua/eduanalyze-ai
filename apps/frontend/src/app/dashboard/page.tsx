@@ -149,6 +149,21 @@ function DashboardCards({
                 ? { text: 'ครบตามเกณฑ์', tone: 'positive' }
                 : { text: `เหลืออีก ${dashboard.creditsRemaining} หน่วยกิต`, tone: 'neutral' }
             }
+            footer={
+              dashboard.onTrackStatus && (
+                <p
+                  className={
+                    dashboard.onTrackStatus === 'behind'
+                      ? 'text-xs font-medium text-amber-600'
+                      : 'text-xs font-medium text-emerald-600'
+                  }
+                >
+                  {dashboard.onTrackStatus === 'behind'
+                    ? `ตามหลังแผน — ปีการศึกษานี้ควรมีอย่างน้อย ${dashboard.expectedCredits} หน่วยกิต`
+                    : 'ตามแผน'}
+                </p>
+              )
+            }
           />
         </Reveal>
         <Reveal index={3} className="relative">
