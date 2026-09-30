@@ -17,6 +17,7 @@ import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states'
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
+import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
 import { ConfettiBurst } from '@/components/ui/confetti-burst';
@@ -132,6 +133,7 @@ function DashboardCards({
             label="เกรดเฉลี่ยสะสม"
             value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
             suffix="/ 4.0"
+            href="/academic-record"
           />
         </Reveal>
         <Reveal index={2}>
@@ -140,10 +142,11 @@ function DashboardCards({
             label="หน่วยกิตสะสม"
             value={Math.round(animatedCredits)}
             suffix={`/ ${dashboard.totalCreditsRequired}`}
+            href="/credit-checker"
             badge={
               dashboard.graduationReadiness.creditsMet
-                ? { text: 'On Track', tone: 'positive' }
-                : { text: 'ยังไม่ครบ', tone: 'neutral' }
+                ? { text: 'ครบตามเกณฑ์', tone: 'positive' }
+                : { text: `เหลืออีก ${dashboard.creditsRemaining} หน่วยกิต`, tone: 'neutral' }
             }
           />
         </Reveal>
@@ -152,6 +155,7 @@ function DashboardCards({
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
             value={`${Math.round(animatedProgress)}%`}
+            href="/learning-path"
             footer={
               <Progress
                 value={animatedProgress}
@@ -167,7 +171,10 @@ function DashboardCards({
 
       <Reveal index={4}>
         <PageSection title="สิ่งที่ต้องทำต่อ">
-          <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
+          <div className="space-y-4">
+            <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
+            <ElectiveProgressPanel categories={dashboard.incompleteElectiveCategories} />
+          </div>
         </PageSection>
       </Reveal>
 

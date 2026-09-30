@@ -17,6 +17,7 @@ import {
   Menu,
   Network,
   Target,
+  User,
   UserPlus,
   Users,
   type LucideIcon,
@@ -167,6 +168,19 @@ export function DashboardShell({
       )}
 
       <div className="flex flex-col gap-1 border-t border-slate-100 pt-4">
+        <Link
+          href="/profile"
+          aria-current={pathname === '/profile' ? 'page' : undefined}
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition',
+            pathname === '/profile'
+              ? 'bg-brand-light font-medium text-brand'
+              : 'text-slate-600 hover:bg-slate-50',
+          )}
+        >
+          <User size={16} />
+          โปรไฟล์และความปลอดภัย
+        </Link>
         <button
           type="button"
           onClick={() => logout()}

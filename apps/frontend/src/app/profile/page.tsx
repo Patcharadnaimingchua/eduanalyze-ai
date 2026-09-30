@@ -20,6 +20,7 @@ import type {
   StudentProfileMeResponse,
 } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
+import { ChangePasswordForm } from '@/components/auth/change-password-form';
 import {
   fetchCurricula,
   fetchDepartments,
@@ -250,8 +251,9 @@ function ProfileContent() {
         )}
 
       <Reveal index={3} className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          ต้องการเปลี่ยนรหัสผ่าน?{' '}
+        <ChangePasswordForm description="ยืนยันรหัสผ่านปัจจุบันก่อนตั้งรหัสผ่านใหม่" />
+        <p className="text-xs text-muted-foreground">
+          จำรหัสผ่านปัจจุบันไม่ได้?{' '}
           <Link href="/forgot-password" className="text-primary hover:underline">
             ไปที่หน้าลืมรหัสผ่าน
           </Link>

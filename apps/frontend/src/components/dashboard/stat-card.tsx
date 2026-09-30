@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ interface StatCardProps {
   suffix?: string;
   badge?: { text: string; tone?: 'positive' | 'neutral' };
   footer?: React.ReactNode;
+  href?: string;
 }
 
 // Deliberately no percentile/trend badges — the Figma mockup had "Top
@@ -16,8 +18,8 @@ interface StatCardProps {
 // computes a peer percentile or a term-over-term delta. `badge` here is
 // only ever fed a value derived from real fields (e.g. graduationReadiness
 // .creditsMet → "On Track"), never a placeholder number.
-export function StatCard({ icon: Icon, label, value, suffix, badge, footer }: StatCardProps) {
-  return (
+export function StatCard({ icon: Icon, label, value, suffix, badge, footer, href }: StatCardProps) {
+  const card = (
     <Card className="h-full transition-[transform,box-shadow] duration-200 ease-out md:hover:-translate-y-0.5 md:hover:shadow-md">
       <CardContent className="pt-6">
         <div className="mb-3 flex items-start justify-between">
@@ -45,5 +47,15 @@ export function StatCard({ icon: Icon, label, value, suffix, badge, footer }: St
         {footer && <div className="mt-3">{footer}</div>}
       </CardContent>
     </Card>
+  );
+
+  if (!href) return card;
+  return (
+    <Link
+      href={href}
+      className="block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+    >
+      {card}
+    </Link>
   );
 }
