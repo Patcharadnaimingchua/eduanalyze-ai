@@ -12,6 +12,7 @@ import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 
 export function PrerequisiteSection({
   courseId,
@@ -46,8 +47,8 @@ export function PrerequisiteSection({
       toast.success('เพิ่มวิชาตัวก่อนแล้ว');
       form.reset({ prerequisiteCourseId: '' });
       prerequisitesQuery.refetch();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     }
   }
 
@@ -59,8 +60,8 @@ export function PrerequisiteSection({
       toast.success('ลบวิชาตัวก่อนแล้ว');
       setConfirmingId(null);
       prerequisitesQuery.refetch();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     } finally {
       setBusyId(null);
     }

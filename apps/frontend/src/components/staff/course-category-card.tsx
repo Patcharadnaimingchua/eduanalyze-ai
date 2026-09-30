@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 
 // CurriculumRequirement is an optional 1:1 with CourseCategory (unlike
 // AcademicYearCard's Semester, which is a 1:many list) — the only
@@ -66,7 +67,7 @@ export function CourseCategoryCard({
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('ลบไม่ได้ เพราะยังมีวิชาอยู่ในหมวดนี้');
       } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+        setServerError(describeStaffWriteError(error));
       }
     } finally {
       setBusy(false);
@@ -81,8 +82,8 @@ export function CourseCategoryCard({
       await deleteCurriculumRequirement(requirement.id);
       toast.success('ลบเกณฑ์หน่วยกิตแล้ว');
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     } finally {
       setConfirmingRequirementDelete(false);
       setBusy(false);
@@ -105,8 +106,8 @@ export function CourseCategoryCard({
         toast.success('บันทึกเกณฑ์หน่วยกิตแล้ว');
       }
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     }
   }
 

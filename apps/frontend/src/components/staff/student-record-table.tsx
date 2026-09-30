@@ -10,7 +10,7 @@ import { useTableSort } from '@/lib/use-table-sort';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GradeSelectConfirm } from '@/components/academic-record/grade-select-confirm';
 import { SortHeader } from '@/components/ui/sort-header';
 
 interface SemesterLabel {
@@ -122,22 +122,12 @@ export function StaffRecordTable({
                     <td className="py-3 pr-4">{record.credits}</td>
                     <td className="py-3 pr-4">{semester?.label ?? '—'}</td>
                     <td className="py-3 pr-4">
-                      <Select
+                      <GradeSelectConfirm
                         value={record.grade}
-                        onValueChange={(value) => handleGradeChange(record.id, value)}
+                        subject={course?.code ?? 'วิชานี้'}
                         disabled={isBusy}
-                      >
-                        <SelectTrigger className="h-8 w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GRADE_OPTIONS.map((g) => (
-                            <SelectItem key={g} value={g}>
-                              {GRADE_LABELS[g]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onConfirm={(grade) => handleGradeChange(record.id, grade)}
+                      />
                     </td>
                     <td className="py-3 pr-0">
                       {confirmingId === record.id ? (
@@ -147,9 +137,10 @@ export function StaffRecordTable({
                             variant="destructive"
                             size="sm"
                             disabled={isBusy}
+                            aria-label={`ยืนยันลบผลการเรียน ${course?.code ?? ''}`}
                             onClick={() => handleDelete(record.id)}
                           >
-                            ยืนยัน
+                            ยืนยันลบ
                           </Button>
                           <Button
                             type="button"
@@ -166,6 +157,7 @@ export function StaffRecordTable({
                           type="button"
                           variant="ghost"
                           size="sm"
+                          aria-label={`ลบผลการเรียน ${course?.code ?? ''}`}
                           onClick={() => setConfirmingId(record.id)}
                         >
                           ลบ

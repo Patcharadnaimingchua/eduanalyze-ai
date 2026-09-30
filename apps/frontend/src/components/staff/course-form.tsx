@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 
 export function CourseForm({
   curriculumId,
@@ -49,7 +50,7 @@ export function CourseForm({
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('มีรหัสวิชานี้อยู่ในหลักสูตรนี้แล้ว');
       } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+        setServerError(describeStaffWriteError(error));
       }
     }
   }

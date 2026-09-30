@@ -19,6 +19,7 @@ import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 
 export function CourseInstructorSection({ courseId }: { courseId: string }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -48,8 +49,8 @@ export function CourseInstructorSection({ courseId }: { courseId: string }) {
       toast.success('เพิ่มอาจารย์ผู้สอนแล้ว');
       form.reset({ userId: '' });
       assignmentsQuery.refetch();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     }
   }
 
@@ -61,8 +62,8 @@ export function CourseInstructorSection({ courseId }: { courseId: string }) {
       toast.success('ถอนอาจารย์ผู้สอนแล้ว');
       setConfirmingId(null);
       assignmentsQuery.refetch();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeStaffWriteError(error));
     } finally {
       setBusyId(null);
     }

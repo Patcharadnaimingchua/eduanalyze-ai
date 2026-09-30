@@ -10,7 +10,7 @@ import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GradeSelectConfirm } from './grade-select-confirm';
 import { SemesterGroupHeader } from './semester-group-header';
 
 interface SemesterGroup {
@@ -265,22 +265,12 @@ export function RecordTimeline({
                             {GRADE_LABELS[record.grade]}
                           </span>
 
-                          <Select
+                          <GradeSelectConfirm
                             value={record.grade}
-                            onValueChange={(value) => handleGradeChange(record.id, value)}
+                            subject={`${course?.code ?? 'วิชานี้'}`}
                             disabled={isBusy}
-                          >
-                            <SelectTrigger className="h-8 w-24 shrink-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {GRADE_OPTIONS.map((g) => (
-                                <SelectItem key={g} value={g}>
-                                  {GRADE_LABELS[g]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onConfirm={(grade) => handleGradeChange(record.id, grade)}
+                          />
 
                           {confirmingId === record.id ? (
                             <div className="flex shrink-0 gap-2">
@@ -289,9 +279,10 @@ export function RecordTimeline({
                                 variant="destructive"
                                 size="sm"
                                 disabled={isBusy}
+                                aria-label={`ยืนยันลบผลการเรียน ${course?.code ?? ''}`}
                                 onClick={() => handleDelete(record.id)}
                               >
-                                ยืนยัน
+                                ยืนยันลบ
                               </Button>
                               <Button
                                 type="button"
@@ -314,6 +305,7 @@ export function RecordTimeline({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+                                aria-label={`ลบผลการเรียน ${course?.code ?? ''}`}
                                 onClick={() => setConfirmingId(record.id)}
                               >
                                 ลบ

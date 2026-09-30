@@ -18,6 +18,7 @@ import { useToast } from '@/lib/toast-context';
 import { usePagination } from '@/lib/use-pagination';
 import { useTableSort } from '@/lib/use-table-sort';
 import { cn } from '@/lib/utils';
+import { GradeSelectConfirm } from '@/components/academic-record/grade-select-confirm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -304,28 +305,18 @@ export function StudentRosterTable({
                       </td>
                       <td className="py-2 pr-4">
                         {editable ? (
-                          <Select
+                          <GradeSelectConfirm
                             value={student.grade}
-                            onValueChange={(value) =>
+                            subject={student.fullName}
+                            disabled={isBusy}
+                            onConfirm={(grade) =>
                               runWrite(
                                 recordId,
-                                () => updateCourseRecordGrade(recordId, { grade: value as Grade }),
+                                () => updateCourseRecordGrade(recordId, { grade }),
                                 'บันทึกเกรดแล้ว',
                               )
                             }
-                            disabled={isBusy}
-                          >
-                            <SelectTrigger className="h-8 w-24">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {GRADE_OPTIONS.map((g) => (
-                                <SelectItem key={g} value={g}>
-                                  {GRADE_LABELS[g]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          />
                         ) : (
                           <Badge tone={gradeBadgeTone(student.grade)}>{GRADE_LABELS[student.grade]}</Badge>
                         )}
@@ -344,6 +335,7 @@ export function StudentRosterTable({
                                 variant="destructive"
                                 size="sm"
                                 disabled={isBusy}
+                                aria-label={`ยืนยันลบผลการเรียนของ ${student.fullName}`}
                                 onClick={() =>
                                   runWrite(
                                     recordId,
@@ -370,6 +362,7 @@ export function StudentRosterTable({
                               variant="ghost"
                               size="sm"
                               disabled={isBusy}
+                              aria-label={`ลบผลการเรียนของ ${student.fullName}`}
                               onClick={() => setConfirmingId(recordId)}
                             >
                               ลบ
