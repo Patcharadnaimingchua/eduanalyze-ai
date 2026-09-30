@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import { fetchStaffStudentRisk } from '@/lib/api/staff';
@@ -25,25 +26,60 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Radix reserves '' for "no selection", so the all-levels option needs a
-// value of its own — same sentinel the instructor gradebook uses.
+// Radix reserves '' for "no selection", so the all-levels/programs/years
+// option needs a sentinel of its own — same pattern the instructor
+// gradebook uses for risk.
 const ALL_RISK_LEVELS = 'ALL';
+const ALL_PROGRAMS = 'ALL';
+const ALL_YEARS = 'ALL';
 
 export default function StaffStudentsPage() {
   return (
     <ProtectedRoute>
       <RequireRole role="STAFF">
-        <StaffStudentsContent />
+        {/* useSearchParams requires a Suspense boundary in the App Router */}
+        <Suspense fallback={<StaffStudentsSkeleton />}>
+          <StaffStudentsContent />
+        </Suspense>
       </RequireRole>
     </ProtectedRoute>
   );
 }
 
+function StaffStudentsSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-48" />
+      <TableSkeleton cols={6} rows={6} />
+    </div>
+  );
+}
+
 function StaffStudentsContent() {
   const { user } = useAuth();
-  const [search, setSearch] = useState('');
-  const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(
-    ALL_RISK_LEVELS,
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Filters live only in the URL (not useState) so a reload or a Back from
+  // the student detail page lands on the same filtered view — the exact
+  // gap M10 reported. router.replace, not push: filter changes should not
+  // themselves pile up in browser history.
+  const search = searchParams.get('q') ?? '';
+  const riskFilter = (searchParams.get('risk') as RiskLevel | null) ?? ALL_RISK_LEVELS;
+  const programFilter = searchParams.get('program') ?? ALL_PROGRAMS;
+  const yearFilter = searchParams.get('year') ?? ALL_YEARS;
+
+  const updateParams = useCallback(
+    (changes: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(changes)) {
+        if (value === null || value === '') params.delete(key);
+        else params.set(key, value);
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
   );
 
   const studentsQuery = useQuery({
@@ -54,17 +90,27 @@ function StaffStudentsContent() {
   const curriculaQuery = useQuery({ queryKey: ['curricula'], queryFn: fetchCurricula });
 
   const allStudents = useMemo(() => studentsQuery.data ?? [], [studentsQuery.data]);
+  const admissionYears = useMemo(
+    () => [...new Set(allStudents.map((s) => s.admissionYear))].sort((a, b) => b - a),
+    [allStudents],
+  );
   const filteredStudents = useMemo(() => {
     const term = search.trim().toLowerCase();
     return allStudents.filter(
       (student) =>
         (riskFilter === ALL_RISK_LEVELS || student.riskLevel === riskFilter) &&
+        (programFilter === ALL_PROGRAMS || student.programId === programFilter) &&
+        (yearFilter === ALL_YEARS || student.admissionYear === Number(yearFilter)) &&
         (term === '' ||
           student.fullName.toLowerCase().includes(term) ||
           student.studentCode.toLowerCase().includes(term)),
     );
-  }, [allStudents, search, riskFilter]);
-  const isFiltered = search.trim() !== '' || riskFilter !== ALL_RISK_LEVELS;
+  }, [allStudents, search, riskFilter, programFilter, yearFilter]);
+  const isFiltered =
+    search.trim() !== '' ||
+    riskFilter !== ALL_RISK_LEVELS ||
+    programFilter !== ALL_PROGRAMS ||
+    yearFilter !== ALL_YEARS;
 
   if (!user) {
     return (
@@ -86,16 +132,37 @@ function StaffStudentsContent() {
       <Reveal index={1} className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="ค้นหาชื่อหรือรหัสนักศึกษา..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          defaultValue={search}
+          onChange={(e) => updateParams({ q: e.target.value })}
           className="max-w-sm"
         />
-        <Select
-          value={riskFilter}
-          onValueChange={(value) =>
-            setRiskFilter(value as RiskLevel | typeof ALL_RISK_LEVELS)
-          }
-        >
+        <Select value={programFilter} onValueChange={(value) => updateParams({ program: value })}>
+          <SelectTrigger className="h-9 w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_PROGRAMS}>ทุกสาขา</SelectItem>
+            {(programsQuery.data ?? []).map((program) => (
+              <SelectItem key={program.id} value={program.id}>
+                {program.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={yearFilter} onValueChange={(value) => updateParams({ year: value })}>
+          <SelectTrigger className="h-9 w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_YEARS}>ทุกปีเข้าศึกษา</SelectItem>
+            {admissionYears.map((year) => (
+              <SelectItem key={year} value={String(year)}>
+                ปีเข้า {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={riskFilter} onValueChange={(value) => updateParams({ risk: value })}>
           <SelectTrigger className="h-9 w-40">
             <SelectValue />
           </SelectTrigger>

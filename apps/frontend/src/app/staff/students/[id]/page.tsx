@@ -6,10 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { fetchAcademicYears, fetchCourses, fetchMyGpa, fetchSemesters } from '@/lib/api/academic-record';
-import { fetchCourseRecordsInScope, fetchStudentProfile } from '@/lib/api/staff';
+import { fetchCourseRecordsInScope, fetchStaffStudentRisk, fetchStudentProfile } from '@/lib/api/staff';
 import { fetchCurricula, fetchPrograms } from '@/lib/api/organization';
 import { formatSemesterLabel } from '@/lib/grade-label';
 import { gpaColorClassName } from '@/lib/gpa-color';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -55,6 +56,13 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
   const recordsQuery = useQuery({
     queryKey: ['staff-course-records'],
     queryFn: fetchCourseRecordsInScope,
+  });
+  // Same query key the directory list page uses — resolves from cache when
+  // arriving via a "ดูรายละเอียด" link, and gives this page a risk level
+  // without a dedicated per-student endpoint.
+  const riskQuery = useQuery({
+    queryKey: ['staff-student-risk'],
+    queryFn: fetchStaffStudentRisk,
   });
   const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: fetchCourses });
   const academicYearsQuery = useQuery({ queryKey: ['academic-years'], queryFn: fetchAcademicYears });
@@ -124,6 +132,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
   const program = programsQuery.data?.find((p) => p.id === profile?.programId);
   const curriculum = curriculaQuery.data?.find((c) => c.id === profile?.curriculumId);
   const gpa = gpaQuery.data;
+  const risk = riskQuery.data?.find((s) => s.studentProfileId === studentProfileId);
 
   return (
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
@@ -185,9 +194,16 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
               title={profile.user.fullName}
               description={`${profile.studentCode} · ${profile.user.email}`}
               actions={
-                <Badge tone={profile.isActive ? 'success' : 'neutral'}>
-                  {profile.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {risk && (
+                    <Badge tone={RISK_LEVEL_TONES[risk.riskLevel]}>
+                      {RISK_LEVEL_LABELS[risk.riskLevel]}
+                    </Badge>
+                  )}
+                  <Badge tone={profile.isActive ? 'success' : 'neutral'}>
+                    {profile.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
+                  </Badge>
+                </div>
               }
             />
           </Reveal>
