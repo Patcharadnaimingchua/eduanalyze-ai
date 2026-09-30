@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import type { Role } from '@eduanalyze-ai/shared-types';
 import { useAuth } from '@/lib/auth-context';
+import { resolveHomeRoute } from '@/lib/dashboard-routes';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { SemanticTone } from '@/lib/tone';
 
@@ -56,9 +59,14 @@ export function RequireRole({
   if (!allowedRoles.some((allowedRole) => user.roles.includes(allowedRole))) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">
-          หน้านี้สำหรับ{allowedRoles.map((allowedRole) => ROLE_LABEL_TH[allowedRole]).join('หรือ')}เท่านั้น
-        </p>
+        <div className="space-y-4 text-center">
+          <p className="text-muted-foreground">
+            หน้านี้สำหรับ{allowedRoles.map((allowedRole) => ROLE_LABEL_TH[allowedRole]).join('หรือ')}เท่านั้น
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href={resolveHomeRoute(user.roles)}>กลับไปแดชบอร์ดของคุณ</Link>
+          </Button>
+        </div>
       </div>
     );
   }
