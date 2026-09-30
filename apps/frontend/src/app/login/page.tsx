@@ -39,6 +39,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
+const GOOGLE_EMAIL_EXISTS_MESSAGE =
+  'อีเมลนี้เคยสมัครด้วยรหัสผ่านแล้ว กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านแทน';
+
 const BRAND_COPY = {
   title: 'ยินดีต้อนรับกลับมา',
   description:
@@ -60,7 +63,9 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const { login, status, user } = useAuth();
   const nextParam = searchParams.get(NEXT_PARAM);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(() =>
+    searchParams.get('googleError') === 'email_exists' ? GOOGLE_EMAIL_EXISTS_MESSAGE : null,
+  );
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 

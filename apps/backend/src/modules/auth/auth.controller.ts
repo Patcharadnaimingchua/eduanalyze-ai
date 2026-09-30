@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Controller,
   Get,
   Param,
@@ -286,8 +287,20 @@ export class AuthController {
     @CurrentUser() profile: GoogleProfile,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.handleGoogleCallback(profile);
     const frontendUrl = this.configService.get<string>('frontendUrl');
+    let result: Awaited<ReturnType<AuthService['handleGoogleCallback']>>;
+    try {
+      result = await this.authService.handleGoogleCallback(profile);
+    } catch (error) {
+      // Top-level browser redirect: a thrown 409 would render as raw JSON,
+      // so send the user back to /login with a code the page turns into a
+      // friendly message.
+      if (error instanceof ConflictException) {
+        response.redirect(`${frontendUrl}/login?googleError=email_exists`);
+        return;
+      }
+      throw error;
+    }
 
     if ('isNewUser' in result) {
       response.redirect(

@@ -7,7 +7,7 @@ export const completeGoogleRegistrationSchema = z.object({
   programId: z.string().uuid('กรุณาเลือกหลักสูตร'),
   curriculumId: z.string().uuid('กรุณาเลือกฉบับหลักสูตร'),
   admissionYear: z.coerce
-    .number()
+    .number({ invalid_type_error: 'กรุณากรอกปีที่เข้าศึกษา (พ.ศ.)' })
     .int()
     .min(2400, 'ปีการศึกษาไม่ถูกต้อง')
     .max(2700, 'ปีการศึกษาไม่ถูกต้อง'),
