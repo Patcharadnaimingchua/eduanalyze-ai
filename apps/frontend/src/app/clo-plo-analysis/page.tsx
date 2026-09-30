@@ -192,7 +192,7 @@ function CloPloAnalysisContent() {
       <Reveal index={2}>
         <PageSection
           title="ผลการวิเคราะห์ราย PLO"
-          description="คลิกแต่ละ PLO เพื่อดู CLO ที่เกี่ยวข้อง"
+          description="คลิกแต่ละ PLO เพื่อดูผลลัพธ์การเรียนรู้ระดับรายวิชา (CLO) ที่เกี่ยวข้อง"
           actions={
             <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
               <SelectTrigger aria-label="เรียงลำดับ PLO" className="w-full sm:w-48">

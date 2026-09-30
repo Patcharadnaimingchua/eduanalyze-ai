@@ -31,7 +31,7 @@ export function OverallAchievementCard({
       : isAchieved
         ? 'bg-emerald-50 text-emerald-600'
         : 'bg-slate-100 text-slate-600';
-  const badgeLabel = percent === null ? 'ไม่มีข้อมูล' : isAchieved ? 'On Track' : 'In Progress';
+  const badgeLabel = percent === null ? 'ไม่มีข้อมูล' : isAchieved ? 'ผ่านเกณฑ์' : 'ยังไม่ผ่านเกณฑ์';
 
   return (
     <Card>
@@ -71,7 +71,13 @@ export function OverallAchievementCard({
         </div>
 
         <div className="space-y-3 sm:pl-6">
-          <h3 className="text-sm font-medium text-muted-foreground">สรุปตามสถานะ</h3>
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground">สรุปตามคะแนน</h3>
+            <p className="text-xs text-muted-foreground">
+              จัดกลุ่มตามเกณฑ์ทั่วไป (80/60/40) แยกจาก &quot;ผ่านเกณฑ์&quot; ของแต่ละ PLO ด้านล่าง
+              ซึ่งเทียบกับเกณฑ์ที่หลักสูตรนี้กำหนดเอง
+            </p>
+          </div>
           {SCORE_BANDS.map((band) => (
             <div key={band.key} className="flex items-center justify-between gap-3 text-sm">
               <span className="flex items-center gap-2 text-muted-foreground">

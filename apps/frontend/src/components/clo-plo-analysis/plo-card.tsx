@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import type { StudentPloRadarPoint } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
-import { formatFiveScale } from '@/lib/five-scale';
+import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -44,7 +44,7 @@ export function PloCard({
                   : 'bg-slate-100 text-slate-600',
             )}
           >
-            {!hasValue ? 'ไม่มีข้อมูล' : isAchieved ? 'Achieved' : 'In Progress'}
+            {!hasValue ? 'ไม่มีข้อมูล' : isAchieved ? 'ผ่านเกณฑ์' : 'ยังไม่ผ่านเกณฑ์'}
           </span>
         </div>
 
@@ -57,6 +57,11 @@ export function PloCard({
               {plo.value === null ? '—' : `${formatFiveScale(plo.value)} / 5.0`}
             </span>
           </div>
+          {threshold !== null && (
+            <p className="text-xs text-muted-foreground">
+              เกณฑ์ผ่าน ≥ {percentToFiveScale(threshold).toFixed(1)} / 5.0
+            </p>
+          )}
           <Progress
             value={plo.value ?? 0}
             className="w-full"
