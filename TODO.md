@@ -16,3 +16,16 @@ Found 1 pre-existing STAFF account without scope assignment:
 
 ---
 
+## Backend & Data Issues
+
+### Soft-deleted Academic Year Blocks Recreation (M16 deferred)
+Trying to recreate an academic year that was soft-deleted (deleted via the UI but not hard-deleted from DB) fails silently or returns a 409 conflict error.
+
+**Context**: M16 adds flexible bulk year creation, but the soft-deleted-year check is a backend issue that requires:
+- Database migration to handle soft-deleted years in the duplicate-check query, OR
+- UI workaround to hard-delete before allowing recreation
+
+**Decision needed**: Defer to a future issue (not in M-series scope). For now, users must contact an admin to hard-delete if they need to recreate a soft-deleted year.
+
+---
+
