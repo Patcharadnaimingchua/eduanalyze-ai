@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { StaffOverviewProgram } from '@eduanalyze-ai/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,12 @@ export function ProgramOverviewList({ programs }: { programs: StaffOverviewProgr
 
   return (
     <div className="space-y-4">
+      {programs.some((p) => p.curricula.some((c) => c.coursesWithoutClo > 0)) && (
+        <p className="text-sm text-muted-foreground">
+          CLO ของรายวิชากำหนดโดยผู้ดูแลระบบ (ADMIN) — หากวิชาใดยังไม่มี CLO
+          กรุณาแจ้งผู้ดูแลระบบให้เพิ่ม
+        </p>
+      )}
       {programs.map((program) => (
         <Card key={program.programId}>
           <CardHeader>
@@ -37,9 +44,15 @@ export function ProgramOverviewList({ programs }: { programs: StaffOverviewProgr
                     <Badge tone="neutral">
                       GPA เฉลี่ย {curriculum.averageGpa !== null ? curriculum.averageGpa.toFixed(2) : '—'}
                     </Badge>
-                    <Badge tone={curriculum.coursesWithoutClo > 0 ? 'danger' : 'success'}>
-                      {curriculum.coursesWithoutClo}/{curriculum.totalCourses} วิชายังไม่มี CLO
-                    </Badge>
+                    <Link
+                      href={`/staff/curriculum?curriculumId=${curriculum.curriculumId}`}
+                      title="ดูรายวิชาของหลักสูตรนี้"
+                      className="hover:opacity-80"
+                    >
+                      <Badge tone={curriculum.coursesWithoutClo > 0 ? 'danger' : 'success'}>
+                        {curriculum.coursesWithoutClo}/{curriculum.totalCourses} วิชายังไม่มี CLO
+                      </Badge>
+                    </Link>
                   </div>
                 </div>
               ))

@@ -1,143 +1,103 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  fetchCurricula,
-  fetchDepartments,
-  fetchFaculties,
-  fetchPrograms,
-} from '@/lib/api/organization';
+import { fetchStaffOverview } from '@/lib/api/staff';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Cascading Faculty→Department→Program→Curriculum, adapted from
-// components/auth/dependent-org-select.tsx for a non-form context (this
-// drives a URL query param, not a react-hook-form field) — org GET
-// endpoints are unfiltered/public (same as the register flow), so this
-// shows every curriculum in the system; ScopeGuard on the mutating
-// endpoints downstream is what actually blocks STAFF from acting outside
-// their scope, not this picker.
+// Options come from the staff overview (GET /dashboard/staff), which the
+// backend already limits to the viewer's scope — the org list endpoints are
+// public and return every curriculum in the system, which let staff pick
+// something they could only read and then be refused on write. Sharing the
+// ['staff-overview'] query with the dashboard means this is usually a cache
+// hit.
 export function CurriculumPicker({
   curriculumId,
   onSelect,
-}: {
+}: Readonly<{
   curriculumId: string | null;
   onSelect: (curriculumId: string) => void;
-}) {
-  const [facultyId, setFacultyId] = useState<string | undefined>();
-  const [departmentId, setDepartmentId] = useState<string | undefined>();
-  const [programId, setProgramId] = useState<string | undefined>();
+}>) {
+  const overviewQuery = useQuery({ queryKey: ['staff-overview'], queryFn: fetchStaffOverview });
+  const programs = useMemo(() => overviewQuery.data?.programs ?? [], [overviewQuery.data]);
+  const [pickedProgramId, setPickedProgramId] = useState<string | undefined>();
 
-  const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
-  const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
-  const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
-  const curriculaQuery = useQuery({ queryKey: ['curricula'], queryFn: fetchCurricula });
+  const owningProgram = programs.find((p) => p.curricula.some((c) => c.curriculumId === curriculumId));
+  const programId = pickedProgramId ?? owningProgram?.programId ?? (programs.length === 1 ? programs[0].programId : undefined);
+  const program = programs.find((p) => p.programId === programId);
 
-  // Reverse-derive the faculty/department/program chain when curriculumId
-  // arrives from the URL (initial load, back/forward navigation) so the
-  // selects show the right ancestry instead of resetting to empty.
+  // Nothing to choose between -> choose it, so the common single-program /
+  // single-version staff member lands straight on their categories.
+  const soleCurriculumId = program?.curricula.length === 1 ? program.curricula[0].curriculumId : null;
   useEffect(() => {
-    if (!curriculumId || !curriculaQuery.data || !programsQuery.data || !departmentsQuery.data) {
-      return;
-    }
-    const curriculum = curriculaQuery.data.find((c) => c.id === curriculumId);
-    if (!curriculum) return;
-    const program = programsQuery.data.find((p) => p.id === curriculum.programId);
-    if (!program) return;
-    const department = departmentsQuery.data.find((d) => d.id === program.departmentId);
-    if (!department) return;
-
-    setFacultyId((current) => current ?? department.facultyId);
-    setDepartmentId((current) => current ?? department.id);
-    setProgramId((current) => current ?? program.id);
-    // Only fill in gaps, never overwrite a selection the user already made.
+    if (!curriculumId && soleCurriculumId) onSelect(soleCurriculumId);
+    // onSelect is recreated every render by the page; only the ids matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [curriculumId, curriculaQuery.data, programsQuery.data, departmentsQuery.data]);
+  }, [curriculumId, soleCurriculumId]);
 
-  const departments = (departmentsQuery.data ?? []).filter((d) => d.facultyId === facultyId);
-  const programs = (programsQuery.data ?? []).filter((p) => p.departmentId === departmentId);
-  const curricula = (curriculaQuery.data ?? []).filter((c) => c.programId === programId);
+  if (overviewQuery.isLoading) return <Skeleton className="h-16 w-full" />;
+  if (overviewQuery.isError) {
+    return <p className="text-sm text-destructive">ไม่สามารถโหลดสาขาที่คุณดูแลได้ กรุณาลองใหม่อีกครั้ง</p>;
+  }
+  if (programs.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        คุณยังไม่มีสาขาในความดูแล — กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดขอบเขตของคุณ
+      </p>
+    );
+  }
+
+  const outOfScope = curriculumId !== null && !owningProgram;
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <div className="space-y-2">
-        <Label>คณะ</Label>
-        <Select
-          value={facultyId}
-          onValueChange={(value) => {
-            setFacultyId(value);
-            setDepartmentId(undefined);
-            setProgramId(undefined);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="เลือกคณะ" />
-          </SelectTrigger>
-          <SelectContent>
-            {(facultiesQuery.data ?? []).map((f) => (
-              <SelectItem key={f.id} value={f.id}>
-                {f.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>สาขา</Label>
+          <Select value={programId} onValueChange={setPickedProgramId}>
+            <SelectTrigger>
+              <SelectValue placeholder="เลือกสาขา" />
+            </SelectTrigger>
+            <SelectContent>
+              {programs.map((p) => (
+                <SelectItem key={p.programId} value={p.programId}>
+                  {`${p.programCode} ${p.programName} · ${p.facultyName}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="space-y-2">
-        <Label>ภาควิชา</Label>
-        <Select
-          value={departmentId}
-          onValueChange={(value) => {
-            setDepartmentId(value);
-            setProgramId(undefined);
-          }}
-          disabled={!facultyId}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="เลือกภาควิชา" />
-          </SelectTrigger>
-          <SelectContent>
-            {departments.map((d) => (
-              <SelectItem key={d.id} value={d.id}>
-                {d.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <Label>ฉบับหลักสูตร</Label>
+          <Select
+            value={owningProgram && curriculumId ? curriculumId : undefined}
+            onValueChange={onSelect}
+            disabled={!program}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="เลือกฉบับหลักสูตร" />
+            </SelectTrigger>
+            <SelectContent>
+              {(program?.curricula ?? []).map((c) => (
+                <SelectItem key={c.curriculumId} value={c.curriculumId}>
+                  {`${c.version} (พ.ศ. ${c.effectiveYear})`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
-      <div className="space-y-2">
-        <Label>หลักสูตร</Label>
-        <Select value={programId} onValueChange={setProgramId} disabled={!departmentId}>
-          <SelectTrigger>
-            <SelectValue placeholder="เลือกหลักสูตร" />
-          </SelectTrigger>
-          <SelectContent>
-            {programs.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label>ฉบับหลักสูตร</Label>
-        <Select value={curriculumId ?? undefined} onValueChange={onSelect} disabled={!programId}>
-          <SelectTrigger>
-            <SelectValue placeholder="เลือกฉบับหลักสูตร" />
-          </SelectTrigger>
-          <SelectContent>
-            {curricula.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {`${c.version} (พ.ศ. ${c.effectiveYear})`}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {outOfScope && (
+        <p className="text-sm text-amber-600">
+          หลักสูตรในลิงก์นี้อยู่นอกขอบเขตที่คุณดูแล — เลือกสาขาและฉบับจากรายการด้านบนแทน
+        </p>
+      )}
+      {program && program.curricula.length === 0 && (
+        <p className="text-sm text-muted-foreground">ยังไม่มีหลักสูตรในสาขานี้</p>
+      )}
     </div>
   );
 }
