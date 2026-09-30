@@ -47,6 +47,19 @@ export class CourseAssessmentController {
     return this.courseAssessmentService.create(dto, user);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STUDENT')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      "List the current student's own assessments plus how many assessable courses are still pending",
+  })
+  @ApiResponse({ status: 200, description: 'Own assessments and pending count' })
+  findAllOwn(@CurrentUser() user: RequestUser) {
+    return this.courseAssessmentService.findAllOwn(user);
+  }
+
   @Get('course/:courseId/me')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('STUDENT')

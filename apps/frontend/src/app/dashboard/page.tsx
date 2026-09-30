@@ -17,6 +17,7 @@ import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states'
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
+import { PendingAssessmentPanel } from '@/components/dashboard/pending-assessment-panel';
 import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,7 @@ function DashboardCards({
       <Reveal index={4}>
         <PageSection title="สิ่งที่ต้องทำต่อ">
           <div className="space-y-4">
+            <PendingAssessmentPanel count={dashboard.pendingAssessmentCount} />
             <CreditCheckerPanel courses={dashboard.missingRequiredCourses} />
             <ElectiveProgressPanel categories={dashboard.incompleteElectiveCategories} />
           </div>

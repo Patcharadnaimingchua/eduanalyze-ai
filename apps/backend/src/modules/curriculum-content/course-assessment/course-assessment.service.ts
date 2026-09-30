@@ -90,6 +90,52 @@ export class CourseAssessmentService {
     return assessment;
   }
 
+  async findAllOwn(user: RequestUser) {
+    const studentProfile = await this.studentProfileService.findByUserId(
+      user.userId,
+    );
+    const [assessments, pendingAssessmentCount, assessableCourseCount] =
+      await Promise.all([
+        this.prisma.courseAssessment.findMany({
+          where: { studentProfileId: studentProfile.id },
+          include: { cloScores: true },
+        }),
+        this.countPendingForStudent(studentProfile.id),
+        this.countAssessableCourses(studentProfile.id),
+      ]);
+    return { assessments, assessableCourseCount, pendingAssessmentCount };
+  }
+
+  // Assessable = a course the student has taken (active record, retakes
+  // collapse to one via distinct) that has at least one active CLO — the
+  // same rule the academic-record timeline applies. Caller must have
+  // already validated studentProfileId belongs to the requester.
+  private async assessableCourseIds(studentProfileId: string) {
+    const records = await this.prisma.studentCourseRecord.findMany({
+      where: {
+        studentProfileId,
+        isActive: true,
+        course: { isActive: true, clos: { some: { isActive: true } } },
+      },
+      distinct: ['courseId'],
+      select: { courseId: true },
+    });
+    return records.map((r) => r.courseId);
+  }
+
+  private async countAssessableCourses(studentProfileId: string) {
+    return (await this.assessableCourseIds(studentProfileId)).length;
+  }
+
+  async countPendingForStudent(studentProfileId: string) {
+    const courseIds = await this.assessableCourseIds(studentProfileId);
+    if (courseIds.length === 0) return 0;
+    const assessed = await this.prisma.courseAssessment.count({
+      where: { studentProfileId, courseId: { in: courseIds } },
+    });
+    return courseIds.length - assessed;
+  }
+
   async update(id: string, dto: UpdateCourseAssessmentDto, user: RequestUser) {
     const existing = await this.findOwnById(id, user);
 

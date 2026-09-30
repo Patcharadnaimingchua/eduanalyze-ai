@@ -36,6 +36,7 @@ export interface StudentDashboardReport {
   recentCourses: RecentCourse[];
   missingRequiredCourses: LearningPathReport['missingRequiredCourses'];
   incompleteElectiveCategories: LearningPathReport['incompleteElectiveCategories'];
+  pendingAssessmentCount: number;
   // Module 7 (AI Skill Analysis) hasn't started — left null, not omitted,
   // so the frontend has a stable field to check rather than an optional
   // one that silently disappears (PROJECT_CONTEXT.md §25/§26: AI only

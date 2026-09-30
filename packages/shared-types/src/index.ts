@@ -502,6 +502,7 @@ export interface StudentDashboardResponse {
   recentCourses: RecentCourse[];
   missingRequiredCourses: MissingRequiredCourse[];
   incompleteElectiveCategories: IncompleteElectiveCategory[];
+  pendingAssessmentCount: number;
   // Module 7 exists as a standalone endpoint but the Dashboard doesn't
   // call it (kept fast/free) — always null here, by design, not a bug.
   aiSummary: null;
@@ -593,6 +594,13 @@ export interface CourseAssessmentResponse {
   studentProfileId: string;
   comment: string | null;
   cloScores: CourseAssessmentCloScoreRow[];
+}
+
+// GET /course-assessments/me
+export interface MyCourseAssessmentsResponse {
+  assessments: CourseAssessmentResponse[];
+  assessableCourseCount: number;
+  pendingAssessmentCount: number;
 }
 
 export interface CreateCourseAssessmentRequest {

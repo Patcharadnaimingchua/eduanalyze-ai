@@ -203,6 +203,10 @@ export class DashboardService {
       recentCourses,
       missingRequiredCourses: learningPath.missingRequiredCourses,
       incompleteElectiveCategories: learningPath.incompleteElectiveCategories,
+      pendingAssessmentCount:
+        await this.courseAssessmentService.countPendingForStudent(
+          studentProfileId,
+        ),
       aiSummary: null,
     };
   }
