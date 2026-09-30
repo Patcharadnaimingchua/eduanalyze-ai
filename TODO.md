@@ -18,14 +18,12 @@ Found 1 pre-existing STAFF account without scope assignment:
 
 ## Backend & Data Issues
 
-### Soft-deleted Academic Year Blocks Recreation (M16 deferred)
-Trying to recreate an academic year that was soft-deleted (deleted via the UI but not hard-deleted from DB) fails silently or returns a 409 conflict error.
+### On-track by Year Level (M20 deferred)
+M20 was closed with "เหลืออีก X หน่วยกิต" (no year-aware judgement). A real "on track for my year" indicator needs an expected-credits rule, which the schema does not have (no `Curriculum.durationYears`, no `Course.recommendedYear`):
+- Schema-free option: behind if `creditsPassed < ceil(totalCredits × (yearLevel − 1) / 4)` (assumes 4-year programs).
+- Schema option: add `Curriculum.durationYears` (migration).
 
-**Context**: M16 adds flexible bulk year creation, but the soft-deleted-year check is a backend issue that requires:
-- Database migration to handle soft-deleted years in the duplicate-check query, OR
-- UI workaround to hard-delete before allowing recreation
-
-**Decision needed**: Defer to a future issue (not in M-series scope). For now, users must contact an admin to hard-delete if they need to recreate a soft-deleted year.
+Prerequisite: the year-level formula (`currentAcademicYear − admissionYear + 1`, clamped 1-4) lives in three places — `DashboardService.bucketByYearLevel`, `StudentCourseRecordService.resolveYearLevelAt`, and the frontend academic-years page. Extract one shared helper first (CONVENTIONS §6). Also affects Year Level Overview (STAFF/INSTRUCTOR) if a "behind" count is wanted there.
 
 ---
 

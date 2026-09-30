@@ -68,8 +68,8 @@ export class AcademicYearService {
   }
 
   private async assertYearAvailable(year: number, excludeId?: string) {
-    const existing = await this.prisma.academicYear.findUnique({
-      where: { year },
+    const existing = await this.prisma.academicYear.findFirst({
+      where: { year, isActive: true },
     });
     if (existing && existing.id !== excludeId) {
       throw new ConflictException(`Academic year ${year} is already in use`);

@@ -642,13 +642,16 @@ model CourseAssessmentCloScore {
 // (พ.ศ.), same convention as Curriculum.effectiveYear.
 model AcademicYear {
   id        String   @id @default(uuid())
-  year      Int      @unique
+  year      Int
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   semesters Semester[]
 
+  // No @unique on year on purpose — see Faculty.code comment above. Real
+  // constraint: partial unique index on (year) WHERE isActive = true, so a
+  // soft-deleted year can be created again.
   @@map("academic_years")
 }
 
