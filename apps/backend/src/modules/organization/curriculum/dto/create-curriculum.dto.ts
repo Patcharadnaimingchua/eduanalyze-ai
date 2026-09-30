@@ -54,4 +54,17 @@ export class CreateCurriculumDto {
   @IsInt()
   @Min(1)
   maxCreditsPerSemester?: number;
+
+  @ApiPropertyOptional({
+    example: 4,
+    default: 4,
+    minimum: 1,
+    maximum: 8,
+    description: 'Nominal program length in years, used for the on-track expected-credits rule',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(8)
+  durationYears?: number;
 }

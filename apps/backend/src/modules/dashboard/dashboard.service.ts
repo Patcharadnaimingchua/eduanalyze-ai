@@ -50,6 +50,11 @@ import {
   YearLevelBucket,
   YearLevelStudent,
 } from './dashboard-report.interface';
+import {
+  expectedCreditsByNow,
+  resolveOnTrackStatus,
+  resolveYearLevel,
+} from '../../common/academic/year-level';
 import { RadarPoint } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 
 const RECENT_COURSES_LIMIT = 5;
@@ -189,6 +194,21 @@ export class DashboardService {
         ? (creditCheck.creditsPassed / creditCheck.totalCreditsRequired) * 100
         : 0;
 
+    const profile = await this.prisma.studentProfile.findUniqueOrThrow({
+      where: { id: studentProfileId },
+      select: {
+        admissionYear: true,
+        curriculum: { select: { durationYears: true } },
+      },
+    });
+    const currentAcademicYear = await this.resolveCurrentAcademicYear();
+    const expectedCredits = expectedCreditsByNow(
+      creditCheck.totalCreditsRequired,
+      profile.curriculum.durationYears,
+      currentAcademicYear,
+      profile.admissionYear,
+    );
+
     return {
       studentProfileId: creditCheck.studentProfileId,
       gpa: gpaResult.gpa,
@@ -196,6 +216,13 @@ export class DashboardService {
       creditsRemaining: creditCheck.creditsRemaining,
       totalCreditsRequired: creditCheck.totalCreditsRequired,
       curriculumProgressPercent,
+      yearLevel: resolveYearLevel(currentAcademicYear, profile.admissionYear),
+      expectedCredits,
+      onTrackStatus: resolveOnTrackStatus(
+        creditCheck.creditsPassed,
+        creditCheck.totalCreditsRequired,
+        expectedCredits,
+      ),
       graduationReadiness: creditCheck.graduationReadiness,
       radar: ploReport.radar,
       strengths: ploReport.strengths,
@@ -525,8 +552,10 @@ export class DashboardService {
   ): YearLevelBucket<T>[] {
     const buckets = new Map<number, T[]>();
     for (const student of students) {
-      const rawLevel = currentAcademicYear - student.admissionYear + 1;
-      const yearLevel = Math.min(Math.max(rawLevel, 1), 4);
+      const yearLevel = resolveYearLevel(
+        currentAcademicYear,
+        student.admissionYear,
+      );
       const bucket = buckets.get(yearLevel) ?? [];
       bucket.push(student);
       buckets.set(yearLevel, bucket);

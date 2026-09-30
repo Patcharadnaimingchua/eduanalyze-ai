@@ -100,6 +100,9 @@ model Curriculum {
   // system stay generic across institutions) — override per curriculum
   // via PATCH as needed for other institutions/programs.
   maxCreditsPerSemester       Int      @default(22)
+  // Nominal program length used for the "on track" expected-credits rule —
+  // 4 is the common case, NOT universal; override per curriculum.
+  durationYears               Int      @default(4)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 

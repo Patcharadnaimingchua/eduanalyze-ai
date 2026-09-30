@@ -1,3 +1,4 @@
+import { OnTrackStatus } from '../../common/academic/year-level';
 import { Grade } from '@prisma/client';
 import { GraduationReadiness } from '../academic-record/credit-checker/credit-checker-report.interface';
 import { RadarPoint } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
@@ -29,6 +30,9 @@ export interface StudentDashboardReport {
   creditsRemaining: number;
   totalCreditsRequired: number;
   curriculumProgressPercent: number;
+  yearLevel: number;
+  expectedCredits: number;
+  onTrackStatus: OnTrackStatus | null;
   graduationReadiness: GraduationReadiness;
   radar: RadarPoint[];
   strengths: RadarPoint[];

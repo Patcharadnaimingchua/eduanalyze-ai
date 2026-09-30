@@ -12,6 +12,7 @@ import { StudentProfileService } from '../../users/student-profile/student-profi
 import { ScopeResolverService } from '../../../common/scope/scope-resolver.service';
 import { SemesterService } from '../semester/semester.service';
 import { CreateStudentCourseRecordDto } from './dto/create-student-course-record.dto';
+import { resolveYearLevel } from '../../../common/academic/year-level';
 import { UpdateStudentCourseRecordDto } from './dto/update-student-course-record.dto';
 import {
   ACHIEVED_GRADES,
@@ -634,8 +635,7 @@ export class StudentCourseRecordService {
   // "current" — a course-semester cell from three years ago should bucket
   // students by what year-level they were THEN, not now.
   private resolveYearLevelAt(academicYearOfSemester: number, admissionYear: number): number {
-    const raw = academicYearOfSemester - admissionYear + 1;
-    return Math.min(Math.max(raw, 1), 4);
+    return resolveYearLevel(academicYearOfSemester, admissionYear);
   }
 
   // Ties broken by smallest yearLevel first — deterministic, and a more

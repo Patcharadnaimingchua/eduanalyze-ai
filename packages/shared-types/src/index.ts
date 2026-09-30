@@ -148,6 +148,8 @@ export interface CurriculumListItem {
   // "X / maxCreditsPerSemester หน่วยกิต" against nextSemesterPlan's total.
   // Institution-specific default (22), not a universal constant.
   maxCreditsPerSemester: number;
+  // Nominal program length (years) for the on-track expected-credits rule.
+  durationYears: number;
   programId: string;
 }
 
@@ -181,6 +183,7 @@ export interface CreateCurriculumRequest {
   isOpenForRegistration?: boolean;
   defaultAchievementThreshold?: number;
   maxCreditsPerSemester?: number;
+  durationYears?: number;
 }
 export type UpdateCurriculumRequest = Partial<Omit<CreateCurriculumRequest, 'programId'>>;
 
@@ -495,6 +498,11 @@ export interface StudentDashboardResponse {
   creditsRemaining: number;
   totalCreditsRequired: number;
   curriculumProgressPercent: number;
+  yearLevel: number;
+  // Credits expected at the start of the current academic year; null status
+  // = nothing to judge (already at/over totalCreditsRequired).
+  expectedCredits: number;
+  onTrackStatus: 'on_track' | 'behind' | null;
   graduationReadiness: GraduationReadiness;
   radar: RadarPoint[];
   strengths: RadarPoint[];
