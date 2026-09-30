@@ -9,6 +9,11 @@ import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+// Caps each course's list so a large at-risk group doesn't push the rest of
+// the dashboard down; the per-course Gradebook link (already shown above
+// the list) covers seeing everyone.
+const MAX_VISIBLE_PER_COURSE = 5;
+
 export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSummary[] }) {
   const coursesWithRisk = courses.filter((c) => c.atRiskStudents.length > 0);
   const atRisk = coursesWithRisk.flatMap((c) => c.atRiskStudents);
@@ -43,40 +48,52 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
           <p className="text-sm text-muted-foreground">ไม่มีนักศึกษาที่อยู่ในกลุ่มเสี่ยง</p>
         ) : (
           <div className="space-y-4">
-            {coursesWithRisk.map((course) => (
-              <div key={course.courseId} className="space-y-2">
-                <Link
-                  href={`/instructor/courses/${course.courseId}?tab=gradebook`}
-                  className="text-sm font-medium text-brand hover:underline"
-                >
-                  {course.code} {course.name}
-                </Link>
-                <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
-                  {course.atRiskStudents.map((student) => (
-                    <li
-                      key={student.studentProfileId}
-                      className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                    >
-                      <span className="min-w-0">
-                        <span className="text-muted-foreground">{student.studentCode}</span>{' '}
-                        <span className="text-primary">{student.fullName}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {formatSemesterLabel(student.semesterTerm, student.academicYear)}
+            {coursesWithRisk.map((course) => {
+              const visibleStudents = course.atRiskStudents.slice(0, MAX_VISIBLE_PER_COURSE);
+              const hiddenCount = course.atRiskStudents.length - visibleStudents.length;
+              return (
+                <div key={course.courseId} className="space-y-2">
+                  <Link
+                    href={`/instructor/courses/${course.courseId}?tab=gradebook`}
+                    className="text-sm font-medium text-brand hover:underline"
+                  >
+                    {course.code} {course.name}
+                  </Link>
+                  <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
+                    {visibleStudents.map((student) => (
+                      <li
+                        key={student.studentProfileId}
+                        className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                      >
+                        <span className="min-w-0">
+                          <span className="text-muted-foreground">{student.studentCode}</span>{' '}
+                          <span className="text-primary">{student.fullName}</span>
                         </span>
-                        <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
-                          {RISK_LEVEL_LABELS[student.riskLevel]}
-                        </Badge>
-                        <Badge tone={gradeBadgeTone(student.grade)}>
-                          {GRADE_LABELS[student.grade]}
-                        </Badge>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {formatSemesterLabel(student.semesterTerm, student.academicYear)}
+                          </span>
+                          <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
+                            {RISK_LEVEL_LABELS[student.riskLevel]}
+                          </Badge>
+                          <Badge tone={gradeBadgeTone(student.grade)}>
+                            {GRADE_LABELS[student.grade]}
+                          </Badge>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {hiddenCount > 0 && (
+                    <Link
+                      href={`/instructor/courses/${course.courseId}?tab=gradebook`}
+                      className="block text-xs text-brand hover:underline"
+                    >
+                      และอีก {hiddenCount} คน — ดูทั้งหมดที่ Gradebook →
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

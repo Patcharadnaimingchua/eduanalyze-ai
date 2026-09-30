@@ -116,27 +116,27 @@ function InstructorDashboardContent() {
               </Reveal>
             </div>
             <Reveal index={4}>
-              <CourseInsightCard courses={courses} />
-            </Reveal>
-            <Reveal index={5}>
-              <AtRiskStudentsCard courses={courses} />
-            </Reveal>
-            <Reveal index={6}>
-              <CloAttentionCard courses={courses} />
-            </Reveal>
-            <Reveal index={7}>
-              <PloCoverageCard courses={courses} />
-            </Reveal>
-            {courses.length >= 2 && (
-              <Reveal index={8}>
-                <CourseComparisonChart courses={courses} />
-              </Reveal>
-            )}
-            <Reveal index={courses.length >= 2 ? 9 : 8}>
               <PageSection title="รายวิชาที่สอน">
                 <InstructorCourseGrid courses={courses} />
               </PageSection>
             </Reveal>
+            <Reveal index={5}>
+              <CourseInsightCard courses={courses} />
+            </Reveal>
+            <Reveal index={6}>
+              <AtRiskStudentsCard courses={courses} />
+            </Reveal>
+            <Reveal index={7}>
+              <CloAttentionCard courses={courses} />
+            </Reveal>
+            <Reveal index={8}>
+              <PloCoverageCard courses={courses} />
+            </Reveal>
+            {courses.length >= 2 && (
+              <Reveal index={9}>
+                <CourseComparisonChart courses={courses} />
+              </Reveal>
+            )}
           </>
         )}
       </DashboardShell>
