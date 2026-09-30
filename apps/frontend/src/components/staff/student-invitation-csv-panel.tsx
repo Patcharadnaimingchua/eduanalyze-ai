@@ -6,10 +6,12 @@ import {
   executeInvitationImport,
   InvitationCsvFormatError,
   parseStudentInvitationCsv,
+  STUDENT_INVITATION_CSV_HEADERS,
   type InvitationImportResultRow,
   type ParsedInvitationRow,
   type ReadyInvitationRow,
 } from '@/lib/student-invitation-csv';
+import { toCsv, downloadCsv } from '@/lib/csv';
 import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -149,6 +151,10 @@ export function StudentInvitationCsvPanel({
     }
   }
 
+  function onDownloadTemplate() {
+    downloadCsv('student-invitation-template.csv', toCsv(STUDENT_INVITATION_CSV_HEADERS, []));
+  }
+
   const readyCount = rows?.filter((r) => r.verdict === 'ready').length ?? 0;
   const invalidCount = (rows?.length ?? 0) - readyCount;
 
@@ -166,6 +172,22 @@ export function StudentInvitationCsvPanel({
         ผู้ถูกเชิญยังต้องสมัครสมาชิกด้วยตนเอง ไม่มีการสร้างบัญชีให้ทันที
       </p>
 
+      {overview.programs.length > 0 && (
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer text-brand hover:underline">
+            ดูรหัสสาขาและฉบับหลักสูตรที่ใช้ได้
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-4">
+            {overview.programs.map((program) => (
+              <li key={program.programId}>
+                {program.programCode} — {program.programName} (ฉบับ:{' '}
+                {program.curricula.map((c) => c.version).join(', ') || 'ไม่มี'})
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       <div className="flex items-center gap-2">
         <input
           ref={inputRef}
@@ -176,6 +198,9 @@ export function StudentInvitationCsvPanel({
         />
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
           เลือกไฟล์ CSV
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onDownloadTemplate}>
+          ดาวน์โหลดเทมเพลต
         </Button>
         {fileName && <span className="text-xs text-muted-foreground">{fileName}</span>}
       </div>
