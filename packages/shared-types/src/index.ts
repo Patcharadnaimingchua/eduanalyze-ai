@@ -799,6 +799,23 @@ export interface CreateAcademicYearRequest {
 
 export type UpdateAcademicYearRequest = Partial<CreateAcademicYearRequest>;
 
+// POST /academic-years/bulk — atomic; existing years/terms come back 'skipped'.
+export interface BulkCreateAcademicYearsRequest {
+  startYear: number;
+  yearCount: number;
+  terms: SemesterTerm[];
+}
+
+export type BulkCreateStatus = 'created' | 'skipped';
+
+export interface BulkCreateAcademicYearsResponse {
+  years: {
+    year: number;
+    status: BulkCreateStatus;
+    semesters: { term: SemesterTerm; status: BulkCreateStatus }[];
+  }[];
+}
+
 export interface CreateSemesterRequest {
   term: SemesterTerm;
   academicYearId: string;

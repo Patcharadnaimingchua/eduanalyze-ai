@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
-import { createAcademicYear, createSemester } from '@/lib/api/admin';
+import { bulkCreateAcademicYears } from '@/lib/api/admin';
+import { fetchAcademicYears } from '@/lib/api/academic-record';
 import { ALL_TERMS } from '@/lib/bulk-academic-year';
 import {
   academicYearSchema,
@@ -29,24 +30,24 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   async function onSubmit(values: AcademicYearFormValues) {
     setServerError(null);
     try {
-      const created = await createAcademicYear(values);
-      let failedTerms = 0;
-      if (withSemesters) {
-        // Sequential, same as the bulk path: the server's duplicate check
-        // isn't transactional.
-        for (const term of ALL_TERMS) {
-          try {
-            await createSemester({ term, academicYearId: created.id });
-          } catch {
-            failedTerms += 1;
-          }
-        }
+      // Check first so an existing year is never touched (the bulk endpoint
+      // would top up its missing terms) — same "already exists" outcome as
+      // before. The status check below only covers a concurrent create.
+      const existingYears = await fetchAcademicYears();
+      if (existingYears.some((y) => y.year === values.year)) {
+        setServerError('มีปีการศึกษานี้อยู่ในระบบแล้ว');
+        return;
       }
-      if (failedTerms > 0) {
-        toast.error(`เพิ่มปีการศึกษาแล้ว แต่สร้างภาคเรียนไม่สำเร็จ ${failedTerms} ภาค — เพิ่มเองได้ที่การ์ดของปีนั้น`);
-      } else {
-        toast.success(withSemesters ? 'เพิ่มปีการศึกษาและภาคเรียนแล้ว' : 'เพิ่มปีการศึกษาแล้ว');
+      const result = await bulkCreateAcademicYears({
+        startYear: values.year,
+        yearCount: 1,
+        terms: withSemesters ? ALL_TERMS : [],
+      });
+      if (result.years[0].status === 'skipped') {
+        setServerError('มีปีการศึกษานี้อยู่ในระบบแล้ว');
+        return;
       }
+      toast.success(withSemesters ? 'เพิ่มปีการศึกษาและภาคเรียนแล้ว' : 'เพิ่มปีการศึกษาแล้ว');
       form.reset({ year: undefined });
       onCreated();
     } catch (error) {

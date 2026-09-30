@@ -1,6 +1,8 @@
 import type {
   AcademicYear,
   AdminScopeOverviewReport,
+  BulkCreateAcademicYearsRequest,
+  BulkCreateAcademicYearsResponse,
   CreateAcademicYearRequest,
   CreateSemesterRequest,
   Semester,
@@ -12,6 +14,11 @@ import { apiClient } from '../api-client';
 
 export async function createAcademicYear(dto: CreateAcademicYearRequest) {
   const { data } = await apiClient.post<AcademicYear>('/academic-years', dto);
+  return data;
+}
+
+export async function bulkCreateAcademicYears(dto: BulkCreateAcademicYearsRequest) {
+  const { data } = await apiClient.post<BulkCreateAcademicYearsResponse>('/academic-years/bulk', dto);
   return data;
 }
 

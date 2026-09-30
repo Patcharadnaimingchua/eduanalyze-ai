@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SemesterTerm } from '@eduanalyze-ai/shared-types';
 import {
@@ -27,13 +28,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 const STATUS_LABEL: Record<ResultStatus, string> = {
   created: 'สร้างใหม่',
   skipped: 'มีอยู่แล้ว',
-  failed: 'ผิดพลาด',
 };
 
 const STATUS_TONE: Record<ResultStatus, SemanticTone> = {
   created: 'success',
   skipped: 'neutral',
-  failed: 'danger',
 };
 
 export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
@@ -57,18 +56,21 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
       const rows = await bulkGenerateAcademicYears(values.startYear, values.yearCount, terms);
       setResults(rows);
       const created = rows.filter((r) => r.status === 'created').length;
-      const failed = rows.filter((r) => r.status === 'failed').length;
-      if (failed > 0) toast.error(`สร้างไม่สำเร็จ ${failed} รายการ — ดูรายละเอียดในตาราง`);
-      else toast.success(`สร้างปีการศึกษาแล้ว ${created} รายการ`);
+      toast.success(
+        created > 0 ? `สร้างปีการศึกษาแล้ว ${created} รายการ` : 'ทุกรายการมีอยู่แล้ว ไม่มีอะไรถูกสร้างเพิ่ม',
+      );
       onCreated();
-    } catch {
-      toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        toast.error('มีการสร้างรายการเดียวกันพร้อมกัน ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง');
+      } else {
+        toast.error('สร้างไม่สำเร็จ ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง');
+      }
     }
   }
 
   const createdCount = results?.filter((r) => r.status === 'created').length ?? 0;
   const skippedCount = results?.filter((r) => r.status === 'skipped').length ?? 0;
-  const failedCount = results?.filter((r) => r.status === 'failed').length ?? 0;
 
   return (
     <Card>
@@ -77,7 +79,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
         <p className="text-sm text-muted-foreground">
           กรอกปีเริ่มต้นและจำนวนปี ระบบจะสร้างปีการศึกษาต่อเนื่องกันพร้อมภาคเรียนที่เลือก
           ปีหรือภาคเรียนที่มีอยู่แล้วจะไม่ถูกสร้างซ้ำ (แสดงเป็น &quot;มีอยู่แล้ว&quot;)
-          และหากขัดข้องกลางทางสามารถกดสร้างซ้ำได้ ส่วนที่สร้างไปแล้วจะถูกข้าม
+          ระบบสร้างทั้งชุดในครั้งเดียว หากขัดข้องจะไม่มีรายการใดถูกบันทึก และกดสร้างซ้ำได้
         </p>
         <p className="text-sm text-amber-600">
           ระบบถือปีการศึกษาล่าสุดเป็นปีปัจจุบัน — การสร้างปีที่ใหม่กว่าปัจจุบันจะทำให้ชั้นปีของนักศึกษาในแดชบอร์ดเลื่อนตามทันที
@@ -137,7 +139,6 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
               <div className="space-y-2 rounded-md border border-slate-200 p-3">
                 <p className="text-sm font-medium text-primary">
                   สร้างใหม่ {createdCount} รายการ · มีอยู่แล้ว {skippedCount} รายการ
-                  {failedCount > 0 && ` · ผิดพลาด ${failedCount} รายการ`}
                 </p>
                 <ul className="space-y-1 text-sm">
                   {results.map((r) => (

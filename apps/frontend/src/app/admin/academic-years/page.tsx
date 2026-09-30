@@ -98,8 +98,8 @@ function AcademicYearsAdminContent() {
         />
       </Reveal>
 
-      {/* Bulk stays open after submit: it renders a per-year created/skipped/
-          failed table that closing it would throw away. */}
+      {/* Bulk stays open after submit: it renders a per-year created/skipped
+          table that closing it would throw away. */}
       {openForm === 'bulk' && (
         <Reveal className="space-y-2">
           <BulkAcademicYearForm onCreated={refetchAll} />
