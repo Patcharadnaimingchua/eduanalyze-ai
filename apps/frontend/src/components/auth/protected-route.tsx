@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { NEXT_PARAM } from '@/lib/safe-next-path';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuthSplitLayout } from './auth-split-layout';
 import { ChangePasswordForm } from './change-password-form';
@@ -29,7 +30,7 @@ const BRAND_COPY = {
 };
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { status, user, signedOut } = useAuth();
+  const { status, user, signedOut, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -68,10 +69,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (user?.mustChangePassword) {
     return (
       <AuthSplitLayout {...BRAND_COPY}>
-        <ChangePasswordForm
-          title="ตั้งรหัสผ่านใหม่"
-          description="บัญชีนี้ยังใช้รหัสผ่านชั่วคราวอยู่ กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งานต่อ"
-        />
+        <div className="space-y-4">
+          <ChangePasswordForm
+            title="ตั้งรหัสผ่านใหม่"
+            description="บัญชีนี้ยังใช้รหัสผ่านชั่วคราวอยู่ กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งานต่อ"
+          />
+          <Button type="button" variant="ghost" size="sm" className="w-full" onClick={logout}>
+            ออกจากระบบ
+          </Button>
+        </div>
       </AuthSplitLayout>
     );
   }

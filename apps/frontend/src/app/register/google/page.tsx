@@ -115,6 +115,12 @@ function CompleteGoogleRegistrationForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                แบบฟอร์มนี้สำหรับนิสิต/นักศึกษาที่สมัครใช้งานครั้งแรกเท่านั้น หากคุณควรมีบัญชีเจ้าหน้าที่ อาจารย์
+                หรือผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอบัญชีแทนการกรอกแบบฟอร์มนี้
+              </AlertDescription>
+            </Alert>
             {serverError && (
               <Alert variant="destructive">
                 <AlertDescription>{serverError}</AlertDescription>
