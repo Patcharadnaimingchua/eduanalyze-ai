@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +11,7 @@ import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from '@/lib/validation/reset-password.schema';
+import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -40,9 +42,11 @@ export default function ResetPasswordPage() {
 
 function ResetPasswordForm() {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const [serverError, setServerError] = useState<string | null>(null);
+  const [linkExpired, setLinkExpired] = useState(false);
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { newPassword: '', confirmNewPassword: '' },
@@ -52,10 +56,12 @@ function ResetPasswordForm() {
     setServerError(null);
     try {
       await apiClient.post('/auth/reset-password', { token, newPassword: values.newPassword });
+      toast.success('ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่');
       router.push('/login');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
         setServerError('ลิงก์นี้หมดอายุหรือถูกใช้ไปแล้ว กรุณาขอลิงก์ใหม่');
+        setLinkExpired(true);
       } else {
         setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
       }
@@ -65,10 +71,13 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="space-y-3 pt-6">
           <Alert variant="destructive">
             <AlertDescription>ลิงก์ไม่ถูกต้อง กรุณาขอลิงก์รีเซ็ตรหัสผ่านใหม่</AlertDescription>
           </Alert>
+          <Button asChild className="w-full">
+            <Link href="/forgot-password">ขอลิงก์ใหม่</Link>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -87,6 +96,11 @@ function ResetPasswordForm() {
               <Alert variant="destructive">
                 <AlertDescription>{serverError}</AlertDescription>
               </Alert>
+            )}
+            {linkExpired && (
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/forgot-password">ขอลิงก์ใหม่</Link>
+              </Button>
             )}
             <FormField
               control={form.control}
