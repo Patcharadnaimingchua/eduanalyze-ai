@@ -68,7 +68,9 @@ function InstructorYearLevelsContent() {
           </Alert>
         )}
 
-        {query.data && totalStudents > 0 && <YearLevelOverview buckets={buckets} />}
+        {query.data && totalStudents > 0 && (
+          <YearLevelOverview buckets={buckets} studentHref={() => '/instructor/students'} />
+        )}
       </DashboardShell>
     </RequireRole>
   );

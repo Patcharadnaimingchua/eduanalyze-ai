@@ -65,10 +65,13 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
                         key={student.studentProfileId}
                         className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
                       >
-                        <span className="min-w-0">
+                        <Link
+                          href={`/instructor/courses/${course.courseId}?tab=gradebook&student=${student.studentProfileId}`}
+                          className="min-w-0 hover:underline"
+                        >
                           <span className="text-muted-foreground">{student.studentCode}</span>{' '}
                           <span className="text-primary">{student.fullName}</span>
-                        </span>
+                        </Link>
                         <span className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">
                             {formatSemesterLabel(student.semesterTerm, student.academicYear)}

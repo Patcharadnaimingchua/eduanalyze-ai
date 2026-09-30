@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type {
   CloAchievementEntry,
   CoursePloEntry,
@@ -35,6 +36,7 @@ interface CourseAssessmentSummary {
 }
 
 export function CloAchievementSection({
+  courseId,
   achievementPercent,
   achievementThreshold,
   clos,
@@ -49,6 +51,7 @@ export function CloAchievementSection({
   roster,
   onViewRoster,
 }: Readonly<{
+  courseId: string;
   achievementPercent: number;
   achievementThreshold: number;
   clos: CloAchievementEntry[];
@@ -192,7 +195,12 @@ export function CloAchievementSection({
                         >
                           <span className="min-w-0">
                             <span className="text-muted-foreground">{s.studentCode}</span>{' '}
-                            <span className="text-primary">{s.fullName}</span>
+                            <Link
+                              href={`/instructor/courses/${courseId}?tab=gradebook&student=${s.studentProfileId}`}
+                              className="text-primary hover:underline"
+                            >
+                              {s.fullName}
+                            </Link>
                           </span>
                           <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
                         </li>

@@ -57,11 +57,13 @@ export function InstructorDetailPanel({
   activeTab,
   onTabChange,
   isInstructor,
+  initialSelectedStudentId,
 }: {
   course: InstructorCourseSummary;
   activeTab: InstructorTab;
   onTabChange: (tab: InstructorTab) => void;
   isInstructor: boolean;
+  initialSelectedStudentId?: string;
 }) {
   const queryClient = useQueryClient();
 
@@ -148,6 +150,7 @@ export function InstructorDetailPanel({
             {activeTab === 'clo' && (
               <Reveal index={0}>
                 <CloAchievementSection
+                  courseId={course.courseId}
                   achievementPercent={course.achievementPercent}
                   achievementThreshold={course.achievementThreshold}
                   clos={course.clos}
@@ -177,6 +180,7 @@ export function InstructorDetailPanel({
                   roster={rosterQuery.data}
                   isLoading={rosterQuery.isLoading}
                   isError={rosterQuery.isError}
+                  initialSelectedStudentId={initialSelectedStudentId}
                 />
               </Reveal>
             )}
@@ -191,6 +195,7 @@ export function InstructorDetailPanel({
                   isLoading={rosterQuery.isLoading}
                   isError={rosterQuery.isError}
                   onChanged={isInstructor ? handleGradebookChanged : undefined}
+                  initialSelectedStudentId={initialSelectedStudentId}
                 />
               </Reveal>
             )}

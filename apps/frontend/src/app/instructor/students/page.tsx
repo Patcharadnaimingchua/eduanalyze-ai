@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import { fetchInstructorStudents } from '@/lib/api/instructor';
@@ -17,6 +18,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
@@ -40,6 +42,7 @@ function InstructorStudentsContent() {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(
     ALL_RISK_LEVELS,
   );
+  const [search, setSearch] = useState('');
 
   const query = useQuery({
     queryKey: ['instructor-students', courseId, riskFilter],
@@ -51,7 +54,15 @@ function InstructorStudentsContent() {
     enabled: isInstructor,
   });
 
-  const students = query.data?.students ?? [];
+  const allStudents = useMemo(() => query.data?.students ?? [], [query.data]);
+  const students = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (term === '') return allStudents;
+    return allStudents.filter(
+      (s) =>
+        s.studentCode.toLowerCase().includes(term) || s.fullName.toLowerCase().includes(term),
+    );
+  }, [allStudents, search]);
   const sort = useTableSort(students, {
     studentCode: (s) => s.studentCode,
     fullName: (s) => s.fullName,
@@ -60,7 +71,7 @@ function InstructorStudentsContent() {
   const pagination = usePagination(
     sort.sorted,
     undefined,
-    `${courseId}|${riskFilter}|${sort.sortKey}|${sort.direction}`,
+    `${courseId}|${riskFilter}|${search}|${sort.sortKey}|${sort.direction}`,
   );
 
   if (!user) {
@@ -86,6 +97,12 @@ function InstructorStudentsContent() {
 
         <Reveal index={1}>
           <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="ค้นหารหัสนักศึกษาหรือชื่อ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 max-w-xs"
+            />
             <Select value={courseId} onValueChange={setCourseId}>
               <SelectTrigger className="h-9 w-56">
                 <SelectValue />
@@ -115,6 +132,11 @@ function InstructorStudentsContent() {
                 ))}
               </SelectContent>
             </Select>
+            {(search.trim() !== '' || courseId !== ALL_COURSES || riskFilter !== ALL_RISK_LEVELS) && (
+              <span className="text-sm text-muted-foreground">
+                แสดง {students.length} จาก {allStudents.length} คน
+              </span>
+            )}
           </div>
         </Reveal>
 
@@ -153,7 +175,14 @@ function InstructorStudentsContent() {
                         className="border-b border-slate-50 hover:bg-slate-50"
                       >
                         <td className="py-2 pr-4 text-muted-foreground">{s.studentCode}</td>
-                        <td className="py-2 pr-4 text-primary">{s.fullName}</td>
+                        <td className="py-2 pr-4">
+                          <Link
+                            href={`/instructor/courses/${s.courseId}?tab=gradebook&student=${s.studentProfileId}`}
+                            className="text-primary hover:underline"
+                          >
+                            {s.fullName}
+                          </Link>
+                        </td>
                         <td className="py-2 pr-4 text-muted-foreground">{s.courseCode}</td>
                         <td className="py-2 pr-4">
                           <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>

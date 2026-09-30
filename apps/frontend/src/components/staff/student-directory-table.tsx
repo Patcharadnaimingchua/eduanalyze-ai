@@ -61,13 +61,12 @@ export function StudentDirectoryTable({
                 <SortHeader {...sort.sortProps('gpa')}>GPA</SortHeader>
                 <SortHeader {...sort.sortProps('risk')}>ความเสี่ยง</SortHeader>
                 <SortHeader {...sort.sortProps('status')}>สถานะ</SortHeader>
-                <th className="py-2 pr-0 font-medium" />
               </tr>
             </thead>
             <tbody>
               {students.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-6 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-6 text-center text-muted-foreground">
                     ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
                   </td>
                 </tr>
@@ -80,7 +79,14 @@ export function StudentDirectoryTable({
                     key={student.studentProfileId}
                     className="border-b border-slate-50 hover:bg-slate-50"
                   >
-                    <td className="py-3 pr-4 text-primary">{student.fullName}</td>
+                    <td className="py-3 pr-4">
+                      <Link
+                        href={`/staff/students/${student.studentProfileId}`}
+                        className="text-primary hover:underline"
+                      >
+                        {student.fullName}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground">{student.studentCode}</td>
                     <td className="py-3 pr-4">{program?.name ?? '—'}</td>
                     <td className="py-3 pr-4">{curriculum?.version ?? '—'}</td>
@@ -102,14 +108,6 @@ export function StudentDirectoryTable({
                       <Badge tone={student.isActive ? 'success' : 'neutral'}>
                         {student.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
                       </Badge>
-                    </td>
-                    <td className="py-3 pr-0 text-right">
-                      <Link
-                        href={`/staff/students/${student.studentProfileId}`}
-                        className="text-sm font-medium text-brand hover:underline"
-                      >
-                        ดูรายละเอียด
-                      </Link>
                     </td>
                   </tr>
                 );

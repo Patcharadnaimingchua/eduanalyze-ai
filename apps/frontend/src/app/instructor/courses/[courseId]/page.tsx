@@ -49,6 +49,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
 
   const tabParam = searchParams.get('tab');
   const activeTab = parseInstructorTab(tabParam);
+  const studentParam = searchParams.get('student') ?? undefined;
 
   // tab lives only in the URL — write the resolved default back so a
   // reload lands on the same tab.
@@ -64,6 +65,9 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
     if (tab !== 'evidence') {
       params.delete('def');
       params.delete('clo');
+    }
+    if (tab !== 'gradebook' && tab !== 'students') {
+      params.delete('student');
     }
     router[mode](`${pathname}?${params.toString()}`, { scroll: false });
   }
@@ -122,6 +126,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
             activeTab={activeTab}
             onTabChange={selectTab}
             isInstructor={isInstructor}
+            initialSelectedStudentId={studentParam}
           />
         )}
       </DashboardShell>

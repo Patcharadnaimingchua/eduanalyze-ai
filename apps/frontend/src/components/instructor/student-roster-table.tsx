@@ -87,6 +87,7 @@ export function StudentRosterTable({
   isLoading,
   isError,
   onChanged,
+  initialSelectedStudentId,
 }: {
   courseId: string;
   courseCode: string;
@@ -95,11 +96,17 @@ export function StudentRosterTable({
   isLoading: boolean;
   isError: boolean;
   onChanged?: () => void;
+  // Lets a link elsewhere (at-risk card, CLO fail list, students page) land
+  // directly on this student's row instead of just opening the tab —
+  // seeded once on mount, same as any other deep-link param.
+  initialSelectedStudentId?: string;
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const toast = useToast();
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
+    initialSelectedStudentId ?? null,
+  );
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(
     ALL_RISK_LEVELS,
@@ -139,15 +146,20 @@ export function StudentRosterTable({
 
   // The timeline card is opened from a row, so it has to close when that
   // row is filtered away — otherwise it hangs below the table with no
-  // visible student to tie it back to.
+  // visible student to tie it back to. Skipped while roster is still
+  // loading: `roster` is undefined then, so visibleRoster is an empty
+  // placeholder that would otherwise look like "filtered away" and wipe
+  // out a selection seeded from a deep link (initialSelectedStudentId)
+  // before the real data ever arrives.
   useEffect(() => {
+    if (!roster) return;
     if (
       selectedStudentId &&
       !visibleRoster.some((s) => s.studentProfileId === selectedStudentId)
     ) {
       setSelectedStudentId(null);
     }
-  }, [visibleRoster, selectedStudentId]);
+  }, [roster, visibleRoster, selectedStudentId]);
 
   async function runWrite(
     recordId: string,
