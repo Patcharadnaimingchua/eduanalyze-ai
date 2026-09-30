@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 import type {
   CloListItem,
   CourseAssessmentResponse,
+  MyCourseAssessmentsResponse,
   CreateCourseAssessmentRequest,
   UpdateCourseAssessmentRequest,
 } from '@eduanalyze-ai/shared-types';
@@ -29,6 +30,13 @@ export async function fetchOwnAssessment(courseId: string) {
     }
     throw error;
   }
+}
+
+// One call for every assessment the student has submitted (replaces asking
+// per course). Self-scoped server-side — no ids are sent.
+export async function fetchMyAssessments() {
+  const { data } = await apiClient.get<MyCourseAssessmentsResponse>('/course-assessments/me');
+  return data;
 }
 
 export async function createAssessment(dto: CreateCourseAssessmentRequest) {

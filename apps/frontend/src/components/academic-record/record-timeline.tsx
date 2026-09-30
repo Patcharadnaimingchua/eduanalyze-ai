@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { CourseListItem, Grade, SemesterGpa, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
-import { fetchClos, fetchOwnAssessment } from '@/lib/api/course-assessment';
+import { fetchClos, fetchMyAssessments } from '@/lib/api/course-assessment';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { gradeBadgeClassName } from '@/lib/grade-badge-color';
 import { useToast } from '@/lib/toast-context';
@@ -62,24 +62,27 @@ export function RecordTimeline({
   const toast = useToast();
 
   // Which courses can be self-assessed (have CLOs) and which already are.
-  // ['clos'] and ['own-assessment', id] are the same keys the assessment
-  // page uses, so saving there refreshes these badges.
+  // ['clos'] is the key the assessment page uses; ['own-assessments'] is
+  // invalidated there on save, so saving refreshes these badges.
   const closQuery = useQuery({ queryKey: ['clos'], queryFn: fetchClos });
   const closLoaded = closQuery.data !== undefined;
   const assessableCourseIds = useMemo(() => {
     const withClo = new Set((closQuery.data ?? []).map((c) => c.courseId));
     return [...new Set(records.map((r) => r.courseId))].filter((id) => withClo.has(id));
   }, [closQuery.data, records]);
-  const assessmentQueries = useQueries({
-    queries: assessableCourseIds.map((id) => ({
-      queryKey: ['own-assessment', id],
-      queryFn: () => fetchOwnAssessment(id),
-    })),
+  const myAssessmentsQuery = useQuery({
+    queryKey: ['own-assessments'],
+    queryFn: fetchMyAssessments,
   });
-  const assessedCourseIds = new Set(
-    assessableCourseIds.filter((_, i) => assessmentQueries[i]?.data),
+  // Intersect with this timeline's own assessable set so the count can never
+  // exceed the total shown next to it.
+  const submittedCourseIds = new Set(
+    (myAssessmentsQuery.data?.assessments ?? []).map((a) => a.courseId),
   );
-  const assessmentStatusReady = closLoaded && assessmentQueries.every((q) => !q.isLoading);
+  const assessedCourseIds = new Set(
+    assessableCourseIds.filter((id) => submittedCourseIds.has(id)),
+  );
+  const assessmentStatusReady = closLoaded && myAssessmentsQuery.isSuccess;
 
   const gpaBySemesterId = new Map(gpaBySemester.map((s) => [s.semesterId, s]));
   const recordsBySemesterId = new Map<string, StudentCourseRecord[]>();

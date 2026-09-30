@@ -114,6 +114,7 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
         await createAssessment({ courseId, ...values });
       }
       await queryClient.invalidateQueries({ queryKey: ['own-assessment', courseId] });
+      await queryClient.invalidateQueries({ queryKey: ['own-assessments'] });
       await queryClient.invalidateQueries({ queryKey: ['student-dashboard'] });
       toast.success(existing ? 'บันทึกการแก้ไขการประเมินแล้ว' : 'บันทึกการประเมินแล้ว');
       router.push('/academic-record');
