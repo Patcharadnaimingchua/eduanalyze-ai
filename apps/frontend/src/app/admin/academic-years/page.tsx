@@ -38,6 +38,10 @@ function AcademicYearsAdminContent() {
   const yearsQuery = useQuery({ queryKey: ['academic-years'], queryFn: fetchAcademicYears });
   const semestersQuery = useQuery({ queryKey: ['semesters'], queryFn: fetchSemesters });
 
+  // Same rule the backend uses for a student's year level (highest year on
+  // file); there is no stored "current year" field.
+  const currentYear = Math.max(0, ...(yearsQuery.data ?? []).map((y) => y.year));
+
   function refetchAll() {
     queryClient.invalidateQueries({ queryKey: ['academic-years'] });
     queryClient.invalidateQueries({ queryKey: ['semesters'] });
@@ -164,6 +168,7 @@ function AcademicYearsAdminContent() {
                       key={year.id}
                       academicYear={year}
                       semesters={semestersQuery.data.filter((s) => s.academicYearId === year.id)}
+                      isCurrent={year.year === currentYear}
                       onChanged={refetchAll}
                     />
                   ))

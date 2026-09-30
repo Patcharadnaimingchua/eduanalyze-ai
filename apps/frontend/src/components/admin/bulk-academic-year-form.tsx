@@ -3,13 +3,17 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { SemesterTerm } from '@eduanalyze-ai/shared-types';
 import {
+  ALL_TERMS,
   bulkGenerateAcademicYears,
   type ResultRow,
   type ResultStatus,
 } from '@/lib/bulk-academic-year';
+import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
 import {
   bulkAcademicYearSchema,
+  MAX_BULK_YEARS,
   type BulkAcademicYearFormValues,
 } from '@/lib/validation/academic-year.schema';
 import { Button } from '@/components/ui/button';
@@ -19,8 +23,6 @@ import { Badge } from '@/components/ui/badge';
 import type { SemanticTone } from '@/lib/tone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-
-const YEARS_TO_CREATE = 4;
 
 const STATUS_LABEL: Record<ResultStatus, string> = {
   created: 'สร้างใหม่',
@@ -39,13 +41,20 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
   const toast = useToast();
   const form = useForm<BulkAcademicYearFormValues>({
     resolver: zodResolver(bulkAcademicYearSchema),
-    defaultValues: { startYear: undefined },
+    defaultValues: { startYear: undefined, yearCount: 4 },
   });
+  const [terms, setTerms] = useState<SemesterTerm[]>(ALL_TERMS);
+
+  function toggleTerm(term: SemesterTerm) {
+    setTerms((current) =>
+      current.includes(term) ? current.filter((t) => t !== term) : [...current, term],
+    );
+  }
 
   async function onSubmit(values: BulkAcademicYearFormValues) {
     setResults(null);
     try {
-      const rows = await bulkGenerateAcademicYears(values.startYear, YEARS_TO_CREATE);
+      const rows = await bulkGenerateAcademicYears(values.startYear, values.yearCount, terms);
       setResults(rows);
       const created = rows.filter((r) => r.status === 'created').length;
       const failed = rows.filter((r) => r.status === 'failed').length;
@@ -66,9 +75,12 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
       <CardHeader>
         <CardTitle>สร้างชุดปีการศึกษาอัตโนมัติ</CardTitle>
         <p className="text-sm text-muted-foreground">
-          กรอกปีเริ่มต้น ระบบจะสร้างปีการศึกษา {YEARS_TO_CREATE} ปีต่อเนื่องกัน
-          พร้อมภาคเรียนต้น/ปลาย/ฤดูร้อนให้ครบทุกปีโดยอัตโนมัติ
-          ปี/ภาคเรียนที่มีอยู่แล้วจะถูกข้ามไป ไม่ error ทั้งชุด
+          กรอกปีเริ่มต้นและจำนวนปี ระบบจะสร้างปีการศึกษาต่อเนื่องกันพร้อมภาคเรียนที่เลือก
+          ปีหรือภาคเรียนที่มีอยู่แล้วจะไม่ถูกสร้างซ้ำ (แสดงเป็น &quot;มีอยู่แล้ว&quot;)
+          และหากขัดข้องกลางทางสามารถกดสร้างซ้ำได้ ส่วนที่สร้างไปแล้วจะถูกข้าม
+        </p>
+        <p className="text-sm text-amber-600">
+          ระบบถือปีการศึกษาล่าสุดเป็นปีปัจจุบัน — การสร้างปีที่ใหม่กว่าปัจจุบันจะทำให้ชั้นปีของนักศึกษาในแดชบอร์ดเลื่อนตามทันที
         </p>
       </CardHeader>
       <Form {...form}>
@@ -88,12 +100,38 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="yearCount"
+                render={({ field }) => (
+                  <FormItem className="w-28">
+                    <FormLabel>จำนวนปี</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={MAX_BULK_YEARS} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting
-                  ? 'กำลังสร้าง...'
-                  : `สร้างชุด ${YEARS_TO_CREATE} ปี`}
+                {form.formState.isSubmitting ? 'กำลังสร้าง...' : 'สร้างชุดปีการศึกษา'}
               </Button>
             </div>
+
+            <fieldset className="flex flex-wrap items-center gap-4">
+              <legend className="mb-1 text-sm font-medium text-primary">ภาคเรียนที่จะสร้างในแต่ละปี</legend>
+              {ALL_TERMS.map((term) => (
+                <label key={term} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={terms.includes(term)}
+                    onChange={() => toggleTerm(term)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  {SEMESTER_TERM_LABELS[term]}
+                </label>
+              ))}
+            </fieldset>
 
             {results && (
               <div className="space-y-2 rounded-md border border-slate-200 p-3">

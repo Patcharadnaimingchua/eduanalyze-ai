@@ -18,6 +18,7 @@ import {
 } from '@/lib/validation/academic-year.schema';
 import { semesterSchema, type SemesterFormValues } from '@/lib/validation/semester.schema';
 import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
@@ -31,10 +32,12 @@ const TERM_ORDER: Record<Semester['term'], number> = { FIRST: 0, SECOND: 1, SUMM
 export function AcademicYearCard({
   academicYear,
   semesters,
+  isCurrent = false,
   onChanged,
 }: {
   academicYear: AcademicYear;
   semesters: Semester[];
+  isCurrent?: boolean;
   onChanged: () => void;
 }) {
   const [confirmingYearDelete, setConfirmingYearDelete] = useState(false);
@@ -116,6 +119,26 @@ export function AcademicYearCard({
     }
   }
 
+  // Adds every term the year is missing, one at a time (the server's
+  // duplicate check isn't transactional). A 409 means someone else added it
+  // meanwhile and is not a failure.
+  async function fillMissingSemesters() {
+    setBusyId(academicYear.id);
+    setServerError(null);
+    let failed = 0;
+    for (const term of availableTerms) {
+      try {
+        await createSemester({ term, academicYearId: academicYear.id });
+      } catch (error) {
+        if (!(isAxiosError(error) && error.response?.status === 409)) failed += 1;
+      }
+    }
+    setBusyId(null);
+    if (failed > 0) setServerError(`สร้างภาคเรียนไม่สำเร็จ ${failed} ภาค กรุณาลองใหม่อีกครั้ง`);
+    else toast.success('เพิ่มภาคเรียนที่ขาดครบแล้ว');
+    onChanged();
+  }
+
   function startEditingYear() {
     yearEditForm.reset({ year: academicYear.year });
     setEditingYear(true);
@@ -188,7 +211,10 @@ export function AcademicYearCard({
             </form>
           </Form>
         ) : (
-          <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
+            {isCurrent && <Badge tone="success">ปีปัจจุบัน</Badge>}
+          </div>
         )}
         {confirmingYearDelete ? (
           <div className="flex gap-2">
@@ -347,6 +373,18 @@ export function AcademicYearCard({
               );
             })}
           </ul>
+        )}
+
+        {availableTerms.length > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busyId === academicYear.id}
+            onClick={fillMissingSemesters}
+          >
+            เพิ่มภาคเรียนที่ขาดทั้งหมด ({availableTerms.length} ภาค)
+          </Button>
         )}
 
         {availableTerms.length > 0 && (

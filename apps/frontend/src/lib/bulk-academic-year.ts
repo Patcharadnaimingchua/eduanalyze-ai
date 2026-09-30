@@ -4,7 +4,7 @@ import { createAcademicYear, createSemester } from '@/lib/api/admin';
 import { fetchAcademicYears } from '@/lib/api/academic-record';
 import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
 
-const TERMS: SemesterTerm[] = ['FIRST', 'SECOND', 'SUMMER'];
+export const ALL_TERMS: SemesterTerm[] = ['FIRST', 'SECOND', 'SUMMER'];
 
 export type ResultStatus = 'created' | 'skipped' | 'failed';
 export type ResultRow = { label: string; status: ResultStatus };
@@ -75,6 +75,7 @@ async function resolveMissingYearIds(
 async function createSemestersForYears(
   targetYears: number[],
   yearIds: Map<number, string>,
+  terms: SemesterTerm[],
 ) {
   const rows: ResultRow[] = [];
 
@@ -85,7 +86,7 @@ async function createSemestersForYears(
       continue;
     }
 
-    for (const term of TERMS) {
+    for (const term of terms) {
       const { row } = await attemptCreate(
         `${year} ${SEMESTER_TERM_LABELS[term]}`,
         () => createSemester({ term, academicYearId }),
@@ -100,12 +101,13 @@ async function createSemestersForYears(
 export async function bulkGenerateAcademicYears(
   startYear: number,
   count: number,
+  terms: SemesterTerm[] = ALL_TERMS,
 ): Promise<ResultRow[]> {
   const targetYears = Array.from({ length: count }, (_, i) => startYear + i);
 
   const { rows, yearIds } = await createYears(targetYears);
   await resolveMissingYearIds(targetYears, yearIds);
-  rows.push(...(await createSemestersForYears(targetYears, yearIds)));
+  rows.push(...(await createSemestersForYears(targetYears, yearIds, terms)));
 
   return rows;
 }

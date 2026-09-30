@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
-import { createAcademicYear } from '@/lib/api/admin';
+import { createAcademicYear, createSemester } from '@/lib/api/admin';
+import { ALL_TERMS } from '@/lib/bulk-academic-year';
 import {
   academicYearSchema,
   type AcademicYearFormValues,
@@ -19,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const toast = useToast();
+  const [withSemesters, setWithSemesters] = useState(true);
   const form = useForm<AcademicYearFormValues>({
     resolver: zodResolver(academicYearSchema),
     defaultValues: { year: undefined },
@@ -27,8 +29,24 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   async function onSubmit(values: AcademicYearFormValues) {
     setServerError(null);
     try {
-      await createAcademicYear(values);
-      toast.success('เพิ่มปีการศึกษาแล้ว');
+      const created = await createAcademicYear(values);
+      let failedTerms = 0;
+      if (withSemesters) {
+        // Sequential, same as the bulk path: the server's duplicate check
+        // isn't transactional.
+        for (const term of ALL_TERMS) {
+          try {
+            await createSemester({ term, academicYearId: created.id });
+          } catch {
+            failedTerms += 1;
+          }
+        }
+      }
+      if (failedTerms > 0) {
+        toast.error(`เพิ่มปีการศึกษาแล้ว แต่สร้างภาคเรียนไม่สำเร็จ ${failedTerms} ภาค — เพิ่มเองได้ที่การ์ดของปีนั้น`);
+      } else {
+        toast.success(withSemesters ? 'เพิ่มปีการศึกษาและภาคเรียนแล้ว' : 'เพิ่มปีการศึกษาแล้ว');
+      }
       form.reset({ year: undefined });
       onCreated();
     } catch (error) {
@@ -72,6 +90,15 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่ม'}
               </Button>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={withSemesters}
+                onChange={(e) => setWithSemesters(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              สร้างภาคเรียนต้น / ปลาย / ฤดูร้อนให้พร้อมกัน
+            </label>
           </CardContent>
         </form>
       </Form>
