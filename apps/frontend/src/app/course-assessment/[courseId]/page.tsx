@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { Check } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCourses } from '@/lib/api/academic-record';
 import {
@@ -20,6 +21,7 @@ import {
   type CourseAssessmentFormValues,
 } from '@/lib/validation/course-assessment.schema';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
@@ -31,7 +33,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
-const DEFAULT_SCORE = 3;
+// 0 = not chosen yet. Seeding every CLO with a middle score let the form be
+// submitted untouched, recording answers the student never gave.
+const UNSET_SCORE = 0;
 const SELF_ASSESSMENT_LEVELS = [
   { score: 1, label: 'ยังไม่สามารถ' },
   { score: 2, label: 'เริ่มต้น' },
@@ -51,6 +55,8 @@ export default function CourseAssessmentPage({ params }: { params: { courseId: s
 function CourseAssessmentContent({ courseId }: { courseId: string }) {
   const { user } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const isStudent = !!user?.roles.includes('STUDENT');
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -76,6 +82,8 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
     defaultValues: { cloScores: [], comment: '' },
   });
   const { fields, replace } = useFieldArray({ control: form.control, name: 'cloScores' });
+  const watchedScores = form.watch('cloScores');
+  const unansweredCount = watchedScores.filter((s) => !(s.score >= 1)).length;
 
   // Populate the (fixed) CLO rows once CLOs + any existing assessment have
   // loaded — not user-addable/removable, so useFieldArray is only used for
@@ -87,7 +95,7 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
         const existingScore = existing?.cloScores.find((s) => s.cloId === clo.id)?.score;
         return {
           cloId: clo.id,
-          score: existingScore ?? DEFAULT_SCORE,
+          score: existingScore ?? UNSET_SCORE,
         };
       }),
     );
@@ -105,6 +113,8 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
       } else {
         await createAssessment({ courseId, ...values });
       }
+      await queryClient.invalidateQueries({ queryKey: ['own-assessment', courseId] });
+      toast.success(existing ? 'บันทึกการแก้ไขการประเมินแล้ว' : 'บันทึกการประเมินแล้ว');
       router.push('/academic-record');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 400) {
@@ -184,6 +194,13 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
 
   return (
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+      <Link
+        href="/academic-record"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft size={16} />
+        กลับไปติดตามผลการเรียน
+      </Link>
       <PageHeader
         title={existing ? 'แก้ไขการประเมินตนเอง' : 'ประเมินตนเองตาม CLO'}
         description={`${course.code}: ${course.name}`}
@@ -216,7 +233,7 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
                         <p className="mt-1 text-sm leading-6 text-muted-foreground">{clo.description}</p>
                       </div>
                       <span className="shrink-0 rounded-md bg-slate-50 px-2.5 py-1 text-sm font-medium text-primary">
-                        ระดับ {currentScore}
+                        {currentScore >= 1 ? `ระดับ ${currentScore}` : 'ยังไม่ได้เลือก'}
                       </span>
                     </div>
                     <div
@@ -271,7 +288,13 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
                 />
               </div>
 
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              {unansweredCount > 0 && (
+                <p className="text-sm text-amber-600">
+                  ยังไม่ได้ให้คะแนน {unansweredCount} จาก {clos.length} CLO — เลือกให้ครบก่อนบันทึก
+                </p>
+              )}
+
+              <Button type="submit" disabled={form.formState.isSubmitting || unansweredCount > 0}>
                 {form.formState.isSubmitting
                   ? 'กำลังบันทึก...'
                   : existing

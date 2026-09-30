@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import type { CourseListItem, Grade, SemesterGpa, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
+import { fetchClos, fetchOwnAssessment } from '@/lib/api/course-assessment';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { gradeBadgeClassName } from '@/lib/grade-badge-color';
 import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { GradeSelectConfirm } from './grade-select-confirm';
@@ -57,6 +60,26 @@ export function RecordTimeline({
   // actually fires — see the effect below.
   const [exitingRecordId, setExitingRecordId] = useState<string | null>(null);
   const toast = useToast();
+
+  // Which courses can be self-assessed (have CLOs) and which already are.
+  // ['clos'] and ['own-assessment', id] are the same keys the assessment
+  // page uses, so saving there refreshes these badges.
+  const closQuery = useQuery({ queryKey: ['clos'], queryFn: fetchClos });
+  const closLoaded = closQuery.data !== undefined;
+  const assessableCourseIds = useMemo(() => {
+    const withClo = new Set((closQuery.data ?? []).map((c) => c.courseId));
+    return [...new Set(records.map((r) => r.courseId))].filter((id) => withClo.has(id));
+  }, [closQuery.data, records]);
+  const assessmentQueries = useQueries({
+    queries: assessableCourseIds.map((id) => ({
+      queryKey: ['own-assessment', id],
+      queryFn: () => fetchOwnAssessment(id),
+    })),
+  });
+  const assessedCourseIds = new Set(
+    assessableCourseIds.filter((_, i) => assessmentQueries[i]?.data),
+  );
+  const assessmentStatusReady = closLoaded && assessmentQueries.every((q) => !q.isLoading);
 
   const gpaBySemesterId = new Map(gpaBySemester.map((s) => [s.semesterId, s]));
   const recordsBySemesterId = new Map<string, StudentCourseRecord[]>();
@@ -180,6 +203,34 @@ export function RecordTimeline({
           <p className="py-6 text-center text-muted-foreground">ยังไม่มีรายวิชาที่บันทึกไว้</p>
         )}
 
+        {semestersWithRecords.length > 0 && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {assessmentStatusReady && assessableCourseIds.length > 0
+                ? `ประเมินตนเองตาม CLO แล้ว ${assessedCourseIds.size} จาก ${assessableCourseIds.length} วิชา`
+                : ' '}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setExpandedSemesterIds(new Set(semestersWithRecords.map((s) => s.id)))}
+              >
+                ขยายทุกภาคเรียน
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setExpandedSemesterIds(new Set())}
+              >
+                ยุบทั้งหมด
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-8">
           {semestersWithRecords.map((semester, index) => {
             const semesterRecords = recordsBySemesterId.get(semester.id) ?? [];
@@ -256,6 +307,10 @@ export function RecordTimeline({
                             </span>
                           )}
 
+                          {assessedCourseIds.has(record.courseId) && (
+                            <Badge tone="success">ประเมินแล้ว</Badge>
+                          )}
+
                           <span
                             className={cn(
                               'shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium',
@@ -296,11 +351,19 @@ export function RecordTimeline({
                             </div>
                           ) : (
                             <div className="flex shrink-0 gap-2">
-                              <Link href={`/course-assessment/${record.courseId}`}>
-                                <Button type="button" variant="outline" size="sm">
-                                  ประเมินวิชานี้
-                                </Button>
-                              </Link>
+                              {(!closLoaded || assessableCourseIds.includes(record.courseId)) && (
+                                <Link href={`/course-assessment/${record.courseId}`}>
+                                  <Button
+                                    type="button"
+                                    variant={assessedCourseIds.has(record.courseId) ? 'outline' : 'default'}
+                                    size="sm"
+                                  >
+                                    {assessedCourseIds.has(record.courseId)
+                                      ? 'แก้ไขการประเมิน'
+                                      : 'ประเมินวิชานี้'}
+                                  </Button>
+                                </Link>
+                              )}
                               <Button
                                 type="button"
                                 variant="ghost"
