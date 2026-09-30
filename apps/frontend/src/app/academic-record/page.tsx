@@ -264,7 +264,17 @@ function AcademicRecordContent() {
           />
         </Reveal>
         <Reveal index={2}>
-          <StatCard icon={FileCheck2} label="หน่วยกิตที่นับ GPA" value={Math.round(animatedCredits)} />
+          <StatCard
+            icon={FileCheck2}
+            label="หน่วยกิตที่นับ GPA"
+            value={Math.round(animatedCredits)}
+            footer={
+              <p className="text-xs text-muted-foreground">
+                รวมวิชาที่สอบตก (F) ด้วย เพราะมีผลต่อเกรดเฉลี่ย — ไม่เหมือน &quot;หน่วยกิตสะสม&quot;
+                ที่นับเฉพาะวิชาที่ผ่าน ไม่นับวิชาที่ได้ W, I, S หรือ U
+              </p>
+            }
+          />
         </Reveal>
         <Reveal index={3}>
           <StatCard icon={GraduationCap} label="จำนวนวิชาที่บันทึก" value={Math.round(animatedCourseCount)} />

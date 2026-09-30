@@ -179,7 +179,7 @@ function LearningPathContent() {
     <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
       <PageHeader
         title="แผนการเรียน"
-        description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและ Prerequisite ของคุณ"
+        description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและวิชาที่ต้องผ่านก่อน (Prerequisite) ของคุณ"
       />
 
       <Reveal index={1}>
