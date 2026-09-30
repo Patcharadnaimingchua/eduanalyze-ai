@@ -1078,6 +1078,8 @@ export interface YearLevelStudent {
   studentCode: string;
   fullName: string;
   admissionYear: number;
+  // null = no badge (curriculum complete or no requirement tree).
+  onTrackStatus: 'on_track' | 'behind' | null;
 }
 
 export interface YearLevelBucket<T extends YearLevelStudent = YearLevelStudent> {

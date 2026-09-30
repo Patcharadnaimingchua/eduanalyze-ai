@@ -122,6 +122,7 @@ export interface YearLevelStudent {
   studentCode: string;
   fullName: string;
   admissionYear: number;
+  onTrackStatus: OnTrackStatus | null;
 }
 
 export interface YearLevelBucket<T extends YearLevelStudent = YearLevelStudent> {

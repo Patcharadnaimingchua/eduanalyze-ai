@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import type { YearLevelBucket, YearLevelStudent } from '@eduanalyze-ai/shared-types';
 import { Reveal } from '@/components/layout/reveal';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,7 @@ export function YearLevelOverview<T extends YearLevelStudent>({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {buckets.map((bucket) => {
             const isExpanded = expandedLevel === bucket.yearLevel;
+            const behindCount = bucket.students.filter((s) => s.onTrackStatus === 'behind').length;
             return (
               <button
                 key={bucket.yearLevel}
@@ -46,6 +48,11 @@ export function YearLevelOverview<T extends YearLevelStudent>({
                 </div>
                 <p className="mt-2 text-2xl font-semibold text-primary">{bucket.students.length}</p>
                 <p className="text-xs text-muted-foreground">คน</p>
+                {behindCount > 0 && (
+                  <div className="mt-2">
+                    <Badge tone="warning">ตามหลังแผน {behindCount}</Badge>
+                  </div>
+                )}
                 {renderCardExtra?.(bucket)}
               </button>
             );
@@ -80,6 +87,7 @@ export function YearLevelOverview<T extends YearLevelStudent>({
                         )}
                       </span>
                       <span className="flex items-center gap-3">
+                        {s.onTrackStatus === 'behind' && <Badge tone="warning">ตามหลังแผน</Badge>}
                         {renderStudentExtra?.(s)}
                         <span className="text-xs text-muted-foreground">
                           เข้าศึกษาปี {s.admissionYear}

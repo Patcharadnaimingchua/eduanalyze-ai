@@ -52,6 +52,7 @@ import {
 } from './dashboard-report.interface';
 import {
   expectedCreditsByNow,
+  OnTrackStatus,
   resolveOnTrackStatus,
   resolveYearLevel,
 } from '../../common/academic/year-level';
@@ -467,12 +468,17 @@ export class DashboardService {
               id: true,
               studentCode: true,
               admissionYear: true,
+              curriculumId: true,
               user: { select: { fullName: true } },
             },
           })
         : [];
 
     const currentAcademicYear = await this.resolveCurrentAcademicYear();
+    const onTrackByStudent = await this.computeOnTrackStatuses(
+      profiles,
+      currentAcademicYear,
+    );
     return {
       currentAcademicYear,
       buckets: this.bucketByYearLevel(
@@ -481,6 +487,7 @@ export class DashboardService {
           studentCode: profile.studentCode,
           fullName: profile.user.fullName,
           admissionYear: profile.admissionYear,
+          onTrackStatus: onTrackByStudent.get(profile.id) ?? null,
         })),
         currentAcademicYear,
       ),
@@ -510,11 +517,23 @@ export class DashboardService {
         id: true,
         studentCode: true,
         admissionYear: true,
+        curriculumId: true,
         user: { select: { fullName: true } },
       },
     });
+    // One records fetch shared by the risk and on-track passes.
+    const records =
+      await this.studentCourseRecordService.findActiveRecordsForStudents(
+        profiles.map((profile) => profile.id),
+      );
     const riskByStudent = await this.computeStudentRisk(
       profiles.map((profile) => profile.id),
+      records,
+    );
+    const onTrackByStudent = await this.computeOnTrackStatuses(
+      profiles,
+      currentAcademicYear,
+      records,
     );
 
     return {
@@ -527,6 +546,7 @@ export class DashboardService {
             studentCode: profile.studentCode,
             fullName: profile.user.fullName,
             admissionYear: profile.admissionYear,
+            onTrackStatus: onTrackByStudent.get(profile.id) ?? null,
             gpa: risk.gpa,
             riskLevel: risk.riskLevel,
             atRiskCourseCount: risk.atRiskCourseCount,
@@ -535,6 +555,64 @@ export class DashboardService {
         currentAcademicYear,
       ),
     };
+  }
+
+  // On-track status for a whole population in bulk: one curriculum-tree
+  // fetch for every distinct curriculum (plus one records fetch unless the
+  // caller already has them), then the same pure computeCreditCheck /
+  // expectedCreditsByNow / resolveOnTrackStatus the student dashboard uses
+  // (CONVENTIONS.md §6) — no per-student query.
+  private async computeOnTrackStatuses(
+    profiles: {
+      id: string;
+      curriculumId: string;
+      admissionYear: number;
+    }[],
+    currentAcademicYear: number,
+    preloadedRecords?: LatestCourseAttempt[],
+  ): Promise<Map<string, OnTrackStatus | null>> {
+    const result = new Map<string, OnTrackStatus | null>();
+    if (profiles.length === 0) return result;
+
+    const [trees, records] = await Promise.all([
+      this.creditCheckerService.loadCurriculumTrees([
+        ...new Set(profiles.map((profile) => profile.curriculumId)),
+      ]),
+      preloadedRecords ??
+        this.studentCourseRecordService.findActiveRecordsForStudents(
+          profiles.map((profile) => profile.id),
+        ),
+    ]);
+    const recordsByStudent = groupBy(records, (r) => r.studentProfileId);
+
+    for (const profile of profiles) {
+      const tree = trees.get(profile.curriculumId);
+      if (!tree) {
+        result.set(profile.id, null);
+        continue;
+      }
+      const { creditsPassed } = this.creditCheckerService.computeCreditCheck(
+        profile,
+        tree,
+        this.studentCourseRecordService.dedupeLatestPerCourse(
+          recordsByStudent.get(profile.id) ?? [],
+        ),
+      );
+      result.set(
+        profile.id,
+        resolveOnTrackStatus(
+          creditsPassed,
+          tree.totalCredits,
+          expectedCreditsByNow(
+            tree.totalCredits,
+            tree.durationYears,
+            currentAcademicYear,
+            profile.admissionYear,
+          ),
+        ),
+      );
+    }
+    return result;
   }
 
   // No stored "current academic year" in the schema (AcademicYear.isActive
@@ -1233,7 +1311,10 @@ export class DashboardService {
   // selectAtRiskAttempts returns worst-first, so [0] decides the band.
   // There is deliberately no separate "student is at risk when…" rule to
   // drift away from the per-course one the instructor dashboard uses.
-  private async computeStudentRisk(studentProfileIds: string[]): Promise<
+  private async computeStudentRisk(
+    studentProfileIds: string[],
+    preloadedRecords?: LatestCourseAttempt[],
+  ): Promise<
     Map<
       string,
       {
@@ -1245,9 +1326,10 @@ export class DashboardService {
     >
   > {
     const records =
-      await this.studentCourseRecordService.findActiveRecordsForStudents(
+      preloadedRecords ??
+      (await this.studentCourseRecordService.findActiveRecordsForStudents(
         studentProfileIds,
-      );
+      ));
     const recordsByStudent = new Map<string, typeof records>();
     for (const record of records) {
       const list = recordsByStudent.get(record.studentProfileId) ?? [];
