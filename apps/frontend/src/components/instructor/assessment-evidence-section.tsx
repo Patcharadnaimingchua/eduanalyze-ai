@@ -139,6 +139,7 @@ export function AssessmentEvidenceSection({
           courseId={courseId}
           assessmentDefinitionId={selectedDefinitionId}
           assessmentCloMappingId={selectedMappingId}
+          clos={clos}
           onDirtyChange={setHasUnsavedScores}
         />
       )}

@@ -3,17 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AssessmentScoreStatus } from '@eduanalyze-ai/shared-types';
+import { isAxiosError } from 'axios';
+import type { AssessmentScoreStatus, CloAchievementEntry } from '@eduanalyze-ai/shared-types';
 import {
+  bulkUpsertStudentAssessmentScores,
   fetchAssessmentCloMappings,
   fetchAssessmentDefinitions,
   fetchStudentAssessmentScores,
-  upsertStudentAssessmentScore,
 } from '@/lib/api/assessment-evidence';
 import { fetchCourseRoster } from '@/lib/api/instructor';
 import { SCORE_CSV_HEADERS } from '@/lib/assessment-score-import';
 import { toCsv, downloadCsv } from '@/lib/csv';
 import { shouldReseedScoreForm } from '@/lib/score-form-guard';
+import { effectiveMaxOf, findScoreRowProblems, isCompatibleMax } from '@/lib/score-multi-clo';
 import {
   ASSESSMENT_SCORE_STATUS_LABELS,
   ASSESSMENT_SCORE_STATUS_OPTIONS,
@@ -37,15 +39,24 @@ interface ScoreRow {
   score: string;
 }
 
+function extractServerMessage(error: unknown): string | null {
+  if (!isAxiosError(error)) return null;
+  const message = error.response?.data?.message;
+  if (Array.isArray(message)) return message.join(', ');
+  return typeof message === 'string' ? message : null;
+}
+
 export function StudentScoreEntryPanel({
   courseId,
   assessmentDefinitionId,
   assessmentCloMappingId,
+  clos,
   onDirtyChange,
 }: Readonly<{
   courseId: string;
   assessmentDefinitionId: string;
   assessmentCloMappingId: string;
+  clos: CloAchievementEntry[];
   onDirtyChange?: (isDirty: boolean) => void;
 }>) {
   const queryClient = useQueryClient();
@@ -53,6 +64,10 @@ export function StudentScoreEntryPanel({
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // Other CLO mappings of this assessment that the next save should also
+  // write to. Deliberately NOT form state: ticking a box must not make the
+  // score table "dirty" (H6), and it always starts unticked.
+  const [extraMappingIds, setExtraMappingIds] = useState<string[]>([]);
 
   const rosterQuery = useQuery({
     queryKey: ['course-roster', courseId],
@@ -84,6 +99,30 @@ export function StudentScoreEntryPanel({
     const raw = selectedMapping?.maxScoreOverride ?? definition?.maxScore;
     return raw === undefined || raw === null ? null : Number(raw);
   }, [selectedMapping, definitionsQuery.data, assessmentDefinitionId]);
+
+  const definitionMaxScore = definitionsQuery.data?.find(
+    (d) => d.id === assessmentDefinitionId,
+  )?.maxScore;
+  const siblingOptions = useMemo(() => {
+    if (!mappingsQuery.data || definitionMaxScore === undefined || effectiveMax === null) return [];
+    const cloById = new Map(clos.map((c) => [c.cloId, c]));
+    return mappingsQuery.data
+      .filter((m) => m.id !== assessmentCloMappingId)
+      .map((m) => {
+        const max = effectiveMaxOf(m, definitionMaxScore);
+        return {
+          id: m.id,
+          label: cloById.get(m.cloId)?.code ?? m.cloId,
+          max,
+          compatible: isCompatibleMax(max, effectiveMax),
+        };
+      });
+  }, [mappingsQuery.data, definitionMaxScore, effectiveMax, clos, assessmentCloMappingId]);
+
+  // A mapping switch is confirmed by the parent; the selection never carries over.
+  useEffect(() => {
+    setExtraMappingIds([]);
+  }, [assessmentCloMappingId]);
 
   const form = useForm<{ rows: ScoreRow[] }>({ defaultValues: { rows: [] } });
   const { fields } = useFieldArray({ control: form.control, name: 'rows' });
@@ -143,32 +182,97 @@ export function StudentScoreEntryPanel({
 
   async function onSave() {
     setServerError(null);
+    const rows = form.getValues('rows');
+    const dirtyIndexes = form.formState.dirtyFields.rows ?? [];
+    const dirtyRows = rows.filter((_, index) => dirtyIndexes[index]);
+    const targetIds = [assessmentCloMappingId, ...extraMappingIds];
+
+    const problems = findScoreRowProblems(dirtyRows, effectiveMax);
+    if (problems.length > 0) {
+      setServerError(`ยังไม่ได้บันทึก — กรุณาแก้ไข: ${problems.join('; ')}`);
+      return;
+    }
+
     setSaving(true);
     forceReseedRef.current = true;
     try {
-      const rows = form.getValues('rows');
-      const dirtyIndexes = form.formState.dirtyFields.rows ?? [];
-      const dirtyRows = rows.filter((_, index) => dirtyIndexes[index]);
-      for (const row of dirtyRows) {
-        await upsertStudentAssessmentScore({
-          assessmentCloMappingId,
+      if (extraMappingIds.length > 0 && !(await confirmOverwrite(dirtyRows, extraMappingIds))) {
+        return;
+      }
+      await bulkUpsertStudentAssessmentScores({
+        courseId,
+        assessmentDefinitionId,
+        assessmentCloMappingIds: targetIds,
+        entries: dirtyRows.map((row) => ({
           studentCourseRecordId: row.studentCourseRecordId,
           status: row.status,
-          score: row.status === 'GRADED' && row.score !== '' ? Number(row.score) : undefined,
-          courseId,
-        });
-      }
-      await queryClient.invalidateQueries({
-        queryKey: ['student-assessment-scores', assessmentCloMappingId],
+          score: row.status === 'GRADED' ? Number(row.score) : undefined,
+        })),
       });
+      await Promise.all([
+        ...targetIds.map((id) =>
+          queryClient.invalidateQueries({ queryKey: ['student-assessment-scores', id] }),
+        ),
+        queryClient.invalidateQueries({ queryKey: ['actual-clo-achievement', courseId] }),
+      ]);
       form.reset(form.getValues());
-      toast.success(`บันทึกคะแนน ${dirtyRows.length} รายการสำเร็จ`);
-    } catch {
-      setServerError('บันทึกคะแนนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      setExtraMappingIds([]);
+      toast.success(
+        targetIds.length > 1
+          ? `บันทึกคะแนน ${dirtyRows.length} รายการลง ${targetIds.length} CLO สำเร็จ`
+          : `บันทึกคะแนน ${dirtyRows.length} รายการสำเร็จ`,
+      );
+    } catch (error) {
+      // The batch is all-or-nothing: the form stays dirty and nothing was saved.
+      const serverMessage = extractServerMessage(error);
+      if (serverMessage) {
+        setServerError(`ไม่มีรายการใดถูกบันทึก — ${serverMessage}`);
+      } else {
+        // No response: the outcome is unknown, so show what the server holds.
+        // Re-saving is safe (the endpoint is an idempotent upsert).
+        await Promise.all(
+          targetIds.map((id) =>
+            queryClient.invalidateQueries({ queryKey: ['student-assessment-scores', id] }),
+          ),
+        ).catch(() => undefined);
+        setServerError(
+          'บันทึกไม่สำเร็จหรือไม่ทราบผลลัพธ์ (การเชื่อมต่อขัดข้อง) — กรุณาตรวจสอบคะแนนในระบบ แล้วกดบันทึกอีกครั้งได้อย่างปลอดภัย',
+        );
+      }
     } finally {
       forceReseedRef.current = false;
       setSaving(false);
     }
+  }
+
+  // Writing to other CLOs replaces whatever is already recorded there for
+  // these students, so say how many existing values will change first.
+  async function confirmOverwrite(dirtyRows: ScoreRow[], mappingIds: string[]): Promise<boolean> {
+    const existing = await Promise.all(
+      mappingIds.map((id) => fetchStudentAssessmentScores(id, courseId)),
+    );
+    const changed = new Set<string>();
+    existing.forEach((scores) => {
+      const byRecord = new Map(scores.map((s) => [s.studentCourseRecordId, s]));
+      for (const row of dirtyRows) {
+        const prior = byRecord.get(row.studentCourseRecordId);
+        if (!prior || prior.status === 'PENDING') continue;
+        const sameScore =
+          row.status === 'GRADED' ? prior.score !== null && Number(prior.score) === Number(row.score) : prior.score === null;
+        if (prior.status !== row.status || !sameScore) changed.add(row.studentCourseRecordId);
+      }
+    });
+    const labels = siblingOptions
+      .filter((o) => mappingIds.includes(o.id))
+      .map((o) => o.label)
+      .join(', ');
+    const overwriteNote =
+      changed.size > 0
+        ? ` คะแนนเดิมของนักศึกษา ${changed.size} คนใน CLO เหล่านั้นจะถูกเขียนทับ`
+        : ' ไม่มีคะแนนเดิมที่ต่างกันถูกเขียนทับ';
+    return window.confirm(
+      `จะบันทึกคะแนน ${dirtyRows.length} คน ลงใน CLO ปัจจุบัน และ ${labels} พร้อมกัน (ทั้งหมดหรือไม่มีเลย).${overwriteNote} ต้องการดำเนินการต่อหรือไม่?`,
+    );
   }
 
   // Exports what's on screen now, so the file round-trips straight back
@@ -238,6 +342,40 @@ export function StudentScoreEntryPanel({
               <span className="text-xs text-muted-foreground">คะแนนเต็ม {effectiveMax}</span>
             )}
           </div>
+        )}
+
+        {fields.length > 0 && siblingOptions.length > 0 && (
+          <fieldset className="rounded-md border border-slate-200 p-3">
+            <legend className="px-1 text-xs font-medium text-muted-foreground">
+              บันทึกคะแนนชุดนี้ลง CLO อื่นของแบบประเมินนี้ด้วย (ไม่บังคับ)
+            </legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {siblingOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center gap-2 text-sm ${option.compatible ? '' : 'opacity-50'}`}
+                  title={
+                    option.compatible
+                      ? undefined
+                      : 'คะแนนเต็มของ CLO นี้ไม่เท่ากับ CLO ปัจจุบัน จึงใช้คะแนนเดียวกันไม่ได้'
+                  }
+                >
+                  <input
+                    type="checkbox"
+                    disabled={!option.compatible || saving}
+                    checked={extraMappingIds.includes(option.id)}
+                    onChange={(e) =>
+                      setExtraMappingIds((prev) =>
+                        e.target.checked ? [...prev, option.id] : prev.filter((id) => id !== option.id),
+                      )
+                    }
+                  />
+                  {option.label}
+                  <span className="text-xs text-muted-foreground">(เต็ม {option.max})</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         )}
 
         {importOpen && effectiveMax !== null && rosterQuery.data && (

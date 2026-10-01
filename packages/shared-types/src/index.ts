@@ -924,6 +924,23 @@ export interface UpsertStudentAssessmentScoreRequest {
   courseId: string;
 }
 
+export interface BulkUpsertStudentAssessmentScoresRequest {
+  courseId: string;
+  assessmentDefinitionId: string;
+  assessmentCloMappingIds: string[];
+  entries: {
+    studentCourseRecordId: string;
+    status: AssessmentScoreStatus;
+    score?: number;
+  }[];
+}
+
+export interface BulkUpsertStudentAssessmentScoresResponse {
+  mappingCount: number;
+  entryCount: number;
+  written: number;
+}
+
 export interface CoverageInfo {
   validCount: number;
   totalCount: number;

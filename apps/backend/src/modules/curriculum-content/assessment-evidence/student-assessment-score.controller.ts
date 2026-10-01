@@ -7,6 +7,7 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { InstructorOrScopeGuard } from '../../../common/guards/instructor-or-scope.guard';
 import { StudentAssessmentScoreService } from './student-assessment-score.service';
 import { AssessmentCloMappingService } from './assessment-clo-mapping.service';
+import { BulkUpsertStudentAssessmentScoresDto } from './dto/bulk-upsert-student-assessment-scores.dto';
 import { UpsertStudentAssessmentScoreDto } from './dto/upsert-student-assessment-score.dto';
 
 @ApiTags('assessment-evidence')
@@ -30,6 +31,22 @@ export class StudentAssessmentScoreController {
   @ApiResponse({ status: 400, description: 'score presence does not match status' })
   upsert(@Body() dto: UpsertStudentAssessmentScoreDto) {
     return this.studentAssessmentScoreService.upsert(dto);
+  }
+
+  @Put('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard, InstructorOrScopeGuard)
+  @Roles('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR')
+  @InstructorCourseTarget({ from: 'body', key: 'courseId' })
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Record the same scores against several CLO mappings of one assessment — all-or-nothing: any invalid item rejects the whole batch and nothing is written.',
+  })
+  @ApiResponse({ status: 200, description: 'All scores recorded' })
+  @ApiResponse({ status: 400, description: 'Invalid item(s) — nothing was saved' })
+  @ApiResponse({ status: 404, description: 'Assessment or CLO mapping not found in course' })
+  bulkUpsert(@Body() dto: BulkUpsertStudentAssessmentScoresDto) {
+    return this.studentAssessmentScoreService.bulkUpsert(dto);
   }
 
   @Get('clo-mapping/:assessmentCloMappingId')

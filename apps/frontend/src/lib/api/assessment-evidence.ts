@@ -2,6 +2,8 @@ import type {
   AchievementResult,
   AssessmentCloMapping,
   AssessmentDefinition,
+  BulkUpsertStudentAssessmentScoresRequest,
+  BulkUpsertStudentAssessmentScoresResponse,
   CreateAssessmentCloMappingRequest,
   CreateAssessmentDefinitionRequest,
   StudentAssessmentScore,
@@ -50,6 +52,18 @@ export async function fetchStudentAssessmentScores(assessmentCloMappingId: strin
 
 export async function upsertStudentAssessmentScore(dto: UpsertStudentAssessmentScoreRequest) {
   const { data } = await apiClient.put<StudentAssessmentScore>('/student-assessment-scores', dto);
+  return data;
+}
+
+// All-or-nothing: one invalid item rejects the whole batch (400) and nothing
+// is written, so callers never have to reason about a half-saved state.
+export async function bulkUpsertStudentAssessmentScores(
+  dto: BulkUpsertStudentAssessmentScoresRequest,
+) {
+  const { data } = await apiClient.put<BulkUpsertStudentAssessmentScoresResponse>(
+    '/student-assessment-scores/bulk',
+    dto,
+  );
   return data;
 }
 
