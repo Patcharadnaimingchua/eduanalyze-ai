@@ -256,7 +256,7 @@ export function RecordTimeline({
 
             return (
               <div key={semester.id} className="relative border-l-2 border-slate-100 pl-6">
-                <span className="absolute -left-[7px] top-0 h-3 w-3 rounded-full border-2 border-primary bg-white" />
+                <span className="absolute -left-[7px] top-0 h-3 w-3 rounded-full border-2 border-primary bg-background" />
 
                 <SemesterGroupHeader
                   label={semester.label}

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +40,7 @@ import {
 export default function CompleteGoogleRegistrationPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <div className="w-full max-w-md">
         <Suspense>
           <CompleteGoogleRegistrationForm />

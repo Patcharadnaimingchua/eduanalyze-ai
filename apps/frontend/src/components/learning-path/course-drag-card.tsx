@@ -26,7 +26,7 @@ export function CourseDragCard({
         e.dataTransfer.setData('text/plain', course.courseId);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="flex cursor-grab flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-slate-100 bg-white p-3 active:cursor-grabbing"
+      className="flex cursor-grab flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-slate-100 bg-card p-3 active:cursor-grabbing"
     >
       {/* basis-48 + wrap: when the column is too narrow for name, badge and
           button on one line, the actions drop below instead of squeezing

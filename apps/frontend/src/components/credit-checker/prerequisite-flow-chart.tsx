@@ -6,6 +6,7 @@ import '@xyflow/react/dist/style.css';
 import type { CreditCheckReport } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent } from '@/components/ui/card';
 import { computeCourseDepths } from '@/lib/compute-course-depth';
+import { useTheme } from '@/lib/theme-context';
 import {
   PrerequisiteFlowNode,
   type CourseNodeData,
@@ -25,6 +26,7 @@ const LEGEND: { status: CourseNodeStatus; label: string; swatch: string }[] = [
 ];
 
 export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheckReport }>) {
+  const { theme } = useTheme();
   const { nodes, edges } = useMemo(() => {
     const passedIds = new Set(report.passedCourses.map((c) => c.courseId));
     const failedIds = new Set(report.failedCourses.map((c) => c.courseId));
@@ -81,7 +83,9 @@ export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheck
           id: `${prereqId}->${course.courseId}`,
           source: prereqId,
           target: course.courseId,
-          style: { stroke: '#94a3b8' },
+          // Palette channels are theme-aware (styles/theme-palette.css); a literal
+          // hex would stay light-theme grey in dark mode.
+          style: { stroke: 'rgb(var(--slate-400))' },
         })),
     );
 
@@ -107,6 +111,9 @@ export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheck
             nodesDraggable={false}
             nodesConnectable={false}
             fitView
+            colorMode={theme}
+            // Match the surrounding card instead of React Flow's own near-black dark canvas.
+            style={{ '--xy-background-color': 'hsl(var(--card))' } as React.CSSProperties}
           >
             <Background />
             <Controls showInteractive={false} />

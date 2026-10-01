@@ -33,7 +33,7 @@ export function OrgNodeRow({
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
+    <div className="rounded-md border border-slate-200 bg-background">
       <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-2">
         <button
           type="button"

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { GraduationCap } from 'lucide-react';
 
 // Shared shell for /login, /register and /forgot-password — a wider
@@ -60,7 +61,8 @@ export function AuthSplitLayout({
   children,
 }: Readonly<{ title: ReactNode; description: ReactNode; children: ReactNode }>) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <div className="grid w-full max-w-4xl grid-cols-1 rounded-2xl border border-slate-100 shadow-sm md:min-h-[34rem] md:grid-cols-2">
         <div className="relative hidden md:block">
           <div className="absolute inset-0 overflow-hidden rounded-l-2xl bg-brand-light">

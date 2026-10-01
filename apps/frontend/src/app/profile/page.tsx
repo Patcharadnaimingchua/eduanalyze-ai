@@ -212,7 +212,7 @@ function ProfileContent() {
                     {ROLE_LABEL_TH[primaryRole]}
                   </span>
                   {isStudent && profileQuery.data && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-600">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-background/90 px-3 py-1 text-xs font-medium text-slate-600">
                       <Hash size={13} aria-hidden="true" />
                       {profileQuery.data.studentCode}
                     </span>
@@ -220,7 +220,7 @@ function ProfileContent() {
                 </div>
               </div>
             </div>
-            <div className="flex min-w-0 items-start gap-3 rounded-lg bg-white/70 px-4 py-3">
+            <div className="flex min-w-0 items-start gap-3 rounded-lg bg-background/70 px-4 py-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-light text-brand">
                 <Mail size={16} aria-hidden="true" />
               </div>

@@ -120,7 +120,7 @@ function TwoFactorStepper({ mode }: Readonly<{ mode: Mode }>) {
         const current = mode === 'recoveryCodes' ? s.n === 3 : s.n === 2;
         let circleTone = 'border-slate-300 text-slate-400';
         if (done) circleTone = 'border-emerald-500 bg-emerald-500 text-white';
-        else if (current) circleTone = 'border-brand bg-brand text-white';
+        else if (current) circleTone = 'border-brand bg-brand text-white dark:text-brand-foreground';
         return (
           <li key={s.n} className="flex flex-1 items-center gap-2 last:flex-none">
             <span
@@ -206,7 +206,7 @@ function TwoFactorSetupFlow({
           เปิดแอป Authenticator แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
         </p>
         <div className="flex flex-col items-center gap-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-card p-4 shadow-sm">
             <div className="relative inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL, not a static asset */}
               <img
@@ -217,7 +217,7 @@ function TwoFactorSetupFlow({
                 }`}
               />
               {verified && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/80 animate-in fade-in zoom-in duration-300">
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-card/80 animate-in fade-in zoom-in duration-300">
                   <ShieldCheck className="h-12 w-12 text-emerald-600" />
                 </div>
               )}
@@ -325,7 +325,7 @@ function TwoFactorRecoveryCodesReveal({
             {recoveryCodes.map((code) => (
               <span
                 key={code}
-                className="rounded-md border border-amber-200 bg-white px-3 py-2 text-center font-mono text-sm text-slate-700 shadow-sm"
+                className="rounded-md border border-amber-200 bg-card px-3 py-2 text-center font-mono text-sm text-slate-700 shadow-sm"
               >
                 {code}
               </span>

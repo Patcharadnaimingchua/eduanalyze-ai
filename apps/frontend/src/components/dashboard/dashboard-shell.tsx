@@ -30,6 +30,7 @@ import { ROLE_PRIORITY } from '@/lib/role-priority';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface NavItem {
   label: string;
@@ -194,7 +195,7 @@ export function DashboardShell({
   );
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen bg-background">
       <aside className="hidden w-64 flex-col border-r border-slate-100 p-6 md:flex">
         {sidebarContent}
       </aside>
@@ -215,11 +216,15 @@ export function DashboardShell({
           >
             <Menu size={20} />
           </button>
-          <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
-            {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
-            <span className="font-medium text-primary">{fullName}</span>
-            <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* -my-2 keeps the header exactly as tall as before the toggle existed */}
+            <ThemeToggle className="-my-2 h-8 w-8" />
+            <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
+              {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
+              <span className="font-medium text-primary">{fullName}</span>
+              <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
+            </Link>
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-8">{children}</main>

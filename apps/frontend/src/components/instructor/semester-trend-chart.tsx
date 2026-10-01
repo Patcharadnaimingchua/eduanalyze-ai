@@ -45,29 +45,28 @@ export function SemesterTrendChart({ trend }: { trend: SemesterAchievement[] }) 
                 y1={y}
                 x2={WIDTH - PADDING_X}
                 y2={y}
-                stroke="#e2e8f0"
+                className="stroke-slate-200"
                 strokeWidth={1}
               />
-              <text x={PADDING_X - 8} y={y + 4} textAnchor="end" fontSize={11} fill="#64748b">
+              <text x={PADDING_X - 8} y={y + 4} textAnchor="end" fontSize={11} className="fill-slate-500">
                 {percent}%
               </text>
             </g>
           );
         })}
 
-        <path d={linePath} fill="none" stroke="#2563eb" strokeWidth={2} />
+        <path d={linePath} fill="none" className="stroke-blue-600" strokeWidth={2} />
 
         {points.map((p) => (
           <g key={`${p.academicYear}-${p.semesterTerm}`}>
-            <circle cx={p.x} cy={p.y} r={4} fill="#2563eb" className="pointer-events-none" />
+            <circle cx={p.x} cy={p.y} r={4} className="pointer-events-none fill-blue-600" />
             <text
               x={p.x}
               y={p.y - 12}
               textAnchor="middle"
               fontSize={12}
               fontWeight={600}
-              fill="#1e293b"
-              className="pointer-events-none"
+              className="pointer-events-none fill-slate-800"
             >
               {Math.round(p.achievementPercent)}%
             </text>
@@ -76,8 +75,7 @@ export function SemesterTrendChart({ trend }: { trend: SemesterAchievement[] }) 
               y={HEIGHT - 28}
               textAnchor="middle"
               fontSize={11}
-              fill="#64748b"
-              className="pointer-events-none"
+              className="pointer-events-none fill-slate-500"
             >
               {formatSemesterLabel(p.semesterTerm, p.academicYear)}
             </text>
@@ -86,8 +84,7 @@ export function SemesterTrendChart({ trend }: { trend: SemesterAchievement[] }) 
               y={HEIGHT - 14}
               textAnchor="middle"
               fontSize={11}
-              fill="#94a3b8"
-              className="pointer-events-none"
+              className="pointer-events-none fill-slate-400"
             >
               {p.studentCount} คน
             </text>

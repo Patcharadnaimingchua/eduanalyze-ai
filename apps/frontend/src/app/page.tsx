@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { GraduationCap, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { resolveHomeRoute } from '@/lib/dashboard-routes';
@@ -23,12 +24,13 @@ export default function Home() {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-center bg-white p-4"
+      className="flex min-h-screen flex-col items-center justify-center bg-background p-4"
       style={{
         backgroundImage:
           'radial-gradient(circle at 50% -10%, hsl(var(--brand-light)) 0%, transparent 55%)',
       }}
     >
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <div className="w-full max-w-md">
         {status === 'loading' && (
           <div className="flex flex-col items-center gap-6">

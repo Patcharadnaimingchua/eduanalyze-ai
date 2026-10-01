@@ -31,6 +31,40 @@
     --input: 214 32% 91%;
     --ring: 210 75% 37%;
     --radius: 0.5rem;
+    color-scheme: light;
+  }
+
+  /* Dark theme — applied only when <html class="dark"> (see lib/theme-context).
+     Navy-tinted surfaces; every foreground/background pair below was checked
+     against WCAG AA (body text ≥ 4.5:1). The slate/emerald/amber/… palettes
+     are mirrored separately in styles/theme-palette.css. */
+  .dark {
+    --background: 215 45% 7%;
+    --foreground: 210 40% 96%;
+    --card: 215 40% 10%;
+    --card-foreground: 210 40% 96%;
+    --popover: 215 40% 11%;
+    --popover-foreground: 210 40% 96%;
+    /* primary doubles as the heading colour (text-primary) and the default
+       button fill, so in dark it becomes a pale blue with navy button text. */
+    --primary: 210 70% 88%;
+    --primary-foreground: 215 60% 12%;
+    --brand: 210 85% 62%;
+    --brand-foreground: 215 60% 8%;
+    --brand-light: 215 50% 16%;
+    --secondary: 215 30% 15%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 215 30% 15%;
+    --muted-foreground: 215 20% 66%;
+    --accent: 215 30% 18%;
+    --accent-foreground: 210 40% 96%;
+    /* Lighter red + dark foreground: white-on-red only reached 4.3:1. */
+    --destructive: 0 80% 66%;
+    --destructive-foreground: 215 60% 8%;
+    --border: 215 25% 22%;
+    --input: 215 25% 22%;
+    --ring: 210 85% 62%;
+    color-scheme: dark;
   }
 
   * {

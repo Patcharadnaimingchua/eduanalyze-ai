@@ -187,7 +187,7 @@ export function CloAchievementSection({
                   {failingStudents.length === 0 ? (
                     <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่าเกณฑ์</p>
                   ) : (
-                    <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
+                    <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-background">
                       {failingStudents.map((s) => (
                         <li
                           key={s.studentProfileId}

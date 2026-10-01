@@ -1,5 +1,12 @@
 import type { Config } from 'tailwindcss';
 
+// Theme-aware palettes: every step reads a CSS variable defined in
+// src/styles/theme-palette.css (stock Tailwind values in light, a mirrored
+// scale in dark), so existing slate-/emerald-/amber-… classes follow the theme.
+const PALETTE_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
+const themedPalette = (name: string) =>
+  Object.fromEntries(PALETTE_STEPS.map((step) => [step, `rgb(var(--${name}-${step}) / <alpha-value>)`]));
+
 const config: Config = {
   darkMode: ['class'],
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
@@ -10,6 +17,14 @@ const config: Config = {
     },
     extend: {
       colors: {
+        slate: themedPalette('slate'),
+        emerald: themedPalette('emerald'),
+        amber: themedPalette('amber'),
+        red: themedPalette('red'),
+        sky: themedPalette('sky'),
+        violet: themedPalette('violet'),
+        rose: themedPalette('rose'),
+        blue: themedPalette('blue'),
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

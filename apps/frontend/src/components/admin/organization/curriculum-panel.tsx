@@ -116,7 +116,7 @@ function CurriculumCard({
   }
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
+    <div className="rounded-md border border-slate-200 bg-background px-3 py-2">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">

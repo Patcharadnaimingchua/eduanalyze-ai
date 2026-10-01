@@ -102,7 +102,7 @@ export function PloRadarChart({
               <polygon
                 key={fraction}
                 points={ringPoints}
-                className="fill-none stroke-slate-100"
+                className="fill-none stroke-slate-100 dark:stroke-slate-300"
                 strokeWidth={1}
               />
             );
@@ -129,7 +129,7 @@ export function PloRadarChart({
                 y1={center}
                 x2={outer.x}
                 y2={outer.y}
-                className="stroke-slate-100"
+                className="stroke-slate-100 dark:stroke-slate-300"
                 strokeWidth={1}
               />
             );

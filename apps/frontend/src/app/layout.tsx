@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import '../styles/theme-palette.css';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { QueryProvider } from '@/lib/query-client';
+import { ThemeProvider } from '@/lib/theme-context';
+import { THEME_INIT_SCRIPT } from '@/lib/theme-script';
 import { ToastProvider } from '@/lib/toast-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -16,15 +19,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    // suppressHydrationWarning: the inline script below adds the `dark` class
+    // to <html> before React hydrates.
+    <html lang="th" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
-        <ToastProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-            </AuthProvider>
-          </QueryProvider>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+              </AuthProvider>
+            </QueryProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
