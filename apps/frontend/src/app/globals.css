@@ -76,6 +76,46 @@
   }
 }
 
+/* Press ripple for filled buttons (default + destructive variants in
+   button.tsx). Pure CSS, so it grows from the centre — CSS cannot know where
+   the pointer landed. currentColor makes it follow the label colour, which is
+   already theme-aware (white on navy in light, navy on pale blue in dark).
+   Sits at z-index -1 inside an isolated stacking context: above the button
+   background, below its label. On release the size is held for 400ms while the
+   opacity fades, so even a quick tap shows a fading ripple. */
+@layer components {
+  .btn-ripple {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .btn-ripple::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle, currentColor 0 100%) center / 0% 0% no-repeat;
+    opacity: 0;
+    transition: background-size 0s 400ms, opacity 400ms ease-out;
+  }
+
+  .btn-ripple:active::after {
+    background-size: 250% 250%;
+    opacity: 0.25;
+    transition: background-size 400ms ease-out, opacity 0s;
+  }
+}
+
+/* The global reduced-motion rule below would turn the ripple into a one-frame
+   flash, so it is switched off outright instead. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-ripple::after {
+    display: none;
+  }
+}
+
 /* Neither Tailwind core nor tailwindcss-animate ships a shake preset —
    used for wrong-2FA-code feedback (profile setup's OtpInput, login's
    verify field). */
