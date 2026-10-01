@@ -491,9 +491,21 @@ export interface IncompleteElectiveCategory {
   availableElectivesInCategory: CourseSummary[];
 }
 
+// One plotted point of the dashboard GPA sparkline: a semester with a real
+// GPA, chronologically ordered (semesters whose courses are all W/I/S/U have
+// no GPA and are left out). Per-semester GPA is NOT retake-deduped, so these
+// need not average to the cumulative gpa.
+export interface GpaTrendPoint {
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+  gpa: number;
+  creditsCounted: number;
+}
+
 export interface StudentDashboardResponse {
   studentProfileId: string;
   gpa: number | null;
+  gpaTrend: GpaTrendPoint[];
   creditsEarned: number;
   creditsRemaining: number;
   totalCreditsRequired: number;
@@ -762,6 +774,8 @@ export interface GpaSummary {
 
 export interface SemesterGpa extends GpaSummary {
   semesterId: string;
+  academicYear: number;
+  semesterTerm: SemesterTerm;
 }
 
 // GET /student-course-records/gpa/:studentProfileId — cumulative GpaSummary

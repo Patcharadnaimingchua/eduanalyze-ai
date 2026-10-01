@@ -69,6 +69,8 @@ export interface GpaSummary {
 
 export interface SemesterGpa extends GpaSummary {
   semesterId: string;
+  academicYear: number;
+  semesterTerm: SemesterTerm;
 }
 
 export interface GpaResult extends GpaSummary {
@@ -333,18 +335,32 @@ export class StudentCourseRecordService {
   ): Promise<SemesterGpa[]> {
     const records = await this.prisma.studentCourseRecord.findMany({
       where: { studentProfileId, isActive: true },
+      include: { semester: { include: { academicYear: true } } },
     });
 
-    const bySemesterId = new Map<string, { grade: Grade; credits: number }[]>();
+    const bySemesterId = new Map<
+      string,
+      {
+        academicYear: number;
+        semesterTerm: SemesterTerm;
+        records: { grade: Grade; credits: number }[];
+      }
+    >();
     for (const record of records) {
-      const group = bySemesterId.get(record.semesterId) ?? [];
-      group.push(record);
+      const group = bySemesterId.get(record.semesterId) ?? {
+        academicYear: record.semester.academicYear.year,
+        semesterTerm: record.semester.term,
+        records: [],
+      };
+      group.records.push(record);
       bySemesterId.set(record.semesterId, group);
     }
 
     return Array.from(bySemesterId.entries()).map(([semesterId, group]) => ({
       semesterId,
-      ...this.summarizeGpa(group),
+      academicYear: group.academicYear,
+      semesterTerm: group.semesterTerm,
+      ...this.summarizeGpa(group.records),
     }));
   }
 

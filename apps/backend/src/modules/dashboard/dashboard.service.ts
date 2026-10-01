@@ -18,6 +18,7 @@ import {
   SEMESTER_TERM_RANK,
   riskLevel,
 } from '../academic-record/student-course-record/grade-point.constant';
+import { buildGpaTrend } from '../academic-record/student-course-record/gpa-trend';
 import { CloAchievementService } from '../curriculum-content/clo-achievement/clo-achievement.service';
 import { CourseAssessmentService } from '../curriculum-content/course-assessment/course-assessment.service';
 import { CourseService } from '../curriculum-content/course/course.service';
@@ -213,6 +214,7 @@ export class DashboardService {
     return {
       studentProfileId: creditCheck.studentProfileId,
       gpa: gpaResult.gpa,
+      gpaTrend: buildGpaTrend(gpaResult.bySemester),
       creditsEarned: creditCheck.creditsPassed,
       creditsRemaining: creditCheck.creditsRemaining,
       totalCreditsRequired: creditCheck.totalCreditsRequired,

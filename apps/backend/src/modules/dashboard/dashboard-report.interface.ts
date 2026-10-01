@@ -12,6 +12,7 @@ import {
   InstructorCourseTimelineYear,
 } from '../academic-record/student-course-record/student-course-record.service';
 import { RiskLevel } from '../academic-record/student-course-record/grade-point.constant';
+import { GpaTrendPoint } from '../academic-record/student-course-record/gpa-trend';
 
 export interface RecentCourse {
   courseId: string;
@@ -26,6 +27,7 @@ export interface RecentCourse {
 export interface StudentDashboardReport {
   studentProfileId: string;
   gpa: number | null;
+  gpaTrend: GpaTrendPoint[];
   creditsEarned: number;
   creditsRemaining: number;
   totalCreditsRequired: number;
