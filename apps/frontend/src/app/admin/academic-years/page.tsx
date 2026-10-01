@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarX2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { fetchAcademicYears, fetchSemesters } from '@/lib/api/academic-record';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -145,7 +145,7 @@ function AcademicYearsAdminContent() {
             <div className="space-y-4">
               {yearsQuery.data.length === 0 ? (
                 <EmptyState
-                  icon={CalendarX2}
+                  illustration="no-data"
                   description="ยังไม่มีปีการศึกษาในระบบ"
                   action={
                     <Button

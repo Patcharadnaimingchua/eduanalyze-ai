@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AlertTriangle, BookOpen, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, BookOpen } from 'lucide-react';
 import type { MissingRequiredCourse } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ export function CreditCheckerPanel({ courses }: Readonly<{ courses: MissingRequi
     return (
       <Card>
         <CardContent className="pt-6">
-          <EmptyState icon={CheckCircle2} description="คุณผ่านรายวิชาบังคับครบตามเกณฑ์แล้ว" />
+          <EmptyState illustration="all-done" size="sm" description="คุณผ่านรายวิชาบังคับครบตามเกณฑ์แล้ว" />
         </CardContent>
       </Card>
     );

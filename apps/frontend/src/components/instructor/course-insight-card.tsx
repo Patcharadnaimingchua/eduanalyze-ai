@@ -1,7 +1,8 @@
 'use client';
 
-import { ClipboardList, Lightbulb, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
+import { ClipboardList, Lightbulb, TrendingDown, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import {
   NO_COURSES_SUMMARY,
@@ -64,10 +65,7 @@ export function CourseInsightCard({ courses }: { courses: InstructorCourseSummar
       </CardHeader>
       <CardContent className="space-y-4">
         {hasNoData ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <Sparkles size={28} className="text-slate-300" />
-            <p className="text-muted-foreground">{insight.summary}</p>
-          </div>
+          <EmptyState illustration="no-outcomes" description={insight.summary} />
         ) : (
           <>
             <p className="text-sm text-muted-foreground">{insight.summary}</p>

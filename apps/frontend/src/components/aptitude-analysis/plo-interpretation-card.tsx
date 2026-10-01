@@ -1,5 +1,6 @@
-import { ClipboardList, Lightbulb, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
+import { ClipboardList, Lightbulb, TrendingDown, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { NO_DATA_SUMMARY, type PloInterpretation } from '@/lib/interpret-plo-radar';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,10 +61,7 @@ export function PloInterpretationCard({ report }: { report: PloInterpretation })
       </CardHeader>
       <CardContent className="space-y-4">
         {hasNoData ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <Sparkles size={28} className="text-slate-300" />
-            <p className="text-muted-foreground">{report.summary}</p>
-          </div>
+          <EmptyState illustration="no-outcomes" description={report.summary} />
         ) : (
           <>
             <p className="text-sm text-muted-foreground">{report.summary}</p>

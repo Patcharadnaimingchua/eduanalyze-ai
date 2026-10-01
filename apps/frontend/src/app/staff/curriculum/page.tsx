@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { FolderOpen, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { fetchCourses } from '@/lib/api/academic-record';
@@ -171,7 +171,7 @@ function StaffCurriculumContent() {
 
             {categoriesQuery.data && categoriesInCurriculum.length === 0 ? (
               <EmptyState
-                icon={FolderOpen}
+                illustration="no-data"
                 description="ยังไม่มีหมวดวิชาในหลักสูตรนี้"
                 action={
                   !showCategoryForm && (

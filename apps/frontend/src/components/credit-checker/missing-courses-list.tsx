@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronDown, RotateCcw } from 'lucide-react';
+import { AlertTriangle, BookOpen, ChevronDown, RotateCcw } from 'lucide-react';
 import type { CourseSummary } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,7 @@ export function MissingCoursesList({
     return (
       <Card>
         <CardContent className="pt-6">
-          <EmptyState icon={CheckCircle2} description="คุณผ่านรายวิชาบังคับครบตามเกณฑ์แล้ว" />
+          <EmptyState illustration="all-done" description="คุณผ่านรายวิชาบังคับครบตามเกณฑ์แล้ว" />
         </CardContent>
       </Card>
     );

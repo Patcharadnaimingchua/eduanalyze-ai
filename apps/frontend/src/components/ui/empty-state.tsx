@@ -1,20 +1,40 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { EMPTY_STATE_ILLUSTRATIONS, type EmptyStateIllustration } from './empty-state-illustrations';
+
+const ILLUSTRATION_SIZE = { sm: 72, md: 96 } as const;
+
+type EmptyStateVisual =
+  | { icon: LucideIcon; illustration?: never; size?: never }
+  | { illustration: EmptyStateIllustration; icon?: never; size?: keyof typeof ILLUSTRATION_SIZE };
 
 // Centered block variant — matches the pattern previously duplicated in
 // plo-radar-chart.tsx / course-insight-card.tsx (icon size 28, muted slate).
+// Pass `icon` for the compact Lucide look or `illustration` for the line-art
+// drawings; exactly one of the two.
 export function EmptyState({
-  icon: Icon,
   description,
   action,
   className,
+  ...visual
 }: {
-  icon: LucideIcon;
   description: ReactNode;
   action?: ReactNode;
   className?: string;
-}) {
+} & EmptyStateVisual) {
+  if (visual.illustration) {
+    const Illustration = EMPTY_STATE_ILLUSTRATIONS[visual.illustration];
+    return (
+      <div className={cn('flex flex-col items-center gap-3 py-8 text-center', className)}>
+        <Illustration size={ILLUSTRATION_SIZE[visual.size ?? 'md']} />
+        <p className="text-muted-foreground">{description}</p>
+        {action}
+      </div>
+    );
+  }
+
+  const Icon = visual.icon;
   return (
     <div className={cn('flex flex-col items-center gap-2 py-8 text-center', className)}>
       <Icon size={28} className="text-slate-300" aria-hidden="true" />

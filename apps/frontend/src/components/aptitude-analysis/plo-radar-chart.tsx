@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Radar } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { RadarPoint } from '@eduanalyze-ai/shared-types';
 import { formatFiveScale } from '@/lib/five-scale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,9 +62,8 @@ export function PloRadarChart({
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-          <Radar size={28} className="text-slate-300" />
-          <p className="text-muted-foreground">ยังไม่มีข้อมูล PLO สำหรับหลักสูตรนี้</p>
+        <CardContent>
+          <EmptyState illustration="no-outcomes" description="ยังไม่มีข้อมูล PLO สำหรับหลักสูตรนี้" />
         </CardContent>
       </Card>
     );

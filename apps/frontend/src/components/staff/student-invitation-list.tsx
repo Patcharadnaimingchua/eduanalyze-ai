@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
-import { MailX, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { StudentInvitationListEntry } from '@eduanalyze-ai/shared-types';
 import { resendStudentInvitation } from '@/lib/api/staff';
 import { useToast } from '@/lib/toast-context';
@@ -49,7 +49,7 @@ export function StudentInvitationList({
   if (invitations.length === 0) {
     return (
       <EmptyState
-        icon={MailX}
+        illustration="no-data"
         description="ยังไม่มีคำเชิญที่ค้างอยู่"
         action={
           onInviteClick && (

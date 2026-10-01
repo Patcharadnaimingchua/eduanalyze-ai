@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Users } from 'lucide-react';
 import { fetchStaffYearLevels } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
@@ -62,7 +61,7 @@ function StaffYearLevelsContent() {
         <Reveal index={1}>
           <Card>
             <CardContent className="pt-6">
-              <EmptyState icon={Users} description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล" />
+              <EmptyState illustration="no-students" description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล" />
             </CardContent>
           </Card>
         </Reveal>

@@ -1,4 +1,3 @@
-import { Layers } from 'lucide-react';
 import type { CategoryProgress } from '@eduanalyze-ai/shared-types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +9,7 @@ export function CategoryProgressList({ categories }: Readonly<{ categories: Cate
     <Card>
       <CardContent className="pt-6">
         {categories.length === 0 ? (
-          <EmptyState icon={Layers} description="ยังไม่มีข้อมูลหมวดวิชา" />
+          <EmptyState illustration="no-data" description="ยังไม่มีข้อมูลหมวดวิชา" />
         ) : (
           <ul className="grid grid-cols-1 gap-x-10 gap-y-5 lg:grid-cols-2">
             {categories.map((category) => (

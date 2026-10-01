@@ -1,4 +1,4 @@
-import { CheckCircle2, Inbox, Info } from 'lucide-react';
+import { Inbox, Info } from 'lucide-react';
 import type { IncompleteElectiveCategory } from '@eduanalyze-ai/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState, InlineNotice } from '@/components/ui/empty-state';
@@ -17,7 +17,7 @@ export function ElectiveCategoryList({
       </CardHeader>
       <CardContent className="space-y-6">
         {categories.length === 0 && (
-          <EmptyState icon={CheckCircle2} description="คุณผ่านหมวดวิชาเลือกครบตามเกณฑ์แล้ว" />
+          <EmptyState illustration="all-done" size="sm" description="คุณผ่านหมวดวิชาเลือกครบตามเกณฑ์แล้ว" />
         )}
         {categories.map((category) => {
           const hasCatalog = (courseCountByCategory.get(category.categoryId) ?? 0) > 0;

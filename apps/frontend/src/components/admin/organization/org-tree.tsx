@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createDepartment,
@@ -175,7 +176,7 @@ export function OrgTree() {
 
       {faculties.length === 0 && <p className="text-sm text-muted-foreground">ยังไม่มีคณะในระบบ</p>}
       {faculties.length > 0 && visibleFaculties.length === 0 && (
-        <p className="text-sm text-muted-foreground">ไม่พบรายการที่ตรงกับคำค้นหา</p>
+        <EmptyState illustration="no-results" size="sm" description="ไม่พบรายการที่ตรงกับคำค้นหา" />
       )}
 
       {visibleFaculties.map((faculty) => {
