@@ -121,6 +121,7 @@ const config: Config = {
         // Outline draws first, then the fill and vertex dots settle in.
         'radar-shape': 'radar-draw 900ms ease-out both, radar-fill 500ms ease-out 600ms both',
         'radar-dot': 'radar-dot 300ms ease-out 800ms both',
+        'spark-line': 'radar-draw 900ms ease-out both',
         'otp-digit-pop': 'otp-digit-pop 220ms ease-out',
         confetti: 'confetti 1400ms cubic-bezier(0.2, 0.7, 0.4, 1) both',
       },

@@ -16,6 +16,7 @@ import { Reveal } from '@/components/layout/reveal';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
+import { GpaSparkline } from '@/components/dashboard/gpa-sparkline';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PendingAssessmentPanel } from '@/components/dashboard/pending-assessment-panel';
 import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-panel';
@@ -135,6 +136,7 @@ function DashboardCards({
             value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
             suffix="/ 4.0"
             href="/academic-record"
+            footer={dashboard.gpaTrend.length >= 2 && <GpaSparkline points={dashboard.gpaTrend} />}
           />
         </Reveal>
         <Reveal index={2}>
