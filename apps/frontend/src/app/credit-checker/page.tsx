@@ -10,6 +10,7 @@ import { fetchOwnStudentProfile } from '@/lib/api/dashboard';
 import { fetchCreditCheck } from '@/lib/api/credit-checker';
 import { useAuth } from '@/lib/auth-context';
 import { useCelebrateOnce } from '@/lib/use-celebrate-once';
+import { useCountUp } from '@/lib/use-count-up';
 import { cn } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -23,6 +24,7 @@ import { MissingCoursesList } from '@/components/credit-checker/missing-courses-
 import { FailedCoursesList } from '@/components/credit-checker/failed-courses-list';
 import { Button } from '@/components/ui/button';
 import { ConfettiBurst } from '@/components/ui/confetti-burst';
+import { ProgressRing } from '@/components/ui/progress-ring';
 import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 // React Flow is the heaviest dependency on this page and the chart starts
@@ -79,7 +81,7 @@ function CreditCheckerContent() {
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-4 w-96 max-w-full" />
         </div>
-        <StatCardsSkeleton count={3} />
+        <StatCardsSkeleton count={4} className="md:grid-cols-2 lg:grid-cols-4" />
         <ListSkeleton items={4} />
       </DashboardShell>
     );
@@ -137,6 +139,9 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
     `celebrate:credit-ready:${report.studentProfileId}`,
     report.graduationReadiness.isReady,
   );
+  const readinessPercent =
+    report.totalCreditsRequired > 0 ? (report.creditsPassed / report.totalCreditsRequired) * 100 : 0;
+  const animatedReadiness = useCountUp(readinessPercent, { duration: 900, decimals: 0 });
 
   return (
     <>
@@ -145,8 +150,17 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         description="ตรวจสอบความคืบหน้าการเรียนเทียบกับโครงสร้างหลักสูตรของคุณแบบละเอียด"
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Reveal index={1}>
+          <StatCard
+            icon={GraduationCap}
+            label="ความพร้อมสำเร็จการศึกษา"
+            visual={
+              <ProgressRing value={animatedReadiness} label="ความพร้อมสำเร็จการศึกษา (ตามหน่วยกิต)" />
+            }
+          />
+        </Reveal>
+        <Reveal index={2}>
           <StatCard
             icon={FileCheck2}
             label="หน่วยกิตสะสม"
@@ -154,10 +168,10 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
             suffix={`/ ${report.totalCreditsRequired}`}
           />
         </Reveal>
-        <Reveal index={2}>
+        <Reveal index={3}>
           <StatCard icon={Award} label="หน่วยกิตที่เหลือ" value={report.creditsRemaining} />
         </Reveal>
-        <Reveal index={3} className="relative">
+        <Reveal index={4} className="relative">
           <StatCard
             icon={GraduationCap}
             label="วิชาบังคับที่ยังขาด"
@@ -173,7 +187,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         </Reveal>
       </div>
 
-      <Reveal index={4}>
+      <Reveal index={5}>
         <PageSection
           title="ต้องจัดการ"
           actions={
@@ -199,7 +213,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         </PageSection>
       </Reveal>
 
-      <Reveal index={5}>
+      <Reveal index={6}>
         <PageSection
           title="ความคืบหน้าตามหมวด"
           description={`ครบแล้ว ${completeCategories} จาก ${report.categoryProgress.length} หมวด`}
@@ -208,7 +222,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         </PageSection>
       </Reveal>
 
-      <Reveal index={6}>
+      <Reveal index={7}>
         <PageSection
           title="แผนผังวิชาต่อเนื่อง"
           description={`ลำดับวิชาก่อน-หลังของทุกวิชาในหลักสูตร (${curriculumCourseCount} วิชา)`}

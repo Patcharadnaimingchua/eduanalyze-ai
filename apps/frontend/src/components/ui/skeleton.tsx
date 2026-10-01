@@ -41,9 +41,9 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
 
 // Stat card row — icon + label + number, same shape reused across
 // dashboard/staff-dashboard/curriculum-dashboard's summary cards.
-export function StatCardsSkeleton({ count = 3 }: { count?: number }) {
+export function StatCardsSkeleton({ count = 3, className }: { count?: number; className?: string }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-3', className)}>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>
           <CardContent className="space-y-3 pt-6">

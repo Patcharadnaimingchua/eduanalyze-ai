@@ -22,7 +22,7 @@ import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
 import { ConfettiBurst } from '@/components/ui/confetti-burst';
-import { Progress } from '@/components/ui/progress';
+import { ProgressRing } from '@/components/ui/progress-ring';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
@@ -170,13 +170,11 @@ function DashboardCards({
           <StatCard
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
-            value={`${Math.round(animatedProgress)}%`}
             href="/learning-path"
-            footer={
-              <Progress
+            visual={
+              <ProgressRing
                 value={animatedProgress}
                 label="ความพร้อมสำหรับการสำเร็จการศึกษา"
-                barClassName="transition-none"
               />
             }
           />
