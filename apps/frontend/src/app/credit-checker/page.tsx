@@ -17,6 +17,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { CategoryProgressList } from '@/components/credit-checker/category-progress-list';
@@ -213,16 +214,16 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
         </PageSection>
       </Reveal>
 
-      <Reveal index={6}>
+      <RevealOnScroll>
         <PageSection
           title="ความคืบหน้าตามหมวด"
           description={`ครบแล้ว ${completeCategories} จาก ${report.categoryProgress.length} หมวด`}
         >
           <CategoryProgressList categories={report.categoryProgress} />
         </PageSection>
-      </Reveal>
+      </RevealOnScroll>
 
-      <Reveal index={7}>
+      <RevealOnScroll>
         <PageSection
           title="แผนผังวิชาต่อเนื่อง"
           description={`ลำดับวิชาก่อน-หลังของทุกวิชาในหลักสูตร (${curriculumCourseCount} วิชา)`}
@@ -247,7 +248,7 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
             </div>
           )}
         </PageSection>
-      </Reveal>
+      </RevealOnScroll>
     </>
   );
 }

@@ -11,6 +11,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { BelowThresholdLists } from '@/components/admin/below-threshold-lists';
 import { CurriculumComparisonChart } from '@/components/admin/curriculum-comparison-chart';
 import { CurriculumTierSummary } from '@/components/admin/curriculum-tier-summary';
@@ -117,7 +118,7 @@ function CurriculumDashboardContent() {
             />
           </Reveal>
 
-          <Reveal index={4}>
+          <RevealOnScroll>
             {comparable.length >= MIN_CURRICULA_TO_COMPARE ? (
               <CurriculumComparisonChart curricula={comparable} threshold={null} />
             ) : (
@@ -131,11 +132,11 @@ function CurriculumDashboardContent() {
                 </CardContent>
               </Card>
             )}
-          </Reveal>
+          </RevealOnScroll>
 
-          <Reveal index={5}>
+          <RevealOnScroll>
             <SystemCurriculumList curricula={data.curricula} />
-          </Reveal>
+          </RevealOnScroll>
         </>
       )}
     </DashboardShell>

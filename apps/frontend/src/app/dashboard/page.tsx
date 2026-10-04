@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
@@ -207,7 +208,7 @@ function DashboardCards({
         </PageSection>
       </Reveal>
 
-      <Reveal index={5}>
+      <RevealOnScroll>
         <PageSection
           title="ผลลัพธ์การเรียนรู้ (PLO)"
           description="ความสำเร็จตามผลลัพธ์การเรียนรู้ระดับหลักสูตร จากผลการเรียนของคุณ"
@@ -224,7 +225,7 @@ function DashboardCards({
         >
           <PloRadarCard radar={dashboard.radar} />
         </PageSection>
-      </Reveal>
+      </RevealOnScroll>
     </>
   );
 }

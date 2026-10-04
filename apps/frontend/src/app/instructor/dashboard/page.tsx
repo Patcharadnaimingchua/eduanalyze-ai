@@ -19,6 +19,7 @@ import { CourseInsightCard } from '@/components/instructor/course-insight-card';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -123,19 +124,19 @@ function InstructorDashboardContent() {
             <Reveal index={5}>
               <CourseInsightCard courses={courses} />
             </Reveal>
-            <Reveal index={6}>
+            <RevealOnScroll>
               <AtRiskStudentsCard courses={courses} />
-            </Reveal>
-            <Reveal index={7}>
+            </RevealOnScroll>
+            <RevealOnScroll>
               <CloAttentionCard courses={courses} />
-            </Reveal>
-            <Reveal index={8}>
+            </RevealOnScroll>
+            <RevealOnScroll>
               <PloCoverageCard courses={courses} />
-            </Reveal>
+            </RevealOnScroll>
             {courses.length >= 2 && (
-              <Reveal index={9}>
+              <RevealOnScroll>
                 <CourseComparisonChart courses={courses} />
-              </Reveal>
+              </RevealOnScroll>
             )}
           </>
         )}
