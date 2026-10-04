@@ -116,6 +116,23 @@
   }
 }
 
+/* Starting state of RevealOnScroll. It lines up with the first frame of the
+   animate-in entrance (opacity 0, 0.5rem below), so switching to the animated
+   classes is seamless. Reduced motion and print never hide anything: the
+   entrance is skipped, and below-the-fold blocks would otherwise be missing
+   from a printout. */
+.reveal-pending {
+  opacity: 0;
+  transform: translateY(0.5rem);
+}
+
+@media (prefers-reduced-motion: reduce), print {
+  .reveal-pending {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Neither Tailwind core nor tailwindcss-animate ships a shake preset —
    used for wrong-2FA-code feedback (profile setup's OtpInput, login's
    verify field). */
