@@ -6,6 +6,7 @@ import { Award, FileCheck2, Star } from 'lucide-react';
 import type { StudentDashboardResponse } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile, fetchStudentDashboard } from '@/lib/api/dashboard';
 import { useAuth } from '@/lib/auth-context';
+import { buildDashboardSummary } from '@/lib/dashboard-summary';
 import { computeGpaChange } from '@/lib/gpa-change';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -129,6 +130,7 @@ function DashboardCards({
     decimals: 0,
   });
   const gpaChange = computeGpaChange(dashboard.gpaTrend);
+  const summary = buildDashboardSummary(dashboard);
 
   return (
     <>
@@ -139,7 +141,7 @@ function DashboardCards({
       <Reveal index={0}>
         <PageHeader
           title={`สวัสดี, ${fullName}`}
-          description="แผนการเรียนวิชาการและตัวชี้วัดความพร้อมของคุณ"
+          description={summary ?? 'แผนการเรียนวิชาการและตัวชี้วัดความพร้อมของคุณ'}
         />
       </Reveal>
 
