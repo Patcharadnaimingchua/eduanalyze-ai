@@ -16,6 +16,7 @@ import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
+import { TiltCard } from '@/components/ui/tilt-card';
 import { GraduationCelebration } from '@/components/dashboard/graduation-celebration';
 import { GpaSparkline } from '@/components/dashboard/gpa-sparkline';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
@@ -141,14 +142,16 @@ function DashboardCards({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Reveal index={1}>
-          <StatCard
-            icon={Star}
-            label="เกรดเฉลี่ยสะสม"
-            value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
-            suffix="/ 4.0"
-            href="/academic-record"
-            footer={dashboard.gpaTrend.length >= 2 && <GpaSparkline points={dashboard.gpaTrend} />}
-          />
+          <TiltCard>
+            <StatCard
+              icon={Star}
+              label="เกรดเฉลี่ยสะสม"
+              value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
+              suffix="/ 4.0"
+              href="/academic-record"
+              footer={dashboard.gpaTrend.length >= 2 && <GpaSparkline points={dashboard.gpaTrend} />}
+            />
+          </TiltCard>
         </Reveal>
         <Reveal index={2}>
           <StatCard
@@ -180,17 +183,19 @@ function DashboardCards({
           />
         </Reveal>
         <Reveal index={3}>
-          <StatCard
-            icon={Award}
-            label="ความพร้อมสำหรับการสำเร็จการศึกษา"
-            href="/learning-path"
-            visual={
-              <ProgressRing
-                value={animatedProgress}
-                label="ความพร้อมสำหรับการสำเร็จการศึกษา"
-              />
-            }
-          />
+          <TiltCard>
+            <StatCard
+              icon={Award}
+              label="ความพร้อมสำหรับการสำเร็จการศึกษา"
+              href="/learning-path"
+              visual={
+                <ProgressRing
+                  value={animatedProgress}
+                  label="ความพร้อมสำหรับการสำเร็จการศึกษา"
+                />
+              }
+            />
+          </TiltCard>
         </Reveal>
       </div>
 
