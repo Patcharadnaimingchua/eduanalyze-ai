@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { BookOpen, Users } from 'lucide-react';
 import type { StudentProfileSummary } from '@eduanalyze-ai/shared-types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/dashboard/stat-card';
 
 // Minimal, chart-free landing summary, counted client-side off the
 // scoped student list the page already holds. GET /dashboard/staff does
@@ -13,29 +14,27 @@ export function StaffDashboardSummary({ students }: { students: StudentProfileSu
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>นักศึกษาในความดูแล</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-semibold text-primary">{students.length}</p>
+      <StatCard
+        icon={Users}
+        label="นักศึกษาในความดูแล"
+        value={students.length}
+        footer={
           <Link href="/staff/students" className="text-sm font-medium text-brand hover:underline">
             ดูทำเนียบนักศึกษา
           </Link>
-        </CardContent>
-      </Card>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>หลักสูตรในความดูแล</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-semibold text-primary">{curriculumCount}</p>
+      <StatCard
+        icon={BookOpen}
+        label="หลักสูตรในความดูแล"
+        value={curriculumCount}
+        footer={
           <Link href="/staff/curriculum" className="text-sm font-medium text-brand hover:underline">
             จัดการข้อมูลหลักสูตร
           </Link>
-        </CardContent>
-      </Card>
+        }
+      />
     </div>
   );
 }

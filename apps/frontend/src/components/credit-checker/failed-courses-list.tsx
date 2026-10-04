@@ -1,5 +1,7 @@
 import type { CourseSummary } from '@eduanalyze-ai/shared-types';
+import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS } from '@/lib/grade-label';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function FailedCoursesList({ courses }: Readonly<{ courses: CourseSummary[] }>) {
@@ -22,9 +24,9 @@ export function FailedCoursesList({ courses }: Readonly<{ courses: CourseSummary
               </p>
               <p className="text-xs text-muted-foreground">{course.credits} หน่วยกิต</p>
             </div>
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600">
+            <Badge tone={course.grade ? gradeBadgeTone(course.grade) : 'warning'}>
               {course.grade ? GRADE_LABELS[course.grade] : '—'}
-            </span>
+            </Badge>
           </div>
         ))}
       </CardContent>

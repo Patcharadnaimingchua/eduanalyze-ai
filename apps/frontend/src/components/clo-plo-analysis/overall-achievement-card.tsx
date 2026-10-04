@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { formatFiveScale } from '@/lib/five-scale';
 import { SCORE_BANDS, type ScoreBandKey } from '@/lib/plo-score-bands';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const RADIUS = 52;
@@ -25,12 +26,12 @@ export function OverallAchievementCard({
 }>) {
   const clamped = percent === null ? 0 : Math.max(0, Math.min(100, percent));
   const offset = CIRCUMFERENCE * (1 - clamped / 100);
-  const badgeToneClassName =
+  const badgeTone =
     percent === null
-      ? 'bg-slate-100 text-slate-600'
+      ? 'neutral'
       : isAchieved
-        ? 'bg-emerald-50 text-emerald-600'
-        : 'bg-slate-100 text-slate-600';
+        ? 'success'
+        : 'neutral';
   const badgeLabel = percent === null ? 'ไม่มีข้อมูล' : isAchieved ? 'ผ่านเกณฑ์' : 'ยังไม่ผ่านเกณฑ์';
 
   return (
@@ -65,9 +66,9 @@ export function OverallAchievementCard({
               </div>
             </div>
           </div>
-          <span className={cn('rounded-full px-3 py-1 text-sm font-medium', badgeToneClassName)}>
+          <Badge tone={badgeTone} className="px-3 py-1 text-sm">
             {badgeLabel}
-          </span>
+          </Badge>
         </div>
 
         <div className="space-y-3 sm:pl-6">

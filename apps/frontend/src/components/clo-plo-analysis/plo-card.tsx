@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
@@ -28,24 +29,15 @@ export function PloCard({
 
   return (
     <Card>
-      <CardContent className="space-y-4 pt-5">
+      <CardContent className="space-y-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-primary">{plo.code}</p>
             <p className="mt-1 text-base font-medium text-primary">{plo.name}</p>
           </div>
-          <span
-            className={cn(
-              'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-              !hasValue
-                ? 'bg-slate-100 text-slate-600'
-                : isAchieved
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-slate-100 text-slate-600',
-            )}
-          >
+          <Badge tone={!hasValue ? 'neutral' : isAchieved ? 'success' : 'neutral'}>
             {!hasValue ? 'ไม่มีข้อมูล' : isAchieved ? 'ผ่านเกณฑ์' : 'ยังไม่ผ่านเกณฑ์'}
-          </span>
+          </Badge>
         </div>
 
         {description && <p className="min-h-10 text-sm leading-5 text-muted-foreground">{description}</p>}
@@ -100,18 +92,9 @@ export function PloCard({
                   </p>
                   <p className="text-sm text-primary">{clo.description}</p>
                 </div>
-                <span
-                  className={cn(
-                    'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-                    clo.score === null
-                      ? 'bg-slate-100 text-slate-500'
-                      : clo.isAchieved
-                        ? 'bg-emerald-50 text-emerald-600'
-                        : 'bg-amber-50 text-amber-600',
-                  )}
-                >
+                <Badge tone={clo.score === null ? 'neutral' : clo.isAchieved ? 'success' : 'warning'}>
                   {formatFiveScale(clo.score, 'ไม่มีข้อมูล')}
-                </span>
+                </Badge>
               </div>
             ))}
           </div>
