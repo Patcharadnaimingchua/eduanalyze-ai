@@ -82,8 +82,8 @@ export function OtpInput({
           className={cn(
             'h-12 w-10 rounded-md border text-center text-lg font-semibold ring-offset-background transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50',
             digit
-              ? 'border-slate-300 bg-gradient-to-b from-white to-brand-light/50 text-primary'
-              : 'border-input bg-gradient-to-b from-white to-slate-50',
+              ? 'border-slate-300 bg-gradient-to-b from-background to-brand-light/50 text-primary'
+              : 'border-input bg-gradient-to-b from-background to-slate-50',
             'focus-visible:outline-none focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_hsl(var(--brand)/0.18),0_0_14px_3px_hsl(var(--brand)/0.35)]',
             hasError &&
               'border-destructive focus-visible:border-destructive focus-visible:shadow-[0_0_0_3px_hsl(var(--destructive)/0.18),0_0_14px_3px_hsl(var(--destructive)/0.35)]',

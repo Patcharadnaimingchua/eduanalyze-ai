@@ -208,10 +208,10 @@ function ProfileContent() {
       </Reveal>
 
       <Reveal index={1}>
-        <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-white to-white shadow-sm">
+        <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-card to-card shadow-sm">
           <CardContent className="flex flex-col gap-5 p-5 sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-white sm:h-20 sm:w-20 sm:text-2xl">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-card sm:h-20 sm:w-20 sm:text-2xl">
                 {initial}
               </div>
               <div className="min-w-0">

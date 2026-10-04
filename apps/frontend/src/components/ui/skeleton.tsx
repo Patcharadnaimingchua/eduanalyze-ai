@@ -10,7 +10,7 @@ export function Skeleton({ className }: { className?: string }) {
       className={cn(
         'relative overflow-hidden rounded-md bg-slate-100',
         'before:absolute before:inset-0 before:-translate-x-full before:animate-shimmer',
-        'before:bg-gradient-to-r before:from-transparent before:via-white/70 before:to-transparent',
+        'before:bg-gradient-to-r before:from-transparent before:via-background/70 before:to-transparent',
         className,
       )}
     />

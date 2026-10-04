@@ -57,9 +57,9 @@ export default function Home() {
             </Reveal>
 
             <Reveal index={2} className="w-full">
-              <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-white to-white shadow-sm">
+              <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-card to-card shadow-sm">
                 <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-7">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-white">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-card">
                     {user.fullName.charAt(0).toUpperCase()}
                   </div>
                   <div>
