@@ -6,7 +6,6 @@ import { Award, FileCheck2, Star } from 'lucide-react';
 import type { StudentDashboardResponse } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile, fetchStudentDashboard } from '@/lib/api/dashboard';
 import { useAuth } from '@/lib/auth-context';
-import { useCelebrateOnce } from '@/lib/use-celebrate-once';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -17,13 +16,13 @@ import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { PageLoadError, StudentOnlyPage } from '@/components/layout/page-states';
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton';
 import { StatCard } from '@/components/dashboard/stat-card';
+import { GraduationCelebration } from '@/components/dashboard/graduation-celebration';
 import { GpaSparkline } from '@/components/dashboard/gpa-sparkline';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PendingAssessmentPanel } from '@/components/dashboard/pending-assessment-panel';
 import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-panel';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
-import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -126,13 +125,13 @@ function DashboardCards({
     duration: 900,
     decimals: 0,
   });
-  const celebrateReadiness = useCelebrateOnce(
-    `celebrate:dashboard-readiness:${dashboard.studentProfileId}`,
-    dashboard.curriculumProgressPercent >= 100,
-  );
 
   return (
     <>
+      <GraduationCelebration
+        studentProfileId={dashboard.studentProfileId}
+        isReady={dashboard.graduationReadiness.isReady}
+      />
       <Reveal index={0}>
         <PageHeader
           title={`สวัสดี, ${fullName}`}
@@ -180,7 +179,7 @@ function DashboardCards({
             }
           />
         </Reveal>
-        <Reveal index={3} className="relative">
+        <Reveal index={3}>
           <StatCard
             icon={Award}
             label="ความพร้อมสำหรับการสำเร็จการศึกษา"
@@ -192,8 +191,6 @@ function DashboardCards({
               />
             }
           />
-          {/* Lands as the count-up (900ms) reaches 100%. */}
-          {celebrateReadiness && <ConfettiBurst delayMs={1100} />}
         </Reveal>
       </div>
 

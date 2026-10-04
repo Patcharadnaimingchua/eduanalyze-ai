@@ -101,7 +101,7 @@ const config: Config = {
           '50%': { transform: 'scale(1.08)' },
           '100%': { transform: 'scale(1)' },
         },
-        // --x/--y/--r are set per piece by ConfettiBurst.
+        // --x/--y/--r (and --fall for the viewport variant) are set per piece by ConfettiBurst.
         confetti: {
           '0%': { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: '1' },
           '35%': {
@@ -109,7 +109,8 @@ const config: Config = {
             opacity: '1',
           },
           '100%': {
-            transform: 'translate(calc(-50% + var(--x) * 1.3), calc(-50% + var(--y) + 160px)) rotate(var(--r))',
+            transform:
+              'translate(calc(-50% + var(--x) * 1.3), calc(-50% + var(--y) + var(--fall, 160px))) rotate(var(--r))',
             opacity: '0',
           },
         },
