@@ -25,7 +25,6 @@ import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { Button } from '@/components/ui/button';
 import { ConfettiBurst } from '@/components/ui/confetti-burst';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { LoadingGate } from '@/components/ui/loading-gate';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
@@ -91,10 +90,13 @@ function DashboardContent() {
   const dashboard = dashboardQuery.data;
 
   return (
-    <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-      <LoadingGate ready={!isLoading} skeleton={<DashboardSkeleton />}>
-        {dashboard && <DashboardCards fullName={user.fullName} dashboard={dashboard} />}
-      </LoadingGate>
+    <DashboardShell
+      studentCode={profileQuery.data?.studentCode ?? ''}
+      fullName={user.fullName}
+      skeleton={<DashboardSkeleton />}
+      ready={!isLoading}
+    >
+      {dashboard && <DashboardCards fullName={user.fullName} dashboard={dashboard} />}
     </DashboardShell>
   );
 }

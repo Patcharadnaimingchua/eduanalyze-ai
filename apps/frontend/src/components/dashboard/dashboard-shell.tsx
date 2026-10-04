@@ -31,6 +31,7 @@ import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { LoadingGate } from '@/components/ui/loading-gate';
 
 interface NavItem {
   label: string;
@@ -90,6 +91,8 @@ export function DashboardShell({
   identityLabel,
   fullName,
   role = 'STUDENT',
+  skeleton,
+  ready = true,
   children,
 }: {
   studentCode?: string;
@@ -98,6 +101,11 @@ export function DashboardShell({
   identityLabel?: string;
   fullName: string;
   role?: Role;
+  // Opt-in loading cross-fade: pass the page's skeleton on every render of the
+  // page (loading and loaded) and `ready={false}` while loading, so the
+  // skeleton fades out as the content appears. Omit it and nothing changes.
+  skeleton?: React.ReactNode;
+  ready?: boolean;
   children: React.ReactNode;
 }) {
   const { logout, user } = useAuth();
@@ -227,7 +235,15 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-8">
+          {skeleton ? (
+            <LoadingGate ready={ready} skeleton={skeleton}>
+              {children}
+            </LoadingGate>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

@@ -131,10 +131,17 @@ function LearningPathContent() {
     creditLimitRequestQuery.isLoading ||
     savedPlanQuery.isLoading;
 
+  const skeleton = <LearningPathSkeleton />;
+
   if (isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <LearningPathSkeleton />
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -176,7 +183,11 @@ function LearningPathContent() {
       : MIN_CREDITS_WARNING;
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <PageHeader
         title="แผนการเรียน"
         description="แนะนำวิชาที่ควรเรียนต่อ ตามผลการเรียนและวิชาที่ต้องผ่านก่อน (Prerequisite) ของคุณ"

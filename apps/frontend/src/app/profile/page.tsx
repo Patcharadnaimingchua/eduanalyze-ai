@@ -152,10 +152,18 @@ function ProfileContent() {
       programsQuery.isLoading ||
       curriculaQuery.isLoading);
 
+  const skeleton = <ProfileSkeleton />;
+
   if (isLoading) {
     return (
-      <DashboardShell role={primaryRole} identityLabel={user.email} fullName={user.fullName}>
-        <ProfileSkeleton />
+      <DashboardShell
+        role={primaryRole}
+        identityLabel={user.email}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -189,7 +197,12 @@ function ProfileContent() {
   const identityLabel = isStudent ? profileQuery.data?.studentCode : user.email;
 
   return (
-    <DashboardShell role={primaryRole} identityLabel={identityLabel} fullName={user.fullName}>
+    <DashboardShell
+      role={primaryRole}
+      identityLabel={identityLabel}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <Reveal index={0}>
         <PageHeader title="ข้อมูลส่วนตัว" />
       </Reveal>

@@ -75,15 +75,26 @@ function CreditCheckerContent() {
     return <StudentOnlyPage user={user} />;
   }
 
+  const skeleton = (
+    <>
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-96 max-w-full" />
+      </div>
+      <StatCardsSkeleton count={4} className="md:grid-cols-2 lg:grid-cols-4" />
+      <ListSkeleton items={4} />
+    </>
+  );
+
   if (profileQuery.isLoading || reportQuery.isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-        </div>
-        <StatCardsSkeleton count={4} className="md:grid-cols-2 lg:grid-cols-4" />
-        <ListSkeleton items={4} />
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -102,7 +113,11 @@ function CreditCheckerContent() {
   }
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <CreditCheckReportView report={reportQuery.data} />
     </DashboardShell>
   );

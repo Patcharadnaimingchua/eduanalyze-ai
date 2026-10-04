@@ -147,17 +147,28 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   const isLoading =
     profileQuery.isLoading || coursesQuery.isLoading || closQuery.isLoading || assessmentQuery.isLoading;
 
+  const skeleton = (
+    <>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-48" />
+        </CardHeader>
+        <CardContent>
+          <ListSkeleton items={4} />
+        </CardContent>
+      </Card>
+    </>
+  );
+
   if (isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-5 w-48" />
-          </CardHeader>
-          <CardContent>
-            <ListSkeleton items={4} />
-          </CardContent>
-        </Card>
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -195,7 +206,11 @@ function CourseAssessmentContent({ courseId }: { courseId: string }) {
   }
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <Link
         href="/academic-record"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"

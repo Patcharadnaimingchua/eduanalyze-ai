@@ -64,10 +64,17 @@ function AptitudeAnalysisContent() {
     return <StudentOnlyPage user={user} />;
   }
 
+  const skeleton = <AptitudeAnalysisSkeleton />;
+
   if (profileQuery.isLoading || ploQuery.isLoading || curriculumQuery.isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <AptitudeAnalysisSkeleton />
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -99,7 +106,11 @@ function AptitudeAnalysisContent() {
   );
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <PageHeader
         title="สรุปความถนัด"
         description="สรุปจุดเด่นและจุดที่ควรพัฒนาจากผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) ของคุณ ไม่ต้องทำแบบทดสอบเพิ่ม"

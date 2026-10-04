@@ -179,15 +179,26 @@ function AcademicRecordContent() {
     academicYearsQuery.isLoading ||
     semestersQuery.isLoading;
 
+  const skeleton = (
+    <>
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-60" />
+        <Skeleton className="h-4 w-72 max-w-full" />
+      </div>
+      <StatCardsSkeleton count={3} />
+      <ListSkeleton items={5} />
+    </>
+  );
+
   if (isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-60" />
-          <Skeleton className="h-4 w-72 max-w-full" />
-        </div>
-        <StatCardsSkeleton count={3} />
-        <ListSkeleton items={5} />
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -221,7 +232,11 @@ function AcademicRecordContent() {
   const isAddFormOpen = addFormToggle ?? records.length === 0;
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <PageHeader
         title="การติดตามผลการเรียน"
         description="บันทึกและจัดการรายวิชาที่คุณเรียนไปแล้ว"

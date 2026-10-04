@@ -50,6 +50,7 @@ export function LoadingGate({
         <div
           aria-hidden={leaving || undefined}
           className={cn(
+            'space-y-6',
             leaving &&
               'pointer-events-none absolute inset-0 !mt-0 overflow-hidden animate-out fade-out-0 fill-mode-forwards duration-200 motion-reduce:hidden',
           )}

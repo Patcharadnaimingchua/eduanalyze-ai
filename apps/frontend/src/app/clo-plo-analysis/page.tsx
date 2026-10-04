@@ -126,20 +126,31 @@ function CloPloAnalysisContent() {
   const isLoading =
     profileQuery.isLoading || achievementQuery.isLoading || plosQuery.isLoading || curriculumQuery.isLoading;
 
+  const skeleton = (
+    <>
+      <Card>
+        <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
+          <Skeleton className="mx-auto h-32 w-32 rounded-full" />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+      <ListSkeleton items={4} />
+    </>
+  );
+
   if (isLoading) {
     return (
-      <DashboardShell studentCode={profileQuery.data?.studentCode ?? ''} fullName={user.fullName}>
-        <Card>
-          <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
-            <Skeleton className="mx-auto h-32 w-32 rounded-full" />
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-        <ListSkeleton items={4} />
+      <DashboardShell
+        studentCode={profileQuery.data?.studentCode ?? ''}
+        fullName={user.fullName}
+        skeleton={skeleton}
+        ready={false}
+      >
+        {null}
       </DashboardShell>
     );
   }
@@ -169,7 +180,11 @@ function CloPloAnalysisContent() {
   const overallAchieved = threshold !== null && overallPercent !== null && overallPercent >= threshold;
 
   return (
-    <DashboardShell studentCode={profileQuery.data.studentCode} fullName={user.fullName}>
+    <DashboardShell
+      studentCode={profileQuery.data.studentCode}
+      fullName={user.fullName}
+      skeleton={skeleton}
+    >
       <PageHeader
         title="การวิเคราะห์ CLO/PLO"
         description="ความสำเร็จของผลลัพธ์การเรียนรู้ระดับหลักสูตร (PLO) จากผลการเรียนของคุณ"
