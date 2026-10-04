@@ -108,8 +108,20 @@ function DashboardCards({
   fullName: string;
   dashboard: StudentDashboardResponse;
 }>) {
-  const animatedGpa = useCountUp(dashboard.gpa ?? 0, { duration: 900, decimals: 2 });
-  const animatedCredits = useCountUp(dashboard.creditsEarned, { duration: 900, decimals: 0 });
+  const animatedGpa = useCountUp(dashboard.gpa ?? 0, {
+    duration: 1200,
+    decimals: 2,
+    easing: 'elastic',
+    clampMin: 0,
+    clampMax: 4,
+  });
+  const animatedCredits = useCountUp(dashboard.creditsEarned, {
+    duration: 1200,
+    decimals: 0,
+    easing: 'elastic',
+    clampMin: 0,
+    clampMax: Math.max(dashboard.totalCreditsRequired, dashboard.creditsEarned),
+  });
   const animatedProgress = useCountUp(dashboard.curriculumProgressPercent, {
     duration: 900,
     decimals: 0,

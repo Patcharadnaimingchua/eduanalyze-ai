@@ -111,7 +111,13 @@ function AcademicRecordContent() {
   // which is exactly what triggers the 0→target count-up (same pattern
   // Dashboard F2 uses, just without needing a separate child component
   // here since this page's StatCard trio is fixed, not looped).
-  const animatedGpa = useCountUp(gpa?.gpa ?? 0, { duration: 900, decimals: 2 });
+  const animatedGpa = useCountUp(gpa?.gpa ?? 0, {
+    duration: 1200,
+    decimals: 2,
+    easing: 'elastic',
+    clampMin: 0,
+    clampMax: 4,
+  });
   const animatedCredits = useCountUp(gpa?.creditsCounted ?? 0, { duration: 900, decimals: 0 });
   const animatedCourseCount = useCountUp(gpa?.courseCount ?? 0, { duration: 900, decimals: 0 });
 
