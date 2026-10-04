@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
-// One-shot "has this element been reached by scrolling?" flag. It also counts
-// an element that is already ABOVE the viewport as reached — otherwise a
-// reload with a restored mid-page scroll position, or a fast scroll, would
-// leave every earlier block hidden for good. Without IntersectionObserver
-// there is nothing to wait for, so everything is simply visible.
+// One-shot "has this element been reached by scrolling?" flag. The root's top
+// margin is made huge so everything ABOVE the viewport counts as intersecting
+// too: an IntersectionObserver only calls back when visibility changes, so a
+// block skipped entirely by a fast scroll or a restored scroll position would
+// otherwise never fire and stay hidden for good. The bottom margin is a fixed
+// 24px (not a percentage) so a short block at the very end of a page, sitting
+// above main's 16-32px bottom padding, can still be reached at max scroll.
+// Without IntersectionObserver there is nothing to wait for, so everything is
+// simply visible.
 export function useInView<T extends Element>() {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(false);
@@ -19,13 +23,12 @@ export function useInView<T extends Element>() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const rootBottom = entry.rootBounds?.bottom ?? window.innerHeight;
-        if (entry.isIntersecting || entry.boundingClientRect.top < rootBottom) {
+        if (entry.isIntersecting) {
           setSeen(true);
           observer.disconnect();
         }
       },
-      { threshold: 0, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0, rootMargin: '100000px 0px -24px 0px' },
     );
     observer.observe(node);
     return () => observer.disconnect();
