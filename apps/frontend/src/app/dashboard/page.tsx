@@ -6,6 +6,7 @@ import { Award, FileCheck2, Star } from 'lucide-react';
 import type { StudentDashboardResponse } from '@eduanalyze-ai/shared-types';
 import { fetchOwnStudentProfile, fetchStudentDashboard } from '@/lib/api/dashboard';
 import { useAuth } from '@/lib/auth-context';
+import { computeGpaChange } from '@/lib/gpa-change';
 import { useCountUp } from '@/lib/use-count-up';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -19,6 +20,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { TiltCard } from '@/components/ui/tilt-card';
 import { GraduationCelebration } from '@/components/dashboard/graduation-celebration';
 import { GpaSparkline } from '@/components/dashboard/gpa-sparkline';
+import { GpaChangeBadge } from '@/components/dashboard/gpa-change-badge';
 import { CreditCheckerPanel } from '@/components/dashboard/credit-checker-panel';
 import { PendingAssessmentPanel } from '@/components/dashboard/pending-assessment-panel';
 import { ElectiveProgressPanel } from '@/components/dashboard/elective-progress-panel';
@@ -126,6 +128,7 @@ function DashboardCards({
     duration: 900,
     decimals: 0,
   });
+  const gpaChange = computeGpaChange(dashboard.gpaTrend);
 
   return (
     <>
@@ -149,7 +152,14 @@ function DashboardCards({
               value={dashboard.gpa !== null ? animatedGpa.toFixed(2) : '—'}
               suffix="/ 4.0"
               href="/academic-record"
-              footer={dashboard.gpaTrend.length >= 2 && <GpaSparkline points={dashboard.gpaTrend} />}
+              footer={
+                dashboard.gpaTrend.length >= 2 && (
+                  <div className="space-y-2">
+                    {gpaChange && <GpaChangeBadge change={gpaChange} />}
+                    <GpaSparkline points={dashboard.gpaTrend} />
+                  </div>
+                )
+              }
             />
           </TiltCard>
         </Reveal>
