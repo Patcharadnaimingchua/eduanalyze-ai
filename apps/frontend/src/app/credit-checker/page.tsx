@@ -155,8 +155,12 @@ function CreditCheckReportView({ report }: Readonly<{ report: CreditCheckReport 
     `celebrate:credit-ready:${report.studentProfileId}`,
     report.graduationReadiness.isReady,
   );
+  // Capped like the backend's curriculumProgressPercent: earning more than the
+  // requirement reads 100%, while the raw creditsPassed stays shown as-is.
   const readinessPercent =
-    report.totalCreditsRequired > 0 ? (report.creditsPassed / report.totalCreditsRequired) * 100 : 0;
+    report.totalCreditsRequired > 0
+      ? Math.min(100, (report.creditsPassed / report.totalCreditsRequired) * 100)
+      : 0;
   const animatedReadiness = useCountUp(readinessPercent, { duration: 900, decimals: 0 });
 
   return (

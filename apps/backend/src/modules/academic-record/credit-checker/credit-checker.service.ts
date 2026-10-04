@@ -3,6 +3,7 @@ import { Prisma, StudentProfile } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RequestUser } from '../../auth/request-user.interface';
 import { StudentProfileService } from '../../users/student-profile/student-profile.service';
+import { creditsRemaining } from '../../../common/academic/credit-progress';
 import { GRADE_STATUS } from '../student-course-record/grade-point.constant';
 import {
   LatestCourseAttempt,
@@ -240,7 +241,6 @@ export class CreditCheckerService {
       });
     }
 
-    const creditsRemaining = curriculum.totalCredits - creditsPassed;
     const graduationReadiness = computeGraduationReadiness(
       creditsPassed,
       curriculum.totalCredits,
@@ -256,7 +256,10 @@ export class CreditCheckerService {
       creditsPassed,
       // Alias — see credit-checker-report.interface.ts comment.
       creditsAccumulated: creditsPassed,
-      creditsRemaining,
+      creditsRemaining: creditsRemaining(
+        curriculum.totalCredits,
+        creditsPassed,
+      ),
       passedCourses,
       failedCourses,
       notYetStudiedCourses,

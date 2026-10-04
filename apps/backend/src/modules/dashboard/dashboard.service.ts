@@ -57,6 +57,7 @@ import {
   resolveOnTrackStatus,
   resolveYearLevel,
 } from '../../common/academic/year-level';
+import { creditProgressPercent } from '../../common/academic/credit-progress';
 import { RadarPoint } from '../curriculum-content/plo-achievement/plo-achievement-report.interface';
 
 const RECENT_COURSES_LIMIT = 5;
@@ -191,10 +192,10 @@ export class DashboardService {
         };
       });
 
-    const curriculumProgressPercent =
-      creditCheck.totalCreditsRequired > 0
-        ? (creditCheck.creditsPassed / creditCheck.totalCreditsRequired) * 100
-        : 0;
+    const curriculumProgressPercent = creditProgressPercent(
+      creditCheck.creditsPassed,
+      creditCheck.totalCreditsRequired,
+    );
 
     const profile = await this.prisma.studentProfile.findUniqueOrThrow({
       where: { id: studentProfileId },

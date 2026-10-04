@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ProgressRingProps {
-  value: number; // 0-100, arc is clamped; centre text may show the raw value
+  value: number; // 0-100; both the arc and the centre text are clamped to it
   label: string;
   size?: number;
   strokeWidth?: number;
@@ -63,7 +63,7 @@ export function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center text-xl font-semibold tabular-nums text-primary">
-        {children ?? `${Math.round(safe)}%`}
+        {children ?? `${Math.round(clamped)}%`}
       </div>
     </div>
   );
