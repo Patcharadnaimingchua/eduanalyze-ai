@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, BookOpen, Target, Users } from 'lucide-react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstructorDashboard } from '@/lib/api/instructor';
 import { useAuth } from '@/lib/auth-context';
@@ -149,6 +150,28 @@ function InstructorDashboardContent() {
             <div id="follow-up" className="scroll-mt-6">
               <Reveal index={5}>
                 <AtRiskStudentsCard courses={courses} />
+                {/* Outside the card: AtRiskStudentsCard is shared with the staff dashboard. */}
+                {followUps.total > 0 && (
+                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted-foreground">
+                    ดูรายชื่อทั้งหมดในหน้านักศึกษา:
+                    {followUps.critical > 0 && (
+                      <Link
+                        href="/instructor/students?risk=CRITICAL"
+                        className="font-medium text-brand hover:underline"
+                      >
+                        ระดับ{RISK_LEVEL_LABELS.CRITICAL} →
+                      </Link>
+                    )}
+                    {followUps.watch > 0 && (
+                      <Link
+                        href="/instructor/students?risk=WATCH"
+                        className="font-medium text-brand hover:underline"
+                      >
+                        ระดับ{RISK_LEVEL_LABELS.WATCH} →
+                      </Link>
+                    )}
+                  </p>
+                )}
               </Reveal>
             </div>
             <RevealOnScroll>

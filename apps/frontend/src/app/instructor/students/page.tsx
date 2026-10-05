@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import { fetchInstructorStudents } from '@/lib/api/instructor';
@@ -30,17 +31,28 @@ const ALL_RISK_LEVELS = 'ALL';
 export default function InstructorStudentsPage() {
   return (
     <ProtectedRoute>
-      <InstructorStudentsContent />
+      {/* useSearchParams requires a Suspense boundary in the App Router */}
+      <Suspense fallback={null}>
+        <InstructorStudentsContent />
+      </Suspense>
     </ProtectedRoute>
   );
+}
+
+// ?risk= (same name as the staff list) pre-selects the risk filter once, so the
+// dashboard can link straight to e.g. the critical students. Anything else
+// falls back to all levels; the backend still scopes and validates the query.
+function riskFilterFromUrl(value: string | null): RiskLevel | typeof ALL_RISK_LEVELS {
+  return RISK_LEVEL_ORDER.includes(value as RiskLevel) ? (value as RiskLevel) : ALL_RISK_LEVELS;
 }
 
 function InstructorStudentsContent() {
   const { user } = useAuth();
   const isInstructor = !!user?.roles.includes('INSTRUCTOR');
   const [courseId, setCourseId] = useState<string>(ALL_COURSES);
-  const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(
-    ALL_RISK_LEVELS,
+  const searchParams = useSearchParams();
+  const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(() =>
+    riskFilterFromUrl(searchParams.get('risk')),
   );
   const [search, setSearch] = useState('');
 
