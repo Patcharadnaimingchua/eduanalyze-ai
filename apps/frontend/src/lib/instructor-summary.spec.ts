@@ -113,11 +113,19 @@ describe('overallAchievementPercent', () => {
 describe('computeAchievementChange', () => {
   it('pools every course per term and compares the latest term with the one before', () => {
     // 2566/2: (14 + 18) / 50 = 64%; 2567/1: (16 + 21) / 50 = 74%
-    expect(computeAchievementChange(allPassing)).toEqual({ direction: 'up', delta: expect.closeTo(10, 10) });
+    expect(computeAchievementChange(allPassing)).toEqual({
+      direction: 'up',
+      delta: expect.closeTo(10, 10),
+      latestStudentCount: 50,
+    });
   });
 
   it('reports a drop', () => {
-    expect(computeAchievementChange(withRisk)).toEqual({ direction: 'down', delta: expect.closeTo(-12, 10) });
+    expect(computeAchievementChange(withRisk)).toEqual({
+      direction: 'down',
+      delta: expect.closeTo(-12, 10),
+      latestStudentCount: 50,
+    });
   });
 
   it('merges courses whose terms do not line up', () => {
@@ -126,19 +134,27 @@ describe('computeAchievementChange', () => {
       course({ courseId: 'c2', semesterTrend: [term(2567, 'FIRST', 30, 80)] }),
     ];
     // 2566/2: 5/10 = 50%; 2567/1: (6 + 24) / 40 = 75%
-    expect(computeAchievementChange(courses)).toEqual({ direction: 'up', delta: expect.closeTo(25, 10) });
+    expect(computeAchievementChange(courses)).toEqual({
+      direction: 'up',
+      delta: expect.closeTo(25, 10),
+      latestStudentCount: 40,
+    });
   });
 
   it('orders SUMMER after SECOND in the same year', () => {
     const courses = [
       course({ semesterTrend: [term(2567, 'SUMMER', 10, 90), term(2567, 'SECOND', 10, 50)] }),
     ];
-    expect(computeAchievementChange(courses)).toEqual({ direction: 'up', delta: expect.closeTo(40, 10) });
+    expect(computeAchievementChange(courses)).toEqual({
+      direction: 'up',
+      delta: expect.closeTo(40, 10),
+      latestStudentCount: 10,
+    });
   });
 
   it('is flat below half a point', () => {
     const courses = [course({ semesterTrend: [term(2566, 'SECOND', 1000, 70), term(2567, 'FIRST', 1000, 70.4)] })];
-    expect(computeAchievementChange(courses)).toEqual({ direction: 'flat', delta: 0 });
+    expect(computeAchievementChange(courses)).toEqual({ direction: 'flat', delta: 0, latestStudentCount: 1000 });
   });
 
   it('is null with fewer than two terms, ignoring empty or non-finite points', () => {
@@ -159,32 +175,32 @@ describe('computeAchievementChange', () => {
 });
 
 describe('formatAchievementChange', () => {
-  it('uses arrows and whole points, signed only when asked', () => {
-    expect(formatAchievementChange({ direction: 'up', delta: 4.4 }, { signed: true })).toBe(
-      'เทอมล่าสุด ▲ +4 จุดจากเทอมก่อน',
-    );
-    expect(formatAchievementChange({ direction: 'down', delta: -5.6 }, { signed: true })).toBe(
-      'เทอมล่าสุด ▼ −6 จุดจากเทอมก่อน',
-    );
-    expect(formatAchievementChange({ direction: 'up', delta: 0.5 }, { signed: false })).toBe(
-      'เทอมล่าสุด ▲ 1 จุดจากเทอมก่อน',
-    );
-    expect(formatAchievementChange({ direction: 'flat', delta: 0 }, { signed: true })).toBe(
-      '– เทอมล่าสุดเท่ากับเทอมก่อน',
-    );
+  it('uses arrows and whole points, signed only when asked, with the latest term head count', () => {
+    expect(
+      formatAchievementChange({ direction: 'up', delta: 4.4, latestStudentCount: 38 }, { signed: true }),
+    ).toBe('เทอมล่าสุด 38 คน: ▲ +4 จุดจากเทอมก่อน');
+    expect(
+      formatAchievementChange({ direction: 'down', delta: -5.6, latestStudentCount: 12 }, { signed: true }),
+    ).toBe('เทอมล่าสุด 12 คน: ▼ −6 จุดจากเทอมก่อน');
+    expect(
+      formatAchievementChange({ direction: 'up', delta: 100, latestStudentCount: 2 }, { signed: false }),
+    ).toBe('เทอมล่าสุด 2 คน: ▲ 100 จุดจากเทอมก่อน');
+    expect(
+      formatAchievementChange({ direction: 'flat', delta: 0, latestStudentCount: 40 }, { signed: true }),
+    ).toBe('– เทอมล่าสุด 40 คน: เท่ากับเทอมก่อน');
   });
 });
 
 describe('buildInstructorSummary', () => {
   it('normal: every course passes and nobody needs following up', () => {
     expect(buildInstructorSummary(allPassing)).toBe(
-      'ทุกวิชาผ่านเกณฑ์ · ผลสัมฤทธิ์เฉลี่ย 74% (เทอมล่าสุด ▲ 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาผ่านเกณฑ์ · ผลสัมฤทธิ์เฉลี่ย 74% (เทอมล่าสุด 50 คน: ▲ 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่ต้องติดตาม',
     );
   });
 
   it('at risk: follow-ups first, then the worst course, then the average', () => {
     expect(buildInstructorSummary(withRisk)).toBe(
-      'ต้องติดตามนักศึกษา 4 คน (เร่งด่วน 2) · 1 จาก 2 วิชาต่ำกว่าเกณฑ์ เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เกณฑ์ 60%) · ผลสัมฤทธิ์เฉลี่ย 62% (เทอมล่าสุด ▼ 12 จุดจากเทอมก่อน)',
+      'ต้องติดตามนักศึกษา 4 คน (เร่งด่วน 2) · 1 จาก 2 วิชาต่ำกว่าเกณฑ์ เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เกณฑ์ 60%) · ผลสัมฤทธิ์เฉลี่ย 62% (เทอมล่าสุด 50 คน: ▼ 12 จุดจากเทอมก่อน)',
     );
   });
 

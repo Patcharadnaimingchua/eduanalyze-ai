@@ -31,6 +31,8 @@ export interface AchievementChange {
   direction: AchievementChangeDirection;
   // Signed percentage points (latest − previous); 0 when flat.
   delta: number;
+  // Students behind the latest term's figure, so a swing from a tiny term reads as one.
+  latestStudentCount: number;
 }
 
 // Mirrors the backend's SEMESTER_TERM_RANK (grade-point.constant.ts).
@@ -75,22 +77,26 @@ export function computeAchievementChange(
   if (ordered.length < 2) return null;
 
   const percent = (t: SemesterTotal) => (t.achieved / t.students) * 100;
-  const delta = percent(ordered[ordered.length - 1]) - percent(ordered[ordered.length - 2]);
+  const latest = ordered[ordered.length - 1];
+  const delta = percent(latest) - percent(ordered[ordered.length - 2]);
   if (!Number.isFinite(delta)) return null;
-  if (Math.abs(delta) < FLAT_BELOW) return { direction: 'flat', delta: 0 };
-  return { direction: delta > 0 ? 'up' : 'down', delta };
+  const latestStudentCount = latest.students;
+  if (Math.abs(delta) < FLAT_BELOW) return { direction: 'flat', delta: 0, latestStudentCount };
+  return { direction: delta > 0 ? 'up' : 'down', delta, latestStudentCount };
 }
 
 // Says "เทอมล่าสุด" because the headline figure beside it is cumulative while
-// this compares single terms. `signed` adds the +/− sign for badges.
+// this compares single terms, and names the latest term's head count first so
+// it cannot be read as the previous term's. `signed` adds the +/− sign for badges.
 export function formatAchievementChange(
   change: AchievementChange,
   { signed }: { signed: boolean },
 ): string {
-  if (change.direction === 'flat') return '– เทอมล่าสุดเท่ากับเทอมก่อน';
+  const term = `เทอมล่าสุด ${change.latestStudentCount} คน:`;
+  if (change.direction === 'flat') return `– ${term} เท่ากับเทอมก่อน`;
   const points = Math.round(Math.abs(change.delta));
-  if (change.direction === 'up') return `เทอมล่าสุด ▲ ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
-  return `เทอมล่าสุด ▼ ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
+  if (change.direction === 'up') return `${term} ▲ ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
+  return `${term} ▼ ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
 }
 
 // One line for the dashboard header, most urgent first. Every part is dropped
