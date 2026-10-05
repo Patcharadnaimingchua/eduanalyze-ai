@@ -1,32 +1,36 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import { fetchInstructorStudents } from '@/lib/api/instructor';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
+import {
+  DEFAULT_STUDENT_FILTERS,
+  applyStudentFilters,
+  buildStudentsSummary,
+  parseStudentFilters,
+  studentFiltersToQuery,
+  type StudentFilters,
+} from '@/lib/student-directory';
 import { usePagination } from '@/lib/use-pagination';
-import { useTableSort } from '@/lib/use-table-sort';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StudentFilterBar } from '@/components/instructor/student-filter-bar';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SortHeader } from '@/components/ui/sort-header';
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
-
-const ALL_COURSES = 'ALL';
-const ALL_RISK_LEVELS = 'ALL';
 
 export default function InstructorStudentsPage() {
   return (
@@ -39,52 +43,48 @@ export default function InstructorStudentsPage() {
   );
 }
 
-// ?risk= (same name as the staff list) pre-selects the risk filter once, so the
-// dashboard can link straight to e.g. the critical students. Anything else
-// falls back to all levels; the backend still scopes and validates the query.
-function riskFilterFromUrl(value: string | null): RiskLevel | typeof ALL_RISK_LEVELS {
-  return RISK_LEVEL_ORDER.includes(value as RiskLevel) ? (value as RiskLevel) : ALL_RISK_LEVELS;
-}
-
 function InstructorStudentsContent() {
   const { user } = useAuth();
   const isInstructor = !!user?.roles.includes('INSTRUCTOR');
-  const [courseId, setCourseId] = useState<string>(ALL_COURSES);
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [riskFilter, setRiskFilter] = useState<RiskLevel | typeof ALL_RISK_LEVELS>(() =>
-    riskFilterFromUrl(searchParams.get('risk')),
-  );
-  const [search, setSearch] = useState('');
 
+  // risk and course live only in the URL, so a reload, Back, or the
+  // dashboard's ?risk= link all land on the same view. The search box keeps
+  // its own state so typing never waits on the router; each change is still
+  // written to ?q= with replace (no history entry per keystroke).
+  const urlFilters = parseStudentFilters(searchParams);
+  const [search, setSearch] = useState(urlFilters.q);
+  const filters: StudentFilters = { ...urlFilters, q: search };
+
+  const writeUrl = useCallback(
+    (next: StudentFilters) => {
+      const query = studentFiltersToQuery(next);
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [router, pathname],
+  );
+
+  // The endpoint returns every row at once (no paging), so one unfiltered
+  // fetch is filtered here: the per-level counts stay put whatever is
+  // selected, and changing a filter needs no new request.
   const query = useQuery({
-    queryKey: ['instructor-students', courseId, riskFilter],
-    queryFn: () =>
-      fetchInstructorStudents({
-        courseId: courseId === ALL_COURSES ? undefined : courseId,
-        riskLevel: riskFilter === ALL_RISK_LEVELS ? undefined : riskFilter,
-      }),
+    queryKey: ['instructor-students'],
+    queryFn: () => fetchInstructorStudents({}),
     enabled: isInstructor,
   });
 
-  const allStudents = useMemo(() => query.data?.students ?? [], [query.data]);
-  const students = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (term === '') return allStudents;
-    return allStudents.filter(
-      (s) =>
-        s.studentCode.toLowerCase().includes(term) || s.fullName.toLowerCase().includes(term),
-    );
-  }, [allStudents, search]);
-  const sort = useTableSort(students, {
-    studentCode: (s) => s.studentCode,
-    fullName: (s) => s.fullName,
-    course: (s) => s.courseCode,
-  });
-  const pagination = usePagination(
-    sort.sorted,
-    undefined,
-    `${courseId}|${riskFilter}|${search}|${sort.sortKey}|${sort.direction}`,
+  const entries = useMemo(() => query.data?.students ?? [], [query.data]);
+  const courses = useMemo(() => query.data?.courses ?? [], [query.data]);
+  const { risk, courseId } = urlFilters;
+  const { people, counts } = useMemo(
+    () => applyStudentFilters(entries, { risk, courseId, q: search }),
+    [entries, risk, courseId, search],
   );
+  const summary = query.data ? buildStudentsSummary(entries, courses.length) : null;
+  const isFiltered = studentFiltersToQuery(filters) !== '';
+  const pagination = usePagination(people, undefined, studentFiltersToQuery(filters));
 
   if (!user) {
     return (
@@ -97,62 +97,22 @@ function InstructorStudentsContent() {
     );
   }
 
+  const clearFilters = () => {
+    setSearch('');
+    writeUrl(DEFAULT_STUDENT_FILTERS);
+  };
+
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Reveal index={0}>
           <PageHeader
             title="นักศึกษา"
-            description="ค้นหา/กรองนักศึกษาข้ามทุกวิชาที่คุณสอน ตามวิชาและระดับความเสี่ยง"
+            description={summary ?? 'นักศึกษาในวิชาที่คุณสอน เรียงจากคนที่ต้องติดตามก่อน'}
           />
         </Reveal>
 
-        <Reveal index={1}>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              placeholder="ค้นหารหัสนักศึกษาหรือชื่อ..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 max-w-xs"
-            />
-            <Select value={courseId} onValueChange={setCourseId}>
-              <SelectTrigger className="h-9 w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_COURSES}>ทุกวิชา</SelectItem>
-                {(query.data?.courses ?? []).map((c) => (
-                  <SelectItem key={c.courseId} value={c.courseId}>
-                    {c.code} — {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={riskFilter}
-              onValueChange={(value) => setRiskFilter(value as RiskLevel | typeof ALL_RISK_LEVELS)}
-            >
-              <SelectTrigger className="h-9 w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_RISK_LEVELS}>ทุกระดับ</SelectItem>
-                {RISK_LEVEL_ORDER.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {RISK_LEVEL_LABELS[level]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {(search.trim() !== '' || courseId !== ALL_COURSES || riskFilter !== ALL_RISK_LEVELS) && (
-              <span className="text-sm text-muted-foreground">
-                แสดง {students.length} จาก {allStudents.length} คน
-              </span>
-            )}
-          </div>
-        </Reveal>
-
-        {query.isLoading && <TableSkeleton cols={5} rows={4} />}
+        {query.isLoading && <TableSkeleton cols={4} rows={4} />}
 
         {query.isError && (
           <Alert variant="destructive">
@@ -160,60 +120,110 @@ function InstructorStudentsContent() {
           </Alert>
         )}
 
-        {query.data && students.length === 0 && (
-          <Alert>
-            <AlertDescription>ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก</AlertDescription>
-          </Alert>
+        {query.data && entries.length === 0 && (
+          <Reveal index={1}>
+            <Card>
+              <CardContent className="pt-6">
+                <EmptyState
+                  illustration="no-students"
+                  description={
+                    courses.length > 0
+                      ? 'ยังไม่มีนักศึกษาในรายวิชาที่คุณสอน รายชื่อจะขึ้นที่นี่เมื่อมีผลการเรียน'
+                      : 'ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน'
+                  }
+                />
+              </CardContent>
+            </Card>
+          </Reveal>
         )}
 
-        {query.data && students.length > 0 && (
-          <Reveal index={2}>
-            <div className="space-y-3">
-              {/* Scrolls inside its own box on phones; min-w keeps the tablet column
-                  widths instead of crushing names and codes into narrow columns. */}
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[28rem] text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-                      <SortHeader {...sort.sortProps('studentCode')}>รหัสนักศึกษา</SortHeader>
-                      <SortHeader {...sort.sortProps('fullName')}>ชื่อ-นามสกุล</SortHeader>
-                      <SortHeader {...sort.sortProps('course')}>วิชา</SortHeader>
-                      <th className="py-2 font-medium">เกรด</th>
-                      <th className="py-2 font-medium">ความเสี่ยง</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagination.pageRows.map((s) => (
-                      <tr
-                        key={`${s.studentProfileId}-${s.courseId}`}
-                        className="border-b border-slate-50 hover:bg-slate-50"
-                      >
-                        <td className="py-2 pr-4 text-muted-foreground">{s.studentCode}</td>
-                        <td className="py-2 pr-4">
-                          <Link
-                            href={`/instructor/courses/${s.courseId}?tab=gradebook&student=${s.studentProfileId}`}
-                            className="text-primary hover:underline"
-                          >
-                            {s.fullName}
-                          </Link>
-                        </td>
-                        <td className="py-2 pr-4 text-muted-foreground">{s.courseCode}</td>
-                        <td className="py-2 pr-4">
-                          <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
-                        </td>
-                        <td className="py-2 pr-4">
-                          <Badge tone={RISK_LEVEL_TONES[s.riskLevel]}>
-                            {RISK_LEVEL_LABELS[s.riskLevel]}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Pagination {...pagination} onPageChange={pagination.setPage} />
-            </div>
-          </Reveal>
+        {query.data && entries.length > 0 && (
+          <>
+            <Reveal index={1}>
+              <StudentFilterBar
+                counts={counts}
+                risk={filters.risk}
+                onRiskChange={(risk) => writeUrl({ ...filters, risk })}
+                courses={courses}
+                courseId={filters.courseId}
+                onCourseChange={(courseId) => writeUrl({ ...filters, courseId })}
+                search={search}
+                onSearchChange={(q) => {
+                  setSearch(q);
+                  writeUrl({ ...filters, q });
+                }}
+                isFiltered={isFiltered}
+                onClear={clearFilters}
+              />
+            </Reveal>
+
+            {people.length === 0 ? (
+              <Reveal index={2}>
+                <Card>
+                  <CardContent className="pt-6">
+                    <EmptyState
+                      illustration="no-results"
+                      description="ไม่พบนักศึกษาที่ตรงกับตัวกรองที่เลือก"
+                      action={
+                        <Button type="button" variant="outline" onClick={clearFilters} className="h-11 sm:h-10">
+                          ล้างตัวกรอง
+                        </Button>
+                      }
+                    />
+                  </CardContent>
+                </Card>
+              </Reveal>
+            ) : (
+              <Reveal index={2}>
+                <div className="space-y-3">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[28rem] text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
+                          <th className="py-2 pr-4 font-medium">นักศึกษา</th>
+                          <th className="py-2 pr-4 font-medium">วิชา</th>
+                          <th className="py-2 pr-4 font-medium">เกรด</th>
+                          <th className="py-2 font-medium">ความเสี่ยง</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagination.pageRows.flatMap((person) =>
+                          [person.primary, ...person.others].map((s) => (
+                            <tr
+                              key={`${s.studentProfileId}-${s.courseId}`}
+                              className="border-b border-slate-50 hover:bg-slate-50"
+                            >
+                              <td className="py-2 pr-4">
+                                <Link
+                                  href={`/instructor/courses/${s.courseId}?tab=gradebook&student=${s.studentProfileId}`}
+                                  className="text-primary hover:underline"
+                                >
+                                  {s.fullName}
+                                </Link>
+                                <span className="block text-xs text-muted-foreground">{s.studentCode}</span>
+                              </td>
+                              <td className="py-2 pr-4 text-muted-foreground">
+                                {s.courseCode} {s.courseName}
+                              </td>
+                              <td className="py-2 pr-4">
+                                <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
+                              </td>
+                              <td className="py-2">
+                                <Badge tone={RISK_LEVEL_TONES[s.riskLevel]}>
+                                  {RISK_LEVEL_LABELS[s.riskLevel]}
+                                </Badge>
+                              </td>
+                            </tr>
+                          )),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination {...pagination} onPageChange={pagination.setPage} />
+                </div>
+              </Reveal>
+            )}
+          </>
         )}
       </DashboardShell>
     </RequireRole>
