@@ -11,7 +11,9 @@ interface StatCardProps {
   badge?: { text: string; tone?: 'positive' | 'neutral' };
   footer?: React.ReactNode;
   // Replaces the big number: shown to the right of the icon + label (e.g. a
-  // progress ring that carries its own centre value).
+  // progress ring that carries its own centre value). When the card is too
+  // narrow for both side by side it drops below the label instead of
+  // squeezing the label into the ring.
   visual?: React.ReactNode;
   href?: string;
 }
@@ -58,8 +60,8 @@ export function StatCard({
     <Card className="h-full transition-[transform,box-shadow] duration-200 ease-out md:hover:-translate-y-0.5 md:hover:shadow-md">
       <CardContent className="pt-6">
         {visual ? (
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">{heading}</div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-[4rem] flex-1">{heading}</div>
             {visual}
           </div>
         ) : (

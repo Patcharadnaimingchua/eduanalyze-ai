@@ -145,7 +145,7 @@ function DashboardCards({
         />
       </Reveal>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Reveal index={1}>
           <TiltCard>
             <StatCard
@@ -194,7 +194,7 @@ function DashboardCards({
             }
           />
         </Reveal>
-        <Reveal index={3}>
+        <Reveal index={3} className="md:col-span-2 lg:col-span-1">
           <TiltCard>
             <StatCard
               icon={Award}

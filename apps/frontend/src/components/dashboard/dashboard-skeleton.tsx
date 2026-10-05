@@ -15,7 +15,11 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <StatCardsSkeleton count={3} />
+      {/* Same columns as the loaded grid; the last card spans the row at md like the readiness card. */}
+      <StatCardsSkeleton
+        count={3}
+        className="md:grid-cols-2 lg:grid-cols-3 md:[&>:last-child]:col-span-2 lg:[&>:last-child]:col-span-1"
+      />
 
       <div className="space-y-4">
         <Skeleton className="h-6 w-40" />
