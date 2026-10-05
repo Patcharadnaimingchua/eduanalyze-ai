@@ -217,7 +217,10 @@ export function DashboardShell({
         </SheetContent>
       </Sheet>
 
-      <div className="flex flex-1 flex-col">
+      {/* min-w-0: as a flex item this column otherwise grows to its content's
+          min-content width, so a wide table's overflow-x-auto wrapper never got
+          narrower than the table and the whole page scrolled sideways. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:justify-end md:px-8">
           <button
             type="button"

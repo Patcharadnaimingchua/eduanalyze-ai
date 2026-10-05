@@ -169,8 +169,10 @@ function InstructorStudentsContent() {
         {query.data && students.length > 0 && (
           <Reveal index={2}>
             <div className="space-y-3">
+              {/* Scrolls inside its own box on phones; min-w keeps the tablet column
+                  widths instead of crushing names and codes into narrow columns. */}
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[28rem] text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
                       <SortHeader {...sort.sortProps('studentCode')}>รหัสนักศึกษา</SortHeader>
