@@ -115,6 +115,9 @@ export function DashboardShell({
   const pathname = usePathname();
   const navItems = navItemsForRole(role);
   const shownIdentity = identityLabel ?? studentCode;
+  // A long email pushed the name and role badge off narrow phones; the email is
+  // only hidden below sm. A student code is short and always shown.
+  const identityIsEmail = !!shownIdentity?.includes('@');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // A nav link inside the drawer should dismiss it, not leave it open over
@@ -228,7 +231,13 @@ export function DashboardShell({
             {/* -my-2 keeps the header exactly as tall as before the toggle existed */}
             <ThemeToggle className="-my-2 h-8 w-8" />
             <Link href="/profile" className="flex items-center gap-3 text-sm hover:opacity-80">
-              {shownIdentity && <span className="text-muted-foreground">{shownIdentity}</span>}
+              {shownIdentity && (
+                <span
+                  className={cn('text-muted-foreground', identityIsEmail && 'hidden sm:inline')}
+                >
+                  {shownIdentity}
+                </span>
+              )}
               <span className="font-medium text-primary">{fullName}</span>
               <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
             </Link>
