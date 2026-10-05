@@ -9,6 +9,7 @@ import {
   buildInstructorSummary,
   computeAchievementChange,
   overallAchievementPercent,
+  sortCoursesByAttention,
 } from '@/lib/instructor-summary';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -144,19 +145,19 @@ function InstructorDashboardContent() {
                 />
               </Reveal>
             </div>
-            <Reveal index={5}>
-              <PageSection title="รายวิชาที่สอน">
-                <InstructorCourseGrid courses={courses} />
-              </PageSection>
-            </Reveal>
-            <Reveal index={6}>
-              <CourseInsightCard courses={courses} />
-            </Reveal>
             <div id="follow-up" className="scroll-mt-6">
-              <RevealOnScroll>
+              <Reveal index={5}>
                 <AtRiskStudentsCard courses={courses} />
-              </RevealOnScroll>
+              </Reveal>
             </div>
+            <RevealOnScroll>
+              <PageSection title="รายวิชาที่สอน" description="เรียงจากวิชาที่ผลสัมฤทธิ์ต่ำสุดก่อน">
+                <InstructorCourseGrid courses={sortCoursesByAttention(courses)} />
+              </PageSection>
+            </RevealOnScroll>
+            <RevealOnScroll>
+              <CourseInsightCard courses={courses} />
+            </RevealOnScroll>
             <RevealOnScroll>
               <CloAttentionCard courses={courses} />
             </RevealOnScroll>

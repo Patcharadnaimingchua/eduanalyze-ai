@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
+import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
 function CardRow({ children }: { children: (i: number) => React.ReactNode }) {
   return (
@@ -21,6 +21,13 @@ export function InstructorDashboardSkeleton() {
   return (
     <div className="space-y-6">
       <StatCardsSkeleton count={4} className="md:grid-cols-2 xl:grid-cols-4" />
+      {/* Follow-up list, then the course grid — same order as the loaded page. */}
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <Skeleton className="h-5 w-40" />
+          <ListSkeleton items={3} />
+        </CardContent>
+      </Card>
       <CardRow>
         {() => (
           <>

@@ -99,6 +99,18 @@ export function formatAchievementChange(
   return `${term} ▼ ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
 }
 
+// Worst achievement first, courses without students last — the same order the
+// summary's "เริ่มที่" course and the comparison chart use, so they agree.
+export function sortCoursesByAttention<
+  T extends Pick<InstructorCourseSummary, 'studentCount' | 'achievementPercent'>,
+>(courses: readonly T[]): T[] {
+  const rank = (c: T) =>
+    isPositiveCount(c.studentCount) && Number.isFinite(c.achievementPercent)
+      ? c.achievementPercent
+      : Number.POSITIVE_INFINITY;
+  return [...courses].sort((a, b) => rank(a) - rank(b));
+}
+
 // One line for the dashboard header, most urgent first. Every part is dropped
 // when its data is missing or not a real number, so the line never shows
 // undefined/NaN. null = no courses at all (the page shows its own notice).

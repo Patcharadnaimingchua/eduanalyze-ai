@@ -10,6 +10,7 @@ import {
   computeAchievementChange,
   formatAchievementChange,
   overallAchievementPercent,
+  sortCoursesByAttention,
 } from './instructor-summary';
 import { NO_STUDENTS_SUMMARY } from './interpret-instructor-courses';
 
@@ -237,5 +238,23 @@ describe('buildInstructorSummary', () => {
     const line = buildInstructorSummary(broken);
     expect(line).toBe('ยังไม่มีนักศึกษาที่ต้องติดตาม');
     expect(line).not.toMatch(/NaN|undefined|Infinity/);
+  });
+});
+
+describe('sortCoursesByAttention', () => {
+  it('puts the lowest achievement first and courses without students last, without mutating the input', () => {
+    const input = [
+      course({ courseId: 'empty', studentCount: 0, achievementPercent: 0 }),
+      course({ courseId: 'high', achievementPercent: 90 }),
+      course({ courseId: 'broken', achievementPercent: Number.NaN }),
+      course({ courseId: 'low', achievementPercent: 20 }),
+    ];
+    expect(sortCoursesByAttention(input).map((c) => c.courseId)).toEqual([
+      'low',
+      'high',
+      'empty',
+      'broken',
+    ]);
+    expect(input.map((c) => c.courseId)).toEqual(['empty', 'high', 'broken', 'low']);
   });
 });
