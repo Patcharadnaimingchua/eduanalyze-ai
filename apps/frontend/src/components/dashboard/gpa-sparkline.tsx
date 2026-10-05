@@ -20,6 +20,9 @@ function toCoordinates(points: readonly GpaTrendPoint[]): { x: number; y: number
   }));
 }
 
+// WIDTH/HEIGHT are the drawing's natural size, not a layout width: the svg
+// scales down with its card (viewBox keeps the aspect ratio) and the row wraps
+// the label above it when the card is too narrow for both side by side.
 // Non-interactive on purpose: the GPA StatCard it sits in is a link.
 // Semesters are spaced evenly (not by calendar gap) and a trend needs at
 // least two of them, so fewer points render nothing.
@@ -36,7 +39,7 @@ export function GpaSparkline({ points }: Readonly<{ points: readonly GpaTrendPoi
     `ถึง ${formatSemesterLabel(last.semesterTerm, last.academicYear)} ${last.gpa.toFixed(2)}`;
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <p className="text-xs text-muted-foreground">เกรดเฉลี่ยรายภาคเรียน</p>
       <svg
         role="img"
@@ -45,7 +48,7 @@ export function GpaSparkline({ points }: Readonly<{ points: readonly GpaTrendPoi
         height={HEIGHT}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         fill="none"
-        className="shrink-0"
+        className="h-auto min-w-0 max-w-full"
       >
         <polyline
           points={coordinates.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}
