@@ -1,4 +1,5 @@
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
+import { countFollowUps } from './follow-ups';
 import { formatSemesterLabel } from './grade-label';
 
 // Rule-based, deterministic reading of the instructor's own course list —
@@ -55,14 +56,8 @@ export function interpretInstructorCourses(
     .sort((a, b) => a.achievementPercent - b.achievementPercent);
 
   const totalStudents = withStudents.reduce((sum, c) => sum + c.studentCount, 0);
-  const criticalCount = courses.reduce(
-    (sum, c) => sum + c.atRiskStudents.filter((s) => s.riskLevel === 'CRITICAL').length,
-    0,
-  );
-  const watchCount = courses.reduce(
-    (sum, c) => sum + c.atRiskStudents.filter((s) => s.riskLevel === 'WATCH').length,
-    0,
-  );
+  // People, not course rows — the same count as the dashboard's follow-up card.
+  const { critical: criticalCount, watch: watchCount } = countFollowUps(courses);
 
   const summary =
     `จาก ${withStudents.length} รายวิชาที่มีนักศึกษา (รวม ${totalStudents} คน) ` +

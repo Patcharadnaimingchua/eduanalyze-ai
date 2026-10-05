@@ -4,10 +4,10 @@ import type {
   SemesterAchievement,
   SemesterTerm,
 } from '@eduanalyze-ai/shared-types';
+import { countFollowUps } from './follow-ups';
 import {
   buildInstructorSummary,
   computeAchievementChange,
-  countFollowUps,
   formatAchievementChange,
   overallAchievementPercent,
 } from './instructor-summary';

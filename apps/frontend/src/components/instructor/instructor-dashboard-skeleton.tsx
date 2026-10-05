@@ -20,7 +20,7 @@ function CardRow({ children }: { children: (i: number) => React.ReactNode }) {
 export function InstructorDashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <StatCardsSkeleton count={3} />
+      <StatCardsSkeleton count={4} className="md:grid-cols-2 xl:grid-cols-4" />
       <CardRow>
         {() => (
           <>

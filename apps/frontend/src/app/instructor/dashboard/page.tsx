@@ -1,10 +1,16 @@
 'use client';
 
-import { BookOpen, Target, Users } from 'lucide-react';
+import { AlertTriangle, BookOpen, Target, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchInstructorDashboard } from '@/lib/api/instructor';
 import { useAuth } from '@/lib/auth-context';
+import { countFollowUps } from '@/lib/follow-ups';
+import {
+  buildInstructorSummary,
+  computeAchievementChange,
+  overallAchievementPercent,
+} from '@/lib/instructor-summary';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -16,11 +22,13 @@ import { CloAttentionCard } from '@/components/instructor/clo-attention-card';
 import { PloCoverageCard } from '@/components/instructor/plo-coverage-card';
 import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
 import { CourseInsightCard } from '@/components/instructor/course-insight-card';
+import { AchievementChangeBadge } from '@/components/instructor/achievement-change-badge';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
@@ -29,18 +37,6 @@ export default function InstructorDashboardPage() {
       <InstructorDashboardContent />
     </ProtectedRoute>
   );
-}
-
-// Weighted by studentCount — a plain mean of per-course percentages would
-// let a 1-student course count as much as a 60-student one.
-function overallAchievementPercent(courses: InstructorCourseSummary[]): number | null {
-  const totalStudents = courses.reduce((sum, c) => sum + c.studentCount, 0);
-  if (totalStudents === 0) return null;
-  const achieved = courses.reduce(
-    (sum, c) => sum + (c.achievementPercent * c.studentCount) / 100,
-    0,
-  );
-  return (achieved / totalStudents) * 100;
 }
 
 function InstructorDashboardContent() {
@@ -67,6 +63,9 @@ function InstructorDashboardContent() {
   const courses = dashboardQuery.data?.courses ?? [];
   const enrollments = courses.reduce((sum, c) => sum + c.studentCount, 0);
   const achievement = overallAchievementPercent(courses);
+  const achievementChange = computeAchievementChange(courses);
+  const followUps = countFollowUps(courses);
+  const summary = dashboardQuery.data ? buildInstructorSummary(courses) : null;
 
   return (
     <RequireRole role="INSTRUCTOR">
@@ -74,7 +73,7 @@ function InstructorDashboardContent() {
         <Reveal index={0}>
           <PageHeader
             title="แดชบอร์ดอาจารย์"
-            description="ภาพรวมผลการเรียนและ CLO Achievement ของรายวิชาที่คุณสอน"
+            description={summary ?? 'ภาพรวมผลการเรียนและ CLO Achievement ของรายวิชาที่คุณสอน'}
           />
         </Reveal>
 
@@ -96,7 +95,8 @@ function InstructorDashboardContent() {
 
         {dashboardQuery.data && courses.length > 0 && (
           <>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* 4 columns only from xl: with the 256px sidebar, lg leaves ~164px per card. */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Reveal index={1}>
                 <StatCard icon={BookOpen} label="รายวิชาที่สอน" value={courses.length} suffix="วิชา" />
               </Reveal>
@@ -113,20 +113,50 @@ function InstructorDashboardContent() {
                   icon={Target}
                   label="ผลสัมฤทธิ์เฉลี่ย (เกรด B ขึ้นไป)"
                   value={achievement === null ? '—' : `${Math.round(achievement)}%`}
+                  footer={achievementChange && <AchievementChangeBadge change={achievementChange} />}
+                />
+              </Reveal>
+              <Reveal index={4}>
+                <StatCard
+                  icon={AlertTriangle}
+                  label="นักศึกษาที่ต้องติดตาม (นับรายคน)"
+                  value={followUps.total}
+                  suffix="คน"
+                  href={followUps.total > 0 ? '#follow-up' : undefined}
+                  footer={
+                    followUps.total > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {followUps.critical > 0 && (
+                          <Badge tone={RISK_LEVEL_TONES.CRITICAL}>
+                            {RISK_LEVEL_LABELS.CRITICAL} {followUps.critical}
+                          </Badge>
+                        )}
+                        {followUps.watch > 0 && (
+                          <Badge tone={RISK_LEVEL_TONES.WATCH}>
+                            {RISK_LEVEL_LABELS.WATCH} {followUps.watch}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">ยังไม่มีนักศึกษาที่ต้องติดตาม</p>
+                    )
+                  }
                 />
               </Reveal>
             </div>
-            <Reveal index={4}>
+            <Reveal index={5}>
               <PageSection title="รายวิชาที่สอน">
                 <InstructorCourseGrid courses={courses} />
               </PageSection>
             </Reveal>
-            <Reveal index={5}>
+            <Reveal index={6}>
               <CourseInsightCard courses={courses} />
             </Reveal>
-            <RevealOnScroll>
-              <AtRiskStudentsCard courses={courses} />
-            </RevealOnScroll>
+            <div id="follow-up" className="scroll-mt-6">
+              <RevealOnScroll>
+                <AtRiskStudentsCard courses={courses} />
+              </RevealOnScroll>
+            </div>
             <RevealOnScroll>
               <CloAttentionCard courses={courses} />
             </RevealOnScroll>
