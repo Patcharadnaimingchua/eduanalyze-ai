@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// 44px tall on phones (touch), the usual 36px from sm up.
-const CONTROL_HEIGHT = 'h-11 sm:h-9';
+// 44px at every width: tablets are touch screens too. Same height as the
+// design system's Button size "lg".
+const CONTROL_HEIGHT = 'h-11';
 
 // The risk buttons double as the page's numbers: each shows how many people
 // it would leave, so there is no separate stat card repeating them.

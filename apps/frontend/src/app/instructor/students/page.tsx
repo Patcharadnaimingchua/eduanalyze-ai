@@ -1,13 +1,9 @@
 'use client';
 
 import { Suspense, useCallback, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstructorStudents } from '@/lib/api/instructor';
-import { GRADE_LABELS } from '@/lib/grade-label';
-import { gradeBadgeTone } from '@/lib/grade-badge-color';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import {
   DEFAULT_STUDENT_FILTERS,
   applyStudentFilters,
@@ -22,15 +18,15 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StudentFilterBar } from '@/components/instructor/student-filter-bar';
+import { StudentPersonList, StudentPersonListSkeleton } from '@/components/instructor/student-person-list';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
-import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorStudentsPage() {
   return (
@@ -112,7 +108,7 @@ function InstructorStudentsContent() {
           />
         </Reveal>
 
-        {query.isLoading && <TableSkeleton cols={4} rows={4} />}
+        {query.isLoading && <StudentPersonListSkeleton />}
 
         {query.isError && (
           <Alert variant="destructive">
@@ -165,7 +161,7 @@ function InstructorStudentsContent() {
                       illustration="no-results"
                       description="ไม่พบนักศึกษาที่ตรงกับตัวกรองที่เลือก"
                       action={
-                        <Button type="button" variant="outline" onClick={clearFilters} className="h-11 sm:h-10">
+                        <Button type="button" variant="outline" onClick={clearFilters} className="h-11">
                           ล้างตัวกรอง
                         </Button>
                       }
@@ -176,49 +172,7 @@ function InstructorStudentsContent() {
             ) : (
               <Reveal index={2}>
                 <div className="space-y-3">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[28rem] text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-                          <th className="py-2 pr-4 font-medium">นักศึกษา</th>
-                          <th className="py-2 pr-4 font-medium">วิชา</th>
-                          <th className="py-2 pr-4 font-medium">เกรด</th>
-                          <th className="py-2 font-medium">ความเสี่ยง</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pagination.pageRows.flatMap((person) =>
-                          [person.primary, ...person.others].map((s) => (
-                            <tr
-                              key={`${s.studentProfileId}-${s.courseId}`}
-                              className="border-b border-slate-50 hover:bg-slate-50"
-                            >
-                              <td className="py-2 pr-4">
-                                <Link
-                                  href={`/instructor/courses/${s.courseId}?tab=gradebook&student=${s.studentProfileId}`}
-                                  className="text-primary hover:underline"
-                                >
-                                  {s.fullName}
-                                </Link>
-                                <span className="block text-xs text-muted-foreground">{s.studentCode}</span>
-                              </td>
-                              <td className="py-2 pr-4 text-muted-foreground">
-                                {s.courseCode} {s.courseName}
-                              </td>
-                              <td className="py-2 pr-4">
-                                <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
-                              </td>
-                              <td className="py-2">
-                                <Badge tone={RISK_LEVEL_TONES[s.riskLevel]}>
-                                  {RISK_LEVEL_LABELS[s.riskLevel]}
-                                </Badge>
-                              </td>
-                            </tr>
-                          )),
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <StudentPersonList people={pagination.pageRows} />
                   <Pagination {...pagination} onPageChange={pagination.setPage} />
                 </div>
               </Reveal>
