@@ -44,32 +44,36 @@ export function CourseComparisonChart({ courses }: { courses: InstructorCourseSu
                   href={`/instructor/courses/${course.courseId}`}
                   className="block rounded-md transition hover:bg-slate-50"
                 >
-                  <div className="flex items-center gap-3 px-2 py-1.5">
-                    <div className="w-40 shrink-0 truncate text-sm">
+                  {/* Name above the bar on phones (fixed side columns overflowed 360px);
+                      side by side from sm. The name wraps instead of truncating. */}
+                  <div className="flex flex-col gap-1.5 px-2 py-1.5 sm:flex-row sm:items-center sm:gap-3">
+                    <div className="text-sm sm:w-40 sm:shrink-0">
                       <span className="text-muted-foreground">{course.code}</span>{' '}
                       <span className="text-primary">{course.name}</span>
                     </div>
-                    <div className="h-5 flex-1 overflow-hidden rounded bg-slate-100">
-                      {hasStudents && (
-                        <div
-                          className={cn(
-                            'h-full rounded transition-all',
-                            ploProgressBarColorClassName(
-                              course.achievementPercent,
-                              course.achievementThreshold,
-                            ),
-                          )}
-                          style={{ width: `${course.achievementPercent}%` }}
-                        />
-                      )}
-                    </div>
-                    <div className="flex w-44 shrink-0 items-center justify-end gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {hasStudents
-                          ? `${Math.round(course.achievementPercent)}% (${course.studentCount})`
-                          : 'ไม่มีข้อมูล'}
-                      </span>
-                      {hasStudents && <Badge tone={status.tone}>{status.label}</Badge>}
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="h-5 min-w-0 flex-1 overflow-hidden rounded bg-slate-100">
+                        {hasStudents && (
+                          <div
+                            className={cn(
+                              'h-full rounded transition-all',
+                              ploProgressBarColorClassName(
+                                course.achievementPercent,
+                                course.achievementThreshold,
+                              ),
+                            )}
+                            style={{ width: `${course.achievementPercent}%` }}
+                          />
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center justify-end gap-2 sm:w-44">
+                        <span className="text-sm text-muted-foreground">
+                          {hasStudents
+                            ? `${Math.round(course.achievementPercent)}% (${course.studentCount})`
+                            : 'ไม่มีข้อมูล'}
+                        </span>
+                        {hasStudents && <Badge tone={status.tone}>{status.label}</Badge>}
+                      </div>
                     </div>
                   </div>
                 </Link>

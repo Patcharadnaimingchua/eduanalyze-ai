@@ -46,7 +46,9 @@ export function PloCoverageCard({ courses }: Readonly<{ courses: InstructorCours
       footer={
         <div className="space-y-4 border-t pt-4">
           {radar.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            // Wraps rather than scrolls: a no-wrap scroller still counts its full
+            // width as min-content and pushed the whole page wider than a phone.
+            <div className="flex flex-wrap gap-2">
               {radar.map((plo) => {
                 const isActive = plo.ploId === selectedPloId;
                 return (
@@ -56,7 +58,7 @@ export function PloCoverageCard({ courses }: Readonly<{ courses: InstructorCours
                     aria-pressed={isActive}
                     onClick={() => toggleSelected(plo.ploId)}
                     className={cn(
-                      'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition',
+                      'rounded-full border px-3 py-1.5 text-sm font-medium transition',
                       isActive
                         ? 'border-brand bg-brand-light text-brand'
                         : 'border-slate-200 text-slate-600 hover:border-brand hover:text-brand',

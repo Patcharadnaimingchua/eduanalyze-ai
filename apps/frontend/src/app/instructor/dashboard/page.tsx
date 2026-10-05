@@ -30,6 +30,7 @@ import { Reveal } from '@/components/layout/reveal';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
@@ -156,19 +157,24 @@ function InstructorDashboardContent() {
               </PageSection>
             </RevealOnScroll>
             <RevealOnScroll>
-              <CourseInsightCard courses={courses} />
-            </RevealOnScroll>
-            <RevealOnScroll>
               <CloAttentionCard courses={courses} />
             </RevealOnScroll>
             <RevealOnScroll>
-              <PloCoverageCard courses={courses} />
+              <CollapsibleSection
+                framed={false}
+                title="ข้อมูลเชิงลึก"
+                meta={
+                  <span className="text-sm font-normal text-muted-foreground">
+                    จุดแข็งและข้อเสนอแนะ · PLO
+                    {courses.length >= 2 && ' · เปรียบเทียบรายวิชา'}
+                  </span>
+                }
+              >
+                <CourseInsightCard courses={courses} />
+                <PloCoverageCard courses={courses} />
+                {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
+              </CollapsibleSection>
             </RevealOnScroll>
-            {courses.length >= 2 && (
-              <RevealOnScroll>
-                <CourseComparisonChart courses={courses} />
-              </RevealOnScroll>
-            )}
           </>
         )}
       </DashboardShell>

@@ -49,7 +49,8 @@ function IconList({
 
 // Deliberately not labelled "AI": the text is rule-based and derived from
 // the numbers already on this page (interpret-instructor-courses.ts), the
-// same honesty applied to PloInterpretationCard on the aptitude page.
+// same honesty applied to PloInterpretationCard on the aptitude page. The
+// one-line summary is shown in the page header, so only the lists are here.
 export function CourseInsightCard({ courses }: { courses: InstructorCourseSummary[] }) {
   const insight = interpretInstructorCourses(courses);
   const hasNoData =
@@ -60,7 +61,7 @@ export function CourseInsightCard({ courses }: { courses: InstructorCourseSummar
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ClipboardList size={16} className="text-brand" />
-          สรุปภาพรวมรายวิชาที่คุณสอน
+          จุดแข็งและข้อเสนอแนะ
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -68,7 +69,6 @@ export function CourseInsightCard({ courses }: { courses: InstructorCourseSummar
           <EmptyState illustration="no-outcomes" description={insight.summary} />
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">{insight.summary}</p>
             <IconList title="จุดแข็ง" items={insight.strengths} icon={TrendingUp} tone="strength" />
             <IconList
               title="จุดที่ควรดูแล"

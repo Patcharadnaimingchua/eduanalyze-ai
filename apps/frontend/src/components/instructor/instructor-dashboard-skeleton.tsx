@@ -37,6 +37,9 @@ export function InstructorDashboardSkeleton() {
           </>
         )}
       </CardRow>
+      {/* Collapsed CLO and in-depth bars. */}
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-lg" />
     </div>
   );
 }

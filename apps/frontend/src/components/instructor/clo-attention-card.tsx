@@ -6,7 +6,7 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { achievementStatus } from '@/lib/achievement-status';
 import { formatFiveScale } from '@/lib/five-scale';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCourseSummary[] }>) {
   const coursesWithGaps = courses
@@ -14,19 +14,23 @@ export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCour
     .filter((entry) => entry.gaps.length > 0);
   const totalGaps = coursesWithGaps.reduce((sum, entry) => sum + entry.gaps.length, 0);
 
+  // Open by default only when there is something to act on; the count stays
+  // visible on the summary bar when it is collapsed.
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2">
+    <CollapsibleSection
+      defaultOpen={totalGaps > 0}
+      title={
+        <>
           <ClipboardX className="h-4 w-4 text-amber-600" />
           CLO ที่ต้องดูแล
-          {totalGaps > 0 && <Badge tone="danger">{totalGaps} รายการ</Badge>}
-        </CardTitle>
+        </>
+      }
+      meta={totalGaps > 0 && <Badge tone="danger">{totalGaps} รายการ</Badge>}
+    >
+      <div className="space-y-4">
         <p className="text-xs text-muted-foreground">
           CLO ที่ผลสัมฤทธิ์ของวิชายังไม่ถึงเกณฑ์ที่ CLO นั้นตั้งไว้ รวมทุกวิชาที่คุณสอน
         </p>
-      </CardHeader>
-      <CardContent>
         {coursesWithGaps.length === 0 ? (
           <p className="text-sm text-muted-foreground">ไม่มี CLO ที่ต้องดูแลในขณะนี้</p>
         ) : (
@@ -65,7 +69,7 @@ export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCour
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleSection>
   );
 }
