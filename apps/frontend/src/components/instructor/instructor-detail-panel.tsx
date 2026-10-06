@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
 import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
+import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
+import { useUnsavedNavigationGuard } from '@/lib/use-unsaved-navigation-guard';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
@@ -71,6 +74,15 @@ export function InstructorDetailPanel({
 }) {
   const queryClient = useQueryClient();
 
+  // Set by the score form while it holds edits that are not saved yet.
+  const [hasUnsavedScores, setHasUnsavedScores] = useState(false);
+  useUnsavedNavigationGuard(hasUnsavedScores);
+  function handleTabChange(tab: InstructorTab) {
+    if (tab === activeTab) return;
+    if (hasUnsavedScores && !window.confirm(UNSAVED_SCORES_CONFIRM_MESSAGE)) return;
+    onTabChange(tab);
+  }
+
   const cloQuery = useQuery({
     queryKey: ['course-clo-achievement', course.courseId],
     queryFn: () => fetchCourseCloAchievement(course.courseId),
@@ -116,7 +128,7 @@ export function InstructorDetailPanel({
                   key={key}
                   type="button"
                   aria-current={activeTab === key ? 'true' : undefined}
-                  onClick={() => onTabChange(key)}
+                  onClick={() => handleTabChange(key)}
                   className={cn(
                     'min-h-11 border-b-2 px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     activeTab === key
@@ -212,7 +224,11 @@ export function InstructorDetailPanel({
                 firing requests when unused, same net effect. */}
             {activeTab === 'evidence' && isInstructor && (
               <Reveal index={0}>
-                <AssessmentEvidenceSection courseId={course.courseId} clos={course.clos} />
+                <AssessmentEvidenceSection
+                  courseId={course.courseId}
+                  clos={course.clos}
+                  onUnsavedChange={setHasUnsavedScores}
+                />
               </Reveal>
             )}
           </CardContent>

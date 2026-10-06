@@ -26,9 +26,12 @@ import { StudentScoreEntryPanel } from './student-score-entry-panel';
 export function AssessmentEvidenceSection({
   courseId,
   clos,
+  onUnsavedChange,
 }: {
   courseId: string;
   clos: CloAchievementEntry[];
+  // Lets the page guard tab/course switches while scores are unsaved.
+  onUnsavedChange?: (hasUnsaved: boolean) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -95,6 +98,13 @@ export function AssessmentEvidenceSection({
   useEffect(() => {
     if (!selectedMappingId) setHasUnsavedScores(false);
   }, [selectedMappingId]);
+
+  useEffect(() => {
+    onUnsavedChange?.(hasUnsavedScores);
+  }, [hasUnsavedScores, onUnsavedChange]);
+
+  // Leaving this tab unmounts the form, so nothing is unsaved any more.
+  useEffect(() => () => onUnsavedChange?.(false), [onUnsavedChange]);
 
   // Unsaved score edits live only in the score panel's form; leaving it for
   // another assessment/CLO discards them, so ask first.
