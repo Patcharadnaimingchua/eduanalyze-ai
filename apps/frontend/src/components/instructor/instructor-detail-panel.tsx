@@ -7,13 +7,16 @@ import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
 import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { CourseResultsSection } from './course-results-section';
 import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
+import { CourseFollowUpList } from './course-follow-up-list';
 
 export type InstructorTab = 'overview' | 'students' | 'gradebook' | 'clo' | 'evidence';
 
@@ -129,11 +132,24 @@ export function InstructorDetailPanel({
             {activeTab === 'overview' && (
               <Reveal index={0}>
                 <div className="space-y-6">
-                  <CourseInfoSection course={course} />
-                  <CourseResultsSection
-                    distribution={course.gradeDistribution}
-                    trend={course.semesterTrend}
-                  />
+                  <CourseFollowUpList courseId={course.courseId} students={course.atRiskStudents} />
+                  <PageSection title="ผลการเรียน">
+                    <CourseResultsSection
+                      distribution={course.gradeDistribution}
+                      trend={course.semesterTrend}
+                    />
+                  </PageSection>
+                  <CollapsibleSection
+                    framed={false}
+                    title="ข้อมูลรายวิชา"
+                    meta={
+                      <span className="text-sm font-normal text-muted-foreground">
+                        หน่วยกิต และวิชาที่ต้องผ่านก่อน
+                      </span>
+                    }
+                  >
+                    <CourseInfoSection course={course} />
+                  </CollapsibleSection>
                 </div>
               </Reveal>
             )}
