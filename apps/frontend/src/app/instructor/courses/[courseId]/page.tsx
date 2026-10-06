@@ -69,8 +69,10 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
       params.delete('def');
       params.delete('clo');
     }
-    if (tab !== 'gradebook' && tab !== 'students') {
+    if (tab !== 'students') {
       params.delete('student');
+      params.delete('risk');
+      params.delete('q');
     }
     router[mode](`${pathname}?${params.toString()}`, { scroll: false });
   }

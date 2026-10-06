@@ -173,7 +173,10 @@ function InstructorStudentsContent() {
               <Reveal index={2}>
                 <div className="space-y-3">
                   <StudentPersonList people={pagination.pageRows} />
-                  <Pagination {...pagination} onPageChange={pagination.setPage} />
+                  {/* The shared Pagination buttons are 32px; 44px here for touch. */}
+                  <div className="[&_button]:h-11 [&_button]:w-11">
+                    <Pagination {...pagination} onPageChange={pagination.setPage} />
+                  </div>
                 </div>
               </Reveal>
             )}

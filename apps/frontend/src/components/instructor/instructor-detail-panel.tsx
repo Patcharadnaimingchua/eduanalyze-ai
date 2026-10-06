@@ -21,33 +21,30 @@ import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
 import { CourseFollowUpList } from './course-follow-up-list';
 
-export type InstructorTab = 'overview' | 'students' | 'gradebook' | 'clo' | 'evidence';
+export type InstructorTab = 'overview' | 'students' | 'evidence' | 'clo';
 
-// Overview/Students/Gradebook/Evidence/CLO — Students and
-// Gradebook render the SAME StudentRosterTable (see the two branches
-// below), toggled only by whether onChanged is passed: Students is the
-// read-only search/filter/timeline view, Gradebook is the same table with
-// inline grade-edit and delete enabled. Overview absorbed the old standalone
-// 'grades' (distribution/trend charts) and 'course' (metadata/prerequisites)
-// tabs — both are read-only/summary-shaped content with no tab of their own
-// anymore.
+// Four tabs, in the order of the work done most often. The old Gradebook tab
+// was the same table as Students with grade editing switched on; that is now a
+// mode inside Students ("แก้ไขเกรด"), off until the instructor asks for it.
+// Overview absorbed the old standalone 'grades' (distribution/trend charts)
+// and 'course' (metadata/prerequisites) tabs.
 const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'overview', label: 'ภาพรวม' },
   { key: 'students', label: 'นักศึกษา' },
-  { key: 'gradebook', label: 'แก้ไขเกรด' },
   { key: 'evidence', label: 'กรอกคะแนน' },
   { key: 'clo', label: 'ผลลัพธ์การเรียนรู้ (CLO)' },
 ];
 
-// Backward-compat for bookmarked/shared links from before the 5-tab
-// restructure: ?tab=grades and ?tab=trend (the older standalone tab grades
-// absorbed) fall back onto Overview; ?tab=roster (renamed) falls back onto
-// Gradebook, since that's the tab that kept the editable behavior.
+// Backward-compat for bookmarked/shared links from before the restructure:
+// ?tab=grades / trend / course fall back onto Overview; ?tab=gradebook and
+// ?tab=roster (the editable table) land on Students in view mode, with the
+// ?student= deep link kept so the same person is opened.
 const LEGACY_TAB_ALIASES: Record<string, InstructorTab> = {
   grades: 'overview',
   trend: 'overview',
   course: 'overview',
-  roster: 'gradebook',
+  gradebook: 'students',
+  roster: 'students',
 };
 
 export function parseInstructorTab(value: string | null): InstructorTab {
@@ -92,9 +89,7 @@ export function InstructorDetailPanel({
   const rosterQuery = useQuery({
     queryKey: ['course-roster', course.courseId],
     queryFn: () => fetchCourseRoster(course.courseId),
-    enabled:
-      isInstructor &&
-      (activeTab === 'students' || activeTab === 'gradebook' || activeTab === 'clo'),
+    enabled: isInstructor && (activeTab === 'students' || activeTab === 'clo'),
   });
 
   // Evidence coverage sits beside the grade-based numbers on the CLO tab so
@@ -187,24 +182,7 @@ export function InstructorDetailPanel({
               </Reveal>
             )}
 
-            {/* Same table both tabs — onChanged toggles editable (student-roster-table.tsx's
-                `editable = !!onChanged`): omitted here for a read-only search/filter/timeline
-                view, passed below for the same rows with grade-edit and delete enabled. */}
             {activeTab === 'students' && (
-              <Reveal index={0}>
-                <StudentRosterTable
-                  courseId={course.courseId}
-                  courseCode={course.code}
-                  clos={course.clos}
-                  roster={rosterQuery.data}
-                  isLoading={rosterQuery.isLoading}
-                  isError={rosterQuery.isError}
-                  initialSelectedStudentId={initialSelectedStudentId}
-                />
-              </Reveal>
-            )}
-
-            {activeTab === 'gradebook' && (
               <Reveal index={0}>
                 <StudentRosterTable
                   courseId={course.courseId}
