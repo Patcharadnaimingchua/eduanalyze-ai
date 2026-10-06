@@ -1,16 +1,30 @@
 'use client';
 
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstructorCourseTimeline } from '@/lib/api/instructor';
+import {
+  buildTimelineSummary,
+  countCourses,
+  splitTimeline,
+  termLabel,
+} from '@/lib/course-timeline-summary';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { InstructorCourseTimelineSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
-import { InstructorCourseTimeline } from '@/components/instructor/instructor-course-timeline';
+import { TermCourseList, TermHeading } from '@/components/instructor/instructor-course-timeline';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorMyCoursesPage() {
@@ -34,6 +48,11 @@ function InstructorMyCoursesContent() {
     enabled: isInstructor,
   });
 
+  const years = useMemo(() => timelineQuery.data?.years ?? [], [timelineQuery.data]);
+  const { latest, previousYears } = useMemo(() => splitTimeline(years), [years]);
+  const summary = buildTimelineSummary(years);
+  const previousCount = countCourses(previousYears);
+
   if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -45,15 +64,13 @@ function InstructorMyCoursesContent() {
     );
   }
 
-  const years = timelineQuery.data?.years ?? [];
-
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Reveal index={0}>
           <PageHeader
             title="รายวิชาที่สอน"
-            description="รายวิชาที่คุณได้รับมอบหมายให้สอน จัดกลุ่มตามปีการศึกษาและภาคการศึกษา"
+            description={summary ?? 'รายวิชาที่คุณได้รับมอบหมายให้สอน แยกตามภาคเรียน'}
           />
         </Reveal>
 
@@ -67,28 +84,68 @@ function InstructorMyCoursesContent() {
           </Alert>
         )}
 
-        {timelineQuery.data && years.length === 0 && (
-          <Alert>
-            <AlertDescription>ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน</AlertDescription>
-          </Alert>
+        {timelineQuery.data && !latest && (
+          <Reveal index={1}>
+            <Card>
+              <CardContent className="pt-6">
+                <EmptyState
+                  illustration="no-data"
+                  description="ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน เมื่อมีนักศึกษาลงทะเบียน วิชาจะขึ้นที่นี่"
+                />
+              </CardContent>
+            </Card>
+          </Reveal>
         )}
 
-        {timelineQuery.data && years.length > 0 && (
-          <>
-            <Reveal index={1}>
-              <Alert>
-                <AlertDescription>
-                  รายการด้านล่างแสดงตามประวัติการลงทะเบียนเรียนของนักศึกษาในแต่ละวิชา
-                  หากคุณเพิ่งได้รับมอบหมายให้สอนวิชาใดวิชาหนึ่ง
-                  อาจเห็นภาคการศึกษาย้อนหลังที่คุณไม่ได้เป็นผู้สอนด้วย
-                </AlertDescription>
-              </Alert>
-            </Reveal>
+        {latest && (
+          <Reveal index={1}>
+            <PageSection
+              title={`เทอมล่าสุด — ${termLabel(latest)}`}
+              actions={
+                <Button asChild variant="outline" className="h-11">
+                  <Link href="/instructor/dashboard">
+                    ดูผลสัมฤทธิ์และคนที่ต้องติดตาม
+                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+              }
+            >
+              <TermCourseList semester={latest.semester} />
+            </PageSection>
+          </Reveal>
+        )}
 
-            <Reveal index={2}>
-              <InstructorCourseTimeline years={years} />
-            </Reveal>
-          </>
+        {latest && previousYears.length > 0 && (
+          <Reveal index={2}>
+            <CollapsibleSection
+              title="เทอมก่อนหน้า"
+              meta={
+                <span className="text-sm font-normal text-muted-foreground">
+                  {previousCount.courses} วิชา · {previousCount.semesters} เทอม
+                </span>
+              }
+            >
+              <div className="space-y-6">
+                <p className="text-xs text-muted-foreground">
+                  แสดงตามประวัติการลงทะเบียนของนักศึกษาในแต่ละวิชา
+                  หากเพิ่งได้รับมอบหมายให้สอน อาจเห็นเทอมย้อนหลังที่คุณไม่ได้เป็นผู้สอนด้วย
+                </p>
+                {previousYears.map((yearGroup) => (
+                  <div key={yearGroup.academicYear} className="space-y-3">
+                    <h2 className="text-base font-semibold text-primary">
+                      ปีการศึกษา {yearGroup.academicYear}
+                    </h2>
+                    {yearGroup.semesters.map((semester) => (
+                      <div key={semester.semesterId} className="space-y-2">
+                        <TermHeading term={semester.semesterTerm} />
+                        <TermCourseList semester={semester} />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          </Reveal>
         )}
       </DashboardShell>
     </RequireRole>

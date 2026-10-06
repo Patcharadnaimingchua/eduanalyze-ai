@@ -36,7 +36,7 @@ export interface AchievementChange {
 }
 
 // Mirrors the backend's SEMESTER_TERM_RANK (grade-point.constant.ts).
-const SEMESTER_TERM_RANK: Record<SemesterTerm, number> = { FIRST: 1, SECOND: 2, SUMMER: 3 };
+export const SEMESTER_TERM_RANK: Record<SemesterTerm, number> = { FIRST: 1, SECOND: 2, SUMMER: 3 };
 
 // Below half a point the change rounds to 0 at the whole points we show.
 const FLAT_BELOW = 0.5;
