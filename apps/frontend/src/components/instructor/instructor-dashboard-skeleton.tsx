@@ -1,43 +1,20 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { ListSkeleton, Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
-function CardRow({ children }: { children: (i: number) => React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Card key={i}>
-          <CardContent className="space-y-3 pt-6">{children(i)}</CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-// Shaped like the real layouts rather than a generic spinner — same
-// approach as dashboard-skeleton.tsx. First row reuses StatCardsSkeleton
-// (was a hand-duplicated CardRow with the exact same icon+label+number
-// shape) — second row has no shared equivalent, stays a custom CardRow.
+// Same order as the loaded dashboard: the three numbers, the by-course
+// overview, the learning goals and the grade bar.
 export function InstructorDashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <StatCardsSkeleton count={4} className="md:grid-cols-2 xl:grid-cols-4" />
-      {/* Follow-up list, then the course grid — same order as the loaded page. */}
-      <Card>
-        <CardContent className="space-y-3 pt-6">
-          <Skeleton className="h-5 w-40" />
-          <ListSkeleton items={3} />
-        </CardContent>
-      </Card>
-      <CardRow>
-        {() => (
-          <>
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-24" />
-          </>
-        )}
-      </CardRow>
-      {/* Collapsed CLO and in-depth bars. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <Skeleton className="h-52 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl lg:h-52" />
+        <Skeleton className="h-32 w-full rounded-xl lg:h-52" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
       <Skeleton className="h-14 w-full rounded-lg" />
       <Skeleton className="h-14 w-full rounded-lg" />
     </div>

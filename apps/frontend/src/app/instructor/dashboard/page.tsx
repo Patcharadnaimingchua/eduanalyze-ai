@@ -1,38 +1,43 @@
 'use client';
 
-import { AlertTriangle, BookOpen, Target, Users } from 'lucide-react';
-import Link from 'next/link';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchInstructorDashboard, fetchInstructorStudents } from '@/lib/api/instructor';
+import {
+  fetchInstructorCourseTimeline,
+  fetchInstructorDashboard,
+  fetchInstructorStudents,
+  fetchInstructorYearLevels,
+} from '@/lib/api/instructor';
+import { fetchCourses } from '@/lib/api/academic-record';
 import { useAuth } from '@/lib/auth-context';
-import { countFollowUps } from '@/lib/follow-ups';
+import { splitTimeline, termLabel } from '@/lib/course-timeline-summary';
 import { describeHeadcount } from '@/lib/headcount';
 import {
-  buildInstructorSummary,
-  computeAchievementChange,
-  overallAchievementPercent,
-  sortCoursesByAttention,
-} from '@/lib/instructor-summary';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
+  ALL_GRADES,
+  GRADE_POINTS,
+  breakdownByYearLevel,
+  buildCourseOverviews,
+  buildOverallOverview,
+  buildOverviewSentence,
+  selectGoals,
+  sortByGap,
+  statusOf,
+} from '@/lib/instructor-overview';
+import { computeAchievementChange } from '@/lib/instructor-summary';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { StatCard } from '@/components/dashboard/stat-card';
-import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
-import { InstructorCourseGrid } from '@/components/instructor/instructor-course-grid';
-import { AtRiskStudentsCard } from '@/components/instructor/at-risk-students-card';
-import { CloAttentionCard } from '@/components/instructor/clo-attention-card';
-import { PloCoverageCard } from '@/components/instructor/plo-coverage-card';
-import { CourseComparisonChart } from '@/components/instructor/course-comparison-chart';
-import { CourseInsightCard } from '@/components/instructor/course-insight-card';
 import { AchievementChangeBadge } from '@/components/instructor/achievement-change-badge';
+import { CourseOverviewList } from '@/components/instructor/course-overview-list';
+import { DashboardKpis } from '@/components/instructor/dashboard-kpis';
+import { GoalsCard } from '@/components/instructor/goals-card';
+import { GradeBand } from '@/components/instructor/grade-band';
+import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { PageHeader } from '@/components/layout/page-header';
-import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
@@ -52,13 +57,64 @@ function InstructorDashboardContent() {
     queryFn: fetchInstructorDashboard,
     enabled: isInstructor,
   });
-  // Same key as the students page, so the two share one cached request. Only used
-  // to count people; the dashboard works without it (seats are shown instead).
+  const courses = useMemo(() => dashboardQuery.data?.courses ?? [], [dashboardQuery.data]);
+  const courseKey = courses.map((c) => c.courseId).join(',');
+
+  // Same keys as the students, year-levels and my-courses pages, so each is one
+  // cached request shared across them. None of the three is needed for the main
+  // numbers: without them the page shows seats, no year split and no term label.
   const studentsQuery = useQuery({
     queryKey: ['instructor-students'],
     queryFn: () => fetchInstructorStudents({}),
     enabled: isInstructor,
   });
+  const yearLevelsQuery = useQuery({
+    queryKey: ['instructor-year-levels'],
+    queryFn: fetchInstructorYearLevels,
+    enabled: isInstructor,
+  });
+  const timelineQuery = useQuery({
+    queryKey: ['instructor-course-timeline'],
+    queryFn: fetchInstructorCourseTimeline,
+    enabled: isInstructor,
+  });
+  // GET /courses lists every course in the system. Same key and function as the
+  // course page's info section (the cache is shared and left as it is); `select`
+  // keeps only this instructor's own courses' credits and the rest is dropped
+  // here, never stored in this page.
+  const creditsQuery = useQuery({
+    queryKey: ['courses'],
+    queryFn: fetchCourses,
+    enabled: isInstructor && courseKey !== '',
+    select: useCallback(
+      (all: Awaited<ReturnType<typeof fetchCourses>>) => {
+        const mine = new Set(courseKey.split(','));
+        return new Map(all.filter((c) => mine.has(c.id)).map((c) => [c.id, c.credits]));
+      },
+      [courseKey],
+    ),
+  });
+  const credits = creditsQuery.data;
+
+  const overviews = useMemo(() => buildCourseOverviews(courses, credits), [courses, credits]);
+  const sorted = useMemo(() => sortByGap(overviews), [overviews]);
+  const overall = useMemo(() => buildOverallOverview(overviews, credits), [overviews, credits]);
+  const goals = useMemo(() => selectGoals(overviews, 5), [overviews]);
+
+  const yearLevelByStudent = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const bucket of yearLevelsQuery.data?.buckets ?? []) {
+      for (const s of bucket.students) map.set(s.studentProfileId, bucket.yearLevel);
+    }
+    return map;
+  }, [yearLevelsQuery.data]);
+  const yearCells = useMemo(
+    () =>
+      studentsQuery.data && yearLevelsQuery.data
+        ? breakdownByYearLevel(studentsQuery.data.students, yearLevelByStudent, credits).overall
+        : null,
+    [studentsQuery.data, yearLevelsQuery.data, yearLevelByStudent, credits],
+  );
 
   if (!user) {
     return (
@@ -71,18 +127,25 @@ function InstructorDashboardContent() {
     );
   }
 
-  const courses = dashboardQuery.data?.courses ?? [];
-  const seats = courses.reduce((sum, c) => sum + c.studentCount, 0);
-  // People, not seats: the students endpoint lists every (student, course) row, so a
-  // student in two courses is two rows but one person. Null until it has loaded (or if it fails).
+  // People, not seats: the students endpoint lists every (student, course) row.
   const people = studentsQuery.data
     ? new Set(studentsQuery.data.students.map((s) => s.studentProfileId)).size
     : null;
+  const seats = overall.stats.seats;
   const headcount = describeHeadcount(people, seats);
-  const achievement = overallAchievementPercent(courses);
-  const achievementChange = computeAchievementChange(courses);
-  const followUps = countFollowUps(courses);
-  const summary = dashboardQuery.data ? buildInstructorSummary(courses) : null;
+  const change = computeAchievementChange(courses);
+  const sentence = dashboardQuery.data ? buildOverviewSentence(overall, overviews) : null;
+  const latest = timelineQuery.data ? splitTimeline(timelineQuery.data.years).latest : null;
+
+  const hasPointSeats = ALL_GRADES.some((g) => GRADE_POINTS[g] !== null && overall.stats.counts[g] > 0);
+  const gpaNote =
+    overall.stats.gpa !== null
+      ? null
+      : !hasPointSeats
+        ? 'ยังไม่มีเกรดที่นำมาคิด'
+        : creditsQuery.isLoading
+          ? 'กำลังโหลดหน่วยกิตของวิชา'
+          : 'ยังแสดงไม่ได้ เพราะโหลดหน่วยกิตของวิชาไม่ได้ จึงถ่วงหน่วยกิตไม่ได้';
 
   return (
     <RequireRole role="INSTRUCTOR">
@@ -90,7 +153,14 @@ function InstructorDashboardContent() {
         <Reveal index={0}>
           <PageHeader
             title="แดชบอร์ดอาจารย์"
-            description={summary ?? 'ภาพรวมผลการเรียนและเป้าการเรียนรู้ของรายวิชาที่คุณสอน'}
+            description={sentence ?? 'ภาพรวมผลการเรียนและเป้าการเรียนรู้ของรายวิชาที่คุณสอน'}
+            actions={
+              latest && (
+                <Badge tone="neutral" className="px-3 py-1 text-sm">
+                  เทอมล่าสุด {termLabel(latest)}
+                </Badge>
+              )
+            }
           />
         </Reveal>
 
@@ -112,106 +182,35 @@ function InstructorDashboardContent() {
 
         {dashboardQuery.data && courses.length > 0 && (
           <>
-            {/* 4 columns only from xl: with the 256px sidebar, lg leaves ~164px per card. */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Reveal index={1}>
-                <StatCard icon={BookOpen} label="รายวิชาที่สอน" value={courses.length} suffix="วิชา" />
-              </Reveal>
-              <Reveal index={2}>
-                <StatCard
-                  icon={Users}
-                  label="นักศึกษาที่คุณสอน"
-                  value={headcount.value}
-                  suffix={headcount.unit}
-                  footer={headcount.note && <p className="text-xs text-muted-foreground">{headcount.note}</p>}
+            <Reveal index={1}>
+              <div className="space-y-2">
+                <DashboardKpis
+                  overall={overall}
+                  gpaNote={gpaNote}
+                  headcount={headcount}
+                  trend={change && <AchievementChangeBadge change={change} />}
                 />
-              </Reveal>
-              <Reveal index={3}>
-                <StatCard
-                  icon={Target}
-                  label="ได้ B ขึ้นไป (เฉลี่ยทุกวิชา)"
-                  value={achievement === null ? '—' : `${Math.round(achievement)}%`}
-                  footer={achievementChange && <AchievementChangeBadge change={achievementChange} />}
-                />
-              </Reveal>
-              <Reveal index={4}>
-                <StatCard
-                  icon={AlertTriangle}
-                  label="นักศึกษาที่ต้องติดตาม (นับรายคน)"
-                  value={followUps.total}
-                  suffix="คน"
-                  href={followUps.total > 0 ? '#follow-up' : undefined}
-                  footer={
-                    followUps.total > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {followUps.critical > 0 && (
-                          <Badge tone={RISK_LEVEL_TONES.CRITICAL}>
-                            {RISK_LEVEL_LABELS.CRITICAL} {followUps.critical}
-                          </Badge>
-                        )}
-                        {followUps.watch > 0 && (
-                          <Badge tone={RISK_LEVEL_TONES.WATCH}>
-                            {RISK_LEVEL_LABELS.WATCH} {followUps.watch}
-                          </Badge>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">ยังไม่มีนักศึกษาที่ต้องติดตาม</p>
-                    )
-                  }
-                />
-              </Reveal>
-            </div>
-            <div id="follow-up" className="scroll-mt-6">
-              <Reveal index={5}>
-                <AtRiskStudentsCard courses={courses} />
-                {/* Outside the card: AtRiskStudentsCard is shared with the staff dashboard. */}
-                {followUps.total > 0 && (
-                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-sm text-muted-foreground">
-                    ดูรายชื่อทั้งหมดในหน้านักศึกษา:
-                    {followUps.critical > 0 && (
-                      <Link
-                        href="/instructor/students?risk=CRITICAL"
-                        className="font-medium text-brand hover:underline"
-                      >
-                        ระดับ{RISK_LEVEL_LABELS.CRITICAL} →
-                      </Link>
-                    )}
-                    {followUps.watch > 0 && (
-                      <Link
-                        href="/instructor/students?risk=WATCH"
-                        className="font-medium text-brand hover:underline"
-                      >
-                        ระดับ{RISK_LEVEL_LABELS.WATCH} →
-                      </Link>
-                    )}
-                  </p>
-                )}
-              </Reveal>
-            </div>
+                <p className="text-xs text-muted-foreground">
+                  ตัวเลขรวมผลล่าสุดของนักศึกษาแต่ละคนจากทุกเทอม
+                </p>
+              </div>
+            </Reveal>
+
+            <Reveal index={2}>
+              <CourseOverviewList
+                overviews={sorted}
+                yearCells={yearCells}
+                overallTarget={overall.target}
+                overallStatusOf={(p) => statusOf(p, overall.target)}
+              />
+            </Reveal>
+
             <RevealOnScroll>
-              <PageSection title="รายวิชาที่สอน" description="เรียงจากวิชาที่ได้ B ขึ้นไปน้อยที่สุดก่อน">
-                <InstructorCourseGrid courses={sortCoursesByAttention(courses)} />
-              </PageSection>
+              <GoalsCard rows={goals.rows} unmet={goals.unmet} total={goals.total} />
             </RevealOnScroll>
+
             <RevealOnScroll>
-              <CloAttentionCard courses={courses} />
-            </RevealOnScroll>
-            <RevealOnScroll>
-              <CollapsibleSection
-                framed={false}
-                title="ดูรายละเอียดเพิ่ม"
-                meta={
-                  <span className="text-sm font-normal text-muted-foreground">
-                    จุดแข็ง ข้อเสนอแนะ และเป้าหมายของหลักสูตร
-                    {courses.length >= 2 && ' · เปรียบเทียบรายวิชา'}
-                  </span>
-                }
-              >
-                <CourseInsightCard courses={courses} />
-                <PloCoverageCard courses={courses} />
-                {courses.length >= 2 && <CourseComparisonChart courses={courses} />}
-              </CollapsibleSection>
+              <GradeBand counts={overall.stats.counts} />
             </RevealOnScroll>
           </>
         )}

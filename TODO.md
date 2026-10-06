@@ -22,6 +22,7 @@ Orphaned STAFF account (`patcharadnaimingchua+eduanalyze-test@gmail.com`) delete
 ตัดสินใจแล้ว: เกรดเฉลี่ยถ่วงหน่วยกิตตามสูตร backend เดิม · % ได้ B ขึ้นไปถ่วงที่นั่ง · ภาคเรียนเป็นป้ายข้อความ · สถานะ 4 แบบ (ผ่านเป้า / ใกล้เป้า ≤5 จุด / ยังไม่ถึงเป้า / ยังไม่มีเกรด) ใช้เฉพาะ Instructor ไม่แตะ `achievementStatus()` ที่ใช้ร่วม · ตัวอย่างน้อย <10 คน
 - ✓ C1 ปรับคำ + นับคนไม่ซ้ำ (`551c4eb`), ✓ C2 helper `lib/instructor-overview.ts` + test
 - **ที่ต้องแก้ backend แต่ยังไม่ทำ:** (1) ตัวกรองภาคเรียนจริง (เกรดเฉลี่ย / F / W / ชั้นปีรายเทอม) ต้องเพิ่ม `semesterId` ให้ `GET /dashboard/instructor` ตอนนี้ได้แค่ % B ขึ้นไปรายเทอมจาก `semesterTrend` (2) % ผ่านเป้าแยกรายข้อของเป้าการเรียนรู้ (backend คิดค่าเดียวต่อวิชา)
+- (ง) เพิ่ม `credits` ใน `GET /dashboard/instructor` (หรือเปิด endpoint วิชาของอาจารย์) เพื่อเลิกดึง `GET /courses` ทั้งแคตตาล็อก (ตอนนี้ Dashboard ดึง ~100 วิชาแล้วเก็บเฉพาะ courseId ของอาจารย์ ซึ่งคือ 3 วิชา)
 - งานเก่าของแนวการ์ดงานเก็บไว้ใน `git stash` ชื่อ "wip-commit2-task-style-2026-10-06" (ห้าม drop จนกว่าจะตัดสินใจ)
 
 ### Staff redesign (รอทำ)
