@@ -4,6 +4,7 @@ import {
   GRADE_POINTS,
   breakdownByYearLevel,
   buildCourseOverviews,
+  buildCourseYearMatrix,
   buildOverallOverview,
   buildOverviewSentence,
   emptyCounts,
@@ -231,5 +232,54 @@ describe('buildOverviewSentence', () => {
 describe('tallyGrades', () => {
   it('counts known grades and ignores anything else', () => {
     expect(tallyGrades(['A', 'A', 'F', 'X' as Grade])).toEqual(counts({ A: 2, F: 1 }));
+  });
+});
+
+describe('buildCourseYearMatrix', () => {
+  const ov = buildCourseOverviews([
+    course('a', 'CS101', { A: 2, F: 1, W: 1 }),
+    course('b', 'CS102', { B: 1, C: 1 }),
+    course('c', 'CS103', { A: 1 }),
+  ]);
+  const rows = [
+    { studentProfileId: 's1', courseId: 'a', grade: 'A' as Grade },
+    { studentProfileId: 's2', courseId: 'a', grade: 'A' as Grade },
+    { studentProfileId: 's3', courseId: 'a', grade: 'F' as Grade },
+    { studentProfileId: 's4', courseId: 'a', grade: 'W' as Grade },
+    { studentProfileId: 's1', courseId: 'b', grade: 'B' as Grade },
+    { studentProfileId: 's3', courseId: 'b', grade: 'C' as Grade },
+    { studentProfileId: 's1', courseId: 'c', grade: 'A' as Grade },
+  ];
+  const levels = new Map([['s1', 2], ['s2', 2], ['s3', 3], ['s4', 3]]);
+  const m = buildCourseYearMatrix(ov, rows, levels);
+
+  it('has a column only for year levels that have someone, and rows furthest from the goal first', () => {
+    expect(m.levels).toEqual([2, 3]);
+    expect(m.rows.map((r) => r.course.code)).toEqual(['CS102', 'CS101', 'CS103']);
+  });
+
+  it('leaves a cell empty (null) where a course has nobody at that level', () => {
+    const cs103 = m.rows.find((r) => r.course.code === 'CS103')!;
+    expect(cs103.cells[0]?.stats.seats).toBe(1);
+    expect(cs103.cells[1]).toBeNull();
+  });
+
+  it('every cell is the share of that course at that level, and W is not counted', () => {
+    const cs101 = m.rows.find((r) => r.course.code === 'CS101')!;
+    expect(cs101.cells[0]?.stats.achievedPercent).toBe(100); // s1, s2: A, A
+    expect(cs101.cells[1]?.stats).toMatchObject({ seats: 2, counted: 1, achievedPercent: 0, w: 1, f: 1 });
+  });
+
+  it('the row total is the course figure and the footer adds every course', () => {
+    const cs101 = m.rows.find((r) => r.course.code === 'CS101')!;
+    expect(cs101.total.seats).toBe(4);
+    expect(m.footer.total.seats).toBe(7);
+    expect(m.footer.cells[0]?.stats.seats).toBe(4); // level 2: s1 in a, b, c and s2 in a
+    expect(m.footer.cells[1]?.stats.seats).toBe(3);
+  });
+
+  it('counts seats whose student has no year level, and has no columns without any', () => {
+    expect(buildCourseYearMatrix(ov, rows, new Map()).levels).toEqual([]);
+    expect(buildCourseYearMatrix(ov, rows, new Map()).unplaced).toBe(7);
   });
 });

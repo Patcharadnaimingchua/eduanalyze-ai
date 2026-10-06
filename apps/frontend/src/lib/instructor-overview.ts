@@ -321,3 +321,63 @@ export function buildOverviewSentence(
   if (stats.lowSample) parts.push(`ตัวอย่างน้อย (${stats.counted} คน)`);
   return parts.join(' · ');
 }
+
+// ---- course x year level matrix ----
+
+export interface MatrixCell {
+  yearLevel: number;
+  stats: GroupStats;
+  status: OverviewStatus;
+}
+
+export interface MatrixRow {
+  course: InstructorCourseSummary;
+  target: number | null;
+  // One entry per column, in the same order as `levels`; null = nobody there ("–").
+  cells: (MatrixCell | null)[];
+  total: GroupStats;
+  totalStatus: OverviewStatus;
+}
+
+export interface Matrix {
+  // The year levels that have anyone, ascending; empty levels are not columns.
+  levels: number[];
+  rows: MatrixRow[];
+  // Seats of the whole table per level, and in total.
+  footer: { cells: (MatrixCell | null)[]; total: GroupStats; totalStatus: OverviewStatus; target: number | null };
+  unplaced: number;
+}
+
+// Every number comes from the same seats: the per-course total here is the
+// course's own counted figure, so a row's total matches its card elsewhere.
+export function buildCourseYearMatrix(
+  overviews: readonly CourseOverview[],
+  seats: readonly SeatRow[],
+  yearLevelByStudent: ReadonlyMap<string, number>,
+  credits?: CreditsByCourse,
+): Matrix {
+  const { byCourse, overall, unplaced } = breakdownByYearLevel(seats, yearLevelByStudent, credits);
+  const levels = [...new Set(overall.map((c) => c.yearLevel))].sort((a, b) => a - b);
+  const all = buildOverallOverview(overviews, credits);
+  const cell = (cells: YearLevelCell[] | undefined, level: number, target: number | null): MatrixCell | null => {
+    const hit = cells?.find((c) => c.yearLevel === level);
+    return hit ? { yearLevel: level, stats: hit.stats, status: statusOf(hit.stats.achievedPercent, target) } : null;
+  };
+  return {
+    levels,
+    rows: sortByGap(overviews).map((o) => ({
+      course: o.course,
+      target: o.target,
+      cells: levels.map((l) => cell(byCourse.get(o.course.courseId), l, o.target)),
+      total: o.stats,
+      totalStatus: o.status,
+    })),
+    footer: {
+      cells: levels.map((l) => cell(overall, l, all.target)),
+      total: all.stats,
+      totalStatus: all.status,
+      target: all.target,
+    },
+    unplaced,
+  };
+}
