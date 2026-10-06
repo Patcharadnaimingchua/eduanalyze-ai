@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSection } from '@/components/layout/page-section';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { achievementStatus } from '@/lib/achievement-status';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 
@@ -133,7 +134,10 @@ export function CloAchievementSection({
         </p>
       </PageSection>
 
-      <PageSection title="รายการ CLO">
+      <PageSection
+        title="รายการ CLO"
+        description="CLO คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
+      >
         {clos.map((clo) => {
           // Same course-level achievementPercent for every CLO (backend
           // limitation), but each CLO may set its own threshold.
@@ -154,7 +158,7 @@ export function CloAchievementSection({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="mt-1 h-auto px-0 text-xs text-brand hover:bg-transparent hover:underline"
+                      className="mt-1 h-auto min-h-11 px-0 text-xs text-brand hover:bg-transparent hover:underline"
                       onClick={() => setExpandedCloId(isExpanded ? null : clo.cloId)}
                     >
                       {isExpanded ? 'ซ่อนรายชื่อ' : `ดูรายชื่อนักศึกษาที่ยังไม่ผ่าน (${failingStudents.length} คน)`}
@@ -189,20 +193,19 @@ export function CloAchievementSection({
                   ) : (
                     <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-background">
                       {failingStudents.map((s) => (
-                        <li
-                          key={s.studentProfileId}
-                          className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm"
-                        >
-                          <span className="min-w-0">
-                            <span className="text-muted-foreground">{s.studentCode}</span>{' '}
-                            <Link
-                              href={`/instructor/courses/${courseId}?tab=gradebook&student=${s.studentProfileId}`}
-                              className="text-primary hover:underline"
-                            >
-                              {s.fullName}
-                            </Link>
-                          </span>
-                          <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
+                        <li key={s.studentProfileId}>
+                          <Link
+                            href={`/instructor/courses/${courseId}?tab=students&student=${s.studentProfileId}`}
+                            className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-primary">{s.fullName}</span>
+                              <span className="block text-xs text-muted-foreground">
+                                {s.studentCode}
+                              </span>
+                            </span>
+                            <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -210,9 +213,9 @@ export function CloAchievementSection({
                   <button
                     type="button"
                     onClick={onViewRoster}
-                    className="text-xs text-brand hover:underline"
+                    className="inline-flex min-h-11 items-center text-xs text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    ไปที่ Gradebook →
+                    ไปที่แท็บนักศึกษา →
                   </button>
                 </div>
               )}
@@ -221,47 +224,59 @@ export function CloAchievementSection({
         })}
       </PageSection>
 
-      {plos.length > 0 && (
-        <PageSection title="PLO ที่เกี่ยวข้อง" className="border-t border-slate-100 pt-3">
-          {plos.map((plo) => (
-            <div key={plo.ploId} className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {plo.code} · {plo.name}
-                </span>
-                <span className="font-medium text-primary">
-                  {formatFiveScale(plo.achievementPercent)}
-                </span>
-              </div>
-              <Progress
-                value={plo.achievementPercent}
-                barClassName={ploProgressBarColorClassName(plo.achievementPercent, null)}
-              />
-            </div>
-          ))}
-        </PageSection>
-      )}
-
-      {scoredAssessmentClos.length > 0 && (
-        <PageSection
-          title="คะแนนประเมินตนเองเฉลี่ยต่อ CLO (1-5)"
-          className="border-t border-slate-100 pt-3"
+      {(plos.length > 0 || scoredAssessmentClos.length > 0) && (
+        <CollapsibleSection
+          framed={false}
+          title="PLO และคะแนนประเมินตนเอง"
+          meta={
+            <span className="text-sm font-normal text-muted-foreground">
+              ข้อมูลประกอบ ไม่ต้องดูทุกครั้ง
+            </span>
+          }
         >
-          {scoredAssessmentClos.map((c) => (
-            <div key={c.cloId} className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {c.code}
-                {c.cloId === highestAssessmentCloId && (
-                  <span className="ml-1.5 text-xs text-emerald-600">(สูงสุด)</span>
-                )}
-                {c.cloId === lowestAssessmentCloId && c.cloId !== highestAssessmentCloId && (
-                  <span className="ml-1.5 text-xs text-amber-600">(ต่ำสุด)</span>
-                )}
-              </span>
-              <span className="font-medium text-primary">{c.averageScore!.toFixed(1)}</span>
-            </div>
-          ))}
-        </PageSection>
+          {plos.length > 0 && (
+            <PageSection
+              title="PLO ที่เกี่ยวข้อง"
+              description="PLO คือผลลัพธ์ที่หลักสูตรคาดหวังจากนักศึกษา"
+            >
+              {plos.map((plo) => (
+                <div key={plo.ploId} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {plo.code} · {plo.name}
+                    </span>
+                    <span className="font-medium text-primary">
+                      {formatFiveScale(plo.achievementPercent)}
+                    </span>
+                  </div>
+                  <Progress
+                    value={plo.achievementPercent}
+                    barClassName={ploProgressBarColorClassName(plo.achievementPercent, null)}
+                  />
+                </div>
+              ))}
+            </PageSection>
+          )}
+
+          {scoredAssessmentClos.length > 0 && (
+            <PageSection title="คะแนนประเมินตนเองเฉลี่ยต่อ CLO (1-5)">
+              {scoredAssessmentClos.map((c) => (
+                <div key={c.cloId} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {c.code}
+                    {c.cloId === highestAssessmentCloId && (
+                      <span className="ml-1.5 text-xs text-emerald-600">(สูงสุด)</span>
+                    )}
+                    {c.cloId === lowestAssessmentCloId && c.cloId !== highestAssessmentCloId && (
+                      <span className="ml-1.5 text-xs text-amber-600">(ต่ำสุด)</span>
+                    )}
+                  </span>
+                  <span className="font-medium text-primary">{c.averageScore!.toFixed(1)}</span>
+                </div>
+              ))}
+            </PageSection>
+          )}
+        </CollapsibleSection>
       )}
     </div>
   );

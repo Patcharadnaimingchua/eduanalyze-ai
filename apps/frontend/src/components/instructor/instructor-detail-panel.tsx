@@ -170,7 +170,7 @@ export function InstructorDetailPanel({
                   evidenceTotal={rosterQuery.data?.length}
                   evidenceError={evidenceCoverageQuery.isError}
                   roster={rosterQuery.data}
-                  onViewRoster={() => onTabChange('gradebook')}
+                  onViewRoster={() => onTabChange('students')}
                 />
               </Reveal>
             )}
