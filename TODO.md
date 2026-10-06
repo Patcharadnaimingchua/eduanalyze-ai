@@ -18,12 +18,18 @@ Orphaned STAFF account (`patcharadnaimingchua+eduanalyze-test@gmail.com`) delete
 
 **ถัดไป:** Staff redesign
 
-### Instructor รอบ 3 — แนว Academic Overview (กำลังทำ, ยังไม่ push)
-ตัดสินใจแล้ว: เกรดเฉลี่ยถ่วงหน่วยกิตตามสูตร backend เดิม · % ได้ B ขึ้นไปถ่วงที่นั่ง · ภาคเรียนเป็นป้ายข้อความ · สถานะ 4 แบบ (ผ่านเป้า / ใกล้เป้า ≤5 จุด / ยังไม่ถึงเป้า / ยังไม่มีเกรด) ใช้เฉพาะ Instructor ไม่แตะ `achievementStatus()` ที่ใช้ร่วม · ตัวอย่างน้อย <10 คน
-- ✓ C1 ปรับคำ + นับคนไม่ซ้ำ (`551c4eb`), ✓ C2 helper `lib/instructor-overview.ts` + test
-- **ที่ต้องแก้ backend แต่ยังไม่ทำ:** (1) ตัวกรองภาคเรียนจริง (เกรดเฉลี่ย / F / W / ชั้นปีรายเทอม) ต้องเพิ่ม `semesterId` ให้ `GET /dashboard/instructor` ตอนนี้ได้แค่ % B ขึ้นไปรายเทอมจาก `semesterTrend` (2) % ผ่านเป้าแยกรายข้อของเป้าการเรียนรู้ (backend คิดค่าเดียวต่อวิชา)
-- (ง) เพิ่ม `credits` ใน `GET /dashboard/instructor` (หรือเปิด endpoint วิชาของอาจารย์) เพื่อเลิกดึง `GET /courses` ทั้งแคตตาล็อก (ตอนนี้ Dashboard ดึง ~100 วิชาแล้วเก็บเฉพาะ courseId ของอาจารย์ ซึ่งคือ 3 วิชา)
-- งานเก่าของแนวการ์ดงานเก็บไว้ใน `git stash` ชื่อ "wip-commit2-task-style-2026-10-06" (ห้าม drop จนกว่าจะตัดสินใจ)
+### Instructor รอบ 3 — แนว Academic Overview (เสร็จ, **ยังไม่ push** รอคำสั่ง)
+Commit (7): `551c4eb` คำ+นับคน · `65ae3cb` helper · `e9a6ec5` GPA รวมเป็น null เมื่อไม่รู้หน่วยกิต · `559ccb5` Dashboard · `476d399` หน้ารายวิชา แท็บภาพรวม · `d96201b` ตารางวิชา × ชั้นปี · `6ddf018` กรอกคะแนนด้วยคำธรรมดา
+ตัดสินใจแล้ว: GPA ถ่วงหน่วยกิตตามสูตร backend เดิม · % ได้ B ขึ้นไปถ่วงที่นั่ง · ภาคเรียนเป็นป้ายข้อความ · สถานะ 4 แบบเฉพาะ Instructor (ไม่แตะ `achievementStatus()` ที่ใช้ร่วม) · ตัวอย่างน้อย <10 คน
+**ที่ยังค้าง / ควรทำต่อ**
+- (ก) ตัวกรองภาคเรียนจริง (เกรดเฉลี่ย / F / W / ชั้นปีรายเทอม) ต้องแก้ backend: เพิ่ม `semesterId` ให้ `GET /dashboard/instructor` ตอนนี้ทำได้แค่ % B ขึ้นไปรายเทอมจาก `semesterTrend`
+- (ข) % ผ่านเป้าแยกรายข้อของเป้าการเรียนรู้ ต้องแก้ backend (ตอนนี้คิดค่าเดียวต่อวิชา)
+- (ค) เพิ่ม `credits` ใน `GET /dashboard/instructor` (หรือเปิด endpoint วิชาของอาจารย์) เพื่อเลิกดึง `GET /courses` ทั้งแคตตาล็อก (ตอนนี้ดึง ~100 วิชา เก็บเฉพาะ 3 วิชาของอาจารย์ แต่ยังโอนข้อมูลมาที่เบราว์เซอร์)
+- (ง) คอมโพเนนต์ที่ไม่มีหน้าไหนใช้แล้วหลัง Dashboard ใหม่ (ยังไม่ลบ): `at-risk-students-card`, `clo-attention-card`, `course-insight-card`, `plo-coverage-card`, `course-comparison-chart`, `instructor-course-grid` (ฝั่ง instructor) ลบเมื่อยืนยันว่าไม่ย้อนกลับไปแนวเก่า
+- (จ) คำที่อยู่ในไฟล์ใช้ร่วมกับ Staff/Student ยังเป็นคำเดิม รอตัดสินใจ: เร่งด่วน/เฝ้าระวัง (`lib/risk-level.ts`), Sign Out / Academic Insights (`dashboard-shell`), "ตามหลังแผน" (Staff ชั้นปี + Student แดชบอร์ด), ตัวเลข PLO แบบ 0–5 (`PloRadarChart`, `PloProgressTable`)
+- (ฉ) ปุ่ม Back/Forward ของเบราว์เซอร์ดักเตือนค่าที่ยังไม่บันทึกไม่ได้ (ข้อจำกัดเบราว์เซอร์)
+- (ช) งานเก่าของแนวการ์ดงานอยู่ใน `git stash` "wip-commit2-task-style-2026-10-06" (ห้าม drop จนกว่าจะตัดสินใจ)
+- (ซ) assessment "Exam (Quiz, เต็ม 100)" วิชา 02739111 สร้างเมื่อ 2026-10-06 15:33 (เวลาไทย) ไม่ใช่จากสคริปต์ทดสอบ (ทุกคำขอเขียนถูกดัก) น่าจะมาจากการลองหน้าเว็บเอง ยังอยู่ในฐานข้อมูล ไม่ได้ลบ
 
 ### Staff redesign (รอทำ)
 - ตรวจความหมายของ "จาก N รายการ" ในคอมโพเนนต์ `Pagination` ที่ใช้ร่วมกัน: หน้า Instructor นับเป็น "คน" แต่ Staff อาจนับเป็น "คน × วิชา" (ยังไม่แก้ เพราะ Staff ใช้ร่วม)
