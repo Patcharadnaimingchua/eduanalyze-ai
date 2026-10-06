@@ -88,24 +88,39 @@ export function InstructorCourseTimelineSkeleton() {
   );
 }
 
-// Mirrors InstructorDetailPanel's layout: a header bar outside the Card
-// (now PageHeader — course name/code), then a Card holding the tab-strip
-// pills and the active tab's content block.
-export function InstructorCourseSkeleton() {
+// Mirrors the loaded course page: the course switcher (a bar on phones, a
+// row of pills from sm), the header with its title and summary lines, then
+// the tab card with its four tabs and the first blocks of the content. With
+// the switcher drawn up front the header does not move when the data arrives.
+// `withSwitcher` is off for the Suspense fallback, which has no shell yet.
+export function InstructorCourseSkeleton({ withSwitcher = false }: { withSwitcher?: boolean }) {
   return (
     <div className="space-y-4">
+      {withSwitcher && (
+        <>
+          <Skeleton className="h-[3.375rem] w-full rounded-lg sm:hidden" />
+          <div className="hidden flex-wrap gap-2 sm:flex">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-11 w-72 max-w-full rounded-full" />
+            ))}
+          </div>
+        </>
+      )}
       <div className="space-y-2">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-full max-w-xl" />
+        <Skeleton className="h-4 w-2/3 max-w-md sm:hidden" />
       </div>
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-6 w-24" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-11 w-24" />
             ))}
           </div>
+          <Skeleton className="h-24 w-full" />
           <Skeleton className="h-56 w-full" />
+          <Skeleton className="h-14 w-full rounded-lg" />
         </CardContent>
       </Card>
     </div>

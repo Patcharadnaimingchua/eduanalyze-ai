@@ -109,7 +109,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
           />
         )}
 
-        {dashboardQuery.isLoading && <InstructorCourseSkeleton />}
+        {dashboardQuery.isLoading && <InstructorCourseSkeleton withSwitcher />}
 
         {dashboardQuery.isError && (
           <Alert variant="destructive">
