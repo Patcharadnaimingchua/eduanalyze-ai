@@ -138,3 +138,57 @@ export function buildStudentsSummary(
   const critical = counts.CRITICAL > 0 ? ` (เร่งด่วน ${counts.CRITICAL})` : '';
   return `ต้องติดตาม ${followUps} คน${critical} จาก${population}`;
 }
+
+// ---- /instructor/year-levels: risk badges and the header line ----
+
+// Worst level per student across every course the instructor teaches, keyed by
+// studentProfileId. A student missing from the map has no row in the students
+// report, so their level is unknown (not "normal").
+export function worstRiskById(
+  entries: readonly InstructorStudentEntry[],
+): Map<string, RiskLevel> {
+  return new Map(groupByPerson(entries).map((p) => [p.studentProfileId, p.worstRisk]));
+}
+
+interface YearLevelBucketLike {
+  yearLevel: number;
+  label: string;
+  students: readonly { studentProfileId: string; onTrackStatus: 'on_track' | 'behind' | null }[];
+}
+
+export function buildYearLevelsSummary(
+  buckets: readonly YearLevelBucketLike[],
+  riskById: ReadonlyMap<string, RiskLevel> | null,
+): string | null {
+  const total = buckets.reduce((sum, b) => sum + b.students.length, 0);
+  if (total === 0) return null;
+  const parts = [`นักศึกษา ${total} คน`];
+
+  if (riskById) {
+    const perLevel = buckets.map((b) => ({
+      label: b.label,
+      count: b.students.filter((s) => {
+        const level = riskById.get(s.studentProfileId);
+        return level === 'CRITICAL' || level === 'WATCH';
+      }).length,
+    }));
+    const followUps = perLevel.reduce((sum, l) => sum + l.count, 0);
+    if (followUps === 0) {
+      parts.push('ยังไม่มีนักศึกษาที่ต้องติดตามในวิชาของคุณ');
+    } else {
+      const most = Math.max(...perLevel.map((l) => l.count));
+      const where = perLevel
+        .filter((l) => l.count === most)
+        .map((l) => l.label)
+        .join(' และ ');
+      parts.push(`ต้องติดตามในวิชาของคุณ ${followUps} คน (มากสุดที่${where})`);
+    }
+  }
+
+  const behind = buckets.reduce(
+    (sum, b) => sum + b.students.filter((s) => s.onTrackStatus === 'behind').length,
+    0,
+  );
+  if (behind > 0) parts.push(`ตามหลังแผน ${behind} คน`);
+  return parts.join(' · ');
+}

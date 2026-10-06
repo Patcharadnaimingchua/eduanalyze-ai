@@ -5,10 +5,12 @@ import {
   NO_STUDENTS_IN_COURSES,
   applyStudentFilters,
   buildStudentsSummary,
+  buildYearLevelsSummary,
   countByRisk,
   groupByPerson,
   parseStudentFilters,
   studentFiltersToQuery,
+  worstRiskById,
 } from './student-directory';
 
 const GRADE: Record<RiskLevel, InstructorStudentEntry['grade']> = { CRITICAL: 'F', WATCH: 'C', NORMAL: 'A' };
@@ -158,6 +160,75 @@ describe('buildStudentsSummary', () => {
   it('never prints NaN or undefined', () => {
     const odd = [{ ...row('9', 'CS101', 'NORMAL'), riskLevel: 'UNKNOWN' as RiskLevel }];
     const line = buildStudentsSummary(odd, Number.NaN);
+    expect(line).not.toMatch(/NaN|undefined|Infinity/);
+  });
+});
+
+type Track = 'on_track' | 'behind' | null;
+const person = (id: string, onTrackStatus: Track = 'on_track') => ({ studentProfileId: id, onTrackStatus });
+const bucket = (yearLevel: number, ...students: ReturnType<typeof person>[]) => ({
+  yearLevel,
+  label: yearLevel === 4 ? 'ปี 4 ขึ้นไป' : `ปี ${yearLevel}`,
+  students,
+});
+
+describe('worstRiskById', () => {
+  it('keeps the worst level per student across courses', () => {
+    const map = worstRiskById(entries);
+    expect(map.get('1')).toBe('CRITICAL');
+    expect(map.get('2')).toBe('WATCH');
+    expect(map.get('3')).toBe('NORMAL');
+    expect(map.has('99')).toBe(false);
+  });
+});
+
+describe('buildYearLevelsSummary', () => {
+  const risk = new Map<string, RiskLevel>([
+    ['a', 'CRITICAL'],
+    ['b', 'WATCH'],
+    ['c', 'NORMAL'],
+    ['d', 'WATCH'],
+  ]);
+
+  it('at risk: names where the follow-ups are, plus behind-plan', () => {
+    const buckets = [bucket(1, person('a')), bucket(2, person('b', 'behind'), person('c'), person('d')), bucket(3), bucket(4)];
+    expect(buildYearLevelsSummary(buckets, risk)).toBe(
+      'นักศึกษา 4 คน · ต้องติดตามในวิชาของคุณ 3 คน (มากสุดที่ปี 2) · ตามหลังแผน 1 คน',
+    );
+  });
+
+  it('lists every year when the most is tied', () => {
+    const buckets = [bucket(1, person('a')), bucket(2, person('b'))];
+    expect(buildYearLevelsSummary(buckets, risk)).toBe(
+      'นักศึกษา 2 คน · ต้องติดตามในวิชาของคุณ 2 คน (มากสุดที่ปี 1 และ ปี 2)',
+    );
+  });
+
+  it('normal: nobody to follow up, nobody behind', () => {
+    expect(buildYearLevelsSummary([bucket(1, person('c'))], risk)).toBe(
+      'นักศึกษา 1 คน · ยังไม่มีนักศึกษาที่ต้องติดตามในวิชาของคุณ',
+    );
+  });
+
+  it('leaves the risk part out when the students report is unavailable', () => {
+    expect(buildYearLevelsSummary([bucket(1, person('a', 'behind'))], null)).toBe(
+      'นักศึกษา 1 คน · ตามหลังแผน 1 คน',
+    );
+  });
+
+  it('a student with no risk row is unknown, not counted', () => {
+    expect(buildYearLevelsSummary([bucket(1, person('zzz'))], risk)).toBe(
+      'นักศึกษา 1 คน · ยังไม่มีนักศึกษาที่ต้องติดตามในวิชาของคุณ',
+    );
+  });
+
+  it('no data: no students at all returns null', () => {
+    expect(buildYearLevelsSummary([bucket(1), bucket(2)], risk)).toBeNull();
+    expect(buildYearLevelsSummary([], null)).toBeNull();
+  });
+
+  it('never prints NaN or undefined', () => {
+    const line = buildYearLevelsSummary([bucket(1, person('a', null))], new Map());
     expect(line).not.toMatch(/NaN|undefined|Infinity/);
   });
 });
