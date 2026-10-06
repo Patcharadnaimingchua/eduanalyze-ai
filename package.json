@@ -20,7 +20,9 @@
     "docker:rebuild": "docker compose up -d --build",
     "docker:rebuild:frontend": "docker compose up -d --build frontend",
     "docker:rebuild:backend": "docker compose up -d --build backend",
-    "docker:check-fresh": "bash scripts/check-docker-freshness.sh"
+    "docker:check-fresh": "bash scripts/check-docker-freshness.sh",
+    "docker:stop": "docker compose stop",
+    "db:backup": "bash scripts/db-backup.sh"
   },
   "engines": {
     "node": ">=20.0.0"

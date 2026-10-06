@@ -1,3 +1,13 @@
+# DATA LOSS WARNING — the postgres_data volume holds the only copy of the dev
+# data. On 2026-10-06 `docker-compose down -v` deleted it and every table came
+# back empty; it was only recoverable because an earlier pg_dump existed.
+#   - Stop with `npm run docker:stop` (docker compose stop). Never `down -v`,
+#     `docker volume rm/prune` or `docker system prune`.
+#   - Never stop or touch another project's containers/volumes (e.g.
+#     pm25-pipeline) even if a port looks taken; find what holds the port first.
+#   - Run `npm run db:backup -- <label>` before any QA/test round that touches
+#     Docker. Reset test data with a seed or the API, not by deleting volumes.
+#
 # Daily dev only needs the postgres service:
 #   docker compose up -d postgres
 # backend/frontend keep running natively (npm run start:dev / npm run dev)

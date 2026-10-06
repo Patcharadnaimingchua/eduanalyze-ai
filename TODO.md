@@ -5,6 +5,9 @@
 ### ✓ H9-H11 Testing (2026-09-29) — CLOSED
 Orphaned STAFF account (`patcharadnaimingchua+eduanalyze-test@gmail.com`) deleted; see commit `chore: remove orphaned test STAFF account with no scope/dependencies`.
 
+### pm25-pipeline (โปรเจกต์ของอีกวิชา)
+หยุดอยู่ สาเหตุยังไม่ทราบ อาจชนพอร์ต 5433 ตรวจทีหลัง (ห้ามสตาร์ท/หยุด/แตะ container หรือ volume ของมัน)
+
 ---
 
 ## Backend & Data Issues
