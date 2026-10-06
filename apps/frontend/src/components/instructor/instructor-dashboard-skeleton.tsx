@@ -94,13 +94,16 @@ export function InstructorCourseTimelineSkeleton() {
 export function InstructorCourseSkeleton() {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-8 w-64" />
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-full max-w-xl" />
+      </div>
       <Card>
         <CardContent className="space-y-4 pt-6">
-          <div className="flex gap-4">
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-6 w-28" />
-            <Skeleton className="h-6 w-28" />
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-24" />
+            ))}
           </div>
           <Skeleton className="h-56 w-full" />
         </CardContent>

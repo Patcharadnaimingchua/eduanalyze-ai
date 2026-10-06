@@ -18,6 +18,9 @@ import {
   type InstructorTab,
 } from '@/components/instructor/instructor-detail-panel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorCoursePage({ params }: { params: { courseId: string } }) {
@@ -90,7 +93,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Link
           href="/instructor/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft size={14} />
           กลับไปภาพรวม
@@ -115,9 +118,19 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
         )}
 
         {dashboardQuery.data && !course && (
-          <Alert>
-            <AlertDescription>ไม่พบรายวิชานี้ในรายวิชาที่คุณสอน</AlertDescription>
-          </Alert>
+          <Card>
+            <CardContent className="pt-6">
+              <EmptyState
+                illustration="no-results"
+                description="ไม่พบรายวิชานี้ในรายวิชาที่คุณสอน กลับไปเลือกวิชาจากรายการ"
+                action={
+                  <Button asChild variant="outline" className="h-11">
+                    <Link href="/instructor/my-courses">ดูรายวิชาที่สอน</Link>
+                  </Button>
+                }
+              />
+            </CardContent>
+          </Card>
         )}
 
         {course && (

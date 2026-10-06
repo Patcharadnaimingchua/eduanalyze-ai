@@ -5,6 +5,7 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
+import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { CourseInfoSection } from './course-info-section';
 
 export type InstructorTab = 'overview' | 'students' | 'gradebook' | 'clo' | 'evidence';
 
-// Overview/Students/Gradebook/CLO-PLO/Assessment Evidence — Students and
+// Overview/Students/Gradebook/Evidence/CLO — Students and
 // Gradebook render the SAME StudentRosterTable (see the two branches
 // below), toggled only by whether onChanged is passed: Students is the
 // read-only search/filter/timeline view, Gradebook is the same table with
@@ -25,11 +26,11 @@ export type InstructorTab = 'overview' | 'students' | 'gradebook' | 'clo' | 'evi
 // tabs — both are read-only/summary-shaped content with no tab of their own
 // anymore.
 const TABS: { key: InstructorTab; label: string }[] = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'students', label: 'Students' },
-  { key: 'gradebook', label: 'Gradebook' },
-  { key: 'clo', label: 'CLO-PLO' },
-  { key: 'evidence', label: 'Assessment Evidence' },
+  { key: 'overview', label: 'ภาพรวม' },
+  { key: 'students', label: 'นักศึกษา' },
+  { key: 'gradebook', label: 'แก้ไขเกรด' },
+  { key: 'evidence', label: 'กรอกคะแนน' },
+  { key: 'clo', label: 'ผลลัพธ์การเรียนรู้ (CLO)' },
 ];
 
 // Backward-compat for bookmarked/shared links from before the 5-tab
@@ -97,20 +98,24 @@ export function InstructorDetailPanel({
   return (
     <>
       <Reveal index={0}>
-        <PageHeader title={course.name} description={course.code} />
+        <PageHeader
+          title={course.name}
+          description={`${course.code} · ${buildCourseDetailSummary(course)}`}
+        />
       </Reveal>
 
       <Reveal index={1}>
         <Card>
           <CardContent className="space-y-4 pt-6">
-            <div className="flex gap-2 overflow-x-auto border-b border-slate-100">
+            <div className="flex flex-wrap gap-x-2 border-b border-slate-100">
               {TABS.map(({ key, label }) => (
                 <button
                   key={key}
                   type="button"
+                  aria-current={activeTab === key ? 'true' : undefined}
                   onClick={() => onTabChange(key)}
                   className={cn(
-                    'border-b-2 px-3 py-2 text-sm font-medium transition',
+                    'min-h-11 border-b-2 px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     activeTab === key
                       ? 'border-brand text-brand'
                       : 'border-transparent text-slate-500 hover:text-primary',
@@ -120,20 +125,6 @@ export function InstructorDetailPanel({
                 </button>
               ))}
             </div>
-
-            {/* Gradebook already tells the instructor this table is grade-fix-only
-                (student-roster-table.tsx:182-186) — the one thing missing is where
-                to actually enter scores, so this only adds that pointer. */}
-            {activeTab === 'gradebook' && (
-              <p className="text-xs text-muted-foreground">
-                กรอกคะแนนสอบ/ควิซจริงที่แท็บ Assessment Evidence
-              </p>
-            )}
-            {activeTab === 'evidence' && (
-              <p className="text-xs text-muted-foreground">
-                กรอกคะแนนสอบ/ควิซและผูกกับ CLO ที่นี่
-              </p>
-            )}
 
             {activeTab === 'overview' && (
               <Reveal index={0}>

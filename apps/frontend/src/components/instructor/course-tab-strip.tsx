@@ -21,24 +21,27 @@ export function CourseTabStrip({
   if (courses.length < 2) return null;
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <nav aria-label="สลับรายวิชา" className="flex flex-wrap gap-2">
       {courses.map((course) => {
         const isActive = course.courseId === activeCourseId;
         return (
           <Link
             key={course.courseId}
             href={`/instructor/courses/${course.courseId}${tabParam ? `?tab=${tabParam}` : ''}`}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium transition',
+              'inline-flex min-h-11 max-w-full items-center rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               isActive
                 ? 'border-brand bg-brand-light text-brand'
                 : 'border-slate-200 text-slate-600 hover:border-brand hover:text-brand',
             )}
           >
-            {course.code}
+            <span className="min-w-0">
+              {course.code} {course.name}
+            </span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
