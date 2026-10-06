@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ListSkeleton } from '@/components/ui/skeleton';
@@ -99,11 +99,7 @@ export function AssessmentDefinitionPanel({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>การประเมินในรายวิชานี้</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="space-y-2">
           {definitionsQuery.isLoading && <ListSkeleton items={3} />}
           {definitionsQuery.isError && (
             <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>
@@ -129,12 +125,11 @@ export function AssessmentDefinitionPanel({
               </span>
             </button>
           ))}
-        </CardContent>
-      </Card>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>เพิ่มการประเมินใหม่</CardTitle>
+      <div className="rounded-lg border">
+        <div className="flex items-center justify-between gap-3 px-4 py-1">
+          <h3 className="text-sm font-medium text-primary">เพิ่มข้อสอบ ควิซ หรืองานใหม่</h3>
           <Button
             type="button"
             variant="ghost"
@@ -147,11 +142,11 @@ export function AssessmentDefinitionPanel({
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
           </Button>
-        </CardHeader>
+        </div>
         <div id={formId} hidden={!formOpen}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 pb-4 pt-0">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertDescription>{serverError}</AlertDescription>
@@ -166,7 +161,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>ชื่อการประเมิน</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น Midterm Exam" className="h-11" {...field} />
+                        <Input placeholder="เช่น สอบกลางภาค" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -177,9 +172,9 @@ export function AssessmentDefinitionPanel({
                   name="kind"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ประเภท</FormLabel>
+                      <FormLabel>ประเภท (พิมพ์เอง)</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น Quiz, Exam, Assignment" className="h-11" {...field} />
+                        <Input placeholder="เช่น ข้อสอบ ควิซ งาน" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -231,7 +226,7 @@ export function AssessmentDefinitionPanel({
           </form>
         </Form>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function StudentActualCloCell({
   if (!shown) {
     return (
       <Button type="button" variant="ghost" size="sm" onClick={() => setShown(true)}>
-        ดูผลรวม CLO
+        ดูผลของเป้านี้
       </Button>
     );
   }

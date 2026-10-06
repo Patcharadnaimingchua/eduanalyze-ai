@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { ListSkeleton } from '@/components/ui/skeleton';
@@ -75,10 +75,10 @@ export function AssessmentCloMappingPanel({
       });
       setFormOpenOverride(false);
       onSelect(created.id, created.cloId);
-      toast.success('ผูก CLO แล้ว');
+      toast.success('เชื่อมกับเป้าการเรียนรู้แล้ว');
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('การประเมินนี้ผูกกับ CLO นี้ไว้แล้ว');
+        setServerError('การประเมินนี้เชื่อมกับเป้าการเรียนรู้ข้อนี้ไว้แล้ว');
       } else if (isAxiosError(error) && error.response?.status === 400) {
         setServerError('ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
       } else {
@@ -92,15 +92,11 @@ export function AssessmentCloMappingPanel({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>CLO ที่ผูกกับการประเมินนี้</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="space-y-2">
           {mappingsQuery.isLoading && <ListSkeleton items={3} />}
           {mappingsQuery.isError && <p className="text-sm text-destructive">ไม่สามารถโหลดข้อมูลได้</p>}
           {mappingsQuery.data && mappings.length === 0 && (
-            <p className="text-sm text-muted-foreground">ยังไม่มี CLO ผูกกับการประเมินนี้ — เพิ่มด้านล่าง</p>
+            <p className="text-sm text-muted-foreground">ยังไม่ได้เชื่อมกับเป้าการเรียนรู้ข้อใดเลย ต้องเชื่อมอย่างน้อย 1 ข้อก่อนจึงกรอกคะแนนได้ (ระบบเก็บคะแนนไว้ใต้เป้านั้น) — เลือกด้านล่าง</p>
           )}
           {mappings.map((mapping) => {
             const clo = cloById.get(mapping.cloId);
@@ -119,19 +115,18 @@ export function AssessmentCloMappingPanel({
                 <span>
                   <span className="font-medium">{clo?.code ?? mapping.cloId}</span>{' '}
                   <span className="text-muted-foreground">
-                    (น้ำหนัก {mapping.weight}
+                    (สัดส่วนคะแนน {mapping.weight}
                     {mapping.maxScoreOverride ? `, เต็ม ${mapping.maxScoreOverride}` : ''})
                   </span>
                 </span>
               </button>
             );
           })}
-        </CardContent>
-      </Card>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>ผูก CLO เพิ่ม</CardTitle>
+      <div className="rounded-lg border">
+        <div className="flex items-center justify-between gap-3 px-4 py-1">
+          <h3 className="text-sm font-medium text-primary">เชื่อมกับเป้าการเรียนรู้เพิ่ม</h3>
           <Button
             type="button"
             variant="ghost"
@@ -144,11 +139,11 @@ export function AssessmentCloMappingPanel({
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
           </Button>
-        </CardHeader>
+        </div>
         <div id={formId} hidden={!formOpen}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 pb-4 pt-0">
               {serverError && (
                 <Alert variant="destructive">
                   <AlertDescription>{serverError}</AlertDescription>
@@ -161,16 +156,16 @@ export function AssessmentCloMappingPanel({
                   name="cloId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CLO</FormLabel>
+                      <FormLabel>เป้าการเรียนรู้</FormLabel>
                       <FormControl>
                         <div className="[&_button]:h-11">
                         <Combobox
                           options={cloOptions}
                           value={field.value || undefined}
                           onValueChange={field.onChange}
-                          placeholder="เลือก CLO"
-                          searchPlaceholder="ค้นหารหัสหรือคำอธิบาย CLO..."
-                          emptyText="ไม่พบ CLO ที่ตรงกับคำค้นหา"
+                          placeholder="เลือกเป้าการเรียนรู้"
+                          searchPlaceholder="ค้นหารหัสหรือคำอธิบายเป้าการเรียนรู้..."
+                          emptyText="ไม่พบเป้าการเรียนรู้ที่ตรงกับคำค้นหา"
                         />
                         </div>
                       </FormControl>
@@ -183,7 +178,7 @@ export function AssessmentCloMappingPanel({
                   name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>น้ำหนักคะแนน</FormLabel>
+                      <FormLabel>สัดส่วนคะแนน</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" inputMode="decimal" className="h-11" {...field} />
                       </FormControl>
@@ -196,7 +191,7 @@ export function AssessmentCloMappingPanel({
                   name="maxScoreOverride"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>คะแนนเต็ม (เฉพาะ CLO นี้ ถ้ามี)</FormLabel>
+                      <FormLabel>คะแนนเต็มเฉพาะเป้านี้ (ถ้ามี)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -215,13 +210,13 @@ export function AssessmentCloMappingPanel({
               </div>
 
               <Button type="submit" className="h-11" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'ผูก CLO'}
+                {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เชื่อมกับเป้านี้'}
               </Button>
             </CardContent>
           </form>
         </Form>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

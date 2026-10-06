@@ -23,7 +23,6 @@ import {
 import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
 import { ScoreCsvImportPanel } from './score-csv-import-panel';
@@ -223,7 +222,7 @@ export function StudentScoreEntryPanel({
       setExtraMappingIds([]);
       toast.success(
         targetIds.length > 1
-          ? `บันทึกคะแนน ${dirtyRows.length} รายการลง ${targetIds.length} CLO สำเร็จ`
+          ? `บันทึกคะแนน ${dirtyRows.length} รายการลงเป้าการเรียนรู้ ${targetIds.length} ข้อสำเร็จ`
           : `บันทึกคะแนน ${dirtyRows.length} รายการสำเร็จ`,
       );
     } catch (error) {
@@ -272,10 +271,10 @@ export function StudentScoreEntryPanel({
       .join(', ');
     const overwriteNote =
       changed.size > 0
-        ? ` คะแนนเดิมของนักศึกษา ${changed.size} คนใน CLO เหล่านั้นจะถูกเขียนทับ`
+        ? ` คะแนนเดิมของนักศึกษา ${changed.size} คนในเป้าเหล่านั้นจะถูกเขียนทับ`
         : ' ไม่มีคะแนนเดิมที่ต่างกันถูกเขียนทับ';
     return window.confirm(
-      `จะบันทึกคะแนน ${dirtyRows.length} คน ลงใน CLO ปัจจุบัน และ ${labels} พร้อมกัน (ทั้งหมดหรือไม่มีเลย).${overwriteNote} ต้องการดำเนินการต่อหรือไม่?`,
+      `จะบันทึกคะแนน ${dirtyRows.length} คน ลงในเป้าที่เลือกอยู่ และ ${labels} พร้อมกัน (ทั้งหมดหรือไม่มีเลย).${overwriteNote} ต้องการดำเนินการต่อหรือไม่?`,
     );
   }
 
@@ -314,14 +313,14 @@ export function StudentScoreEntryPanel({
   const isError = rosterQuery.isError || scoresQuery.isError;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle>กรอกคะแนนนักศึกษา</CardTitle>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-primary">คะแนนของนักศึกษาแต่ละคน</h3>
         {fields.length > 0 && (
           <EvidenceCoverageBadge coverage={{ validCount: gradedCount, totalCount: fields.length }} />
         )}
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <div className="space-y-4">
         {serverError && (
           <Alert variant="destructive">
             <AlertDescription>{serverError}</AlertDescription>
@@ -352,7 +351,7 @@ export function StudentScoreEntryPanel({
         {fields.length > 0 && siblingOptions.length > 0 && (
           <fieldset className="rounded-md border border-slate-200 p-3">
             <legend className="px-1 text-xs font-medium text-muted-foreground">
-              บันทึกคะแนนชุดนี้ลง CLO อื่นของแบบประเมินนี้ด้วย (ไม่บังคับ)
+              บันทึกคะแนนชุดนี้ให้เป้าการเรียนรู้ข้ออื่นของการประเมินนี้ด้วย (ไม่บังคับ)
             </legend>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {siblingOptions.map((option) => (
@@ -362,7 +361,7 @@ export function StudentScoreEntryPanel({
                   title={
                     option.compatible
                       ? undefined
-                      : 'คะแนนเต็มของ CLO นี้ไม่เท่ากับ CLO ปัจจุบัน จึงใช้คะแนนเดียวกันไม่ได้'
+                      : 'คะแนนเต็มของเป้านี้ไม่เท่ากับเป้าที่เลือกอยู่ จึงใช้คะแนนเดียวกันไม่ได้'
                   }
                 >
                   <input
@@ -450,7 +449,7 @@ export function StudentScoreEntryPanel({
                   </div>
                   {selectedMapping && (
                     <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-1 text-xs text-muted-foreground [&_button]:min-h-11">
-                      ผลรวมของ CLO นี้ (จากหลักฐาน)
+                      ผลของเป้านี้จากคะแนนที่กรอก
                       <StudentActualCloCell
                         courseId={courseId}
                         cloId={selectedMapping.cloId}
@@ -474,7 +473,7 @@ export function StudentScoreEntryPanel({
             </span>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

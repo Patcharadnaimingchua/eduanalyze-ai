@@ -100,6 +100,16 @@ export function AssessmentEvidenceSection({
     if (!selectedMappingId) setHasUnsavedScores(false);
   }, [selectedMappingId]);
 
+  // An assessment linked to exactly one goal has nothing to choose in step 2, so
+  // that goal is picked for the instructor and the score table opens at once. Only
+  // the ?clo= selection changes (replace, no history entry); nothing is written.
+  // Nothing is typed yet when no goal is selected, so there is nothing to lose.
+  const onlyMappingId =
+    mappingsQuery.data && mappingsQuery.data.length === 1 ? mappingsQuery.data[0].id : null;
+  useEffect(() => {
+    if (selectedDefinitionId && !cloParam && onlyMappingId) updateParams({ clo: onlyMappingId });
+  }, [selectedDefinitionId, cloParam, onlyMappingId, updateParams]);
+
   useEffect(() => {
     onUnsavedChange?.(hasUnsavedScores);
   }, [hasUnsavedScores, onUnsavedChange]);
@@ -143,8 +153,8 @@ export function AssessmentEvidenceSection({
 
       <EvidenceStep
         number={2}
-        title="เลือก CLO ที่จะกรอกคะแนน"
-        hint="CLO คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
+        title="เลือกเป้าการเรียนรู้ที่จะกรอกคะแนน"
+        hint="เป้าการเรียนรู้ (CLO) คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา ถ้ามีข้อเดียวระบบเลือกให้เอง"
         done={!!selectedMappingId}
         waiting={!selectedDefinitionId}
         waitingText="เลือกการประเมินในขั้นที่ 1 ก่อน"
@@ -165,7 +175,7 @@ export function AssessmentEvidenceSection({
         number={3}
         title="กรอกคะแนน"
         waiting={!(selectedDefinitionId && selectedMappingId)}
-        waitingText="เลือก CLO ในขั้นที่ 2 ก่อน แล้วจะกรอกคะแนนได้ที่นี่"
+        waitingText="เลือกเป้าการเรียนรู้ในขั้นที่ 2 ก่อน แล้วจะกรอกคะแนนได้ที่นี่"
       >
         {selectedDefinitionId && selectedMappingId && (
           <StudentScoreEntryPanel
