@@ -22,11 +22,14 @@ const BANDS: Band[] = [
   { key: 'none', label: 'ไม่คิดเกรด (W, I, S, U)', grades: ['W', 'I', 'S', 'U'], tone: 'neutral' },
 ];
 
-export function GradeBand({ counts }: Readonly<{ counts: GradeCounts }>) {
+export function GradeBand({
+  counts,
+  description = 'ผลล่าสุดของนักศึกษาแต่ละคน รวมทุกวิชา',
+}: Readonly<{ counts: GradeCounts; description?: string }>) {
   const total = ALL_GRADES.reduce((sum, g) => sum + counts[g], 0);
   const bands = BANDS.map((b) => ({ ...b, n: b.grades.reduce((s, g) => s + counts[g], 0) }));
   return (
-    <PageSection title="การกระจายเกรด" description="ผลล่าสุดของนักศึกษาแต่ละคน รวมทุกวิชา">
+    <PageSection title="การกระจายเกรด" description={description}>
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">ยังไม่มีเกรด</p>
       ) : (

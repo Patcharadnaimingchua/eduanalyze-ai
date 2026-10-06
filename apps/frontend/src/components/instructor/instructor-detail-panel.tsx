@@ -10,16 +10,15 @@ import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
 import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
 import { useUnsavedNavigationGuard } from '@/lib/use-unsaved-navigation-guard';
 import { PageHeader } from '@/components/layout/page-header';
-import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { CourseResultsSection } from './course-results-section';
 import { CloAchievementSection } from './clo-achievement-section';
 import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
 import { CourseFollowUpList } from './course-follow-up-list';
+import { CourseOverviewTab } from './course-overview-tab';
 
 export type InstructorTab = 'overview' | 'students' | 'evidence' | 'clo';
 
@@ -139,13 +138,8 @@ export function InstructorDetailPanel({
             {activeTab === 'overview' && (
               <Reveal index={0}>
                 <div className="space-y-6">
+                  <CourseOverviewTab course={course} />
                   <CourseFollowUpList courseId={course.courseId} students={course.atRiskStudents} />
-                  <PageSection title="ผลการเรียน">
-                    <CourseResultsSection
-                      distribution={course.gradeDistribution}
-                      trend={course.semesterTrend}
-                    />
-                  </PageSection>
                   <CollapsibleSection
                     framed={false}
                     title="ข้อมูลรายวิชา"
