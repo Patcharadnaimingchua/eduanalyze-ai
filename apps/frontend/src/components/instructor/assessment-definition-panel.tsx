@@ -101,7 +101,7 @@ export function AssessmentDefinitionPanel({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>การประเมิน (Assessment) ในรายวิชานี้</CardTitle>
+          <CardTitle>การประเมินในรายวิชานี้</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {definitionsQuery.isLoading && <ListSkeleton items={3} />}
@@ -117,7 +117,7 @@ export function AssessmentDefinitionPanel({
               type="button"
               onClick={() => onSelect(def.id)}
               className={cn(
-                'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition',
+                'flex min-h-11 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition',
                 selectedDefinitionId === def.id
                   ? 'border-brand bg-brand/5 text-brand'
                   : 'border-slate-100 text-primary hover:border-slate-200',
@@ -142,7 +142,7 @@ export function AssessmentDefinitionPanel({
             onClick={() => setFormOpenOverride(!formOpen)}
             aria-expanded={formOpen}
             aria-controls={formId}
-            className="gap-1.5"
+            className="min-h-11 gap-1.5"
           >
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
@@ -166,7 +166,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>ชื่อการประเมิน</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น Midterm Exam" {...field} />
+                        <Input placeholder="เช่น Midterm Exam" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,7 +179,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>ประเภท</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น Quiz, Exam, Assignment" {...field} />
+                        <Input placeholder="เช่น Quiz, Exam, Assignment" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -192,7 +192,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>คะแนนเต็ม</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input type="number" step="0.01" inputMode="decimal" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -206,7 +206,7 @@ export function AssessmentDefinitionPanel({
                       <FormLabel>ภาคเรียน</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11">
                             <SelectValue placeholder="เลือกภาคเรียน" />
                           </SelectTrigger>
                         </FormControl>
@@ -224,7 +224,7 @@ export function AssessmentDefinitionPanel({
                 />
               </div>
 
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="h-11" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มการประเมิน'}
               </Button>
             </CardContent>

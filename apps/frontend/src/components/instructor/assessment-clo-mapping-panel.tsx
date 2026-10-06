@@ -110,7 +110,7 @@ export function AssessmentCloMappingPanel({
                 type="button"
                 onClick={() => onSelect(mapping.id, mapping.cloId)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition',
+                  'flex min-h-11 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition',
                   selectedMappingId === mapping.id
                     ? 'border-brand bg-brand/5 text-brand'
                     : 'border-slate-100 text-primary hover:border-slate-200',
@@ -139,7 +139,7 @@ export function AssessmentCloMappingPanel({
             onClick={() => setFormOpenOverride(!formOpen)}
             aria-expanded={formOpen}
             aria-controls={formId}
-            className="gap-1.5"
+            className="min-h-11 gap-1.5"
           >
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
@@ -163,6 +163,7 @@ export function AssessmentCloMappingPanel({
                     <FormItem>
                       <FormLabel>CLO</FormLabel>
                       <FormControl>
+                        <div className="[&_button]:h-11">
                         <Combobox
                           options={cloOptions}
                           value={field.value || undefined}
@@ -171,6 +172,7 @@ export function AssessmentCloMappingPanel({
                           searchPlaceholder="ค้นหารหัสหรือคำอธิบาย CLO..."
                           emptyText="ไม่พบ CLO ที่ตรงกับคำค้นหา"
                         />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,7 +185,7 @@ export function AssessmentCloMappingPanel({
                     <FormItem>
                       <FormLabel>น้ำหนักคะแนน</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input type="number" step="0.01" inputMode="decimal" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -199,6 +201,8 @@ export function AssessmentCloMappingPanel({
                         <Input
                           type="number"
                           step="0.01"
+                          inputMode="decimal"
+                          className="h-11"
                           placeholder="ค่าเริ่มต้น = คะแนนเต็มของการประเมิน"
                           {...field}
                           value={field.value ?? ''}
@@ -210,7 +214,7 @@ export function AssessmentCloMappingPanel({
                 />
               </div>
 
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="h-11" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'ผูก CLO'}
               </Button>
             </CardContent>

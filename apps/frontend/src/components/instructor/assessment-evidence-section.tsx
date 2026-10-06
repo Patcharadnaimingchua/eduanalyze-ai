@@ -12,6 +12,7 @@ import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
 import { AssessmentDefinitionPanel } from './assessment-definition-panel';
 import { AssessmentCloMappingPanel } from './assessment-clo-mapping-panel';
 import { StudentScoreEntryPanel } from './student-score-entry-panel';
+import { EvidenceStep } from './evidence-step';
 
 // Orchestrates the 3-level drill-down (Assessment -> CLO mapping -> Score
 // entry) behind the instructor dashboard's "evidence" tab. The selection
@@ -126,33 +127,56 @@ export function AssessmentEvidenceSection({
   }
 
   return (
-    <div className="space-y-4">
-      <AssessmentDefinitionPanel
-        courseId={courseId}
-        selectedDefinitionId={selectedDefinitionId}
-        onSelect={selectDefinition}
-      />
-
-      {selectedDefinitionId && (
-        <AssessmentCloMappingPanel
-          key={selectedDefinitionId}
+    <div className="space-y-8">
+      <EvidenceStep
+        number={1}
+        title="เลือกการประเมิน"
+        hint="การประเมิน คือข้อสอบ ควิซ หรืองานที่ให้คะแนน"
+        done={!!selectedDefinitionId}
+      >
+        <AssessmentDefinitionPanel
           courseId={courseId}
-          clos={clos}
-          assessmentDefinitionId={selectedDefinitionId}
-          selectedMappingId={selectedMappingId}
-          onSelect={(mappingId) => selectMapping(mappingId)}
+          selectedDefinitionId={selectedDefinitionId}
+          onSelect={selectDefinition}
         />
-      )}
+      </EvidenceStep>
 
-      {selectedDefinitionId && selectedMappingId && (
-        <StudentScoreEntryPanel
-          courseId={courseId}
-          assessmentDefinitionId={selectedDefinitionId}
-          assessmentCloMappingId={selectedMappingId}
-          clos={clos}
-          onDirtyChange={setHasUnsavedScores}
-        />
-      )}
+      <EvidenceStep
+        number={2}
+        title="เลือก CLO ที่จะกรอกคะแนน"
+        hint="CLO คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
+        done={!!selectedMappingId}
+        waiting={!selectedDefinitionId}
+        waitingText="เลือกการประเมินในขั้นที่ 1 ก่อน"
+      >
+        {selectedDefinitionId && (
+          <AssessmentCloMappingPanel
+            key={selectedDefinitionId}
+            courseId={courseId}
+            clos={clos}
+            assessmentDefinitionId={selectedDefinitionId}
+            selectedMappingId={selectedMappingId}
+            onSelect={(mappingId) => selectMapping(mappingId)}
+          />
+        )}
+      </EvidenceStep>
+
+      <EvidenceStep
+        number={3}
+        title="กรอกคะแนน"
+        waiting={!(selectedDefinitionId && selectedMappingId)}
+        waitingText="เลือก CLO ในขั้นที่ 2 ก่อน แล้วจะกรอกคะแนนได้ที่นี่"
+      >
+        {selectedDefinitionId && selectedMappingId && (
+          <StudentScoreEntryPanel
+            courseId={courseId}
+            assessmentDefinitionId={selectedDefinitionId}
+            assessmentCloMappingId={selectedMappingId}
+            clos={clos}
+            onDirtyChange={setHasUnsavedScores}
+          />
+        )}
+      </EvidenceStep>
     </div>
   );
 }

@@ -180,6 +180,10 @@ export function StudentScoreEntryPanel({
     [fields],
   );
 
+  // Display only: how many rows differ from what is saved. onSave reads the
+  // same dirtyFields to decide what to send.
+  const editedCount = (form.formState.dirtyFields.rows ?? []).filter(Boolean).length;
+
   async function onSave() {
     setServerError(null);
     const rows = form.getValues('rows');
@@ -326,13 +330,14 @@ export function StudentScoreEntryPanel({
 
         {fields.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={onDownloadTemplate}>
+            <Button type="button" variant="outline" size="sm" className="h-11" onClick={onDownloadTemplate}>
               ดาวน์โหลดเทมเพลต
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="h-11"
               onClick={() => setImportOpen((open) => !open)}
               disabled={effectiveMax === null}
             >
@@ -353,7 +358,7 @@ export function StudentScoreEntryPanel({
               {siblingOptions.map((option) => (
                 <label
                   key={option.id}
-                  className={`flex items-center gap-2 text-sm ${option.compatible ? '' : 'opacity-50'}`}
+                  className={`flex min-h-11 items-center gap-2 text-sm ${option.compatible ? '' : 'opacity-50'}`}
                   title={
                     option.compatible
                       ? undefined
@@ -362,6 +367,7 @@ export function StudentScoreEntryPanel({
                 >
                   <input
                     type="checkbox"
+                    className="h-5 w-5"
                     disabled={!option.compatible || saving}
                     checked={extraMappingIds.includes(option.id)}
                     onChange={(e) =>
@@ -396,27 +402,21 @@ export function StudentScoreEntryPanel({
         )}
 
         {fields.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-4 font-medium">รหัสนักศึกษา</th>
-                  <th className="py-2 pr-4 font-medium">ชื่อ-นามสกุล</th>
-                  <th className="py-2 pr-4 font-medium">สถานะ</th>
-                  <th className="py-2 pr-4 font-medium">คะแนน</th>
-                  <th className="py-2 font-medium">ผลรวมของ CLO นี้ (จากหลักฐาน)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fields.map((field, index) => {
-                  const status = form.watch(`rows.${index}.status`);
-                  return (
-                    <tr key={field.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-2 pr-4 text-muted-foreground">{field.studentCode}</td>
-                      <td className="py-2 pr-4 text-primary">{field.fullName}</td>
-                      <td className="py-2 pr-4">
+          <ul className="space-y-2">
+            {fields.map((field, index) => {
+              const status = form.watch(`rows.${index}.status`);
+              return (
+                <li key={field.id} className="rounded-lg border border-slate-200 px-3 py-2">
+                  <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+                    <div className="min-w-0 flex-1 basis-48 self-center">
+                      <p className="text-primary">{field.fullName}</p>
+                      <p className="text-xs text-muted-foreground">{field.studentCode}</p>
+                    </div>
+                    <div className="grid w-full grid-cols-1 gap-3 min-[400px]:grid-cols-[minmax(8.5rem,1fr)_5.25rem] sm:w-80">
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        สถานะ
                         <select
-                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                          className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-2 text-sm text-primary"
                           {...form.register(`rows.${index}.status`, {
                             onChange: (e) => {
                               if (e.target.value !== 'GRADED') {
@@ -433,38 +433,46 @@ export function StudentScoreEntryPanel({
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td className="py-2 pr-4">
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        คะแนน
                         <input
                           type="number"
                           step="0.01"
                           min={0}
+                          inputMode="decimal"
                           disabled={status !== 'GRADED'}
-                          className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                          className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm text-primary disabled:cursor-not-allowed disabled:opacity-50"
                           {...form.register(`rows.${index}.score`)}
                         />
-                      </td>
-                      <td className="py-2">
-                        {selectedMapping && (
-                          <StudentActualCloCell
-                            courseId={courseId}
-                            cloId={selectedMapping.cloId}
-                            studentCourseRecordId={field.studentCourseRecordId}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </label>
+                    </div>
+                  </div>
+                  {selectedMapping && (
+                    <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-1 text-xs text-muted-foreground [&_button]:min-h-11">
+                      ผลรวมของ CLO นี้ (จากหลักฐาน)
+                      <StudentActualCloCell
+                        courseId={courseId}
+                        cloId={selectedMapping.cloId}
+                        studentCourseRecordId={field.studentCourseRecordId}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
 
         {fields.length > 0 && (
-          <Button type="button" onClick={onSave} disabled={saving}>
-            {saving ? 'กำลังบันทึก...' : 'บันทึกคะแนนทั้งหมด'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" className="h-11" onClick={onSave} disabled={saving}>
+              {saving ? 'กำลังบันทึก...' : 'บันทึกคะแนนทั้งหมด'}
+            </Button>
+            <span className="text-sm text-muted-foreground" aria-live="polite">
+              {editedCount > 0 ? `แก้ไขแล้ว ${editedCount} คน ยังไม่ได้บันทึก` : 'ยังไม่มีการแก้ไข'}
+            </span>
+          </div>
         )}
       </CardContent>
     </Card>

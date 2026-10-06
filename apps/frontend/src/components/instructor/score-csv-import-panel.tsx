@@ -22,46 +22,28 @@ import { Button } from '@/components/ui/button';
 
 function PreviewTable({ rows }: Readonly<{ rows: ParsedScoreRow[] }>) {
   return (
-    <div className="max-h-72 overflow-auto rounded-md border border-slate-200">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-slate-50">
-          <tr className="border-b border-slate-100 text-left text-xs text-muted-foreground">
-            <th className="px-3 py-2 font-medium">แถว</th>
-            <th className="px-3 py-2 font-medium">รหัสนักศึกษา</th>
-            <th className="px-3 py-2 font-medium">ชื่อ-นามสกุล</th>
-            <th className="px-3 py-2 font-medium">สถานะ</th>
-            <th className="px-3 py-2 font-medium">คะแนน</th>
-            <th className="px-3 py-2 font-medium">ผล</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.rowNumber} className="border-b border-slate-50">
-              <td className="px-3 py-2 text-muted-foreground">{row.rowNumber}</td>
-              <td className="px-3 py-2 text-primary">{row.studentCode || '—'}</td>
-              <td className="px-3 py-2 text-muted-foreground">{row.fullName || '—'}</td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {row.verdict === 'ready'
-                  ? ASSESSMENT_SCORE_STATUS_LABELS[row.status]
-                  : row.statusText.trim() || '—'}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {row.verdict === 'ready'
-                  ? (row.score ?? '—')
-                  : row.scoreText.trim() || '—'}
-              </td>
-              <td className="px-3 py-2">
-                {row.verdict === 'ready' ? (
-                  <Badge tone="success">พร้อมนำเข้า</Badge>
-                ) : (
-                  <span className="text-xs text-destructive">{row.error}</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-md border border-slate-200">
+      {rows.map((row) => (
+        <li key={row.rowNumber} className="space-y-1 px-3 py-2 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <span className="min-w-0">
+              <span className="text-xs text-muted-foreground">แถว {row.rowNumber} · </span>
+              <span className="text-primary">{row.studentCode || '—'}</span>{' '}
+              <span className="text-muted-foreground">{row.fullName || '—'}</span>
+            </span>
+            {row.verdict === 'ready' && <Badge tone="success">พร้อมนำเข้า</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            สถานะ{' '}
+            {row.verdict === 'ready'
+              ? ASSESSMENT_SCORE_STATUS_LABELS[row.status]
+              : row.statusText.trim() || '—'}{' '}
+            · คะแนน {row.verdict === 'ready' ? (row.score ?? '—') : row.scoreText.trim() || '—'}
+          </p>
+          {row.verdict !== 'ready' && <p className="text-xs text-destructive">{row.error}</p>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -164,7 +146,7 @@ export function ScoreCsvImportPanel({
     <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50/50 p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-primary">นำเข้าคะแนนจากไฟล์ CSV</p>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+        <Button type="button" variant="ghost" size="sm" className="h-11" onClick={onClose}>
           ปิด
         </Button>
       </div>
@@ -182,7 +164,7 @@ export function ScoreCsvImportPanel({
           className="hidden"
           onChange={onFileChange}
         />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+        <Button type="button" variant="outline" size="sm" className="h-11" onClick={() => inputRef.current?.click()}>
           เลือกไฟล์ CSV
         </Button>
         {fileName && <span className="text-xs text-muted-foreground">{fileName}</span>}
@@ -207,10 +189,10 @@ export function ScoreCsvImportPanel({
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="button" onClick={onConfirm} disabled={importing || readyCount === 0}>
+            <Button type="button" className="h-11" onClick={onConfirm} disabled={importing || readyCount === 0}>
               {importing ? 'กำลังนำเข้า...' : `ยืนยันนำเข้า ${readyCount} แถว`}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose} disabled={importing}>
+            <Button type="button" variant="outline" className="h-11" onClick={onClose} disabled={importing}>
               ยกเลิก
             </Button>
           </div>
