@@ -83,9 +83,19 @@ describe('summarizeParts', () => {
     expect(summarizeParts([{ counts: counts({ A: 10 }), credits: 3 }]).lowSample).toBe(false);
   });
 
-  it('treats a missing or broken credit value as 1 so it never prints NaN', () => {
-    const s = summarizeParts([{ counts: counts({ A: 1 }), credits: Number.NaN }]);
-    expect(s.gpa).toBe(4);
+  it('one course needs no credits: the average is the plain mean', () => {
+    expect(summarizeParts([{ counts: counts({ A: 1, C: 1 }), credits: null }]).gpa).toBe(3);
+    expect(summarizeParts([{ counts: counts({ A: 1 }), credits: Number.NaN }]).gpa).toBe(4);
+  });
+
+  it('several courses: the average is unknown when any course with a graded seat has no credits', () => {
+    const known = { counts: counts({ A: 1 }), credits: 3 };
+    expect(summarizeParts([known, { counts: counts({ F: 1 }), credits: null }]).gpa).toBeNull();
+    expect(summarizeParts([known, { counts: counts({ F: 1 }), credits: 0 }]).gpa).toBeNull();
+    // a course with only W (no grade point) does not need credits
+    expect(summarizeParts([known, { counts: counts({ W: 2 }), credits: null }]).gpa).toBe(4);
+    // the share at B or above never depends on credits
+    expect(summarizeParts([known, { counts: counts({ F: 1 }), credits: null }]).achievedPercent).toBe(50);
   });
 });
 
@@ -130,6 +140,16 @@ describe('course overviews', () => {
     expect(all.stats).toMatchObject({ counted: 32, achieved: 22, f: 2, w: 3 });
     expect(all.stats.achievedPercent).toBeCloseTo((22 / 32) * 100, 10);
     expect(all.target).toBeCloseTo((70 * 10 + 70 * 7 + 70 * 5 + 72 * 10) / 32, 10);
+  });
+
+  it('the overall average is null without credits, even for a single course, while the course keeps its own', () => {
+    const one = buildCourseOverviews([course('a', 'CS101', { A: 1, C: 1 })]);
+    expect(one[0].stats.gpa).toBe(3);
+    expect(buildOverallOverview(one).stats.gpa).toBe(3); // one course: plain mean, as the course itself
+    const two = buildCourseOverviews([course('a', 'CS101', { A: 1 }), course('b', 'CS102', { F: 1 })]);
+    expect(buildOverallOverview(two).stats.gpa).toBeNull();
+    expect(buildOverallOverview(two, new Map([['a', 3]])).stats.gpa).toBeNull();
+    expect(buildOverallOverview(two, new Map([['a', 3], ['b', 1]])).stats.gpa).toBeCloseTo(3, 10);
   });
 
   it('reads the same numbers as the course card: seats equal the course head count', () => {
@@ -187,10 +207,16 @@ describe('selectGoals', () => {
 
 describe('buildOverviewSentence', () => {
   it('says the share against the goal, the average, the worst course and the small sample', () => {
-    const ov = buildCourseOverviews([course('a', 'CS101', { A: 2, F: 2 }), course('b', 'CS102', { B: 3 })], new Map([['a', 3], ['b', 3]]));
-    expect(buildOverviewSentence(buildOverallOverview(ov), ov)).toBe(
+    const credits = new Map([['a', 3], ['b', 3]]);
+    const ov = buildCourseOverviews([course('a', 'CS101', { A: 2, F: 2 }), course('b', 'CS102', { B: 3 })], credits);
+    expect(buildOverviewSentence(buildOverallOverview(ov, credits), ov)).toBe(
       'ได้ B ขึ้นไป 71% จากเป้า 70% (ผ่านเป้า) · เกรดเฉลี่ย 2.43 · ห่างเป้ามากสุด CS101 วิชา CS101 50% · ตัวอย่างน้อย (7 คน)',
     );
+  });
+
+  it('leaves the average out of the sentence when credits are unknown', () => {
+    const ov = buildCourseOverviews([course('a', 'CS101', { A: 2, F: 2 }), course('b', 'CS102', { B: 3 })]);
+    expect(buildOverviewSentence(buildOverallOverview(ov), ov)).not.toContain('เกรดเฉลี่ย');
   });
 
   it('is null with nobody to count, and never prints NaN or undefined', () => {

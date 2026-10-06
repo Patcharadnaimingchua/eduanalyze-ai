@@ -73,24 +73,30 @@ export interface GroupStats {
 interface Part {
   counts: GradeCounts;
   // Credits of the course these seats belong to (weights the grade average).
-  credits: number;
+  // null = not known: never replaced by a guess.
+  credits: number | null;
 }
 
 // One group of seats, possibly from several courses. Share of B or above is
 // weighted by seat (every counted seat is one); the grade average is weighted
 // by credits, like the backend's GPA, so a 3-credit course counts more than a
-// 1-credit one. Within a single course that is just the mean.
+// 1-credit one. Within a single course that is just the mean, so one part needs
+// no credits. With several parts, one whose credits are unknown makes the
+// average unknown (null) instead of being treated as 1 credit.
 export function summarizeParts(parts: readonly Part[]): GroupStats {
   const counts = emptyCounts();
   let pointSum = 0;
   let creditSum = 0;
+  let creditsMissing = false;
   for (const { counts: c, credits } of parts) {
-    const w = num(credits) && credits > 0 ? credits : 1;
+    const known = num(credits) && credits > 0;
+    const w = known ? credits : 1;
     for (const g of ALL_GRADES) {
       const n = c[g] ?? 0;
       counts[g] += n;
       const point = GRADE_POINTS[g];
       if (point !== null) {
+        if (n > 0 && !known && parts.length > 1) creditsMissing = true;
         pointSum += n * point * w;
         creditSum += n * w;
       }
@@ -104,7 +110,7 @@ export function summarizeParts(parts: readonly Part[]): GroupStats {
     counted,
     achieved,
     achievedPercent: counted > 0 ? (achieved / counted) * 100 : null,
-    gpa: creditSum > 0 ? pointSum / creditSum : null,
+    gpa: creditSum > 0 && !creditsMissing ? pointSum / creditSum : null,
     f: counts.F,
     w: counts.W,
     lowSample: counted < LOW_SAMPLE_BELOW,
@@ -143,9 +149,10 @@ export interface CourseOverview {
 
 export type CreditsByCourse = ReadonlyMap<string, number> | Readonly<Record<string, number>>;
 
-const creditsOf = (credits: CreditsByCourse | undefined, courseId: string): number => {
+// null when the credits of this course are not known.
+const creditsOf = (credits: CreditsByCourse | undefined, courseId: string): number | null => {
   const raw = credits instanceof Map ? credits.get(courseId) : credits?.[courseId as keyof typeof credits];
-  return num(raw) && raw > 0 ? raw : 1;
+  return num(raw) && raw > 0 ? raw : null;
 };
 
 export function buildCourseOverviews(
