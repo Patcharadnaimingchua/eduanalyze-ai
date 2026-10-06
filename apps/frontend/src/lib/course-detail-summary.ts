@@ -29,9 +29,9 @@ export function buildCourseDetailSummary(
   const parts: string[] = [];
 
   if (Number.isFinite(course.achievementPercent)) {
-    const percent = `ผลสัมฤทธิ์ ${Math.round(course.achievementPercent)}%`;
+    const percent = `ได้ B ขึ้นไป ${Math.round(course.achievementPercent)}%`;
     if (Number.isFinite(course.achievementThreshold)) {
-      const verdict = course.achievementPercent < course.achievementThreshold ? 'ต่ำกว่าเกณฑ์' : 'ผ่านเกณฑ์';
+      const verdict = course.achievementPercent < course.achievementThreshold ? 'ยังไม่ถึงเป้า' : 'ผ่านเป้า';
       parts.push(`${percent} ${verdict} ${course.achievementThreshold}%`);
     } else {
       parts.push(percent);
@@ -49,7 +49,7 @@ export function buildCourseDetailSummary(
   if (course.clos.length > 0) {
     const missed = course.clos.filter((clo) => !clo.isAchieved).length;
     parts.push(
-      missed > 0 ? `CLO ยังไม่ผ่าน ${missed} จาก ${course.clos.length}` : `CLO ผ่านครบ ${course.clos.length} ข้อ`,
+      missed > 0 ? `เป้าการเรียนรู้ยังไม่ผ่าน ${missed} จาก ${course.clos.length}` : `เป้าการเรียนรู้ผ่านครบ ${course.clos.length} ข้อ`,
     );
   }
 

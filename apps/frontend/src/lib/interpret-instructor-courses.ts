@@ -20,7 +20,7 @@ export interface InstructorCoursesInsight {
 
 export const NO_COURSES_SUMMARY = 'ยังไม่มีรายวิชาที่คุณสอนในระบบ';
 export const NO_STUDENTS_SUMMARY =
-  'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่คุณสอน จึงยังสรุปผลสัมฤทธิ์ไม่ได้';
+  'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่คุณสอน จึงยังสรุปผลไม่ได้';
 
 function label(course: InstructorCourseSummary): string {
   return `${course.code} ${course.name}`;
@@ -61,7 +61,7 @@ export function interpretInstructorCourses(
 
   const summary =
     `จาก ${withStudents.length} รายวิชาที่มีนักศึกษา (รวม ${totalStudents} คน) ` +
-    `มี ${meeting.length} วิชาที่ผลสัมฤทธิ์ถึงเกณฑ์ และ ${below.length} วิชาที่ยังไม่ถึงเกณฑ์` +
+    `มี ${meeting.length} วิชาที่ถึงเป้า และ ${below.length} วิชาที่ยังไม่ถึงเป้า` +
     (criticalCount + watchCount > 0
       ? ` มีนักศึกษาที่ต้องติดตาม ${criticalCount + watchCount} คน (เร่งด่วน ${criticalCount} คน)`
       : ' และยังไม่มีนักศึกษาที่ต้องติดตาม');
@@ -82,8 +82,8 @@ function buildStrengths(
     .sort((a, b) => b.achievementPercent - a.achievementPercent)
     .map(
       (course) =>
-        `${label(course)} มีผลสัมฤทธิ์ ${Math.round(course.achievementPercent)}% ` +
-        `ถึงเกณฑ์ ${course.achievementThreshold}% ที่หลักสูตรกำหนด`,
+        `${label(course)} มีผู้ได้ B ขึ้นไป ${Math.round(course.achievementPercent)}% ` +
+        `ถึงเป้า ${course.achievementThreshold}% ที่หลักสูตรกำหนด`,
     );
 
   for (const course of withStudents) {
@@ -106,8 +106,8 @@ function buildWeaknesses(
 ): string[] {
   const out = below.map(
     (course) =>
-      `${label(course)} มีผลสัมฤทธิ์ ${Math.round(course.achievementPercent)}% ` +
-      `ต่ำกว่าเกณฑ์ ${course.achievementThreshold}% อยู่ ` +
+      `${label(course)} มีผู้ได้ B ขึ้นไป ${Math.round(course.achievementPercent)}% ` +
+      `ยังไม่ถึงเป้า ${course.achievementThreshold}% อีก ` +
       `${Math.round(course.achievementThreshold - course.achievementPercent)} จุด`,
   );
 
@@ -131,7 +131,7 @@ function buildWeaknesses(
     }
   }
   for (const course of empty) {
-    out.push(`${label(course)} ยังไม่มีนักศึกษาลงทะเบียน จึงยังไม่มีผลสัมฤทธิ์ให้ประเมิน`);
+    out.push(`${label(course)} ยังไม่มีนักศึกษาลงทะเบียน จึงยังไม่มีผลให้ประเมิน`);
   }
   return out;
 }
@@ -146,14 +146,14 @@ function buildRecommendations(
 
   if (below.length > 0) {
     out.push(
-      `เริ่มจาก ${label(below[0])} ซึ่งห่างจากเกณฑ์มากที่สุด ` +
-        `ลองทบทวน CLO ที่ยังไม่ผ่านในแท็บ CLO Achievement`,
+      `เริ่มจาก ${label(below[0])} ซึ่งห่างจากเป้ามากที่สุด ` +
+        `ลองทบทวนเป้าการเรียนรู้ที่ยังไม่ผ่านในแท็บเป้าการเรียนรู้`,
     );
   }
   if (criticalCount > 0) {
     out.push(
       `ติดตามนักศึกษาระดับเร่งด่วน ${criticalCount} คนก่อน ` +
-        `เปิด Gradebook แล้วกรองด้วยระดับ "เร่งด่วน" เพื่อดูรายชื่อ`,
+        `เปิดแท็บนักศึกษาแล้วกรองด้วยระดับ "เร่งด่วน" เพื่อดูรายชื่อ`,
     );
   }
   if (watchCount > 0) {
@@ -172,5 +172,5 @@ function buildRecommendations(
 
   return out.length > 0
     ? out
-    : ['ทุกรายวิชาผ่านเกณฑ์และไม่มีนักศึกษาที่ต้องติดตาม ควรรักษาระดับนี้ต่อไป'];
+    : ['ทุกรายวิชาผ่านเป้าและไม่มีนักศึกษาที่ต้องติดตาม ควรรักษาระดับนี้ต่อไป'];
 }

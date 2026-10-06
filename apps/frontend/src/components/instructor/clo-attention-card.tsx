@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ClipboardX } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { achievementStatus } from '@/lib/achievement-status';
-import { formatFiveScale } from '@/lib/five-scale';
+import { formatPercent } from '@/lib/format-percent';
 import { Badge } from '@/components/ui/badge';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
@@ -22,17 +22,17 @@ export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCour
       title={
         <>
           <ClipboardX className="h-4 w-4 text-amber-600" />
-          CLO ที่ต้องดูแล
+          เป้าการเรียนรู้ที่ต้องดูแล
         </>
       }
       meta={totalGaps > 0 && <Badge tone="danger">{totalGaps} รายการ</Badge>}
     >
       <div className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          CLO ที่ผลสัมฤทธิ์ของวิชายังไม่ถึงเกณฑ์ที่ CLO นั้นตั้งไว้ รวมทุกวิชาที่คุณสอน
+          เป้าการเรียนรู้ (CLO) ที่วิชายังทำได้ไม่ถึงเป้าที่ตั้งไว้ รวมทุกวิชาที่คุณสอน
         </p>
         {coursesWithGaps.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ไม่มี CLO ที่ต้องดูแลในขณะนี้</p>
+          <p className="text-sm text-muted-foreground">ไม่มีเป้าการเรียนรู้ที่ต้องดูแลในขณะนี้</p>
         ) : (
           <div className="space-y-4">
             {coursesWithGaps.map(({ course, gaps }) => (
@@ -45,7 +45,7 @@ export function CloAttentionCard({ courses }: Readonly<{ courses: InstructorCour
                     {course.code} {course.name}
                   </Link>
                   <span className="text-xs text-muted-foreground">
-                    ผลสัมฤทธิ์วิชานี้ {formatFiveScale(course.achievementPercent)} / 5.0
+                    วิชานี้ได้ B ขึ้นไป {formatPercent(course.achievementPercent)}
                   </span>
                 </div>
                 <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">

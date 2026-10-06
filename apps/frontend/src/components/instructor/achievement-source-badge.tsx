@@ -11,9 +11,9 @@ import type { SemanticTone } from '@/lib/tone';
 // ("computed from what?" vs "how much of it is in?") and are meant to sit
 // next to each other. Same shared tone vocabulary, no new tone needed.
 const SOURCE_PRESENTATION: Record<EvidenceSource, { tone: SemanticTone; label: string }> = {
-  EVIDENCE_BASED: { tone: 'success', label: 'จากหลักฐานจริง' },
+  EVIDENCE_BASED: { tone: 'success', label: 'จากคะแนนที่กรอกจริง' },
   LEGACY_GRADE_ESTIMATE: { tone: 'warning', label: 'ประมาณจากเกรด' },
-  NO_EVIDENCE: { tone: 'neutral', label: 'ยังไม่มีหลักฐาน' },
+  NO_EVIDENCE: { tone: 'neutral', label: 'ยังไม่มีคะแนนที่กรอก' },
 };
 
 export function AchievementSourceBadge({ source }: Readonly<{ source: EvidenceSource }>) {

@@ -193,7 +193,7 @@ describe('buildYearLevelsSummary', () => {
   it('at risk: names where the follow-ups are, plus behind-plan', () => {
     const buckets = [bucket(1, person('a')), bucket(2, person('b', 'behind'), person('c'), person('d')), bucket(3), bucket(4)];
     expect(buildYearLevelsSummary(buckets, risk)).toBe(
-      'นักศึกษา 4 คน · ต้องติดตามในวิชาของคุณ 3 คน (มากสุดที่ปี 2) · ตามหลังแผน 1 คน',
+      'นักศึกษา 4 คน · ต้องติดตามในวิชาของคุณ 3 คน (มากสุดที่ปี 2) · หน่วยกิตน้อยกว่าที่ควรมี 1 คน',
     );
   });
 
@@ -212,7 +212,7 @@ describe('buildYearLevelsSummary', () => {
 
   it('leaves the risk part out when the students report is unavailable', () => {
     expect(buildYearLevelsSummary([bucket(1, person('a', 'behind'))], null)).toBe(
-      'นักศึกษา 1 คน · ตามหลังแผน 1 คน',
+      'นักศึกษา 1 คน · หน่วยกิตน้อยกว่าที่ควรมี 1 คน',
     );
   });
 

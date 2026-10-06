@@ -189,6 +189,6 @@ export function buildYearLevelsSummary(
     (sum, b) => sum + b.students.filter((s) => s.onTrackStatus === 'behind').length,
     0,
   );
-  if (behind > 0) parts.push(`ตามหลังแผน ${behind} คน`);
+  if (behind > 0) parts.push(`หน่วยกิตน้อยกว่าที่ควรมี ${behind} คน`);
   return parts.join(' · ');
 }

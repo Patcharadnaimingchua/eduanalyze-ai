@@ -5,7 +5,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import type { CloAchievementEntry } from '@eduanalyze-ai/shared-types';
 import { fetchStudentTimeline } from '@/lib/api/instructor';
 import { fetchActualCloAchievement } from '@/lib/api/assessment-evidence';
-import { formatFiveScale } from '@/lib/five-scale';
+import { formatPercent } from '@/lib/format-percent';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, formatSemesterLabel } from '@/lib/grade-label';
 import { AchievementSourceBadge } from './achievement-source-badge';
@@ -96,7 +96,7 @@ export function StudentTimelineCard({
         {clos.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
             <p className="text-sm font-medium text-primary">
-              ผลลัพธ์ CLO จากหลักฐานจริง ({courseCode})
+              ผลเป้าการเรียนรู้จากคะแนนที่กรอกจริง ({courseCode})
             </p>
             <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
               {clos.map((clo, i) => {
@@ -114,7 +114,7 @@ export function StudentTimelineCard({
                     {cloQuery.data && (
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-medium tabular-nums text-primary">
-                          {formatFiveScale(
+                          {formatPercent(
                             cloQuery.data.score === null
                               ? null
                               : Number.parseFloat(cloQuery.data.score),

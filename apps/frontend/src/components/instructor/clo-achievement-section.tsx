@@ -10,7 +10,7 @@ import type {
   StudentRosterEntry,
 } from '@eduanalyze-ai/shared-types';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
-import { formatFiveScale, percentToFiveScale } from '@/lib/five-scale';
+import { formatPercent } from '@/lib/format-percent';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { Badge } from '@/components/ui/badge';
@@ -112,31 +112,31 @@ export function CloAchievementSection({
 
   return (
     <div className="space-y-5">
-      <PageSection title="ผลสัมฤทธิ์ CLO โดยรวม">
+      <PageSection title="ภาพรวมเป้าการเรียนรู้">
         <div className="flex items-center gap-3">
           <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
           <Badge tone={courseStatus.tone}>{courseStatus.label}</Badge>
           <span className="shrink-0 text-sm font-medium text-primary">
-            {formatFiveScale(achievementPercent)} / 5.0
+            ได้ B ขึ้นไป {formatPercent(achievementPercent)}
           </span>
         </div>
         {isLoading && <Skeleton className="h-3 w-40" />}
         {isError && (
-          <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ผ่านเกณฑ์ได้</p>
+          <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ผ่านเป้าได้</p>
         )}
         {detail && (
           <p className="text-xs text-muted-foreground">
-            {detail.achievedStudents} จาก {detail.totalStudents} คนผ่านเกณฑ์
+            {detail.achievedStudents} จาก {detail.totalStudents} คนผ่านเป้า
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          ตัวเลขนี้คำนวณจากเกรดรายวิชา (สัดส่วนนักศึกษาที่ได้ ≥ B) ไม่ใช่จากคะแนนหลักฐานรายชิ้น
+          คิดจากเกรดของวิชา (สัดส่วนคนที่ได้ B ขึ้นไป) ไม่ได้คิดจากคะแนนข้อสอบแต่ละชิ้น
         </p>
       </PageSection>
 
       <PageSection
-        title="รายการ CLO"
-        description="CLO คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
+        title="เป้าการเรียนรู้แต่ละข้อ"
+        description="เป้าการเรียนรู้ (CLO) คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
       >
         {clos.map((clo) => {
           // Same course-level achievementPercent for every CLO (backend
@@ -151,7 +151,7 @@ export function CloAchievementSection({
                   <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
                   <p className="text-sm text-primary">{clo.description}</p>
                   <p className="text-xs text-muted-foreground">
-                    เกณฑ์ผ่าน ≥ {percentToFiveScale(clo.threshold).toFixed(1)}
+                    เป้า {formatPercent(clo.threshold)}
                   </p>
                   {isCritical && roster && (
                     <Button
@@ -168,7 +168,7 @@ export function CloAchievementSection({
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
                   {evidenceError ? (
-                    <span className="text-xs text-destructive">โหลดหลักฐานไม่สำเร็จ</span>
+                    <span className="text-xs text-destructive">โหลดคะแนนที่กรอกไม่สำเร็จ</span>
                   ) : (
                     evidenceTotal !== undefined &&
                     evidenceCoverage !== undefined && (
@@ -186,10 +186,10 @@ export function CloAchievementSection({
               {isExpanded && (
                 <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
                   <p className="text-xs text-muted-foreground">
-                    รายชื่อนี้คำนวณจากเกรดรวมวิชา (เหมือนกันทุก CLO ที่ยังไม่ผ่านในวิชานี้) ไม่ใช่คะแนนเฉพาะ CLO นี้
+                    รายชื่อนี้คิดจากเกรดรวมของวิชา (เหมือนกันทุกเป้าที่ยังไม่ผ่านในวิชานี้) ไม่ใช่คะแนนเฉพาะเป้านี้
                   </p>
                   {failingStudents.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่าเกณฑ์</p>
+                    <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่า B</p>
                   ) : (
                     <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-background">
                       {failingStudents.map((s) => (
@@ -227,7 +227,7 @@ export function CloAchievementSection({
       {(plos.length > 0 || scoredAssessmentClos.length > 0) && (
         <CollapsibleSection
           framed={false}
-          title="PLO และคะแนนประเมินตนเอง"
+          title="เป้าหมายของหลักสูตรและคะแนนประเมินตนเอง"
           meta={
             <span className="text-sm font-normal text-muted-foreground">
               ข้อมูลประกอบ ไม่ต้องดูทุกครั้ง
@@ -236,8 +236,8 @@ export function CloAchievementSection({
         >
           {plos.length > 0 && (
             <PageSection
-              title="PLO ที่เกี่ยวข้อง"
-              description="PLO คือผลลัพธ์ที่หลักสูตรคาดหวังจากนักศึกษา"
+              title="เป้าหมายของหลักสูตรที่เกี่ยวข้อง"
+              description="เป้าหมายของหลักสูตร (PLO) คือผลลัพธ์ที่หลักสูตรคาดหวังจากนักศึกษา"
             >
               {plos.map((plo) => (
                 <div key={plo.ploId} className="space-y-1">
@@ -246,7 +246,7 @@ export function CloAchievementSection({
                       {plo.code} · {plo.name}
                     </span>
                     <span className="font-medium text-primary">
-                      {formatFiveScale(plo.achievementPercent)}
+                      {formatPercent(plo.achievementPercent)}
                     </span>
                   </div>
                   <Progress
@@ -259,7 +259,7 @@ export function CloAchievementSection({
           )}
 
           {scoredAssessmentClos.length > 0 && (
-            <PageSection title="คะแนนประเมินตนเองเฉลี่ยต่อ CLO (1-5)">
+            <PageSection title="คะแนนประเมินตนเองเฉลี่ยของแต่ละเป้า (เต็ม 5)">
               {scoredAssessmentClos.map((c) => (
                 <div key={c.cloId} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">

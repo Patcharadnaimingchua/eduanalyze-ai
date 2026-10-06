@@ -40,7 +40,7 @@ export function AtRiskStudentsCard({ courses }: { courses: InstructorCourseSumma
         <p className="text-xs text-muted-foreground">
           ผลการเรียนครั้งล่าสุดได้เกรด C ลงมา — แบ่งเป็น{' '}
           {RISK_LEVEL_LABELS.CRITICAL} (D+, D, F, U) และ {RISK_LEVEL_LABELS.WATCH} (C)
-          ประเมินจากเกรดรายวิชา ไม่ใช่ผลประเมิน CLO รายบุคคล
+          ประเมินจากเกรดรายวิชา ไม่ใช่ผลประเมินเป้าการเรียนรู้รายบุคคล
         </p>
       </CardHeader>
       <CardContent>

@@ -179,13 +179,13 @@ describe('formatAchievementChange', () => {
   it('uses arrows and whole points, signed only when asked, with the latest term head count', () => {
     expect(
       formatAchievementChange({ direction: 'up', delta: 4.4, latestStudentCount: 38 }, { signed: true }),
-    ).toBe('เทอมล่าสุด 38 คน: ▲ +4 จุดจากเทอมก่อน');
+    ).toBe('เทอมล่าสุด 38 คน: ▲ ดีขึ้น +4 จุดจากเทอมก่อน');
     expect(
       formatAchievementChange({ direction: 'down', delta: -5.6, latestStudentCount: 12 }, { signed: true }),
-    ).toBe('เทอมล่าสุด 12 คน: ▼ −6 จุดจากเทอมก่อน');
+    ).toBe('เทอมล่าสุด 12 คน: ▼ แย่ลง −6 จุดจากเทอมก่อน');
     expect(
       formatAchievementChange({ direction: 'up', delta: 100, latestStudentCount: 2 }, { signed: false }),
-    ).toBe('เทอมล่าสุด 2 คน: ▲ 100 จุดจากเทอมก่อน');
+    ).toBe('เทอมล่าสุด 2 คน (ข้อมูลน้อย): ▲ ดีขึ้น 100 จุดจากเทอมก่อน');
     expect(
       formatAchievementChange({ direction: 'flat', delta: 0, latestStudentCount: 40 }, { signed: true }),
     ).toBe('– เทอมล่าสุด 40 คน: เท่ากับเทอมก่อน');
@@ -195,13 +195,13 @@ describe('formatAchievementChange', () => {
 describe('buildInstructorSummary', () => {
   it('normal: every course passes and nobody needs following up', () => {
     expect(buildInstructorSummary(allPassing)).toBe(
-      'ทุกวิชาผ่านเกณฑ์ · ผลสัมฤทธิ์เฉลี่ย 74% (เทอมล่าสุด 50 คน: ▲ 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 74% (เทอมล่าสุด 50 คน: ▲ ดีขึ้น 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่ต้องติดตาม',
     );
   });
 
   it('at risk: follow-ups first, then the worst course, then the average', () => {
     expect(buildInstructorSummary(withRisk)).toBe(
-      'ต้องติดตามนักศึกษา 4 คน (เร่งด่วน 2) · 1 จาก 2 วิชาต่ำกว่าเกณฑ์ เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เกณฑ์ 60%) · ผลสัมฤทธิ์เฉลี่ย 62% (เทอมล่าสุด 50 คน: ▼ 12 จุดจากเทอมก่อน)',
+      'ต้องติดตามนักศึกษา 4 คน (เร่งด่วน 2) · 1 จาก 2 วิชายังไม่ถึงเป้า เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เป้า 60%) · ได้ B ขึ้นไปเฉลี่ย 62% (เทอมล่าสุด 50 คน: ▼ แย่ลง 12 จุดจากเทอมก่อน)',
     );
   });
 
@@ -217,13 +217,13 @@ describe('buildInstructorSummary', () => {
 
   it('leaves out the arrow when there is only one term', () => {
     expect(buildInstructorSummary([course()])).toBe(
-      'ทุกวิชาผ่านเกณฑ์ · ผลสัมฤทธิ์เฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
     );
   });
 
   it('says "with students" when some courses are still empty', () => {
     expect(buildInstructorSummary([course(), course({ courseId: 'c2', studentCount: 0 })])).toBe(
-      'ทุกวิชาที่มีนักศึกษาผ่านเกณฑ์ · ผลสัมฤทธิ์เฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาที่มีนักศึกษาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
     );
   });
 

@@ -40,7 +40,7 @@ export function PloCoverageCard({ courses }: Readonly<{ courses: InstructorCours
     <PloRadarChart
       radar={radar}
       size={COMPACT_SIZE}
-      title="PLO ที่วิชาของฉันสนับสนุน"
+      title="เป้าหมายของหลักสูตรที่วิชาของฉันสนับสนุน"
       selectedPloId={selectedPloId}
       onSelectPlo={toggleSelected}
       footer={
@@ -77,7 +77,7 @@ export function PloCoverageCard({ courses }: Readonly<{ courses: InstructorCours
                 วิชาที่สนับสนุน {selectedPlo.code} · {selectedPlo.name}
               </p>
               {selectedContributions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">ไม่พบวิชาที่ CLO ผูกกับ PLO นี้</p>
+                <p className="text-sm text-muted-foreground">ไม่พบวิชาที่เชื่อมกับเป้าหมายนี้</p>
               ) : (
                 <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
                   {selectedContributions.map((c) => {
@@ -116,7 +116,7 @@ export function PloCoverageCard({ courses }: Readonly<{ courses: InstructorCours
             aria-controls={tableId}
             className="w-full justify-center gap-1.5 text-muted-foreground"
           >
-            {showTable ? 'ซ่อนตาราง' : `ดูเป็นตาราง (${radar.length} PLO)`}
+            {showTable ? 'ซ่อนตาราง' : `ดูเป็นตาราง (${radar.length} ข้อ)`}
             <ChevronDown size={14} className={cn('transition-transform', showTable && 'rotate-180')} />
           </Button>
           {showTable && (

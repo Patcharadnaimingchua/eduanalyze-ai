@@ -32,7 +32,7 @@ const TABS: { key: InstructorTab; label: string }[] = [
   { key: 'overview', label: 'ภาพรวม' },
   { key: 'students', label: 'นักศึกษา' },
   { key: 'evidence', label: 'กรอกคะแนน' },
-  { key: 'clo', label: 'ผลลัพธ์การเรียนรู้ (CLO)' },
+  { key: 'clo', label: 'เป้าการเรียนรู้' },
 ];
 
 // Backward-compat for bookmarked/shared links from before the restructure:

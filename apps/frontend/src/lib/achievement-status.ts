@@ -18,10 +18,10 @@ export function achievementStatus(
   threshold: number,
 ): { label: string; tone: SemanticTone } {
   if (percent >= threshold + EXCEEDED_MARGIN) {
-    return { label: 'เกินเกณฑ์', tone: 'success' };
+    return { label: 'เกินเป้า', tone: 'success' };
   }
   if (percent >= threshold) {
-    return { label: 'ผ่านเกณฑ์', tone: 'success' };
+    return { label: 'ผ่านเป้า', tone: 'success' };
   }
-  return { label: 'ต่ำกว่าเกณฑ์', tone: 'danger' };
+  return { label: 'ยังไม่ถึงเป้า', tone: 'danger' };
 }

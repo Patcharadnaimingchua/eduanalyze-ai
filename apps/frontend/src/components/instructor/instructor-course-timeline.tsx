@@ -22,7 +22,7 @@ export function TermCourseList({
                 <span className="text-primary">{course.name}</span>
               </span>
               <span className="block text-xs text-muted-foreground">
-                {course.programCode} ฉบับ {course.curriculumYear}
+                หลักสูตร {course.programCode} ปี {course.curriculumYear}
               </span>
             </span>
             <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

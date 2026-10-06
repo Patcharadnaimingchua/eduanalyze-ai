@@ -3,9 +3,10 @@
 import { AlertTriangle, BookOpen, Target, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { fetchInstructorDashboard } from '@/lib/api/instructor';
+import { fetchInstructorDashboard, fetchInstructorStudents } from '@/lib/api/instructor';
 import { useAuth } from '@/lib/auth-context';
 import { countFollowUps } from '@/lib/follow-ups';
+import { describeHeadcount } from '@/lib/headcount';
 import {
   buildInstructorSummary,
   computeAchievementChange,
@@ -51,6 +52,13 @@ function InstructorDashboardContent() {
     queryFn: fetchInstructorDashboard,
     enabled: isInstructor,
   });
+  // Same key as the students page, so the two share one cached request. Only used
+  // to count people; the dashboard works without it (seats are shown instead).
+  const studentsQuery = useQuery({
+    queryKey: ['instructor-students'],
+    queryFn: () => fetchInstructorStudents({}),
+    enabled: isInstructor,
+  });
 
   if (!user) {
     return (
@@ -64,7 +72,13 @@ function InstructorDashboardContent() {
   }
 
   const courses = dashboardQuery.data?.courses ?? [];
-  const enrollments = courses.reduce((sum, c) => sum + c.studentCount, 0);
+  const seats = courses.reduce((sum, c) => sum + c.studentCount, 0);
+  // People, not seats: the students endpoint lists every (student, course) row, so a
+  // student in two courses is two rows but one person. Null until it has loaded (or if it fails).
+  const people = studentsQuery.data
+    ? new Set(studentsQuery.data.students.map((s) => s.studentProfileId)).size
+    : null;
+  const headcount = describeHeadcount(people, seats);
   const achievement = overallAchievementPercent(courses);
   const achievementChange = computeAchievementChange(courses);
   const followUps = countFollowUps(courses);
@@ -76,7 +90,7 @@ function InstructorDashboardContent() {
         <Reveal index={0}>
           <PageHeader
             title="แดชบอร์ดอาจารย์"
-            description={summary ?? 'ภาพรวมผลการเรียนและ CLO Achievement ของรายวิชาที่คุณสอน'}
+            description={summary ?? 'ภาพรวมผลการเรียนและเป้าการเรียนรู้ของรายวิชาที่คุณสอน'}
           />
         </Reveal>
 
@@ -106,15 +120,16 @@ function InstructorDashboardContent() {
               <Reveal index={2}>
                 <StatCard
                   icon={Users}
-                  label="นักศึกษา (นับตามรายวิชา)"
-                  value={enrollments}
-                  suffix="คน"
+                  label="นักศึกษาที่คุณสอน"
+                  value={headcount.value}
+                  suffix={headcount.unit}
+                  footer={headcount.note && <p className="text-xs text-muted-foreground">{headcount.note}</p>}
                 />
               </Reveal>
               <Reveal index={3}>
                 <StatCard
                   icon={Target}
-                  label="ผลสัมฤทธิ์เฉลี่ย (เกรด B ขึ้นไป)"
+                  label="ได้ B ขึ้นไป (เฉลี่ยทุกวิชา)"
                   value={achievement === null ? '—' : `${Math.round(achievement)}%`}
                   footer={achievementChange && <AchievementChangeBadge change={achievementChange} />}
                 />
@@ -175,7 +190,7 @@ function InstructorDashboardContent() {
               </Reveal>
             </div>
             <RevealOnScroll>
-              <PageSection title="รายวิชาที่สอน" description="เรียงจากวิชาที่ผลสัมฤทธิ์ต่ำสุดก่อน">
+              <PageSection title="รายวิชาที่สอน" description="เรียงจากวิชาที่ได้ B ขึ้นไปน้อยที่สุดก่อน">
                 <InstructorCourseGrid courses={sortCoursesByAttention(courses)} />
               </PageSection>
             </RevealOnScroll>
@@ -185,10 +200,10 @@ function InstructorDashboardContent() {
             <RevealOnScroll>
               <CollapsibleSection
                 framed={false}
-                title="ข้อมูลเชิงลึก"
+                title="ดูรายละเอียดเพิ่ม"
                 meta={
                   <span className="text-sm font-normal text-muted-foreground">
-                    จุดแข็งและข้อเสนอแนะ · PLO
+                    จุดแข็ง ข้อเสนอแนะ และเป้าหมายของหลักสูตร
                     {courses.length >= 2 && ' · เปรียบเทียบรายวิชา'}
                   </span>
                 }

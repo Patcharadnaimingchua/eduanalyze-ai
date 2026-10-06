@@ -66,7 +66,7 @@ export function InstructorYearLevelOverview({
                       </Badge>
                     ) : null,
                   )}
-                  {behindCount > 0 && <Badge tone="warning">ตามหลังแผน {behindCount}</Badge>}
+                  {behindCount > 0 && <Badge tone="warning">หน่วยกิตน้อยกว่าที่ควรมี {behindCount}</Badge>}
                 </div>
               </button>
             );
@@ -113,7 +113,7 @@ export function InstructorYearLevelOverview({
                                 <Badge tone={RISK_LEVEL_TONES[level]}>{RISK_LEVEL_LABELS[level]}</Badge>
                               )}
                               {s.onTrackStatus === 'behind' && (
-                                <Badge tone="warning">ตามหลังแผน</Badge>
+                                <Badge tone="warning">หน่วยกิตน้อยกว่าที่ควรมี</Badge>
                               )}
                             </span>
                           </Link>

@@ -85,6 +85,10 @@ export function computeAchievementChange(
   return { direction: delta > 0 ? 'up' : 'down', delta, latestStudentCount };
 }
 
+// Fewer people than this in the latest term and a swing of tens of points is
+// noise, so the line says the data is thin rather than celebrating or alarming.
+const THIN_DATA_BELOW = 5;
+
 // Says "เทอมล่าสุด" because the headline figure beside it is cumulative while
 // this compares single terms, and names the latest term's head count first so
 // it cannot be read as the previous term's. `signed` adds the +/− sign for badges.
@@ -92,11 +96,12 @@ export function formatAchievementChange(
   change: AchievementChange,
   { signed }: { signed: boolean },
 ): string {
-  const term = `เทอมล่าสุด ${change.latestStudentCount} คน:`;
+  const thin = change.latestStudentCount < THIN_DATA_BELOW ? ' (ข้อมูลน้อย)' : '';
+  const term = `เทอมล่าสุด ${change.latestStudentCount} คน${thin}:`;
   if (change.direction === 'flat') return `– ${term} เท่ากับเทอมก่อน`;
   const points = Math.round(Math.abs(change.delta));
-  if (change.direction === 'up') return `${term} ▲ ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
-  return `${term} ▼ ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
+  if (change.direction === 'up') return `${term} ▲ ดีขึ้น ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
+  return `${term} ▼ แย่ลง ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
 }
 
 // Worst achievement first, courses without students last — the same order the
@@ -142,18 +147,18 @@ export function buildInstructorSummary(
   if (below.length > 0) {
     const first = below[0];
     coursePart =
-      `${below.length} จาก ${graded.length} วิชาต่ำกว่าเกณฑ์ ` +
+      `${below.length} จาก ${graded.length} วิชายังไม่ถึงเป้า ` +
       `เริ่มที่ ${first.code} ${first.name} ${Math.round(first.achievementPercent)}% ` +
-      `(เกณฑ์ ${first.achievementThreshold}%)`;
+      `(เป้า ${first.achievementThreshold}%)`;
   } else if (graded.length > 0) {
-    coursePart = graded.length < courses.length ? 'ทุกวิชาที่มีนักศึกษาผ่านเกณฑ์' : 'ทุกวิชาผ่านเกณฑ์';
+    coursePart = graded.length < courses.length ? 'ทุกวิชาที่มีนักศึกษาผ่านเป้า' : 'ทุกวิชาผ่านเป้า';
   }
 
   const overall = overallAchievementPercent(courses);
   let achievementPart: string | null = null;
   if (overall !== null) {
     const change = computeAchievementChange(courses);
-    achievementPart = `ผลสัมฤทธิ์เฉลี่ย ${Math.round(overall)}%`;
+    achievementPart = `ได้ B ขึ้นไปเฉลี่ย ${Math.round(overall)}%`;
     if (change) achievementPart += ` (${formatAchievementChange(change, { signed: false })})`;
   }
 
