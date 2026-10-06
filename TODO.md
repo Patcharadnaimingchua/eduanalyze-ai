@@ -5,15 +5,24 @@
 ### ✓ H9-H11 Testing (2026-09-29) — CLOSED
 Orphaned STAFF account (`patcharadnaimingchua+eduanalyze-test@gmail.com`) deleted; see commit `chore: remove orphaned test STAFF account with no scope/dependencies`.
 
-### ✓ Instructor redesign รอบ 1 — COMPLETE (pushed 2026-10-06, origin/main = f6c7526)
-`/instructor/dashboard`, `/instructor/students`, `/instructor/year-levels`, `/instructor/my-courses`: ข้อความสรุป rule-based (pure function + test), นับรายคน, การ์ดรายคนบนมือถือ, ตัวกรองเก็บใน URL, ไม่แก้ backend
-- **เหลือรอบ 2:** `/instructor/courses/[courseId]` (มีฟังก์ชันเขียนข้อมูล ต้องตรวจ POST/PATCH/DELETE ต่างหาก)
+### ✓ Instructor redesign รอบ 1–2 — COMPLETE (pushed 2026-10-06)
+- **รอบ 1:** `/instructor/dashboard`, `/instructor/students`, `/instructor/year-levels`, `/instructor/my-courses` — ข้อความสรุป rule-based (pure function + test), นับรายคน, การ์ดรายคนบนมือถือ, ตัวกรองเก็บใน URL
+- **รอบ 2:** `/instructor/courses/[courseId]` — แท็บเหลือ 4 (ภาพรวม / นักศึกษา / กรอกคะแนน / CLO), โหมดแก้เกรดแยก, กรอกคะแนนเป็นขั้นตอน 1-2-3, ตัวสลับวิชาเป็นเมนูบนมือถือ, เตือนก่อนทิ้งคะแนนที่ยังไม่บันทึก; payload ของส่วนเขียนเทียบ f6c7526 ต่าง 0 (ทดสอบด้วย API interception)
+- ไม่แก้ backend ทั้งสองรอบ
+
+**สิ่งที่ยังค้าง/ควรรู้**
+- skeleton ของหน้ารายวิชาขยับเล็กน้อยเมื่ออาจารย์มีวิชาเดียว (ตัวสลับวิชาถูกวาดใน skeleton แต่ไม่แสดงเมื่อมีวิชาเดียว)
+- ปุ่ม "บันทึกคะแนนทั้งหมด" ยังกดได้แม้ไม่มีการแก้ไข และจะยิง `PUT /student-assessment-scores/bulk` ที่ `entries: []` (พฤติกรรมเดิม ไม่ได้แก้)
+- ปุ่ม Back/Forward ของเบราว์เซอร์ดักเตือนค่าที่ยังไม่บันทึกไม่ได้ (ข้อจำกัดของเบราว์เซอร์)
+- ลิงก์จากหน้าอื่นยังใช้ `?tab=gradebook` ผ่าน alias (ใช้ได้ ไม่เร่งแก้)
+
+**ถัดไป:** Staff redesign
 
 ### Staff redesign (รอทำ)
 - ตรวจความหมายของ "จาก N รายการ" ในคอมโพเนนต์ `Pagination` ที่ใช้ร่วมกัน: หน้า Instructor นับเป็น "คน" แต่ Staff อาจนับเป็น "คน × วิชา" (ยังไม่แก้ เพราะ Staff ใช้ร่วม)
 
 ### pm25-pipeline (โปรเจกต์ของอีกวิชา)
-หยุดอยู่ สาเหตุยังไม่ทราบ อาจชนพอร์ต 5433 ตรวจทีหลัง (ห้ามสตาร์ท/หยุด/แตะ container หรือ volume ของมัน)
+หยุดอยู่ สาเหตุยังไม่ทราบ อาจชนพอร์ต 5433 ยังไม่ตรวจ (ห้ามสตาร์ท/หยุด/แตะ container หรือ volume ของมัน)
 
 ---
 
