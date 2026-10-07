@@ -253,9 +253,11 @@ describe('buildCourseYearMatrix', () => {
   const levels = new Map([['s1', 2], ['s2', 2], ['s3', 3], ['s4', 3]]);
   const m = buildCourseYearMatrix(ov, rows, levels);
 
-  it('has a column only for year levels that have someone, and rows furthest from the goal first', () => {
+  it('has a column only for year levels that have someone, and rows by course code', () => {
     expect(m.levels).toEqual([2, 3]);
-    expect(m.rows.map((r) => r.course.code)).toEqual(['CS102', 'CS101', 'CS103']);
+    expect(m.rows.map((r) => r.course.code)).toEqual(['CS101', 'CS102', 'CS103']);
+    expect(m.rows[0]).not.toHaveProperty('totalStatus');
+    expect(m.rows[0]).not.toHaveProperty('target');
   });
 
   it('leaves a cell empty (null) where a course has nobody at that level', () => {

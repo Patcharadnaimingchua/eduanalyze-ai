@@ -1,22 +1,13 @@
 import Link from 'next/link';
 import { yearLevelLabel } from '@/lib/course-timeline-summary';
-import { formatPercent } from '@/lib/format-percent';
-import {
-  STATUS_META,
-  type GroupStats,
-  type Matrix,
-  type MatrixCell,
-  type OverviewStatus,
-} from '@/lib/instructor-overview';
-import { BAR_TONE_CLASSES } from '@/lib/tone';
-import { cn } from '@/lib/utils';
-import { LowSampleTag, StatusBadge } from './overview-parts';
+import { SPARSE_SUMMARY } from '@/lib/course-snapshot';
+import { centerLine, formatCourseGpa, formatMedian, summarizeGradeCenter } from '@/lib/grade-center';
+import type { GroupStats, Matrix, MatrixCell } from '@/lib/instructor-overview';
+import { LowSampleTag } from './overview-parts';
 
-const TONE = { met: 'success', near: 'warning', below: 'danger', none: 'neutral' } as const;
-
-// One cell of the table: the share at B or above as the big number, the seats
-// under it, and the status in words (short) beside a colour stripe, so the
-// colour is never the only signal. An empty cell is a dash.
+// One cell of the table: the middle grade as the big figure, the seats and the
+// course GPA under it. Under 5 graded people the middle is not given, only the
+// seats. An empty cell is a dash.
 function Cell({ cell }: Readonly<{ cell: MatrixCell | null }>) {
   if (!cell) {
     return (
@@ -25,32 +16,40 @@ function Cell({ cell }: Readonly<{ cell: MatrixCell | null }>) {
       </span>
     );
   }
-  return <Figure stats={cell.stats} status={cell.status} />;
+  return <Figure stats={cell.stats} />;
 }
 
-function Figure({ stats, status }: Readonly<{ stats: GroupStats; status: OverviewStatus }>) {
+function Figure({ stats }: Readonly<{ stats: GroupStats }>) {
+  const center = summarizeGradeCenter(stats.counts);
+  const values = center.values;
   return (
-    <span className="flex items-stretch gap-2">
-      <span aria-hidden="true" className={cn('w-1 shrink-0 rounded', BAR_TONE_CLASSES[TONE[status]])} />
-      <span className="min-w-0">
-        <span className="block text-lg font-semibold leading-tight tabular-nums text-primary">
-          {formatPercent(stats.achievedPercent)}
-          <span className="ml-1 text-xs font-normal text-muted-foreground">{STATUS_META[status].label}</span>
-        </span>
-        <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          {stats.seats} ที่นั่ง
-          {stats.f > 0 && ` · F ${stats.f}`}
-          {stats.w > 0 && ` · W ${stats.w}`}
-          {stats.lowSample && stats.counted > 0 && <LowSampleTag counted={stats.counted} />}
-        </span>
+    <span className="block min-w-0">
+      <span className="block text-lg font-semibold leading-tight tabular-nums text-primary">
+        {values ? (
+          formatMedian(values.median)
+        ) : (
+          <span className="text-sm font-normal text-muted-foreground">ข้อมูลยังน้อย</span>
+        )}
+      </span>
+      <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+        {stats.seats} ที่นั่ง
+        {values && ` · GPA ${formatCourseGpa(values.gpa)}`}
+        {stats.f > 0 && ` · F ${stats.f}`}
+        {stats.w > 0 && ` · W ${stats.w}`}
+        {center.level === 'low' && <LowSampleTag counted={center.people} />}
       </span>
     </span>
   );
 }
 
+// "เกรดที่พบมากที่สุด B+ · เกรดกลาง B · GPA วิชา 2.84", the same line as under the
+// course name on the course page.
+const courseLine = (stats: GroupStats): string =>
+  centerLine(summarizeGradeCenter(stats.counts)) ?? SPARSE_SUMMARY;
+
 const href = (id: string) => `/instructor/courses/${id}`;
 
-// Every course against every year level that has someone, one number in every
+// Every course against every year level that has someone, one figure in every
 // cell. A table on wide screens (the course name is the link; the row is
 // clickable through it) and one card per course on phones.
 export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
@@ -59,7 +58,7 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
     <>
       <div className="hidden overflow-hidden rounded-xl border bg-card md:block">
         <table className="w-full text-sm">
-          <caption className="sr-only">ได้ B ขึ้นไป แยกตามวิชาและชั้นปี</caption>
+          <caption className="sr-only">เกรดกลาง แยกตามวิชาและชั้นปี</caption>
           <thead>
             <tr className="border-b bg-slate-50 text-left text-xs text-muted-foreground">
               <th scope="col" className="px-4 py-2 font-medium">วิชา</th>
@@ -82,16 +81,19 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
                     <span>
                       <span className="block text-xs text-muted-foreground">{row.course.code}</span>
                       <span className="block font-semibold text-primary">{row.course.name}</span>
+                      <span className="mt-0.5 block max-w-md text-xs font-normal text-muted-foreground">
+                        {courseLine(row.total)}
+                      </span>
                     </span>
                   </Link>
                 </th>
                 {row.cells.map((c, i) => (
-                  <td key={levels[i]} className="px-4 py-3">
+                  <td key={levels[i]} className="px-4 py-3 align-top">
                     <Cell cell={c} />
                   </td>
                 ))}
-                <td className="px-4 py-3">
-                  <Figure stats={row.total} status={row.totalStatus} />
+                <td className="px-4 py-3 align-top">
+                  <Figure stats={row.total} />
                 </td>
               </tr>
             ))}
@@ -100,12 +102,12 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
             <tr className="bg-slate-50">
               <th scope="row" className="px-4 py-3 text-left font-semibold text-primary">ทุกวิชารวมกัน</th>
               {footer.cells.map((c, i) => (
-                <td key={levels[i]} className="px-4 py-3">
+                <td key={levels[i]} className="px-4 py-3 align-top">
                   <Cell cell={c} />
                 </td>
               ))}
-              <td className="px-4 py-3">
-                <Figure stats={footer.total} status={footer.totalStatus} />
+              <td className="px-4 py-3 align-top">
+                <Figure stats={footer.total} />
               </td>
             </tr>
           </tfoot>
@@ -119,12 +121,10 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
               href={href(row.course.courseId)}
               className="block space-y-3 rounded-xl border bg-card p-4 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className="flex items-start justify-between gap-3">
-                <span className="min-w-0">
-                  <span className="block text-xs text-muted-foreground">{row.course.code}</span>
-                  <span className="block font-semibold text-primary">{row.course.name}</span>
-                </span>
-                <StatusBadge status={row.totalStatus} className="shrink-0" />
+              <span className="block min-w-0">
+                <span className="block text-xs text-muted-foreground">{row.course.code}</span>
+                <span className="block break-words font-semibold text-primary">{row.course.name}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{courseLine(row.total)}</span>
               </span>
               <span className="block divide-y">
                 {levels.map((l, i) => (
@@ -135,7 +135,7 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
                 ))}
                 <span className="flex items-center justify-between gap-3 pt-2">
                   <span className="text-sm font-medium text-primary">รวมวิชานี้</span>
-                  <Figure stats={row.total} status={row.totalStatus} />
+                  <Figure stats={row.total} />
                 </span>
               </span>
             </Link>

@@ -262,15 +262,6 @@ export const DATA_SOURCE_NOTE = 'ข้อมูลล่าสุดจาก�
 export const SPARSE_YEAR_NOTE =
   'ชั้นปีที่มีนักศึกษาที่ได้เกรดไม่ถึง 5 คน ไม่แสดงตัวเลข เพราะเปลี่ยนมากเมื่อเพิ่มหรือลดหนึ่งคน';
 
-// Still read by course-detail-summary until that line drops the goal as well.
-export function formatShare(percent: number | null, target: number | null): string {
-  if (percent === null || !Number.isFinite(percent)) return formatPercent(percent);
-  if (target !== null && Number.isFinite(target) && percent < target && Math.round(percent) >= target) {
-    return `${(Math.floor(percent * 10) / 10).toFixed(1)}%`;
-  }
-  return formatPercent(percent);
-}
-
 // "B or above" as a plain share of the people counted; no goal beside it.
 export function summaryLine(snapshot: Pick<CourseSnapshot, 'stats'>): string {
   const { stats } = snapshot;

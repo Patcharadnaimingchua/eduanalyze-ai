@@ -327,16 +327,13 @@ export function buildOverviewSentence(
 export interface MatrixCell {
   yearLevel: number;
   stats: GroupStats;
-  status: OverviewStatus;
 }
 
 export interface MatrixRow {
   course: InstructorCourseSummary;
-  target: number | null;
   // One entry per column, in the same order as `levels`; null = nobody there ("–").
   cells: (MatrixCell | null)[];
   total: GroupStats;
-  totalStatus: OverviewStatus;
 }
 
 export interface Matrix {
@@ -344,12 +341,13 @@ export interface Matrix {
   levels: number[];
   rows: MatrixRow[];
   // Seats of the whole table per level, and in total.
-  footer: { cells: (MatrixCell | null)[]; total: GroupStats; totalStatus: OverviewStatus; target: number | null };
+  footer: { cells: (MatrixCell | null)[]; total: GroupStats };
   unplaced: number;
 }
 
 // Every number comes from the same seats: the per-course total here is the
 // course's own counted figure, so a row's total matches its card elsewhere.
+// Rows run by course code: no goal decides the order.
 export function buildCourseYearMatrix(
   overviews: readonly CourseOverview[],
   seats: readonly SeatRow[],
@@ -359,24 +357,22 @@ export function buildCourseYearMatrix(
   const { byCourse, overall, unplaced } = breakdownByYearLevel(seats, yearLevelByStudent, credits);
   const levels = [...new Set(overall.map((c) => c.yearLevel))].sort((a, b) => a - b);
   const all = buildOverallOverview(overviews, credits);
-  const cell = (cells: YearLevelCell[] | undefined, level: number, target: number | null): MatrixCell | null => {
+  const cell = (cells: YearLevelCell[] | undefined, level: number): MatrixCell | null => {
     const hit = cells?.find((c) => c.yearLevel === level);
-    return hit ? { yearLevel: level, stats: hit.stats, status: statusOf(hit.stats.achievedPercent, target) } : null;
+    return hit ? { yearLevel: level, stats: hit.stats } : null;
   };
   return {
     levels,
-    rows: sortByGap(overviews).map((o) => ({
-      course: o.course,
-      target: o.target,
-      cells: levels.map((l) => cell(byCourse.get(o.course.courseId), l, o.target)),
-      total: o.stats,
-      totalStatus: o.status,
-    })),
+    rows: [...overviews]
+      .sort((a, b) => a.course.code.localeCompare(b.course.code))
+      .map((o) => ({
+        course: o.course,
+        cells: levels.map((l) => cell(byCourse.get(o.course.courseId), l)),
+        total: o.stats,
+      })),
     footer: {
-      cells: levels.map((l) => cell(overall, l, all.target)),
+      cells: levels.map((l) => cell(overall, l)),
       total: all.stats,
-      totalStatus: all.status,
-      target: all.target,
     },
     unplaced,
   };
