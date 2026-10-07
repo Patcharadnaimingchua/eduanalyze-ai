@@ -69,14 +69,27 @@ export const CRITICAL_GRADES: ReadonlySet<Grade> = new Set<Grade>([
   'U',
 ]);
 
-// Splits the existing at-risk population into severity bands WITHOUT
-// resizing it: WATCH is whatever AT_RISK_GRADES holds that isn't
-// CRITICAL, so CRITICAL ∪ WATCH === AT_RISK_GRADES by construction and
-// the two can never drift apart as grades are added or moved. C+ stays
-// NORMAL here for the same reason it stays out of AT_RISK_GRADES above.
+// Per-course band, used by the Instructor pages only (one grade in one
+// course). WATCH is whatever AT_RISK_GRADES holds that isn't CRITICAL, so
+// CRITICAL ∪ WATCH === AT_RISK_GRADES by construction. C+ stays NORMAL.
+// A student's own status (Staff/Admin) is decided by gpaRiskLevel() below,
+// not by this.
 export function riskLevel(grade: Grade): RiskLevel {
   if (CRITICAL_GRADES.has(grade)) return 'CRITICAL';
   if (AT_RISK_GRADES.has(grade)) return 'WATCH';
+  return 'NORMAL';
+}
+
+// Cumulative-GPA cut-offs for a student's academic status. The only place
+// the numbers live; pending confirmation against the university's rules.
+export const GPA_CRITICAL_BELOW = 1.5;
+export const GPA_WATCH_BELOW = 1.75;
+
+// null = no GPA yet (no counted grade), which is "no data", not a band.
+export function gpaRiskLevel(gpa: number | null): RiskLevel | null {
+  if (gpa === null) return null;
+  if (gpa < GPA_CRITICAL_BELOW) return 'CRITICAL';
+  if (gpa < GPA_WATCH_BELOW) return 'WATCH';
   return 'NORMAL';
 }
 

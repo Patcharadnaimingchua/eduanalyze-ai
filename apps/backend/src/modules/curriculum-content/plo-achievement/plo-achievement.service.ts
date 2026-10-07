@@ -5,6 +5,7 @@ import { RequestUser } from '../../auth/request-user.interface';
 import {
   GRADE_POINTS,
   GRADE_STATUS,
+  gpaRiskLevel,
 } from '../../academic-record/student-course-record/grade-point.constant';
 import {
   LatestCourseAttempt,
@@ -29,8 +30,6 @@ import {
   StudentPloCloBreakdownEntry,
   StudentPloRadarPoint,
 } from './plo-achievement-report.interface';
-
-const AT_RISK_GPA_THRESHOLD = 2.0;
 
 function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   const groups = new Map<K, T[]>();
@@ -437,7 +436,7 @@ export class PloAchievementService {
         this.studentCourseRecordService.calculateGpaFromAttempts(attempts);
       if (gpa !== null) {
         gpas.push(gpa);
-        if (gpa < AT_RISK_GPA_THRESHOLD) {
+        if (gpaRiskLevel(gpa) !== 'NORMAL') {
           studentsAtRiskCount += 1;
         }
         this.pushInto(cohortGpas, student.admissionYear, gpa);

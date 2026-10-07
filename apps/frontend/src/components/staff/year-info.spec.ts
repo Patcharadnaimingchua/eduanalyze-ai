@@ -9,7 +9,7 @@ const entry = (id: string, onTrackStatus: 'on_track' | 'behind' | null) => ({
   onTrackStatus,
   gpa: 3,
   riskLevel: 'NORMAL' as const,
-  atRiskCourseCount: 0,
+  lowGradeCount: 0,
 });
 
 describe('yearInfoFrom', () => {

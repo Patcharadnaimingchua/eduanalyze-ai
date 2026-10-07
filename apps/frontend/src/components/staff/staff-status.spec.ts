@@ -23,16 +23,15 @@ function student(overrides: Partial<StaffStudentRiskEntry> = {}): StaffStudentRi
     isActive: true,
     riskLevel: 'NORMAL',
     gpa: 3,
-    atRiskCourseCount: 0,
+    lowGradeCount: 0,
     ...overrides,
   };
 }
 
-// The five kinds of active student the backend can return, including the two
-// awkward ones: only a U (a reading but no GPA) and only an S (a grade that
-// reads as nothing).
-const onlyU = () => student({ riskLevel: 'CRITICAL', gpa: null, atRiskCourseCount: 1 });
-const onlyS = () => student({ riskLevel: 'NORMAL', gpa: null, atRiskCourseCount: 0 });
+// Two ways to have no GPA: only a U (counts for nothing in a GPA) and only an
+// S. The backend answers NORMAL with gpa null for both; neither is a band.
+const onlyU = () => student({ riskLevel: 'NORMAL', gpa: null, lowGradeCount: 1 });
+const onlyS = () => student({ riskLevel: 'NORMAL', gpa: null, lowGradeCount: 0 });
 
 describe('staffStatus', () => {
   it('puts suspended students in their own status whatever their grades', () => {
@@ -40,14 +39,14 @@ describe('staffStatus', () => {
   });
 
   it.each([
-    ['CRITICAL', student({ riskLevel: 'CRITICAL', gpa: 1.2, atRiskCourseCount: 2 })],
-    ['WATCH', student({ riskLevel: 'WATCH', gpa: 2.1, atRiskCourseCount: 1 })],
+    ['CRITICAL', student({ riskLevel: 'CRITICAL', gpa: 1.49, lowGradeCount: 2 })],
+    ['WATCH', student({ riskLevel: 'WATCH', gpa: 1.5, lowGradeCount: 1 })],
     ['NORMAL', student()],
     ['NO_DATA', student({ gpa: null })],
   ])('reads %s', (key, s) => expect(staffStatus(s)).toBe(key));
 
-  it('keeps a student whose only grade is U as CRITICAL, not no data', () => {
-    expect(staffStatus(onlyU())).toBe('CRITICAL');
+  it('reads a student whose only grade is U as no data: there is no GPA to band', () => {
+    expect(staffStatus(onlyU())).toBe('NO_DATA');
   });
 
   it('reads a student whose only grade is S as no data', () => {
@@ -57,8 +56,8 @@ describe('staffStatus', () => {
 
 describe('summarizeStudents', () => {
   const mixed = () => [
-    student({ riskLevel: 'CRITICAL', gpa: 1.2, atRiskCourseCount: 2 }),
-    student({ riskLevel: 'WATCH', gpa: 2.1, atRiskCourseCount: 1 }),
+    student({ riskLevel: 'CRITICAL', gpa: 1.2, lowGradeCount: 2 }),
+    student({ riskLevel: 'WATCH', gpa: 1.7, lowGradeCount: 1 }),
     student({ gpa: 3.5 }),
     student({ gpa: 2.5 }),
     onlyU(),
@@ -74,7 +73,7 @@ describe('summarizeStudents', () => {
     expect(CRITICAL + WATCH + NORMAL + NO_DATA).toBe(summary.active);
     expect(summary.active).toBe(7);
     expect(summary.suspended).toBe(2);
-    expect(summary.byStatus).toEqual({ CRITICAL: 2, WATCH: 1, NORMAL: 2, NO_DATA: 2 });
+    expect(summary.byStatus).toEqual({ CRITICAL: 1, WATCH: 1, NORMAL: 2, NO_DATA: 3 });
   });
 
   it('keeps the sum equal to active for a list of only U and only S students', () => {
@@ -84,16 +83,14 @@ describe('summarizeStudents', () => {
     expect(summary.active).toBe(3);
   });
 
-  it('counts people with a reading and people with a GPA separately', () => {
+  it('counts the people with a GPA: everyone except no data', () => {
     const summary = summarizeStudents(mixed());
-    // withRecords excludes only NO_DATA (2); withGpa also drops the only-U student.
-    expect(summary.withRecords).toBe(5);
+    expect(summary.withRecords).toBe(4);
     expect(summary.withGpa).toBe(4);
-    expect(summary.withRecords).not.toBe(summary.withGpa);
   });
 
   it('averages the GPA over the active students that have one, ignoring suspended', () => {
-    expect(summarizeStudents(mixed()).averageGpa).toBeCloseTo((1.2 + 2.1 + 3.5 + 2.5) / 4);
+    expect(summarizeStudents(mixed()).averageGpa).toBeCloseTo((1.2 + 1.7 + 3.5 + 2.5) / 4);
   });
 
   it('has no average when nobody has a GPA', () => {
@@ -127,8 +124,8 @@ describe('sortRows', () => {
   const rows = toRows(
     [
       student({ studentCode: '65003', gpa: 3.4 }),
-      student({ studentCode: '65001', riskLevel: 'WATCH', gpa: 2.2, atRiskCourseCount: 1 }),
-      student({ studentCode: '65002', riskLevel: 'CRITICAL', gpa: 1.5, atRiskCourseCount: 2 }),
+      student({ studentCode: '65001', riskLevel: 'WATCH', gpa: 1.7, lowGradeCount: 1 }),
+      student({ studentCode: '65002', riskLevel: 'CRITICAL', gpa: 1.4, lowGradeCount: 2 }),
       student({ studentCode: '65004', gpa: null }),
       student({ studentCode: '65000', isActive: false }),
     ],

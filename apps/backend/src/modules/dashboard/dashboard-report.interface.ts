@@ -145,7 +145,7 @@ export interface InstructorYearLevelsReport {
 export interface StaffYearLevelStudent extends YearLevelStudent {
   gpa: number | null;
   riskLevel: RiskLevel;
-  atRiskCourseCount: number;
+  lowGradeCount: number;
 }
 
 export interface StaffYearLevelsReport {
@@ -181,19 +181,15 @@ export interface StaffOverviewProgram {
 
 // One row per student, not per attempt — staff act on people, where an
 // instructor acts on a course. riskLevel is the band of the student's
-// worst latest attempt, which is the same riskLevel() the instructor
-// dashboard applies per course, so a student failing one course reads as
-// CRITICAL in both places.
+// cumulative GPA (gpaRiskLevel), not of any single course grade.
 export interface StaffAtRiskStudent {
   studentProfileId: string;
   studentCode: string;
   fullName: string;
-  // Never NORMAL — this list is already filtered to at-risk grades.
+  // Never NORMAL — this list is already filtered to the GPA bands.
   riskLevel: RiskLevel;
-  // The grade that set riskLevel, and how many courses are at risk at
-  // all: one D+ reads very differently from six.
-  worstGrade: Grade;
-  atRiskCourseCount: number;
+  // Courses whose latest grade is D+/D/F/U. Context only; it never sets riskLevel.
+  lowGradeCount: number;
   gpa: number | null;
   // A scope can span programs, so a name alone doesn't say where to look.
   programCode: string;
@@ -213,7 +209,7 @@ export interface StaffStudentRiskEntry {
   isActive: boolean;
   riskLevel: RiskLevel;
   gpa: number | null;
-  atRiskCourseCount: number;
+  lowGradeCount: number;
 }
 
 // How much of a curriculum actually exists, decided at the source rather

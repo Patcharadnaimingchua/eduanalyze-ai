@@ -14,8 +14,10 @@ import {
   StudentCourseRecordService,
 } from '../academic-record/student-course-record/student-course-record.service';
 import {
+  CRITICAL_GRADES,
   RiskLevel,
   SEMESTER_TERM_RANK,
+  gpaRiskLevel,
   riskLevel,
 } from '../academic-record/student-course-record/grade-point.constant';
 import { buildGpaTrend } from '../academic-record/student-course-record/gpa-trend';
@@ -64,11 +66,6 @@ const RECENT_COURSES_LIMIT = 5;
 // The dashboard card is a prompt to act, not a register. The directory
 // carries the full list, filtered by risk.
 const STAFF_AT_RISK_LIMIT = 20;
-// Same bar PloAchievementService applies per curriculum — a GPA below
-// this counts as at risk, and a null GPA does not ("no data" is not
-// "at risk").
-const AT_RISK_GPA_THRESHOLD = 2.0;
-
 // Bucket 4 is a catch-all "4 and beyond" band, not a literal 4th year —
 // keeps the UI to a fixed set of buckets regardless of how long a
 // student has actually been enrolled.
@@ -552,7 +549,7 @@ export class DashboardService {
             onTrackStatus: onTrackByStudent.get(profile.id) ?? null,
             gpa: risk.gpa,
             riskLevel: risk.riskLevel,
-            atRiskCourseCount: risk.atRiskCourseCount,
+            lowGradeCount: risk.lowGradeCount,
           };
         }),
         currentAcademicYear,
@@ -1091,7 +1088,7 @@ export class DashboardService {
         this.studentCourseRecordService.calculateGpaFromAttempts(attempts);
       if (gpa !== null) {
         gpas.push(gpa);
-        if (gpa < AT_RISK_GPA_THRESHOLD) studentsAtRiskCount += 1;
+        if (gpaRiskLevel(gpa) !== 'NORMAL') studentsAtRiskCount += 1;
       }
 
       // A curriculum with no requirement tree can't be graduated from,
@@ -1261,7 +1258,7 @@ export class DashboardService {
       gpas.push(risk.gpa);
       gpasByCurriculum.set(student.curriculumId, gpas);
 
-      if (risk.worstGrade === null) continue;
+      if (risk.riskLevel === 'NORMAL') continue;
 
       if (risk.riskLevel === 'CRITICAL') atRiskSummary.critical += 1;
       else if (risk.riskLevel === 'WATCH') atRiskSummary.watch += 1;
@@ -1271,8 +1268,7 @@ export class DashboardService {
         studentCode: student.studentCode,
         fullName: student.user.fullName,
         riskLevel: risk.riskLevel,
-        worstGrade: risk.worstGrade,
-        atRiskCourseCount: risk.atRiskCourseCount,
+        lowGradeCount: risk.lowGradeCount,
         gpa: risk.gpa,
         programCode: programCodeById.get(student.programId) ?? '',
         curriculumVersion:
@@ -1280,12 +1276,12 @@ export class DashboardService {
       });
     }
 
-    // CRITICAL above WATCH, then most courses affected — the cap below
-    // has to keep the students worth looking at first.
+    // CRITICAL above WATCH, then lowest GPA — the cap below has to keep
+    // the students worth looking at first. Everyone here has a GPA.
     atRiskStudents.sort(
       (a, b) =>
         Number(b.riskLevel === 'CRITICAL') - Number(a.riskLevel === 'CRITICAL') ||
-        b.atRiskCourseCount - a.atRiskCourseCount,
+        (a.gpa ?? 0) - (b.gpa ?? 0),
     );
 
     const gpaByCurriculum = new Map<
@@ -1307,13 +1303,12 @@ export class DashboardService {
   }
 
   // One query for a whole cohort's records, then per student: collapse
-  // retakes, average, and pick the worst at-risk attempt. Every step is
-  // an existing StudentCourseRecordService method — this only groups
-  // their inputs (CONVENTIONS.md §6).
+  // retakes and average. Every step is an existing StudentCourseRecordService
+  // method — this only groups their inputs (CONVENTIONS.md §6).
   //
-  // selectAtRiskAttempts returns worst-first, so [0] decides the band.
-  // There is deliberately no separate "student is at risk when…" rule to
-  // drift away from the per-course one the instructor dashboard uses.
+  // The band comes from the cumulative GPA alone (gpaRiskLevel). A student
+  // with no GPA reads NORMAL here with gpa null, which the Staff pages show
+  // as "no data". lowGradeCount (D+/D/F/U) is context, never part of the band.
   private async computeStudentRisk(
     studentProfileIds: string[],
     preloadedRecords?: LatestCourseAttempt[],
@@ -1323,8 +1318,7 @@ export class DashboardService {
       {
         gpa: number | null;
         riskLevel: RiskLevel;
-        worstGrade: Grade | null;
-        atRiskCourseCount: number;
+        lowGradeCount: number;
       }
     >
   > {
@@ -1345,8 +1339,7 @@ export class DashboardService {
       {
         gpa: number | null;
         riskLevel: RiskLevel;
-        worstGrade: Grade | null;
-        atRiskCourseCount: number;
+        lowGradeCount: number;
       }
     >();
     for (const studentProfileId of studentProfileIds) {
@@ -1358,15 +1351,12 @@ export class DashboardService {
         this.studentCourseRecordService.calculateGpaFromAttempts(
           latestByCourse,
         );
-      const atRiskAttempts =
-        this.studentCourseRecordService.selectAtRiskAttempts(latestByCourse);
-      const worst = atRiskAttempts[0];
-
       riskByStudent.set(studentProfileId, {
         gpa,
-        riskLevel: worst ? riskLevel(worst.grade) : 'NORMAL',
-        worstGrade: worst?.grade ?? null,
-        atRiskCourseCount: atRiskAttempts.length,
+        riskLevel: gpaRiskLevel(gpa) ?? 'NORMAL',
+        lowGradeCount: [...latestByCourse.values()].filter((attempt) =>
+          CRITICAL_GRADES.has(attempt.grade),
+        ).length,
       });
     }
     return riskByStudent;
@@ -1414,7 +1404,7 @@ export class DashboardService {
         isActive: student.isActive,
         riskLevel: risk.riskLevel,
         gpa: risk.gpa,
-        atRiskCourseCount: risk.atRiskCourseCount,
+        lowGradeCount: risk.lowGradeCount,
       };
     });
   }

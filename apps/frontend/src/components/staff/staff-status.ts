@@ -4,8 +4,8 @@ import { readStudentRisk, type StaffRiskKey } from './student-reading';
 
 // The numbers every Staff page shows about students, derived in one place from
 // the one list (GET /dashboard/staff/students) so the pages cannot disagree.
-// No GPA cut-off lives here: the band comes from the backend's riskLevel()
-// (the worst course grade), and "no data" is the absence of any reading.
+// No GPA cut-off lives here: the band comes from the backend's gpaRiskLevel()
+// (cumulative GPA), and "no data" is the absence of a GPA.
 
 export type StaffStatusKey = StaffRiskKey | 'SUSPENDED';
 
@@ -22,7 +22,7 @@ export const STATUS_ORDER: StaffStatusKey[] = [
 
 type StatusInput = Pick<
   StaffStudentRiskEntry,
-  'isActive' | 'riskLevel' | 'gpa' | 'atRiskCourseCount'
+  'isActive' | 'riskLevel' | 'gpa'
 >;
 
 export function staffStatus(student: StatusInput): StaffStatusKey {
@@ -37,11 +37,10 @@ export interface StudentSummary {
   suspended: number;
   // Always sums to `active`: every active student has exactly one status.
   byStatus: Record<ActiveStatusKey, number>;
-  // Active students with any grade reading — everyone except NO_DATA.
+  // Active students that have a GPA — everyone except NO_DATA.
   withRecords: number;
-  // Active students that have a GPA — the people an average GPA is taken over.
-  // Can be fewer than withRecords (a student whose only grade is U has a
-  // reading but no GPA).
+  // The people an average GPA is taken over; equal to withRecords now that
+  // "no data" means "no GPA".
   withGpa: number;
   averageGpa: number | null;
 }
