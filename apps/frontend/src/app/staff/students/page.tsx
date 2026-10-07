@@ -182,7 +182,7 @@ function StaffStudentsContent() {
         </Select>
         {isFiltered && (
           <span className="text-sm text-muted-foreground">
-            แสดง {filteredStudents.length} จาก {allStudents.length} คน
+            พบ {filteredStudents.length} คน (ทั้งหมด {allStudents.length} คน)
           </span>
         )}
       </Reveal>

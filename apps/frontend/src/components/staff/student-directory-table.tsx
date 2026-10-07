@@ -81,12 +81,21 @@ export function StudentDirectoryTable({
                     className="border-b border-slate-50 hover:bg-slate-50"
                   >
                     <td className="py-3 pr-4">
-                      <Link
-                        href={`/staff/students/${student.studentProfileId}`}
-                        className="text-primary hover:underline"
-                      >
-                        {student.fullName}
-                      </Link>
+                      {/* A suspended student's detail page answers 404, so the
+                          name is plain text with a tag instead of a dead link. */}
+                      {student.isActive ? (
+                        <Link
+                          href={`/staff/students/${student.studentProfileId}`}
+                          className="text-primary hover:underline"
+                        >
+                          {student.fullName}
+                        </Link>
+                      ) : (
+                        <span className="inline-flex flex-wrap items-center gap-2 text-muted-foreground">
+                          {student.fullName}
+                          <Badge tone="neutral">ระงับ</Badge>
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{student.studentCode}</td>
                     <td className="py-3 pr-4">{program?.name ?? '—'}</td>
