@@ -9,9 +9,7 @@ import {
   LOW_SAMPLE_BELOW,
   breakdownByYearLevel,
   buildCourseOverviews,
-  statusOf,
   type GroupStats,
-  type OverviewStatus,
   type SeatRow,
 } from './instructor-overview';
 import { SEMESTER_TERM_RANK } from './instructor-summary';
@@ -35,15 +33,6 @@ export function dataLevelOf(counted: number): DataLevel {
   return counted < LOW_SAMPLE_BELOW ? 'low' : 'ok';
 }
 
-// 'sparse' = too few graded people to say met / not met; shown as grey text.
-export type SnapshotStatus = OverviewStatus | 'sparse';
-
-export function snapshotStatus(stats: GroupStats, target: number | null): SnapshotStatus {
-  if (stats.counted === 0) return 'none';
-  if (dataLevelOf(stats.counted) === 'insufficient') return 'sparse';
-  return statusOf(stats.achievedPercent, target);
-}
-
 // ---- header: which term and curriculum this course was last taught in ----
 
 export interface CourseTermInfo {
@@ -61,7 +50,11 @@ export function courseTermInfo(
       const rank = SEMESTER_TERM_RANK[semester.semesterTerm];
       const hit = semester.courses.find((c) => c.courseId === courseId);
       if (!hit || rank === undefined) continue;
-      if (best && (year.academicYear < best.year || (year.academicYear === best.year && rank <= best.rank))) continue;
+      if (
+        best &&
+        (year.academicYear < best.year || (year.academicYear === best.year && rank <= best.rank))
+      )
+        continue;
       best = {
         year: year.academicYear,
         rank,
@@ -81,7 +74,6 @@ export interface YearRow {
   yearLevel: number;
   stats: GroupStats;
   level: DataLevel;
-  status: SnapshotStatus;
   // false = the percentage and grade average are hidden ("—").
   showNumbers: boolean;
 }
@@ -95,7 +87,16 @@ export interface GoalItem {
   state: GoalState;
 }
 
-export const GRADE_ORDER: readonly Grade[] = ['A', 'B_PLUS', 'B', 'C_PLUS', 'C', 'D_PLUS', 'D', 'F'];
+export const GRADE_ORDER: readonly Grade[] = [
+  'A',
+  'B_PLUS',
+  'B',
+  'C_PLUS',
+  'C',
+  'D_PLUS',
+  'D',
+  'F',
+];
 
 export interface GradeSegment {
   grade: Grade;
@@ -112,6 +113,9 @@ export interface TrendTerm {
   level: DataLevel;
   showNumbers: boolean;
   isLatest: boolean;
+  // Points of "B or above" against the term before it, only when both terms
+  // have 5 or more graded people; null otherwise.
+  delta: number | null;
 }
 
 export interface TrendChange {
@@ -123,9 +127,7 @@ export interface TrendChange {
 export interface CourseSnapshot {
   courseId: string;
   stats: GroupStats;
-  target: number | null;
   level: DataLevel;
-  status: SnapshotStatus;
   // No grade has been recorded for this course at all.
   empty: boolean;
   // null = year levels could not be loaded.
@@ -152,7 +154,7 @@ export function buildCourseSnapshot({
   seatRows: readonly SeatRow[];
   yearLevelByStudent: ReadonlyMap<string, number> | null;
 }): CourseSnapshot {
-  const { stats, target } = buildCourseOverviews([course])[0];
+  const { stats } = buildCourseOverviews([course])[0];
   const level = dataLevelOf(stats.counted);
 
   let years: CourseSnapshot['years'] = null;
@@ -166,7 +168,6 @@ export function buildCourseSnapshot({
           yearLevel: cell.yearLevel,
           stats: cell.stats,
           level: cellLevel,
-          status: snapshotStatus(cell.stats, target),
           showNumbers: cellLevel !== 'insufficient',
         };
       }),
@@ -201,7 +202,14 @@ export function buildCourseSnapshot({
       level: termLevel,
       showNumbers: termLevel !== 'insufficient',
       isLatest: i === trendPoints.length - 1,
+      delta: null,
     };
+  });
+  terms.forEach((term, i) => {
+    const previous = terms[i - 1];
+    if (previous && term.showNumbers && previous.showNumbers) {
+      term.delta = Math.round(term.percent) - Math.round(previous.percent);
+    }
   });
   const last = terms[terms.length - 1];
   const before = terms[terms.length - 2];
@@ -217,9 +225,7 @@ export function buildCourseSnapshot({
   return {
     courseId: course.courseId,
     stats,
-    target,
     level,
-    status: snapshotStatus(stats, target),
     empty: stats.seats === 0,
     years,
     goals: {
@@ -253,12 +259,10 @@ export const SPARSE_GOAL = 'ข้อมูลยังน้อย — ยั�
 export const SPARSE_TREND = 'ข้อมูลยังน้อย — ยังไม่ควรสรุปแนวโน้ม';
 export const EMPTY_SNAPSHOT = 'ยังไม่มีเกรดที่กรอก — เมื่อมีข้อมูล ระบบจะแสดงภาพรวมที่นี่';
 export const DATA_SOURCE_NOTE = 'ข้อมูลล่าสุดจากเกรดที่บันทึกในระบบ';
-export const SPARSE_YEAR_NOTE = 'ชั้นปีที่มีนักศึกษาที่ได้เกรดไม่ถึง 5 คน ไม่แสดงตัวเลข เพราะเปลี่ยนมากเมื่อเพิ่มหรือลดหนึ่งคน';
+export const SPARSE_YEAR_NOTE =
+  'ชั้นปีที่มีนักศึกษาที่ได้เกรดไม่ถึง 5 คน ไม่แสดงตัวเลข เพราะเปลี่ยนมากเมื่อเพิ่มหรือลดหนึ่งคน';
 
-// A share set beside its goal. Whole numbers, except when it is under the goal
-// but rounds up to it: then one decimal, cut down (never up), so 69.6 reads 69.6%
-// and 69.99 reads 69.9%, not "70% ... below 70%". Only the text changes; the
-// status is still judged on the real value.
+// Still read by course-detail-summary until that line drops the goal as well.
 export function formatShare(percent: number | null, target: number | null): string {
   if (percent === null || !Number.isFinite(percent)) return formatPercent(percent);
   if (target !== null && Number.isFinite(target) && percent < target && Math.round(percent) >= target) {
@@ -267,11 +271,17 @@ export function formatShare(percent: number | null, target: number | null): stri
   return formatPercent(percent);
 }
 
-export function summaryLine(snapshot: Pick<CourseSnapshot, 'stats' | 'target' | 'status'>): string {
-  const { stats, target } = snapshot;
+// "B or above" as a plain share of the people counted; no goal beside it.
+export function summaryLine(snapshot: Pick<CourseSnapshot, 'stats'>): string {
+  const { stats } = snapshot;
   if (stats.achievedPercent === null) return SPARSE_SUMMARY;
-  const goal = target === null ? '' : ` · เป้า ${formatPercent(target)}`;
-  return `จากข้อมูลที่มี ${formatShare(stats.achievedPercent, target)} ได้ B ขึ้นไป${goal}`;
+  return `จากข้อมูลที่มี ${formatPercent(stats.achievedPercent)} ได้ B ขึ้นไป`;
+}
+
+// "+4", "−3", "0": a change in points, never coloured as good or bad.
+export function formatPointsChange(points: number): string {
+  if (points === 0) return '0';
+  return `${points > 0 ? '+' : '−'}${Math.abs(points)}`;
 }
 
 // People with a grade, and how many of them W and I leave out of the B-or-above share.
@@ -291,6 +301,7 @@ export function gradedPeopleLine(stats: GroupStats): string {
 
 export function changeLine(change: TrendChange): string {
   const { points, fromLabel } = change;
-  const move = points === 0 ? 'ใกล้เคียงเดิม' : `${points > 0 ? 'เพิ่มขึ้น' : 'ลดลง'} ${Math.abs(points)} จุด`;
+  const move =
+    points === 0 ? 'ใกล้เคียงเดิม' : `${points > 0 ? 'เพิ่มขึ้น' : 'ลดลง'} ${Math.abs(points)} จุด`;
   return `จากข้อมูลที่มี ${move} เมื่อเทียบ${fromLabel}`;
 }

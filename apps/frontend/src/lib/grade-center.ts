@@ -121,6 +121,14 @@ export function formatMedian(median: GradeCenterValues['median']): string {
     : `${gradeText(median.low)} ถึง ${gradeText(median.high)}`;
 }
 
+// "A 1 คน · B 2 คน": the tally alone, for a course with too few people to say more.
+export function formatGradeTally(distribution: Partial<Record<Grade, number>>): string {
+  const parts = GRADE_ORDER.filter((g) => clean(distribution[g]) > 0).map(
+    (g) => `${gradeText(g)} ${clean(distribution[g])} คน`,
+  );
+  return parts.length > 0 ? parts.join(' · ') : 'ยังไม่มีเกรด A ถึง F';
+}
+
 export const formatCourseGpa = (gpa: number): string => gpa.toFixed(2);
 
 // "เกรดที่พบมากที่สุด B+ · เกรดกลาง B · GPA วิชา 2.84"; null when there are too

@@ -1,12 +1,16 @@
-import type { Grade, InstructorCourseSummary, InstructorCourseTimelineYear } from '@eduanalyze-ai/shared-types';
+import type {
+  Grade,
+  InstructorCourseSummary,
+  InstructorCourseTimelineYear,
+} from '@eduanalyze-ai/shared-types';
 import {
   buildCourseSnapshot,
   changeLine,
   courseTermInfo,
   dataLevelOf,
+  formatPointsChange,
   formatShare,
   gradedPeopleLine,
-  snapshotStatus,
   summaryLine,
 } from './course-snapshot';
 import { emptyCounts, summarizeParts } from './instructor-overview';
@@ -47,27 +51,17 @@ describe('dataLevelOf', () => {
   });
 });
 
-describe('snapshotStatus', () => {
-  it('gives no verdict below 5 people, and none for nobody', () => {
-    expect(snapshotStatus(summarizeParts([{ counts: counts({ A: 4 }), credits: null }]), 70)).toBe('sparse');
-    expect(snapshotStatus(summarizeParts([{ counts: counts({ W: 3 }), credits: null }]), 70)).toBe('none');
-    expect(snapshotStatus(summarizeParts([{ counts: counts({}), credits: null }]), 70)).toBe('none');
-  });
-
-  it('judges against the goal from 5 people', () => {
-    expect(snapshotStatus(summarizeParts([{ counts: counts({ A: 5 }), credits: null }]), 70)).toBe('met');
-    expect(snapshotStatus(summarizeParts([{ counts: counts({ A: 3, F: 2 }), credits: null }]), 70)).toBe('below');
-  });
-});
-
 describe('buildCourseSnapshot', () => {
   it('flags a course with no grade as empty', () => {
-    const s = buildCourseSnapshot({ course: course({}), seatRows: [], yearLevelByStudent: new Map() });
+    const s = buildCourseSnapshot({
+      course: course({}),
+      seatRows: [],
+      yearLevelByStudent: new Map(),
+    });
     expect(s.empty).toBe(true);
-    expect(s.status).toBe('none');
   });
 
-  it('reads the share, level and goal of a normal course', () => {
+  it('reads the share and level of a normal course, with no goal or status in it', () => {
     const s = buildCourseSnapshot({
       course: course({ A: 6, B: 4, C: 2, F: 1, W: 1 }),
       seatRows: [],
@@ -77,12 +71,12 @@ describe('buildCourseSnapshot', () => {
     expect(s.stats.counted).toBe(13);
     expect(s.stats.achievedPercent).toBeCloseTo((10 / 13) * 100);
     expect(s.level).toBe('ok');
-    expect(s.status).toBe('met');
-    expect(s.target).toBe(70);
+    expect(s).not.toHaveProperty('status');
+    expect(s).not.toHaveProperty('target');
     expect(s.years).toBeNull();
   });
 
-  it('hides numbers and verdicts for year levels under 5 people', () => {
+  it('hides the numbers for year levels under 5 people', () => {
     const rows = [
       ...['a', 'b', 'c', 'd'].map((id) => seat(id, 'A')),
       ...['e', 'f', 'g', 'h', 'i', 'j'].map((id) => seat(id, 'B')),
@@ -91,10 +85,15 @@ describe('buildCourseSnapshot', () => {
       ...['a', 'b', 'c', 'd'].map((id) => [id, 1] as [string, number]),
       ...['e', 'f', 'g', 'h', 'i', 'j'].map((id) => [id, 2] as [string, number]),
     ]);
-    const s = buildCourseSnapshot({ course: course({ A: 4, B: 6 }), seatRows: rows, yearLevelByStudent: level });
+    const s = buildCourseSnapshot({
+      course: course({ A: 4, B: 6 }),
+      seatRows: rows,
+      yearLevelByStudent: level,
+    });
     const [y1, y2] = s.years!.rows;
-    expect(y1).toMatchObject({ yearLevel: 1, level: 'insufficient', status: 'sparse', showNumbers: false });
-    expect(y2).toMatchObject({ yearLevel: 2, level: 'low', status: 'met', showNumbers: true });
+    expect(y1).toMatchObject({ yearLevel: 1, level: 'insufficient', showNumbers: false });
+    expect(y2).toMatchObject({ yearLevel: 2, level: 'low', showNumbers: true });
+    expect(y2).not.toHaveProperty('status');
     expect(s.years!.unplaced).toBe(0);
   });
 
@@ -112,10 +111,18 @@ describe('buildCourseSnapshot', () => {
       { cloId: 'k1', code: 'CLO1', description: 'หนึ่ง', threshold: 70, isAchieved: true },
       { cloId: 'k2', code: 'CLO2', description: 'สอง', threshold: 70, isAchieved: false },
     ];
-    const few = buildCourseSnapshot({ course: course({ A: 3 }, { clos }), seatRows: [], yearLevelByStudent: null });
+    const few = buildCourseSnapshot({
+      course: course({ A: 3 }, { clos }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
     expect(few.goals).toMatchObject({ sparse: true, met: 0, unmet: 0 });
     expect(few.goals.items.every((g) => g.state === 'unknown')).toBe(true);
-    const enough = buildCourseSnapshot({ course: course({ A: 8 }, { clos }), seatRows: [], yearLevelByStudent: null });
+    const enough = buildCourseSnapshot({
+      course: course({ A: 8 }, { clos }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
     expect(enough.goals).toMatchObject({ sparse: false, met: 1, unmet: 1 });
   });
 
@@ -138,7 +145,10 @@ describe('buildCourseSnapshot', () => {
       achievementPercent: pct,
     });
     const two = buildCourseSnapshot({
-      course: course({ A: 8 }, { semesterTrend: [point('FIRST', 2567, 20, 60), point('SECOND', 2567, 20, 70)] }),
+      course: course(
+        { A: 8 },
+        { semesterTrend: [point('FIRST', 2567, 20, 60), point('SECOND', 2567, 20, 70)] },
+      ),
       seatRows: [],
       yearLevelByStudent: null,
     });
@@ -147,7 +157,11 @@ describe('buildCourseSnapshot', () => {
       course: course(
         { A: 8 },
         {
-          semesterTrend: [point('FIRST', 2566, 20, 50), point('FIRST', 2567, 20, 60), point('SECOND', 2567, 20, 72)],
+          semesterTrend: [
+            point('FIRST', 2566, 20, 50),
+            point('FIRST', 2567, 20, 60),
+            point('SECOND', 2567, 20, 72),
+          ],
         },
       ),
       seatRows: [],
@@ -160,7 +174,11 @@ describe('buildCourseSnapshot', () => {
       course: course(
         { A: 8 },
         {
-          semesterTrend: [point('FIRST', 2566, 20, 50), point('FIRST', 2567, 20, 60), point('SECOND', 2567, 3, 100)],
+          semesterTrend: [
+            point('FIRST', 2566, 20, 50),
+            point('FIRST', 2567, 20, 60),
+            point('SECOND', 2567, 3, 100),
+          ],
         },
       ),
       seatRows: [],
@@ -168,6 +186,60 @@ describe('buildCourseSnapshot', () => {
     });
     expect(tiny.trend.terms[2].showNumbers).toBe(false);
     expect(tiny.trend.change).toBeNull();
+  });
+
+  it('compares each term with the one before only when both have 5 or more people', () => {
+    const point = (term: 'FIRST' | 'SECOND', year: number, n: number, pct: number) => ({
+      academicYear: year,
+      semesterTerm: term,
+      studentCount: n,
+      achievementPercent: pct,
+    });
+    const s = buildCourseSnapshot({
+      course: course(
+        { A: 8 },
+        {
+          semesterTrend: [
+            point('FIRST', 2566, 20, 50.4),
+            point('SECOND', 2566, 20, 60.4),
+            point('FIRST', 2567, 4, 90),
+            point('SECOND', 2567, 12, 56),
+            point('FIRST', 2568, 12, 56.3),
+          ],
+        },
+      ),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    // no term before the first; 5 people or more on both sides; 4 people on one side
+    expect(s.trend.terms.map((t) => t.delta)).toEqual([null, 10, null, null, 0]);
+  });
+
+  it('has no comparison for a trend with no head count', () => {
+    const s = buildCourseSnapshot({
+      course: course(
+        { A: 8 },
+        {
+          semesterTrend: [
+            {
+              academicYear: 2566,
+              semesterTerm: 'FIRST',
+              studentCount: Number.NaN,
+              achievementPercent: 50,
+            },
+            {
+              academicYear: 2566,
+              semesterTerm: 'SECOND',
+              studentCount: Number.NaN,
+              achievementPercent: 60,
+            },
+          ],
+        },
+      ),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(s.trend.terms.every((t) => t.delta === null)).toBe(true);
   });
 });
 
@@ -179,19 +251,42 @@ describe('courseTermInfo', () => {
         {
           semesterId: 's1',
           semesterTerm: 'SECOND',
-          courses: [{ courseId: 'c1', code: 'x', name: 'x', programCode: 'CS', curriculumYear: 2565, studentCount: 5, predominantYearLevel: 2 }],
+          courses: [
+            {
+              courseId: 'c1',
+              code: 'x',
+              name: 'x',
+              programCode: 'CS',
+              curriculumYear: 2565,
+              studentCount: 5,
+              predominantYearLevel: 2,
+            },
+          ],
         },
         {
           semesterId: 's0',
           semesterTerm: 'FIRST',
-          courses: [{ courseId: 'c1', code: 'x', name: 'x', programCode: 'CS', curriculumYear: 2560, studentCount: 5, predominantYearLevel: 2 }],
+          courses: [
+            {
+              courseId: 'c1',
+              code: 'x',
+              name: 'x',
+              programCode: 'CS',
+              curriculumYear: 2560,
+              studentCount: 5,
+              predominantYearLevel: 2,
+            },
+          ],
         },
       ],
     },
   ];
 
   it('uses the latest term the course appears in', () => {
-    expect(courseTermInfo(years, 'c1')).toEqual({ termLabel: 'ภาคปลาย / 2567', curriculum: 'หลักสูตร CS ปี 2565' });
+    expect(courseTermInfo(years, 'c1')).toEqual({
+      termLabel: 'ภาคปลาย / 2567',
+      curriculum: 'หลักสูตร CS ปี 2565',
+    });
   });
 
   it('is null for a course that was never taught', () => {
@@ -201,8 +296,12 @@ describe('courseTermInfo', () => {
 
 describe('words', () => {
   it('says "from the data we have" and never claims more', () => {
-    const s = buildCourseSnapshot({ course: course({ A: 8, F: 2 }), seatRows: [], yearLevelByStudent: null });
-    expect(summaryLine(s)).toBe('จากข้อมูลที่มี 80% ได้ B ขึ้นไป · เป้า 70%');
+    const s = buildCourseSnapshot({
+      course: course({ A: 8, F: 2 }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(summaryLine(s)).toBe('จากข้อมูลที่มี 80% ได้ B ขึ้นไป');
     expect(gradedPeopleLine(s.stats)).toBe('จากนักศึกษาที่มีเกรด 10 คน');
     expect(changeLine({ points: -4, fromLabel: 'ภาคต้น / 2567', toLabel: 'x' })).toBe(
       'จากข้อมูลที่มี ลดลง 4 จุด เมื่อเทียบภาคต้น / 2567',
@@ -211,8 +310,14 @@ describe('words', () => {
   });
 
   it('keeps W and I out of the sentence base and says so', () => {
-    const s = buildCourseSnapshot({ course: course({ A: 8, W: 2, I: 1 }), seatRows: [], yearLevelByStudent: null });
-    expect(gradedPeopleLine(s.stats)).toBe('จากนักศึกษาที่มีเกรด 11 คน (ไม่รวมถอนหรือยังไม่สมบูรณ์ 3 คน ในร้อยละ B ขึ้นไป)');
+    const s = buildCourseSnapshot({
+      course: course({ A: 8, W: 2, I: 1 }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(gradedPeopleLine(s.stats)).toBe(
+      'จากนักศึกษาที่มีเกรด 11 คน (ไม่รวมถอนหรือยังไม่สมบูรณ์ 3 คน ในร้อยละ B ขึ้นไป)',
+    );
   });
 });
 
@@ -229,11 +334,12 @@ describe('formatShare', () => {
     expect(formatShare(69.6, null)).toBe('70%');
     expect(formatShare(null, 70)).toBe('—');
   });
+});
 
-  it('never changes the status, which is judged on the real value', () => {
-    const stats = summarizeParts([{ counts: counts({ A: 16, C: 7 }), credits: null }]);
-    expect(Math.round(stats.achievedPercent!)).toBe(70);
-    expect(snapshotStatus(stats, 70)).toBe('near');
-    expect(summaryLine({ stats, target: 70, status: 'near' })).toBe('จากข้อมูลที่มี 69.5% ได้ B ขึ้นไป · เป้า 70%');
+describe('formatPointsChange', () => {
+  it('signs a change and keeps zero plain', () => {
+    expect(formatPointsChange(4)).toBe('+4');
+    expect(formatPointsChange(-3)).toBe('−3');
+    expect(formatPointsChange(0)).toBe('0');
   });
 });
