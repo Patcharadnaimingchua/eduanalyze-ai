@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BookOpen, ListChecks, Plus, Search, UserX } from 'lucide-react';
 import { fetchCourses } from '@/lib/api/academic-record';
 import {
+  deleteCourseInstructor,
   fetchCourseCategories,
   fetchCourseInstructors,
   fetchCurriculumRequirements,
@@ -14,6 +15,8 @@ import {
   fetchStaffOverview,
 } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -23,6 +26,7 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
 import { CategorySection } from '@/components/staff/category-section';
 import { CourseCategoryForm } from '@/components/staff/course-category-form';
+import { AssignInstructorSheet } from '@/components/staff/assign-instructor-sheet';
 import { CourseEditSheet, type CourseSheetTarget } from '@/components/staff/course-edit-sheet';
 import { CourseRows } from '@/components/staff/course-rows';
 import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instructors-tab';
@@ -66,6 +70,7 @@ export default function StaffCurriculumPage() {
 
 function StaffCurriculumContent() {
   const { user } = useAuth();
+  const toast = useToast();
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
@@ -73,6 +78,7 @@ function StaffCurriculumContent() {
   const [search, setSearch] = useState('');
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [sheet, setSheet] = useState<CourseSheetTarget | null>(null);
+  const [assignCourseId, setAssignCourseId] = useState<string | null>(null);
 
   // The address keeps the whole selection, so a link from the overview, a
   // reload or Back lands on the same curriculum, filter and course. Older links
@@ -207,6 +213,18 @@ function StaffCurriculumContent() {
       queryClient.invalidateQueries({ queryKey: [key] });
     }
   }, [queryClient]);
+
+  // Flow that writes: DELETE /course-instructors/:id
+  async function withdraw(assignmentId: string) {
+    try {
+      await deleteCourseInstructor(assignmentId);
+      toast.success('ถอนอาจารย์แล้ว');
+      refetchAll();
+    } catch (error) {
+      toast.error(describeStaffWriteError(error, 'ถอนอาจารย์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
+      throw error;
+    }
+  }
 
   if (!user) {
     return (
@@ -521,6 +539,8 @@ function StaffCurriculumContent() {
                         selectedCourseId={courseId}
                         actions={{
                           onEdit: (row) => setSheet({ kind: 'edit', course: row.course }),
+                          onAssign: (row) => setAssignCourseId(row.course.id),
+                          onWithdraw: withdraw,
                         }}
                       />
                     </CategorySection>
@@ -540,6 +560,21 @@ function StaffCurriculumContent() {
           categories={curriculumCategories}
           coursesInCurriculum={activeCoursesInCurriculum}
           prerequisites={prerequisitesQuery.data ?? []}
+          onChanged={refetchAll}
+        />
+      )}
+      {inScope && loaded && (
+        <AssignInstructorSheet
+          course={activeCoursesInCurriculum.find((c) => c.id === assignCourseId) ?? null}
+          assignedUserIds={
+            new Set(
+              (assignmentsQuery.data ?? [])
+                .filter((a) => a.courseId === assignCourseId)
+                .map((a) => a.userId),
+            )
+          }
+          instructors={instructorsQuery.data ?? []}
+          onClose={() => setAssignCourseId(null)}
           onChanged={refetchAll}
         />
       )}
