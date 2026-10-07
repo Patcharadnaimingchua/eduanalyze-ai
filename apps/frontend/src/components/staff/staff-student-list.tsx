@@ -8,9 +8,9 @@ import type { StaffStudentRow } from './staff-status';
 import { NO_DATA_LABEL } from './student-reading';
 
 const DETAIL_BUTTON =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-slate-300 bg-card px-4 text-sm font-semibold text-primary hover:bg-slate-100';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-slate-300 bg-card px-3 text-sm font-semibold text-primary hover:bg-slate-100';
 const LOCKED_BUTTON =
-  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-dashed border-slate-300 px-4 text-sm text-muted-foreground';
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-dashed border-slate-300 px-3 text-sm text-muted-foreground';
 
 // A suspended student's detail page answers 404, so the action is a note
 // instead of a link.
@@ -62,7 +62,8 @@ export function StaffStudentList({
 
   return (
     <>
-      <table className="hidden w-full text-left text-sm md:table">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
             <th className="px-3 py-3 font-semibold">รหัสนักศึกษา</th>
@@ -101,6 +102,7 @@ export function StaffStudentList({
           ))}
         </tbody>
       </table>
+      </div>
 
       <ul className="space-y-3 md:hidden">
         {rows.map((row) => (

@@ -166,7 +166,8 @@ export function CourseRows({
 
   return (
     <>
-      <table className="hidden w-full text-left text-sm md:table">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-y-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
             <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
@@ -210,6 +211,7 @@ export function CourseRows({
           ))}
         </tbody>
       </table>
+      </div>
 
       <ul className="space-y-3 p-4 md:hidden">
         {rows.map((row) => (

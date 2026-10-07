@@ -122,7 +122,7 @@ export function StaffRecordList({
           <Button
             type="button"
             variant="destructive"
-            className="h-11 px-4"
+            className="h-11 px-3"
             disabled={isBusy}
             aria-label={`ยืนยันลบผลการเรียน ${code}`}
             onClick={() => handleDelete(record.id)}
@@ -132,7 +132,7 @@ export function StaffRecordList({
           <Button
             type="button"
             variant="outline"
-            className="h-11 px-4"
+            className="h-11 px-3"
             disabled={isBusy}
             onClick={() => setConfirmingId(null)}
           >
@@ -145,7 +145,7 @@ export function StaffRecordList({
       <Button
         type="button"
         variant="outline"
-        className="h-11 px-4"
+        className="h-11 px-3"
         aria-label={`ลบผลการเรียน ${code}`}
         onClick={() => setConfirmingId(record.id)}
       >
@@ -156,7 +156,8 @@ export function StaffRecordList({
 
   return (
     <div>
-      <table className="hidden w-full text-left text-sm md:table">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
             <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
@@ -187,6 +188,7 @@ export function StaffRecordList({
           ))}
         </tbody>
       </table>
+      </div>
 
       <ul className="space-y-3 md:hidden">
         {pagination.pageRows.map((record) => (

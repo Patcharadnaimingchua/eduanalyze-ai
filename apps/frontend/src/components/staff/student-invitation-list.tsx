@@ -71,7 +71,7 @@ export function StudentInvitationList({
     <Button
       type="button"
       variant="outline"
-      className="h-11 gap-1.5 px-4"
+      className="h-11 gap-1.5 px-3"
       disabled={resendingId === inv.id}
       onClick={() => handleResend(inv.id, inv.email)}
     >
@@ -83,7 +83,8 @@ export function StudentInvitationList({
 
   return (
     <>
-      <table className="hidden w-full text-left text-sm md:table">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
             <th className="px-3 py-3 font-semibold">รหัสนักศึกษา</th>
@@ -107,6 +108,7 @@ export function StudentInvitationList({
           ))}
         </tbody>
       </table>
+      </div>
 
       <ul className="space-y-3 md:hidden">
         {invitations.map((inv) => (

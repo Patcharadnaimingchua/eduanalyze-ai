@@ -60,7 +60,8 @@ export function OverviewYearTable({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <table className="hidden w-full text-left text-sm md:table">
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b-2 border-slate-200 text-xs text-muted-foreground">
               <th className="py-2 pr-3 font-semibold">ชั้นปี</th>
@@ -117,6 +118,7 @@ export function OverviewYearTable({
             </tr>
           </tfoot>
         </table>
+        </div>
 
         <ul className="space-y-3 md:hidden">
           {[

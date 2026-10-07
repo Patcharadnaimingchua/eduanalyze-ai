@@ -97,7 +97,7 @@ export function StaffAddRecordForm({
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <FormField
                 control={form.control}
                 name="semesterId"

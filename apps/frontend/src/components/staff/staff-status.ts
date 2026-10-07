@@ -11,6 +11,14 @@ export type StaffStatusKey = StaffRiskKey | 'SUSPENDED';
 
 export const SUSPENDED_LABEL = 'ระงับ';
 
+// The one wording of each status's rule, shared by every page that explains it.
+export const STATUS_RULES: Record<ActiveStatusKey, string> = {
+  CRITICAL: 'GPA สะสมต่ำกว่า 1.50',
+  WATCH: 'GPA สะสม 1.50–1.74',
+  NORMAL: 'GPA สะสม 1.75 ขึ้นไป',
+  NO_DATA: 'ยังไม่มี GPA (ไม่นับเกรด W I S U)',
+};
+
 // Most urgent first; suspended last because those students are not counted.
 export const STATUS_ORDER: StaffStatusKey[] = [
   'CRITICAL',

@@ -2,19 +2,24 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from './status-badge';
-import { sharePercent, type StaffStatusKey, type StudentSummary } from './staff-status';
+import {
+  STATUS_RULES,
+  sharePercent,
+  type StaffStatusKey,
+  type StudentSummary,
+} from './staff-status';
 
 const ROWS: {
   key: Exclude<StaffStatusKey, 'SUSPENDED'>;
   rule: string;
   bar: string;
 }[] = [
-  { key: 'NORMAL', rule: 'GPA สะสม 1.75 ขึ้นไป', bar: 'bg-emerald-500' },
-  { key: 'WATCH', rule: 'GPA สะสม 1.50–1.74', bar: 'bg-amber-500' },
-  { key: 'CRITICAL', rule: 'GPA สะสมต่ำกว่า 1.50', bar: 'bg-red-500' },
+  { key: 'NORMAL', rule: STATUS_RULES.NORMAL, bar: 'bg-emerald-500' },
+  { key: 'WATCH', rule: STATUS_RULES.WATCH, bar: 'bg-amber-500' },
+  { key: 'CRITICAL', rule: STATUS_RULES.CRITICAL, bar: 'bg-red-500' },
   {
     key: 'NO_DATA',
-    rule: 'ยังไม่มี GPA (ไม่นับเกรด W I S U)',
+    rule: STATUS_RULES.NO_DATA,
     bar: 'bg-slate-300',
   },
 ];

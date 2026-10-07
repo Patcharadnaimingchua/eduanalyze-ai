@@ -19,13 +19,14 @@ import { StaffPagination } from '@/components/staff/staff-pagination';
 import { StaffStudentList } from '@/components/staff/staff-student-list';
 import {
   SORT_LABELS,
+  STATUS_RULES,
   sortRows,
   summarizeStudents,
   toRows,
   type SortKey,
   type StaffStatusKey,
 } from '@/components/staff/staff-status';
-import { statusLabel } from '@/components/staff/status-badge';
+import { StatusBadge, statusLabel } from '@/components/staff/status-badge';
 import { StudentsTabs } from '@/components/staff/students-tabs';
 import { YEAR_LEVELS, yearInfoFrom, yearLevelTitle } from '@/components/staff/year-info';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +39,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+
+const RULE_ORDER = ['CRITICAL', 'WATCH', 'NORMAL', 'NO_DATA'] as const;
 
 // Radix reserves '' for "no selection", so "all" needs a sentinel of its own.
 const ALL = 'ALL';
@@ -200,8 +203,8 @@ function StaffStudentsContent() {
       <Reveal index={1}>
         <Card>
           <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
-            <div className="contents md:grid md:grid-cols-2 md:gap-3 xl:grid-cols-4">
-              <label className="order-1 block space-y-1.5 md:order-none xl:col-span-2">
+            <div className="contents">
+              <label className="order-1 block space-y-1.5 md:order-none">
                 <span className="text-xs font-medium text-muted-foreground">
                   ค้นหาด้วยรหัสนักศึกษาหรือชื่อ-นามสกุล
                 </span>
@@ -244,8 +247,9 @@ function StaffStudentsContent() {
               <div
                 id="staff-student-filters"
                 className={cn(
-                  'order-5 md:contents',
-                  filtersOpen ? 'flex flex-col gap-3' : 'hidden',
+                  'order-5 gap-3 md:order-none md:grid md:grid-cols-2',
+                  programIds.length > 1 ? 'xl:grid-cols-4' : 'md:grid-cols-3',
+                  filtersOpen ? 'flex flex-col' : 'hidden',
                 )}
               >
                 <label className="block space-y-1.5">
@@ -361,10 +365,21 @@ function StaffStudentsContent() {
               (ใช้งาน <span className="tabular-nums">{shownSummary.active}</span> คน, ระงับ{' '}
               <span className="tabular-nums">{shownSummary.suspended}</span> คน)
             </p>
-            <p className="order-6 text-xs text-muted-foreground md:order-none">
-              เร่งด่วน = GPA สะสมต่ำกว่า 1.50 · เฝ้าระวัง = GPA สะสม 1.50–1.74 · ปกติ = GPA สะสม
-              1.75 ขึ้นไป · ยังไม่มีข้อมูล = ยังไม่มี GPA (ไม่นับเกรด W I S U)
-            </p>
+            <dl
+              aria-label="เกณฑ์สถานะทางวิชาการ"
+              className="order-6 grid grid-cols-1 gap-x-4 gap-y-3 md:order-none md:grid-cols-2 xl:grid-cols-4"
+            >
+              {RULE_ORDER.map((key) => (
+                <div key={key} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <dt>
+                    <StatusBadge status={key} />
+                  </dt>
+                  <dd className="min-w-0 break-words text-xs text-muted-foreground">
+                    {STATUS_RULES[key]}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </CardContent>
         </Card>
       </Reveal>

@@ -444,8 +444,8 @@ function StaffCurriculumContent() {
             <>
               <Card>
                 <CardContent className="space-y-4 p-4 sm:p-5">
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1fr_16rem_14rem]">
-                    <label className="block space-y-1.5">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                    <label className="block space-y-1.5 md:col-span-2 xl:col-span-1">
                       <span className="text-xs font-medium text-muted-foreground">
                         ค้นหารหัสวิชาหรือชื่อรายวิชา (ไทย/อังกฤษ)
                       </span>
