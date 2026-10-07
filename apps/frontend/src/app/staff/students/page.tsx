@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import { fetchPrograms } from '@/lib/api/organization';
 import { fetchStaffStudentRisk, fetchStaffYearLevels } from '@/lib/api/staff';
 import { usePagination } from '@/lib/use-pagination';
@@ -84,6 +84,13 @@ function StaffStudentsContent() {
   const levelFilter = searchParams.get('level') ?? ALL;
   const sortParam = searchParams.get('sort') as SortKey | null;
   const sortKey: SortKey = sortParam && SORT_KEYS.includes(sortParam) ? sortParam : 'severity';
+  // On a phone the dropdown filters sit behind a "ตัวกรอง" button, so the search
+  // box, the status chips and the results come first. A link that already
+  // carries one of them (from the overview) opens the panel.
+  const activeFilterCount =
+    [levelFilter, programFilter, admissionFilter].filter((v) => v !== ALL).length +
+    (sortKey === 'severity' ? 0 : 1);
+  const [filtersOpen, setFiltersOpen] = useState(activeFilterCount > 0);
 
   const updateParams = useCallback(
     (changes: Record<string, string | null>) => {
@@ -192,9 +199,9 @@ function StaffStudentsContent() {
 
       <Reveal index={1}>
         <Card>
-          <CardContent className="space-y-4 p-4 sm:p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <label className="block space-y-1.5 xl:col-span-2">
+          <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
+            <div className="contents md:grid md:grid-cols-2 md:gap-3 xl:grid-cols-4">
+              <label className="order-1 block space-y-1.5 md:order-none xl:col-span-2">
                 <span className="text-xs font-medium text-muted-foreground">
                   ค้นหาด้วยรหัสนักศึกษาหรือชื่อ-นามสกุล
                 </span>
@@ -211,77 +218,115 @@ function StaffStudentsContent() {
                   />
                 </span>
               </label>
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">ชั้นปี</span>
-                <Select value={levelFilter} onValueChange={(v) => updateParams({ level: v })}>
-                  <SelectTrigger className="h-11" aria-label="ชั้นปี">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL}>ทุกชั้นปี</SelectItem>
-                    {YEAR_LEVELS.map((level) => (
-                      <SelectItem key={level} value={String(level)}>
-                        {yearLevelTitle(level)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">เรียงตาม</span>
-                <Select
-                  value={sortKey}
-                  onValueChange={(v) => updateParams({ sort: v === 'severity' ? null : v })}
-                >
-                  <SelectTrigger className="h-11" aria-label="เรียงตาม">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_KEYS.map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {SORT_LABELS[key]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
-              {programIds.length > 1 && (
+              <button
+                type="button"
+                aria-expanded={filtersOpen}
+                aria-controls="staff-student-filters"
+                onClick={() => setFiltersOpen((open) => !open)}
+                className="order-4 inline-flex min-h-11 items-center justify-between gap-2 rounded border border-slate-300 bg-card px-3.5 text-sm font-semibold text-primary hover:bg-slate-50 md:hidden"
+              >
+                <span>
+                  ตัวกรอง
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1.5 tabular-nums text-muted-foreground">
+                      ({activeFilterCount})
+                    </span>
+                  )}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn(
+                    'h-4 w-4 transition-transform motion-reduce:transition-none',
+                    filtersOpen && 'rotate-180',
+                  )}
+                />
+              </button>
+              <div
+                id="staff-student-filters"
+                className={cn(
+                  'order-5 md:contents',
+                  filtersOpen ? 'flex flex-col gap-3' : 'hidden',
+                )}
+              >
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">สาขา</span>
-                  <Select value={programFilter} onValueChange={(v) => updateParams({ program: v })}>
-                    <SelectTrigger className="h-11" aria-label="สาขา">
+                  <span className="text-xs font-medium text-muted-foreground">ชั้นปี</span>
+                  <Select value={levelFilter} onValueChange={(v) => updateParams({ level: v })}>
+                    <SelectTrigger className="h-11" aria-label="ชั้นปี">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={ALL}>ทุกสาขา</SelectItem>
-                      {programIds.map((id) => (
-                        <SelectItem key={id} value={id}>
-                          {programNames.get(id) ?? id}
+                      <SelectItem value={ALL}>ทุกชั้นปี</SelectItem>
+                      {YEAR_LEVELS.map((level) => (
+                        <SelectItem key={level} value={String(level)}>
+                          {yearLevelTitle(level)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </label>
-              )}
-              <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">ปีที่เข้าศึกษา</span>
-                <Select value={admissionFilter} onValueChange={(v) => updateParams({ year: v })}>
-                  <SelectTrigger className="h-11" aria-label="ปีที่เข้าศึกษา">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL}>ทุกปีที่เข้าศึกษา</SelectItem>
-                    {admissionYears.map((year) => (
-                      <SelectItem key={year} value={String(year)}>
-                        ปีเข้า {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">เรียงตาม</span>
+                  <Select
+                    value={sortKey}
+                    onValueChange={(v) => updateParams({ sort: v === 'severity' ? null : v })}
+                  >
+                    <SelectTrigger className="h-11" aria-label="เรียงตาม">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_KEYS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {SORT_LABELS[key]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                {programIds.length > 1 && (
+                  <label className="block space-y-1.5">
+                    <span className="text-xs font-medium text-muted-foreground">สาขา</span>
+                    <Select
+                      value={programFilter}
+                      onValueChange={(v) => updateParams({ program: v })}
+                    >
+                      <SelectTrigger className="h-11" aria-label="สาขา">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={ALL}>ทุกสาขา</SelectItem>
+                        {programIds.map((id) => (
+                          <SelectItem key={id} value={id}>
+                            {programNames.get(id) ?? id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                )}
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">ปีที่เข้าศึกษา</span>
+                  <Select value={admissionFilter} onValueChange={(v) => updateParams({ year: v })}>
+                    <SelectTrigger className="h-11" aria-label="ปีที่เข้าศึกษา">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>ทุกปีที่เข้าศึกษา</SelectItem>
+                      {admissionYears.map((year) => (
+                        <SelectItem key={year} value={String(year)}>
+                          ปีเข้า {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+              </div>
             </div>
 
-            <div role="group" aria-label="จำแนกตามสถานะทางวิชาการ" className="flex flex-wrap gap-2">
+            <div
+              role="group"
+              aria-label="จำแนกตามสถานะทางวิชาการ"
+              className="order-2 flex flex-wrap gap-2 md:order-none"
+            >
               {statusButtons.map(({ key, label, count }) => {
                 const on = status === key;
                 return (
@@ -311,12 +356,12 @@ function StaffStudentsContent() {
               })}
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="order-3 text-sm text-muted-foreground md:order-none">
               พบ <span className="font-semibold tabular-nums text-primary">{shown.length}</span> คน
               (ใช้งาน <span className="tabular-nums">{shownSummary.active}</span> คน, ระงับ{' '}
               <span className="tabular-nums">{shownSummary.suspended}</span> คน)
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="order-6 text-xs text-muted-foreground md:order-none">
               เร่งด่วน = มีรายวิชาที่ได้เกรด D+ D F หรือ U · เฝ้าระวัง = มีรายวิชาที่ได้เกรด C ·
               ปกติ = ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า · ยังไม่มีข้อมูล =
               ยังไม่มีผลการเรียนที่นำมาประเมิน
