@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { readGroupGpa, type YearRow } from './staff-status';
-import { BEHIND_PLAN_FORMULA, yearLevelTitle } from './year-info';
+import { BEHIND_PLAN_FORMULA, describeEmptyYears, yearLevelTitle } from './year-info';
 
 function GpaCell({ row }: { row: Pick<YearRow, 'summary'> }) {
   const reading = readGroupGpa(row.summary.averageGpa, row.summary.withGpa);
@@ -47,6 +47,10 @@ export function OverviewYearTable({
   totalBehind: number;
 }>) {
   const totalRow = { summary: total };
+  const populated = years.filter((row) => row.summary.active > 0);
+  const emptyYears = describeEmptyYears(
+    years.filter((row) => row.summary.active === 0).map((row) => row.yearLevel),
+  );
   return (
     <Card>
       <CardHeader>
@@ -68,12 +72,12 @@ export function OverviewYearTable({
             </tr>
           </thead>
           <tbody>
-            {years.map((row) => (
+            {populated.map((row) => (
               <tr key={row.yearLevel} className="border-b border-slate-100 align-top">
                 <td className="py-2 pr-3">
                   <Link
                     href={`/staff/students?level=${row.yearLevel}`}
-                    className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary hover:underline"
+                    className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap font-semibold text-primary hover:underline"
                   >
                     {yearLevelTitle(row.yearLevel)}
                     <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
@@ -90,6 +94,13 @@ export function OverviewYearTable({
                 <td className="py-3 text-right tabular-nums">{row.behind}</td>
               </tr>
             ))}
+            {emptyYears && (
+              <tr className="border-b border-slate-100">
+                <td colSpan={6} className="py-3 text-sm text-muted-foreground">
+                  {emptyYears}
+                </td>
+              </tr>
+            )}
           </tbody>
           <tfoot>
             <tr className="bg-slate-50 align-top font-semibold">
@@ -109,7 +120,7 @@ export function OverviewYearTable({
 
         <ul className="space-y-3 md:hidden">
           {[
-            ...years.map((row) => ({
+            ...populated.map((row) => ({
               row,
               title: yearLevelTitle(row.yearLevel),
               href: `/staff/students?level=${row.yearLevel}`,
@@ -126,7 +137,7 @@ export function OverviewYearTable({
               {href ? (
                 <Link
                   href={href}
-                  className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary hover:underline"
+                  className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap font-semibold text-primary hover:underline"
                 >
                   {title}
                   <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
@@ -163,6 +174,7 @@ export function OverviewYearTable({
             </li>
           ))}
         </ul>
+        {emptyYears && <p className="text-sm text-muted-foreground md:hidden">{emptyYears}</p>}
 
         <p className="text-xs text-muted-foreground">{BEHIND_PLAN_FORMULA}</p>
       </CardContent>

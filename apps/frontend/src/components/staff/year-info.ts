@@ -31,6 +31,27 @@ export function yearLevelTitle(level: number): string {
   return level >= 4 ? 'ชั้นปีที่ 4 ขึ้นไป' : `ชั้นปีที่ ${level}`;
 }
 
+// "ชั้นปี 1–3: ไม่มีนักศึกษา": years with nobody in them, said once instead of
+// as one empty row each. Neighbouring years join into a range; the last year
+// is the "and above" bucket. null when every year has someone.
+export function describeEmptyYears(levels: readonly number[]): string | null {
+  const sorted = [...new Set(levels)].sort((a, b) => a - b);
+  if (sorted.length === 0) return null;
+  const runs: number[][] = [];
+  for (const level of sorted) {
+    const last = runs[runs.length - 1];
+    if (last && level === last[last.length - 1] + 1) last.push(level);
+    else runs.push([level]);
+  }
+  const parts = runs.map((run) => {
+    const from = run[0];
+    const to = run[run.length - 1];
+    const range = from === to ? `${from}` : `${from}–${to}`;
+    return to >= 4 ? `${range} ขึ้นไป` : range;
+  });
+  return `ชั้นปี ${parts.join(', ')}: ไม่มีนักศึกษา`;
+}
+
 // One line for the page, in the backend's own terms (common/academic/year-level.ts).
 export const BEHIND_PLAN_FORMULA =
   'ตามหลังแผน = หน่วยกิตที่ผ่านแล้วน้อยกว่าที่ควรมีเมื่อต้นปีการศึกษานี้ (หน่วยกิตรวมของหลักสูตร × จำนวนปีที่ผ่านมา ÷ ระยะเวลาของหลักสูตร)';
