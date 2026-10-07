@@ -4,15 +4,15 @@ import type {
   SemesterAchievement,
   SemesterTerm,
 } from '@eduanalyze-ai/shared-types';
-import { countFollowUps } from './follow-ups';
+import { countLowGradePeople } from './follow-ups';
 import {
+  NO_STUDENTS_SUMMARY,
   buildInstructorSummary,
   computeAchievementChange,
   formatAchievementChange,
   overallAchievementPercent,
   sortCoursesByAttention,
 } from './instructor-summary';
-import { NO_STUDENTS_SUMMARY } from './interpret-instructor-courses';
 
 function course(overrides: Partial<InstructorCourseSummary> = {}): InstructorCourseSummary {
   return {
@@ -50,7 +50,13 @@ function term(
   studentCount: number,
   achievementPercent: number,
 ): SemesterAchievement {
-  return { academicYear, semesterTerm, studentCount, gradedCount: studentCount, achievementPercent };
+  return {
+    academicYear,
+    semesterTerm,
+    studentCount,
+    gradedCount: studentCount,
+    achievementPercent,
+  };
 }
 
 const allPassing = [
@@ -80,21 +86,23 @@ const withRisk = [
   }),
 ];
 
-describe('countFollowUps', () => {
-  it('counts a student at risk in two courses once, at their worst level', () => {
-    expect(countFollowUps(withRisk)).toEqual({ total: 4, critical: 2, watch: 2 });
+describe('countLowGradePeople', () => {
+  it('counts a student with a low grade in two courses once, and leaves out C', () => {
+    // s1 F (and a C elsewhere), s3 F; s2 and s4 only have a C.
+    expect(countLowGradePeople(withRisk)).toBe(2);
   });
 
-  it('keeps CRITICAL when the WATCH row comes after it', () => {
-    const courses = [
-      course({ atRiskStudents: [atRisk('s1', 'CRITICAL')] }),
-      course({ courseId: 'c2', atRiskStudents: [atRisk('s1', 'WATCH')] }),
-    ];
-    expect(countFollowUps(courses)).toEqual({ total: 1, critical: 1, watch: 0 });
+  it('D+, D, F and U count; C does not', () => {
+    const only = (grade: AtRiskStudent['grade']) =>
+      countLowGradePeople([course({ atRiskStudents: [{ ...atRisk('s', 'WATCH'), grade }] })]);
+    expect(['D_PLUS', 'D', 'F', 'U'].map((g) => only(g as AtRiskStudent['grade']))).toEqual([
+      1, 1, 1, 1,
+    ]);
+    expect(only('C')).toBe(0);
   });
 
-  it('is zero when nobody is at risk', () => {
-    expect(countFollowUps([course()])).toEqual({ total: 0, critical: 0, watch: 0 });
+  it('is zero when nobody has a low grade', () => {
+    expect(countLowGradePeople([course()])).toBe(0);
   });
 });
 
@@ -106,7 +114,10 @@ describe('overallAchievementPercent', () => {
   it('skips courses with no students or a non-finite percent, and is null when none count', () => {
     expect(overallAchievementPercent([course({ studentCount: 0 })])).toBeNull();
     expect(
-      overallAchievementPercent([course(), course({ courseId: 'c2', achievementPercent: Number.NaN })]),
+      overallAchievementPercent([
+        course(),
+        course({ courseId: 'c2', achievementPercent: Number.NaN }),
+      ]),
     ).toBe(80);
   });
 });
@@ -154,12 +165,20 @@ describe('computeAchievementChange', () => {
   });
 
   it('is flat below half a point', () => {
-    const courses = [course({ semesterTrend: [term(2566, 'SECOND', 1000, 70), term(2567, 'FIRST', 1000, 70.4)] })];
-    expect(computeAchievementChange(courses)).toEqual({ direction: 'flat', delta: 0, latestStudentCount: 1000 });
+    const courses = [
+      course({ semesterTrend: [term(2566, 'SECOND', 1000, 70), term(2567, 'FIRST', 1000, 70.4)] }),
+    ];
+    expect(computeAchievementChange(courses)).toEqual({
+      direction: 'flat',
+      delta: 0,
+      latestStudentCount: 1000,
+    });
   });
 
   it('is null with fewer than two terms, ignoring empty or non-finite points', () => {
-    expect(computeAchievementChange([course({ semesterTrend: [term(2567, 'FIRST', 10, 80)] })])).toBeNull();
+    expect(
+      computeAchievementChange([course({ semesterTrend: [term(2567, 'FIRST', 10, 80)] })]),
+    ).toBeNull();
     expect(
       computeAchievementChange([
         course({
@@ -178,16 +197,28 @@ describe('computeAchievementChange', () => {
 describe('formatAchievementChange', () => {
   it('uses arrows and whole points, signed only when asked, with the latest term head count', () => {
     expect(
-      formatAchievementChange({ direction: 'up', delta: 4.4, latestStudentCount: 38 }, { signed: true }),
+      formatAchievementChange(
+        { direction: 'up', delta: 4.4, latestStudentCount: 38 },
+        { signed: true },
+      ),
     ).toBe('เทอมล่าสุด 38 คน: ▲ ดีขึ้น +4 จุดจากเทอมก่อน');
     expect(
-      formatAchievementChange({ direction: 'down', delta: -5.6, latestStudentCount: 12 }, { signed: true }),
+      formatAchievementChange(
+        { direction: 'down', delta: -5.6, latestStudentCount: 12 },
+        { signed: true },
+      ),
     ).toBe('เทอมล่าสุด 12 คน: ▼ แย่ลง −6 จุดจากเทอมก่อน');
     expect(
-      formatAchievementChange({ direction: 'up', delta: 100, latestStudentCount: 2 }, { signed: false }),
+      formatAchievementChange(
+        { direction: 'up', delta: 100, latestStudentCount: 2 },
+        { signed: false },
+      ),
     ).toBe('เทอมล่าสุด 2 คน (ข้อมูลน้อย): ▲ ดีขึ้น 100 จุดจากเทอมก่อน');
     expect(
-      formatAchievementChange({ direction: 'flat', delta: 0, latestStudentCount: 40 }, { signed: true }),
+      formatAchievementChange(
+        { direction: 'flat', delta: 0, latestStudentCount: 40 },
+        { signed: true },
+      ),
     ).toBe('– เทอมล่าสุด 40 คน: เท่ากับเทอมก่อน');
   });
 });
@@ -195,13 +226,13 @@ describe('formatAchievementChange', () => {
 describe('buildInstructorSummary', () => {
   it('normal: every course passes and nobody needs following up', () => {
     expect(buildInstructorSummary(allPassing)).toBe(
-      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 74% (เทอมล่าสุด 50 คน: ▲ ดีขึ้น 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 74% (เทอมล่าสุด 50 คน: ▲ ดีขึ้น 10 จุดจากเทอมก่อน) · ยังไม่มีนักศึกษาที่มีเกรด D+ ลงไป',
     );
   });
 
   it('at risk: follow-ups first, then the worst course, then the average', () => {
     expect(buildInstructorSummary(withRisk)).toBe(
-      'ต้องติดตามนักศึกษา 4 คน (เร่งด่วน 2) · 1 จาก 2 วิชายังไม่ถึงเป้า เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เป้า 60%) · ได้ B ขึ้นไปเฉลี่ย 62% (เทอมล่าสุด 50 คน: ▼ แย่ลง 12 จุดจากเทอมก่อน)',
+      'มีเกรด D+ ลงไป 2 คน · 1 จาก 2 วิชายังไม่ถึงเป้า เริ่มที่ CS201 โครงสร้างข้อมูล 48% (เป้า 60%) · ได้ B ขึ้นไปเฉลี่ย 62% (เทอมล่าสุด 50 คน: ▼ แย่ลง 12 จุดจากเทอมก่อน)',
     );
   });
 
@@ -217,13 +248,13 @@ describe('buildInstructorSummary', () => {
 
   it('leaves out the arrow when there is only one term', () => {
     expect(buildInstructorSummary([course()])).toBe(
-      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่มีเกรด D+ ลงไป',
     );
   });
 
   it('says "with students" when some courses are still empty', () => {
     expect(buildInstructorSummary([course(), course({ courseId: 'c2', studentCount: 0 })])).toBe(
-      'ทุกวิชาที่มีนักศึกษาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+      'ทุกวิชาที่มีนักศึกษาผ่านเป้า · ได้ B ขึ้นไปเฉลี่ย 80% · ยังไม่มีนักศึกษาที่มีเกรด D+ ลงไป',
     );
   });
 
@@ -236,7 +267,7 @@ describe('buildInstructorSummary', () => {
       }),
     ];
     const line = buildInstructorSummary(broken);
-    expect(line).toBe('ยังไม่มีนักศึกษาที่ต้องติดตาม');
+    expect(line).toBe('ยังไม่มีนักศึกษาที่มีเกรด D+ ลงไป');
     expect(line).not.toMatch(/NaN|undefined|Infinity/);
   });
 });

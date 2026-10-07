@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import type { InstructorStudentEntry } from '@eduanalyze-ai/shared-types';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
+import { LOW_GRADE_LABEL } from '@/lib/low-grade';
 import type { StudentPerson } from '@/lib/student-directory';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,9 +44,7 @@ export function StudentPersonList({ people }: Readonly<{ people: StudentPerson[]
                 <span className="block font-medium text-primary">{person.fullName}</span>
                 <span className="block text-xs text-muted-foreground">{person.studentCode}</span>
               </span>
-              <Badge tone={RISK_LEVEL_TONES[person.worstRisk]}>
-                {RISK_LEVEL_LABELS[person.worstRisk]}
-              </Badge>
+              {person.hasLowGrade && <Badge tone="warning">{LOW_GRADE_LABEL}</Badge>}
             </span>
             <CourseLine entry={person.primary} />
           </Link>
@@ -68,9 +66,6 @@ export function StudentPersonList({ people }: Readonly<{ people: StudentPerson[]
                       className="flex min-h-11 flex-wrap items-center justify-between gap-2 px-4 py-2 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <CourseLine entry={entry} />
-                      <Badge tone={RISK_LEVEL_TONES[entry.riskLevel]}>
-                        {RISK_LEVEL_LABELS[entry.riskLevel]}
-                      </Badge>
                     </Link>
                   </li>
                 ))}

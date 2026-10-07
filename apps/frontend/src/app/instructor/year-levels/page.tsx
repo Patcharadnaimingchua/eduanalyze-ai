@@ -10,7 +10,8 @@ import {
   fetchInstructorYearLevels,
 } from '@/lib/api/instructor';
 import { buildCourseOverviews, buildCourseYearMatrix } from '@/lib/instructor-overview';
-import { buildYearLevelsFigures, worstRiskById } from '@/lib/student-directory';
+import { buildYearLevelsFigures, lowGradeIds } from '@/lib/student-directory';
+import { LOW_GRADE_LABEL, LOW_GRADE_RULE } from '@/lib/low-grade';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -48,7 +49,7 @@ function InstructorYearLevelsContent() {
     enabled: isInstructor,
   });
   // Same key as the students page, so the two share one cache entry. Year
-  // levels carry no risk of their own; this supplies it per student.
+  // levels carry no grades of their own; this supplies them per student.
   const studentsQuery = useQuery({
     queryKey: ['instructor-students'],
     queryFn: () => fetchInstructorStudents({}),
@@ -66,8 +67,8 @@ function InstructorYearLevelsContent() {
   const courses = useMemo(() => dashboardQuery.data?.courses ?? [], [dashboardQuery.data]);
 
   const buckets = useMemo(() => query.data?.buckets ?? [], [query.data]);
-  const riskById = useMemo(
-    () => (studentsQuery.data ? worstRiskById(studentsQuery.data.students) : null),
+  const lowIds = useMemo(
+    () => (studentsQuery.data ? lowGradeIds(studentsQuery.data.students) : null),
     [studentsQuery.data],
   );
   const matrix = useMemo(() => {
@@ -82,13 +83,13 @@ function InstructorYearLevelsContent() {
     );
   }, [studentsQuery.data, query.data, courses]);
   const totalStudents = buckets.reduce((sum, b) => sum + b.students.length, 0);
-  // Wait for the risk data (or its failure) so the badges and the header line
+  // Wait for the students data (or its failure) so the badges and the header line
   // do not pop in a moment after the cards.
   const ready =
     !!query.data &&
     (studentsQuery.isSuccess || studentsQuery.isError) &&
     (dashboardQuery.isSuccess || dashboardQuery.isError);
-  const figures = ready ? buildYearLevelsFigures(buckets, riskById) : null;
+  const figures = ready ? buildYearLevelsFigures(buckets, lowIds) : null;
 
   if (!user) {
     return (
@@ -154,17 +155,15 @@ function InstructorYearLevelsContent() {
                 }
               />
               <StatTile
-                label="ต้องติดตามในวิชาของคุณ"
-                unit={figures.followUps === null ? undefined : 'คน'}
-                zero={figures.followUps === 0}
+                label={`${LOW_GRADE_LABEL}ในวิชาของคุณ`}
+                unit={figures.lowGrade === null ? undefined : 'คน'}
+                zero={figures.lowGrade === 0}
                 value={
-                  figures.followUps === null ? '—' : <AnimatedNumber value={figures.followUps} />
+                  figures.lowGrade === null ? '—' : <AnimatedNumber value={figures.lowGrade} />
                 }
                 extra={
                   <span className="text-[13px] text-muted-foreground">
-                    {figures.followUps === null
-                      ? 'โหลดข้อมูลความเสี่ยงไม่ได้'
-                      : 'เกรดล่าสุด C หรือต่ำกว่าในวิชาของคุณ'}
+                    {figures.lowGrade === null ? 'โหลดข้อมูลรายวิชาไม่ได้' : LOW_GRADE_RULE}
                   </span>
                 }
               />
@@ -234,7 +233,7 @@ function InstructorYearLevelsContent() {
               </span>
             }
           >
-            <InstructorYearLevelOverview buckets={buckets} riskById={riskById} />
+            <InstructorYearLevelOverview buckets={buckets} lowIds={lowIds} />
           </CollapsibleSection>
         )}
       </DashboardShell>

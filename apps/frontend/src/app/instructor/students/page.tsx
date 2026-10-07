@@ -50,8 +50,8 @@ function InstructorStudentsContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // risk and course live only in the URL, so a reload, Back, or the
-  // dashboard's ?risk= link all land on the same view. The search box keeps
+  // grade filter and course live only in the URL, so a reload or Back lands on
+  // the same view. The search box keeps
   // its own state so typing never waits on the router; each change is still
   // written to ?q= with replace (no history entry per keystroke).
   const urlFilters = parseStudentFilters(searchParams);
@@ -77,10 +77,10 @@ function InstructorStudentsContent() {
 
   const entries = useMemo(() => query.data?.students ?? [], [query.data]);
   const courses = useMemo(() => query.data?.courses ?? [], [query.data]);
-  const { risk, courseId } = urlFilters;
+  const { grade, courseId } = urlFilters;
   const { people, counts } = useMemo(
-    () => applyStudentFilters(entries, { risk, courseId, q: search }),
-    [entries, risk, courseId, search],
+    () => applyStudentFilters(entries, { grade, courseId, q: search }),
+    [entries, grade, courseId, search],
   );
   const summary = query.data ? buildStudentsSummary(entries, courses.length) : null;
   const isFiltered = studentFiltersToQuery(filters) !== '';
@@ -108,7 +108,7 @@ function InstructorStudentsContent() {
         <Reveal index={0}>
           <PageHeader
             title="นักศึกษา"
-            description={summary ?? 'นักศึกษาในวิชาที่คุณสอน เรียงจากคนที่ต้องติดตามก่อน'}
+            description={summary ?? 'นักศึกษาในวิชาที่คุณสอน เรียงจากคนที่มีเกรด D+ ลงไปก่อน'}
             titleClassName={TEXT_PAGE}
           />
         </Reveal>
@@ -143,8 +143,8 @@ function InstructorStudentsContent() {
             <Reveal index={1}>
               <StudentFilterBar
                 counts={counts}
-                risk={filters.risk}
-                onRiskChange={(risk) => writeUrl({ ...filters, risk })}
+                grade={filters.grade}
+                onGradeChange={(grade) => writeUrl({ ...filters, grade })}
                 courses={courses}
                 courseId={filters.courseId}
                 onCourseChange={(courseId) => writeUrl({ ...filters, courseId })}

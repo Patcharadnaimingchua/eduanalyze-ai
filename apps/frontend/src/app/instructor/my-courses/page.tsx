@@ -105,7 +105,7 @@ function InstructorMyCoursesContent() {
               actions={
                 <Button asChild variant="outline" className="h-11">
                   <Link href="/instructor/dashboard">
-                    ดูผลการเรียนและคนที่ต้องติดตาม
+                    ดูผลการเรียนของแต่ละวิชา
                     <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </Link>
                 </Button>

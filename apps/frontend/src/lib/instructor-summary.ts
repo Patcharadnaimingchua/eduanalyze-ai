@@ -1,10 +1,12 @@
 import type { InstructorCourseSummary, SemesterTerm } from '@eduanalyze-ai/shared-types';
-import { countFollowUps } from './follow-ups';
-import { NO_STUDENTS_SUMMARY } from './interpret-instructor-courses';
+import { countLowGradePeople } from './follow-ups';
+import { LOW_GRADE_LABEL, NO_LOW_GRADE } from './low-grade';
 
-// Pure, rule-based reading of the instructor dashboard response. Like
-// interpret-instructor-courses.ts it only reads what GET /dashboard/instructor
-// returned, so it stays inside the "courses I teach" scope by construction.
+// Pure, rule-based reading of the instructor dashboard response. It only reads
+// what GET /dashboard/instructor returned, so it stays inside the "courses I
+// teach" scope by construction.
+
+export const NO_STUDENTS_SUMMARY = 'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่คุณสอน จึงยังสรุปผลไม่ได้';
 
 const isPositiveCount = (n: number) => Number.isFinite(n) && n > 0;
 
@@ -41,7 +43,12 @@ export const SEMESTER_TERM_RANK: Record<SemesterTerm, number> = { FIRST: 1, SECO
 // Below half a point the change rounds to 0 at the whole points we show.
 const FLAT_BELOW = 0.5;
 
-type SemesterTotal = { academicYear: number; semesterTerm: SemesterTerm; students: number; achieved: number };
+type SemesterTotal = {
+  academicYear: number;
+  semesterTerm: SemesterTerm;
+  students: number;
+  achieved: number;
+};
 
 // Latest semester vs the one before it, across every course the instructor
 // teaches. Each semesterTrend point is (students graded B+ / students) for one
@@ -54,7 +61,8 @@ export function computeAchievementChange(
   const bySemester = new Map<string, SemesterTotal>();
   for (const course of courses) {
     for (const point of course.semesterTrend) {
-      if (!isPositiveCount(point.studentCount) || !Number.isFinite(point.achievementPercent)) continue;
+      if (!isPositiveCount(point.studentCount) || !Number.isFinite(point.achievementPercent))
+        continue;
       if (!(point.semesterTerm in SEMESTER_TERM_RANK)) continue;
       const key = `${point.academicYear}:${point.semesterTerm}`;
       const total = bySemester.get(key) ?? {
@@ -100,7 +108,8 @@ export function formatAchievementChange(
   const term = `เทอมล่าสุด ${change.latestStudentCount} คน${thin}:`;
   if (change.direction === 'flat') return `– ${term} เท่ากับเทอมก่อน`;
   const points = Math.round(Math.abs(change.delta));
-  if (change.direction === 'up') return `${term} ▲ ดีขึ้น ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
+  if (change.direction === 'up')
+    return `${term} ▲ ดีขึ้น ${signed ? '+' : ''}${points} จุดจากเทอมก่อน`;
   return `${term} ▼ แย่ลง ${signed ? '−' : ''}${points} จุดจากเทอมก่อน`;
 }
 
@@ -119,18 +128,13 @@ export function sortCoursesByAttention<
 // One line for the dashboard header, most urgent first. Every part is dropped
 // when its data is missing or not a real number, so the line never shows
 // undefined/NaN. null = no courses at all (the page shows its own notice).
-export function buildInstructorSummary(
-  courses: readonly InstructorCourseSummary[],
-): string | null {
+export function buildInstructorSummary(courses: readonly InstructorCourseSummary[]): string | null {
   if (courses.length === 0) return null;
   if (!courses.some((c) => isPositiveCount(c.studentCount))) return NO_STUDENTS_SUMMARY;
 
-  const followUps = countFollowUps(courses);
+  const lowGradePeople = countLowGradePeople(courses);
   const followUpPart =
-    followUps.total > 0
-      ? `ต้องติดตามนักศึกษา ${followUps.total} คน` +
-        (followUps.critical > 0 ? ` (เร่งด่วน ${followUps.critical})` : '')
-      : 'ยังไม่มีนักศึกษาที่ต้องติดตาม';
+    lowGradePeople > 0 ? `${LOW_GRADE_LABEL} ${lowGradePeople} คน` : NO_LOW_GRADE;
 
   const graded = courses.filter(
     (c) =>
@@ -138,8 +142,7 @@ export function buildInstructorSummary(
       Number.isFinite(c.achievementPercent) &&
       Number.isFinite(c.achievementThreshold),
   );
-  // Same "worst first" order as interpret-instructor-courses.ts, so the course
-  // named here is the one its recommendation also starts with.
+  // Worst first, the same order the comparison chart uses.
   const below = graded
     .filter((c) => c.achievementPercent < c.achievementThreshold)
     .sort((a, b) => a.achievementPercent - b.achievementPercent);
@@ -151,7 +154,8 @@ export function buildInstructorSummary(
       `เริ่มที่ ${first.code} ${first.name} ${Math.round(first.achievementPercent)}% ` +
       `(เป้า ${first.achievementThreshold}%)`;
   } else if (graded.length > 0) {
-    coursePart = graded.length < courses.length ? 'ทุกวิชาที่มีนักศึกษาผ่านเป้า' : 'ทุกวิชาผ่านเป้า';
+    coursePart =
+      graded.length < courses.length ? 'ทุกวิชาที่มีนักศึกษาผ่านเป้า' : 'ทุกวิชาผ่านเป้า';
   }
 
   const overall = overallAchievementPercent(courses);
@@ -163,7 +167,7 @@ export function buildInstructorSummary(
   }
 
   const parts =
-    followUps.total > 0
+    lowGradePeople > 0
       ? [followUpPart, coursePart, achievementPart]
       : [coursePart, achievementPart, followUpPart];
   return parts.filter((part): part is string => part !== null).join(' · ');

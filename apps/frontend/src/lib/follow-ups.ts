@@ -1,28 +1,17 @@
-import type { InstructorCourseSummary, RiskLevel } from '@eduanalyze-ai/shared-types';
+import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
+import { isLowGrade } from './low-grade';
 
-export interface FollowUpCount {
-  total: number;
-  critical: number;
-  watch: number;
-}
-
-// People, not rows: a student at risk in two of the instructor's courses is one
-// person to follow up, counted at their worst level. The level itself comes
-// from the backend's riskLevel() (latest attempt per course); nothing here
-// re-derives it from grades.
-export function countFollowUps(
+// People, not rows: a student with a low grade in two of the instructor's
+// courses is one person. atRiskStudents holds each student's latest attempt of
+// that course (grade C or below); only D+, D, F and U count here.
+export function countLowGradePeople(
   courses: readonly Pick<InstructorCourseSummary, 'atRiskStudents'>[],
-): FollowUpCount {
-  const worst = new Map<string, Exclude<RiskLevel, 'NORMAL'>>();
+): number {
+  const people = new Set<string>();
   for (const course of courses) {
     for (const student of course.atRiskStudents) {
-      if (student.riskLevel === 'NORMAL') continue;
-      if (worst.get(student.studentProfileId) !== 'CRITICAL') {
-        worst.set(student.studentProfileId, student.riskLevel);
-      }
+      if (isLowGrade(student.grade)) people.add(student.studentProfileId);
     }
   }
-  let critical = 0;
-  for (const level of worst.values()) if (level === 'CRITICAL') critical += 1;
-  return { total: worst.size, critical, watch: worst.size - critical };
+  return people.size;
 }

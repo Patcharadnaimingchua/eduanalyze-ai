@@ -2,53 +2,39 @@ import Link from 'next/link';
 import type { AtRiskStudent } from '@eduanalyze-ai/shared-types';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, formatSemesterLabel } from '@/lib/grade-label';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
+import { LOW_GRADE_LABEL, LOW_GRADE_RULE, isLowGrade } from '@/lib/low-grade';
 import { PageSection } from '@/components/layout/page-section';
 import { Badge } from '@/components/ui/badge';
+import { TEXT_SECTION } from './instructor-ui';
 
 // Keeps the overview short; the students tab lists everyone.
 const MAX_VISIBLE = 5;
 
-const rank = (level: AtRiskStudent['riskLevel']) => {
-  const index = RISK_LEVEL_ORDER.indexOf(level);
-  return index === -1 ? RISK_LEVEL_ORDER.length : index;
-};
-
-// Who in THIS course needs following up first. Reads course.atRiskStudents
-// (latest attempt of each student, grade C or below), the same list the
-// dashboard counts, so the numbers agree. Each row opens that student in the
-// students tab.
+// Who in THIS course has a low grade. Reads course.atRiskStudents (the latest
+// attempt of each student) and keeps the D+, D, F and U ones; a C is left out.
+// Each row opens that student in the students tab.
 export function CourseFollowUpList({
   courseId,
   students,
 }: Readonly<{ courseId: string; students: AtRiskStudent[] }>) {
-  const sorted = [...students].sort((a, b) => rank(a.riskLevel) - rank(b.riskLevel));
+  // The backend lists them worst grade first already.
+  const sorted = students.filter((s) => isLowGrade(s.grade));
   const visible = sorted.slice(0, MAX_VISIBLE);
   const hidden = sorted.length - visible.length;
-  const critical = sorted.filter((s) => s.riskLevel === 'CRITICAL').length;
-  const watch = sorted.filter((s) => s.riskLevel === 'WATCH').length;
 
   return (
     <PageSection
       title={
         <span className="flex flex-wrap items-center gap-2">
-          นักศึกษาที่ต้องติดตาม
-          {critical > 0 && (
-            <Badge tone={RISK_LEVEL_TONES.CRITICAL}>
-              {RISK_LEVEL_LABELS.CRITICAL} {critical}
-            </Badge>
-          )}
-          {watch > 0 && (
-            <Badge tone={RISK_LEVEL_TONES.WATCH}>
-              {RISK_LEVEL_LABELS.WATCH} {watch}
-            </Badge>
-          )}
+          นักศึกษาที่{LOW_GRADE_LABEL}
+          {sorted.length > 0 && <Badge tone="warning">{sorted.length}</Badge>}
         </span>
       }
-      description="ผลการเรียนครั้งล่าสุดได้เกรด C ลงมา ประเมินจากเกรดรายวิชา"
+      titleClassName={TEXT_SECTION}
+      description={LOW_GRADE_RULE}
     >
       {sorted.length === 0 ? (
-        <p className="text-sm text-muted-foreground">ยังไม่มีนักศึกษาที่ต้องติดตามในวิชานี้</p>
+        <p className="text-sm text-muted-foreground">ยังไม่มีนักศึกษาที่มีเกรด D+ ลงไปในวิชานี้</p>
       ) : (
         <>
           <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
@@ -66,7 +52,6 @@ export function CourseFollowUpList({
                   </span>
                   <span className="flex flex-wrap items-center gap-1.5">
                     <Badge tone={gradeBadgeTone(s.grade)}>เกรด {GRADE_LABELS[s.grade]}</Badge>
-                    <Badge tone={RISK_LEVEL_TONES[s.riskLevel]}>{RISK_LEVEL_LABELS[s.riskLevel]}</Badge>
                   </span>
                 </Link>
               </li>

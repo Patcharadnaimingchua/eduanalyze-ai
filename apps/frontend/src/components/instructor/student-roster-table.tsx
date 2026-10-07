@@ -4,17 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
 import { ArrowUpDown, ChevronUp, Download, Pencil, Search } from 'lucide-react';
-import type {
-  CloAchievementEntry,
-  Grade,
-  RiskLevel,
-  StudentRosterEntry,
-} from '@eduanalyze-ai/shared-types';
+import type { CloAchievementEntry, Grade, StudentRosterEntry } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
-import { ALL, countByRisk, type RiskFilter } from '@/lib/student-directory';
+import { LOW_GRADE_LABEL, isLowGrade } from '@/lib/low-grade';
+import { ALL, countPeople, type GradeFilter } from '@/lib/student-directory';
 import { downloadCsv, toCsv } from '@/lib/csv';
 import { useToast } from '@/lib/toast-context';
 import { usePagination } from '@/lib/use-pagination';
@@ -28,24 +23,20 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { ListSkeleton } from '@/components/ui/skeleton';
-import { RiskFilterChips } from './risk-filter-chips';
+import { LowGradeFilterChips } from './low-grade-filter-chips';
 import { StudentTimelineCard } from './student-timeline-card';
 
 // Exports what the table currently shows, not the whole class — the
 // filename says so, otherwise a filtered export is indistinguishable
 // from a complete roster once it is off the screen.
-function exportRosterCsv(
-  courseCode: string,
-  rows: StudentRosterEntry[],
-  isFiltered: boolean,
-) {
+function exportRosterCsv(courseCode: string, rows: StudentRosterEntry[], isFiltered: boolean) {
   const csv = toCsv(
-    ['รหัสนักศึกษา', 'ชื่อ-นามสกุล', 'เกรด', 'สถานะเสี่ยง'],
+    ['รหัสนักศึกษา', 'ชื่อ-นามสกุล', 'เกรด', LOW_GRADE_LABEL],
     rows.map((student) => [
       student.studentCode,
       student.fullName,
       GRADE_LABELS[student.grade],
-      student.riskLevel === 'NORMAL' ? '' : RISK_LEVEL_LABELS[student.riskLevel],
+      isLowGrade(student.grade) ? 'ใช่' : '',
     ]),
   );
   const today = new Date().toISOString().slice(0, 10);
@@ -115,15 +106,12 @@ export function StudentRosterTable({
   );
   const [editMode, setEditMode] = useState(false);
 
-  // Filters live in the URL (?risk= ?q=) so a reload or Back lands on the same
+  // Filters live in the URL (?grade=low ?q=) so a reload or Back lands on the same
   // view; replace, not push, so filtering does not pile up history.
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const riskParam = searchParams.get('risk');
-  const riskFilter: RiskFilter = RISK_LEVEL_ORDER.includes(riskParam as RiskLevel)
-    ? (riskParam as RiskLevel)
-    : ALL;
+  const gradeFilter: GradeFilter = searchParams.get('grade') === 'low' ? 'LOW' : ALL;
   const [search, setSearch] = useState(searchParams.get('q') ?? '');
   const updateParams = useCallback(
     (changes: Record<string, string | null>) => {
@@ -139,18 +127,18 @@ export function StudentRosterTable({
 
   const editable = !!onChanged && editMode;
 
-  // Worst risk first, then by code: who needs following up leads the list.
+  // Low grades first, then by code.
   const ordered = useMemo(
     () =>
       [...(roster ?? [])].sort(
         (a, b) =>
-          RISK_LEVEL_ORDER.indexOf(a.riskLevel) - RISK_LEVEL_ORDER.indexOf(b.riskLevel) ||
+          Number(isLowGrade(b.grade)) - Number(isLowGrade(a.grade)) ||
           a.studentCode.localeCompare(b.studentCode),
       ),
     [roster],
   );
 
-  // Search narrows first and the risk counts follow it, so each button shows
+  // Search narrows first and the counts follow it, so each button shows
   // how many people it would leave.
   const searched = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -163,26 +151,26 @@ export function StudentRosterTable({
         );
   }, [ordered, search]);
   const counts = useMemo(
-    () => countByRisk(searched.map((s) => ({ worstRisk: s.riskLevel }))),
+    () => countPeople(searched.map((s) => ({ hasLowGrade: isLowGrade(s.grade) }))),
     [searched],
   );
   const visibleRoster = useMemo(
-    () => (riskFilter === ALL ? searched : searched.filter((s) => s.riskLevel === riskFilter)),
-    [searched, riskFilter],
+    () => (gradeFilter === ALL ? searched : searched.filter((s) => isLowGrade(s.grade))),
+    [searched, gradeFilter],
   );
 
-  const isFiltered = search.trim() !== '' || riskFilter !== ALL;
+  const isFiltered = search.trim() !== '' || gradeFilter !== ALL;
 
   const sort = useTableSort(visibleRoster, {
     studentCode: (s) => s.studentCode,
     fullName: (s) => s.fullName,
     grade: (s) => GRADE_OPTIONS.indexOf(s.grade),
-    risk: (s) => RISK_LEVEL_ORDER.indexOf(s.riskLevel),
+    lowGrade: (s) => (isLowGrade(s.grade) ? 0 : 1),
   });
   const pagination = usePagination(
     sort.sorted,
     undefined,
-    `${search}|${riskFilter}|${sort.sortKey}|${sort.direction}`,
+    `${search}|${gradeFilter}|${sort.sortKey}|${sort.direction}`,
   );
 
   // A row left awaiting delete-confirmation must not stay armed once it
@@ -201,10 +189,7 @@ export function StudentRosterTable({
   // before the real data ever arrives.
   useEffect(() => {
     if (!roster) return;
-    if (
-      selectedStudentId &&
-      !visibleRoster.some((s) => s.studentProfileId === selectedStudentId)
-    ) {
+    if (selectedStudentId && !visibleRoster.some((s) => s.studentProfileId === selectedStudentId)) {
       setSelectedStudentId(null);
     }
   }, [roster, visibleRoster, selectedStudentId]);
@@ -229,7 +214,7 @@ export function StudentRosterTable({
 
   function clearFilters() {
     setSearch('');
-    updateParams({ risk: null, q: null });
+    updateParams({ grade: null, q: null });
   }
 
   if (isLoading) {
@@ -254,10 +239,10 @@ export function StudentRosterTable({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <RiskFilterChips
+        <LowGradeFilterChips
           counts={counts}
-          value={riskFilter}
-          onChange={(risk) => updateParams({ risk: risk === ALL ? null : risk })}
+          value={gradeFilter}
+          onChange={(grade) => updateParams({ grade: grade === ALL ? null : 'low' })}
         />
         <div className="flex flex-wrap items-center gap-2">
           {onChanged && (
@@ -321,9 +306,13 @@ export function StudentRosterTable({
         )}
       </div>
 
-      <div role="group" aria-label="เรียงลำดับรายชื่อ" className="flex flex-wrap items-center gap-1">
+      <div
+        role="group"
+        aria-label="เรียงลำดับรายชื่อ"
+        className="flex flex-wrap items-center gap-1"
+      >
         <span className="text-xs text-muted-foreground">เรียงตาม</span>
-        <SortChip control={sort.sortProps('risk')}>ความเสี่ยง</SortChip>
+        <SortChip control={sort.sortProps('lowGrade')}>เกรด D+ ลงไป</SortChip>
         <SortChip control={sort.sortProps('studentCode')}>รหัส</SortChip>
         <SortChip control={sort.sortProps('fullName')}>ชื่อ</SortChip>
         <SortChip control={sort.sortProps('grade')}>เกรด</SortChip>
@@ -333,12 +322,7 @@ export function StudentRosterTable({
           keeps the full width. minmax(0,1fr) rather than 1fr: a 1fr track
           defaults to min-width:auto, which would let a wide child push the
           panel off screen instead of wrapping inside its own box. */}
-      <div
-        className={cn(
-          'grid gap-4',
-          selectedStudentId && 'lg:grid-cols-[minmax(0,1fr)_340px]',
-        )}
-      >
+      <div className={cn('grid gap-4', selectedStudentId && 'lg:grid-cols-[minmax(0,1fr)_340px]')}>
         <div className="min-w-0">
           {visibleRoster.length === 0 ? (
             <EmptyState
@@ -375,7 +359,10 @@ export function StudentRosterTable({
                         className="min-h-11 min-w-0 flex-1 basis-48 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <span
-                          className={cn('block text-primary', isSelected && 'font-medium underline')}
+                          className={cn(
+                            'block text-primary',
+                            isSelected && 'font-medium underline',
+                          )}
                         >
                           {student.fullName}
                         </span>
@@ -404,9 +391,9 @@ export function StudentRosterTable({
                             เกรด {GRADE_LABELS[student.grade]}
                           </Badge>
                         )}
-                        <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
-                          {RISK_LEVEL_LABELS[student.riskLevel]}
-                        </Badge>
+                        {isLowGrade(student.grade) && (
+                          <Badge tone="warning">{LOW_GRADE_LABEL}</Badge>
+                        )}
                       </div>
                     </div>
                     {editable && (
@@ -509,7 +496,10 @@ function SortChip({
       {control.active ? (
         <ChevronUp
           size={14}
-          className={cn('transition-transform motion-reduce:transition-none', control.direction === 'desc' && 'rotate-180')}
+          className={cn(
+            'transition-transform motion-reduce:transition-none',
+            control.direction === 'desc' && 'rotate-180',
+          )}
         />
       ) : (
         <ArrowUpDown size={12} className="text-slate-300" />
