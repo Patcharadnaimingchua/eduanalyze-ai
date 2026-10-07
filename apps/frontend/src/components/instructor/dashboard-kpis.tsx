@@ -36,7 +36,7 @@ export function DashboardKpis({
           <GoalBar percent={stats.achievedPercent} target={overall.target} status={overall.status} />
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={overall.status} />
-            {stats.lowSample && stats.counted > 0 && <LowSampleTag counted={stats.counted} />}
+            {stats.lowSample && stats.graded > 0 && <LowSampleTag counted={stats.graded} />}
             {trend}
           </div>
         </CardContent>

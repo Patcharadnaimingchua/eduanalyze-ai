@@ -1002,6 +1002,7 @@ export interface SemesterAchievement {
   academicYear: number;
   semesterTerm: SemesterTerm;
   studentCount: number; // excludes W/I
+  gradedCount: number; // A to F only (no W/I/S/U): the base for sample-size notes
   achievementPercent: number; // % graded B or above
 }
 
@@ -1061,6 +1062,7 @@ export interface InstructorCourseTimelineCourse {
   programCode: string;
   curriculumYear: number;
   studentCount: number; // everyone enrolled this term — no W/I exclusion
+  gradedCount: number; // of those, A to F only (no W/I/S/U)
   predominantYearLevel: number; // 1-4, mode across this group's students
 }
 

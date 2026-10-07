@@ -59,6 +59,9 @@ export interface GroupStats {
   seats: number;
   // Seats minus W and I: the base of the "B or above" share.
   counted: number;
+  // People with a grade from A to F (no W, I, S, U): the one base for every
+  // "too few people" note, whatever the page.
+  graded: number;
   achieved: number;
   // null when nobody counts yet.
   achievedPercent: number | null;
@@ -104,16 +107,18 @@ export function summarizeParts(parts: readonly Part[]): GroupStats {
   }
   const seats = ALL_GRADES.reduce((sum, g) => sum + counts[g], 0);
   const counted = ALL_GRADES.reduce((sum, g) => (NOT_COUNTED_GRADES.has(g) ? sum : sum + counts[g]), 0);
+  const graded = ALL_GRADES.reduce((sum, g) => (GRADE_POINTS[g] === null ? sum : sum + counts[g]), 0);
   const achieved = ALL_GRADES.reduce((sum, g) => (ACHIEVED_GRADES.has(g) ? sum + counts[g] : sum), 0);
   return {
     seats,
     counted,
+    graded,
     achieved,
     achievedPercent: counted > 0 ? (achieved / counted) * 100 : null,
     gpa: creditSum > 0 && !creditsMissing ? pointSum / creditSum : null,
     f: counts.F,
     w: counts.W,
-    lowSample: counted < LOW_SAMPLE_BELOW,
+    lowSample: graded < LOW_SAMPLE_BELOW,
     counts,
   };
 }
@@ -318,7 +323,7 @@ export function buildOverviewSentence(
   if (stats.gpa !== null) parts.push(`เกรดเฉลี่ย ${formatGpa(stats.gpa)}`);
   const worst = sortByGap(overviews).find((o) => o.gap !== null && o.gap > 0);
   if (worst) parts.push(`ห่างเป้ามากสุด ${worst.course.code} ${worst.course.name} ${formatPercent(worst.stats.achievedPercent)}`);
-  if (stats.lowSample) parts.push(`ตัวอย่างน้อย (${stats.counted} คน)`);
+  if (stats.lowSample) parts.push(`ตัวอย่างน้อย (${stats.graded} คน)`);
   return parts.join(' · ');
 }
 

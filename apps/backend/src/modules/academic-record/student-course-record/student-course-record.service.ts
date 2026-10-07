@@ -19,6 +19,7 @@ import {
   AT_RISK_GRADES,
   GRADE_POINTS,
   GRADE_STATUS,
+  isLetterGrade,
   RiskLevel,
   SEMESTER_TERM_RANK,
   riskLevel,
@@ -87,6 +88,7 @@ export interface SemesterAchievement {
   academicYear: number;
   semesterTerm: SemesterTerm;
   studentCount: number; // excludes W/I, same base as CloAchievementService
+  gradedCount: number; // A to F only (no W/I/S/U): the base for sample-size notes
   achievementPercent: number; // % graded B or above
 }
 
@@ -103,6 +105,7 @@ export interface InstructorCourseTimelineCourse {
   programCode: string;
   curriculumYear: number;
   studentCount: number; // everyone enrolled, unlike SemesterAchievement (no W/I exclusion)
+  gradedCount: number; // of those, A to F only (no W/I/S/U)
   predominantYearLevel: number; // 1-4, mode across this group's students
 }
 
@@ -563,6 +566,7 @@ export class StudentCourseRecordService {
           academicYear: group[0].semester.academicYear.year,
           semesterTerm: group[0].semester.term,
           studentCount: group.length,
+          gradedCount: group.filter((r) => isLetterGrade(r.grade)).length,
           achievementPercent: (achieved / group.length) * 100,
         };
       })
@@ -605,6 +609,7 @@ export class StudentCourseRecordService {
         programCode: first.course.curriculum.program.code,
         curriculumYear: first.course.curriculum.effectiveYear,
         studentCount: group.length,
+        gradedCount: group.filter((r) => isLetterGrade(r.grade)).length,
         predominantYearLevel: this.modeOf(yearLevels),
       };
     });
@@ -621,6 +626,7 @@ export class StudentCourseRecordService {
         programCode: row.programCode,
         curriculumYear: row.curriculumYear,
         studentCount: row.studentCount,
+        gradedCount: row.gradedCount,
         predominantYearLevel: row.predominantYearLevel,
       });
       semesters.set(row.semesterId, courses);

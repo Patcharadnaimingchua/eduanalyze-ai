@@ -245,7 +245,7 @@ function SummarySection({
 
         {values && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-t pt-5">
-            {showAchievementRing(stats.counted, stats.achievedPercent) && (
+            {showAchievementRing(stats.graded, stats.achievedPercent) && (
               <AnimatedRing percent={stats.achievedPercent}>
                 <span className="text-center text-xs font-medium leading-tight text-muted-foreground">
                   B<br />
@@ -415,7 +415,7 @@ function YearSection({
                       <span className="text-base font-semibold tabular-nums text-primary">
                         {medianOf(row) ?? '—'}
                       </span>
-                      {row.level === 'low' && <LowSampleTag counted={row.stats.counted} />}
+                      {row.level === 'low' && <LowSampleTag counted={row.stats.graded} />}
                     </span>
                   </td>
                 </tr>
@@ -454,7 +454,7 @@ function YearListItem({ row }: Readonly<{ row: YearRow }>) {
     <li className="space-y-1 py-3">
       <div className="flex items-start justify-between gap-3">
         <p className="text-base font-bold text-primary">{yearLevelLabel(row.yearLevel)}</p>
-        {row.level === 'low' && <LowSampleTag counted={row.stats.counted} />}
+        {row.level === 'low' && <LowSampleTag counted={row.stats.graded} />}
       </div>
       <p className="text-sm text-muted-foreground">
         {row.showNumbers
@@ -482,7 +482,7 @@ function GoalsSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
   return (
     <SectionCard
       title="เป้าการเรียนรู้"
-      aside={level === 'low' ? <LowSampleTag counted={stats.counted} /> : undefined}
+      aside={level === 'low' ? <LowSampleTag counted={stats.graded} /> : undefined}
     >
       {goals.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">ยังไม่มีเป้าการเรียนรู้ที่กำหนดไว้ในวิชานี้</p>
@@ -627,7 +627,7 @@ function TrendSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
               )}
               <p className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                 มีเกรด {term.students} คน
-                {term.level === 'low' && <LowSampleTag counted={term.students} />}
+                {term.level === 'low' && <LowSampleTag counted={term.graded} />}
               </p>
               {term.delta !== null && (
                 <Badge tone="neutral" className="px-2.5 py-1 text-xs">

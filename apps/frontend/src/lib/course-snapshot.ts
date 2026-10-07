@@ -26,11 +26,12 @@ export const MIN_TERMS_FOR_TREND = 3;
 
 export type DataLevel = 'insufficient' | 'low' | 'ok';
 
-// Judged on the people counted in the "B or above" share (W and I left out).
+// Judged on the people with a grade from A to F (GroupStats.graded): W, I, S and
+// U are not people "with a grade" here, however many there are.
 // LOW_SAMPLE_BELOW is the same constant the other instructor pages use.
-export function dataLevelOf(counted: number): DataLevel {
-  if (!(counted >= INSUFFICIENT_BELOW)) return 'insufficient';
-  return counted < LOW_SAMPLE_BELOW ? 'low' : 'ok';
+export function dataLevelOf(graded: number): DataLevel {
+  if (!(graded >= INSUFFICIENT_BELOW)) return 'insufficient';
+  return graded < LOW_SAMPLE_BELOW ? 'low' : 'ok';
 }
 
 // ---- header: which term and curriculum this course was last taught in ----
@@ -106,6 +107,8 @@ export interface TrendTerm {
   key: string;
   label: string;
   students: number;
+  // People with a grade from A to F that term: what level and delta are judged on.
+  graded: number;
   percent: number;
   level: DataLevel;
   showNumbers: boolean;
@@ -152,7 +155,7 @@ export function buildCourseSnapshot({
   yearLevelByStudent: ReadonlyMap<string, number> | null;
 }): CourseSnapshot {
   const { stats } = buildCourseOverviews([course])[0];
-  const level = dataLevelOf(stats.counted);
+  const level = dataLevelOf(stats.graded);
 
   let years: CourseSnapshot['years'] = null;
   if (yearLevelByStudent) {
@@ -160,7 +163,7 @@ export function buildCourseSnapshot({
     years = {
       unplaced: split.unplaced,
       rows: (split.byCourse.get(course.courseId) ?? []).map((cell) => {
-        const cellLevel = dataLevelOf(cell.stats.counted);
+        const cellLevel = dataLevelOf(cell.stats.graded);
         return {
           yearLevel: cell.yearLevel,
           stats: cell.stats,
@@ -188,11 +191,12 @@ export function buildCourseSnapshot({
 
   const trendPoints = course.semesterTrend;
   const terms: TrendTerm[] = trendPoints.map((p, i) => {
-    const termLevel = dataLevelOf(p.studentCount);
+    const termLevel = dataLevelOf(p.gradedCount);
     return {
       key: `${p.academicYear}-${p.semesterTerm}`,
       label: formatSemesterLabel(p.semesterTerm, p.academicYear),
       students: p.studentCount,
+      graded: p.gradedCount,
       percent: p.achievementPercent,
       level: termLevel,
       showNumbers: termLevel !== 'insufficient',

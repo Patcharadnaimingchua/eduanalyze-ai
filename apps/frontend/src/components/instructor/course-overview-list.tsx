@@ -137,7 +137,7 @@ function Tags({ row }: Readonly<{ row: Row }>) {
       <span>
         {row.stats.seats} {row.unit}
       </span>
-      {row.stats.lowSample && row.stats.counted > 0 && <LowSampleTag counted={row.stats.counted} />}
+      {row.stats.lowSample && row.stats.graded > 0 && <LowSampleTag counted={row.stats.graded} />}
     </span>
   );
 }

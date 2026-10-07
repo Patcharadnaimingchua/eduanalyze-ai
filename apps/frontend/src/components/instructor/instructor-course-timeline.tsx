@@ -11,15 +11,15 @@ import { CARD, CARD_PAD, TEXT_LABEL } from './instructor-ui';
 import { LowSampleTag } from './overview-parts';
 
 // The size of the group in words, never only a colour: grey tags, not warnings.
-function SampleTag({ studentCount }: Readonly<{ studentCount: number }>) {
-  const level = dataLevelOf(studentCount);
+function SampleTag({ gradedCount }: Readonly<{ gradedCount: number }>) {
+  const level = dataLevelOf(gradedCount);
   if (level === 'ok') return null;
   return level === 'insufficient' ? (
     <Badge tone="neutral" className="px-2.5 py-0.5 text-[13px]">
       {SPARSE_LABEL}
     </Badge>
   ) : (
-    <LowSampleTag counted={studentCount} />
+    <LowSampleTag counted={gradedCount} />
   );
 }
 
@@ -44,7 +44,7 @@ function CourseCard({
       <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
         <span>{termText}</span>
         <span className="tabular-nums">{course.studentCount} นักศึกษา</span>
-        <SampleTag studentCount={course.studentCount} />
+        <SampleTag gradedCount={course.gradedCount} />
         <span className="rounded-full bg-brand-light px-2 py-0.5 text-[13px] text-brand">
           ส่วนใหญ่ {yearLevelLabel(course.predominantYearLevel)}
         </span>

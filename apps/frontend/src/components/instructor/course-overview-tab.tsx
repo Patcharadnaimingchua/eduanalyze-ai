@@ -70,7 +70,7 @@ export function CourseOverviewTab({ course }: Readonly<{ course: InstructorCours
             <GoalBar percent={stats.achievedPercent} target={target} status={status} />
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={status} />
-              {stats.lowSample && stats.counted > 0 && <LowSampleTag counted={stats.counted} />}
+              {stats.lowSample && stats.graded > 0 && <LowSampleTag counted={stats.graded} />}
             </div>
           </CardContent>
         </Card>
@@ -192,7 +192,7 @@ function YearLevelTable({
                       <td className="px-4 py-3 text-muted-foreground">
                         <span className="inline-flex flex-wrap items-center gap-1.5">
                           {c.stats.seats} คน
-                          {c.stats.lowSample && c.stats.counted > 0 && <LowSampleTag counted={c.stats.counted} />}
+                          {c.stats.lowSample && c.stats.graded > 0 && <LowSampleTag counted={c.stats.graded} />}
                         </span>
                         {(c.stats.f > 0 || c.stats.w > 0) && (
                           <span className="block text-xs">
@@ -233,7 +233,7 @@ function YearLevelTable({
                     <span>เกรดเฉลี่ย {formatGpa(c.stats.gpa)}</span>
                     <span className="inline-flex flex-wrap items-center gap-1.5">
                       {c.stats.seats} คน
-                      {c.stats.lowSample && c.stats.counted > 0 && <LowSampleTag counted={c.stats.counted} />}
+                      {c.stats.lowSample && c.stats.graded > 0 && <LowSampleTag counted={c.stats.graded} />}
                     </span>
                     {c.stats.f > 0 && <span>F {c.stats.f}</span>}
                     {c.stats.w > 0 && <span>W {c.stats.w}</span>}

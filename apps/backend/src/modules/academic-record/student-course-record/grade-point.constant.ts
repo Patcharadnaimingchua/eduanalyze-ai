@@ -19,6 +19,10 @@ export const GRADE_POINTS: Record<Grade, number | null> = {
   U: null,
 };
 
+// A to F: the grades that enter the statistics (GPA, grade distribution). W, I,
+// S and U do not. This is the "people with a grade" base for sample-size notes.
+export const isLetterGrade = (grade: Grade): boolean => GRADE_POINTS[grade] !== null;
+
 // Chronological order within a Thai academic year (1st sem ~Aug-Dec,
 // 2nd sem ~Jan-May, Summer ~Jun-Jul) — used to resolve "latest attempt"
 // when a student retakes a course.

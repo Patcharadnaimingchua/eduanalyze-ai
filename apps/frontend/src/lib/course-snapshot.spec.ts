@@ -50,6 +50,58 @@ describe('dataLevelOf', () => {
   });
 });
 
+describe('sample size counts only A to F', () => {
+  it('3 people with A to F and 10 withdrawn is still "too few"', () => {
+    const s = buildCourseSnapshot({
+      course: course({ A: 1, B: 1, C: 1, W: 10 }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(s.stats.graded).toBe(3);
+    expect(s.stats.lowSample).toBe(true);
+    expect(s.level).toBe('insufficient');
+    expect(s.goals.sparse).toBe(true);
+  });
+
+  it('S and U do not make up the numbers either', () => {
+    const s = buildCourseSnapshot({
+      course: course({ A: 2, B: 2, S: 6, U: 2 }),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(s.stats.counted).toBe(12);
+    expect(s.stats.graded).toBe(4);
+    expect(s.level).toBe('insufficient');
+  });
+
+  it('the term comparison needs 5 or more A-to-F people on both terms, whatever the head count', () => {
+    const point = (term: 'FIRST' | 'SECOND', year: number, graded: number, pct: number) => ({
+      academicYear: year,
+      semesterTerm: term,
+      studentCount: 30,
+      gradedCount: graded,
+      achievementPercent: pct,
+    });
+    const s = buildCourseSnapshot({
+      course: course(
+        { A: 8 },
+        {
+          semesterTrend: [
+            point('FIRST', 2566, 20, 50),
+            point('SECOND', 2566, 3, 90),
+            point('FIRST', 2567, 12, 60),
+            point('SECOND', 2567, 12, 70),
+          ],
+        },
+      ),
+      seatRows: [],
+      yearLevelByStudent: null,
+    });
+    expect(s.trend.terms.map((t) => t.level)).toEqual(['ok', 'insufficient', 'ok', 'ok']);
+    expect(s.trend.terms.map((t) => t.delta)).toEqual([null, null, null, 10]);
+  });
+});
+
 describe('buildCourseSnapshot', () => {
   it('flags a course with no grade as empty', () => {
     const s = buildCourseSnapshot({
@@ -146,6 +198,7 @@ describe('buildCourseSnapshot', () => {
       academicYear: year,
       semesterTerm: term,
       studentCount: n,
+      gradedCount: n,
       achievementPercent: pct,
     });
     const two = buildCourseSnapshot({
@@ -197,6 +250,7 @@ describe('buildCourseSnapshot', () => {
       academicYear: year,
       semesterTerm: term,
       studentCount: n,
+      gradedCount: n,
       achievementPercent: pct,
     });
     const s = buildCourseSnapshot({
@@ -229,12 +283,14 @@ describe('buildCourseSnapshot', () => {
               academicYear: 2566,
               semesterTerm: 'FIRST',
               studentCount: Number.NaN,
+              gradedCount: Number.NaN,
               achievementPercent: 50,
             },
             {
               academicYear: 2566,
               semesterTerm: 'SECOND',
               studentCount: Number.NaN,
+              gradedCount: Number.NaN,
               achievementPercent: 60,
             },
           ],
@@ -263,6 +319,7 @@ describe('courseTermInfo', () => {
               programCode: 'CS',
               curriculumYear: 2565,
               studentCount: 5,
+              gradedCount: 5,
               predominantYearLevel: 2,
             },
           ],
@@ -278,6 +335,7 @@ describe('courseTermInfo', () => {
               programCode: 'CS',
               curriculumYear: 2560,
               studentCount: 5,
+              gradedCount: 5,
               predominantYearLevel: 2,
             },
           ],

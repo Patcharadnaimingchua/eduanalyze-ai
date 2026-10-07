@@ -50,7 +50,7 @@ function term(
   studentCount: number,
   achievementPercent: number,
 ): SemesterAchievement {
-  return { academicYear, semesterTerm, studentCount, achievementPercent };
+  return { academicYear, semesterTerm, studentCount, gradedCount: studentCount, achievementPercent };
 }
 
 const allPassing = [

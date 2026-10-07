@@ -157,7 +157,7 @@ export function InstructorDetailPanel({
             {activeTab === 'clo' && (
               <Reveal index={0}>
                 <CloAchievementSection
-                  gradedPeople={buildCourseOverviews([course])[0].stats.counted}
+                  gradedPeople={buildCourseOverviews([course])[0].stats.graded}
                   achievementPercent={course.achievementPercent}
                   clos={course.clos}
                   plos={course.plos}

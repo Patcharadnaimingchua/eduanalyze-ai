@@ -2,8 +2,8 @@ import { dataLevelOf } from './course-snapshot';
 
 // The ring for "B or above" needs a graded group big enough to mean something;
 // the threshold is the one the course pages already use for "too few people".
-export function showAchievementRing(counted: number, percent: number | null): percent is number {
-  return percent !== null && Number.isFinite(percent) && dataLevelOf(counted) !== 'insufficient';
+export function showAchievementRing(graded: number, percent: number | null): percent is number {
+  return percent !== null && Number.isFinite(percent) && dataLevelOf(graded) !== 'insufficient';
 }
 
 // Credits offered in a category against the credits its rule asks for, as a
