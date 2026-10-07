@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Landmark } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -174,7 +175,12 @@ export function OrgTree() {
         </Button>
       </div>
 
-      {faculties.length === 0 && <p className="text-sm text-muted-foreground">ยังไม่มีคณะในระบบ</p>}
+      {faculties.length === 0 && (
+        <EmptyState
+          icon={Landmark}
+          description="ยังไม่มีคณะในระบบ โครงสร้างองค์กรเริ่มจากคณะ กด “เพิ่มคณะ” ด้านล่างเพื่อสร้างคณะแรก แล้วจึงเพิ่มภาควิชา สาขา และหลักสูตรต่อ"
+        />
+      )}
       {faculties.length > 0 && visibleFaculties.length === 0 && (
         <EmptyState illustration="no-results" size="sm" description="ไม่พบรายการที่ตรงกับคำค้นหา" />
       )}

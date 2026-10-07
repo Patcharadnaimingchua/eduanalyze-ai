@@ -5,7 +5,9 @@ import type { CourseListItem, StudentCourseRecord } from '@eduanalyze-ai/shared-
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
 import { usePagination } from '@/lib/use-pagination';
 import { useToast } from '@/lib/toast-context';
+import { ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { recordModeView } from './record-edit-mode';
 import { StaffGradeSelect } from './staff-grade-select';
@@ -88,7 +90,14 @@ export function StaffRecordList({
 
   if (records.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">ยังไม่มีรายวิชาที่บันทึกไว้</p>
+      <EmptyState
+        icon={ClipboardList}
+        description={
+          editing
+            ? 'ยังไม่มีรายวิชาที่บันทึกไว้ เพิ่มรายวิชาและเกรดได้จากแบบฟอร์มเพิ่มรายวิชา'
+            : 'ยังไม่มีรายวิชาที่บันทึกไว้ กด “แก้ไขผลการเรียน” เพื่อเพิ่มรายวิชา'
+        }
+      />
     );
   }
 

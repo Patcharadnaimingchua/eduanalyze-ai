@@ -1,9 +1,12 @@
 'use client';
 
+import Link from 'next/link';
+import { GraduationCap } from 'lucide-react';
 import type { SystemCurriculumEntry } from '@eduanalyze-ai/shared-types';
 import { BAR_TONE_CLASSES } from '@/lib/tone';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TIERS = [
@@ -26,7 +29,18 @@ export function CurriculumTierSummary({ curricula }: { curricula: SystemCurricul
       </CardHeader>
       <CardContent className="space-y-3">
         {total === 0 ? (
-          <p className="text-sm text-muted-foreground">ยังไม่มีหลักสูตรในระบบ</p>
+          <EmptyState
+            icon={GraduationCap}
+            description="ยังไม่มีหลักสูตรในระบบ สร้างหลักสูตรได้ที่หน้าโครงสร้างองค์กร"
+            action={
+              <Link
+                href="/admin/organization"
+                className="inline-flex min-h-11 items-center rounded border border-slate-300 px-4 text-sm font-semibold text-primary hover:bg-slate-100"
+              >
+                ไปที่โครงสร้างองค์กร
+              </Link>
+            }
+          />
         ) : (
           <>
             <div className="flex h-4 overflow-hidden rounded-full bg-slate-100">

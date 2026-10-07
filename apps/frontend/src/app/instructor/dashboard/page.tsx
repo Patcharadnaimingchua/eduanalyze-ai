@@ -10,12 +10,15 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import Link from 'next/link';
+import { BookOpen } from 'lucide-react';
 import { CourseOverview, CourseQuickActions } from '@/components/instructor/course-overview';
 import { CourseSelector, type CourseChoice } from '@/components/instructor/course-selector';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
@@ -123,9 +126,14 @@ function InstructorDashboardContent() {
         )}
 
         {dashboardQuery.data && courses.length === 0 && (
-          <Alert>
-            <AlertDescription>ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน</AlertDescription>
-          </Alert>
+          <Card>
+            <CardContent className="pt-6">
+              <EmptyState
+                icon={BookOpen}
+                description="ยังไม่มีวิชาที่ได้รับมอบหมายให้คุณสอน วิชาจะแสดงที่นี่เมื่อเจ้าหน้าที่มอบหมายให้คุณเป็นอาจารย์ผู้รับผิดชอบ หากคิดว่าควรมีแล้ว ให้ติดต่อเจ้าหน้าที่ที่ดูแลหลักสูตร"
+              />
+            </CardContent>
+          </Card>
         )}
 
         {selected && (

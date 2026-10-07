@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BookOpen, ListChecks, Plus, Search, UserX } from 'lucide-react';
+import { BookOpen, GraduationCap, ListChecks, Plus, Search, UserX } from 'lucide-react';
 import { fetchCourses } from '@/lib/api/academic-record';
 import {
   deleteCourseInstructor,
@@ -33,6 +33,7 @@ import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instruct
 import { buildCurriculumView, type InstructorFilter } from '@/components/staff/curriculum-view';
 import { Button } from '@/components/ui/button';
 import { AnimatedNumber } from '@/components/ui/animated-number';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -307,9 +308,14 @@ function StaffCurriculumContent() {
       </Reveal>
 
       {overviewQuery.data && curricula.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          คุณยังไม่มีสาขาในความดูแล — กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดขอบเขตของคุณ
-        </p>
+        <Card>
+          <CardContent className="pt-6">
+            <EmptyState
+              icon={GraduationCap}
+              description="บัญชีนี้ยังไม่มีสาขาในความดูแล จึงไม่มีหลักสูตรให้แสดง ติดต่อผู้ดูแลระบบ (ADMIN) เพื่อกำหนดขอบเขตของคุณ"
+            />
+          </CardContent>
+        </Card>
       )}
       {curriculumId && overviewQuery.data && !inScope && (
         <p className="text-sm text-amber-600">
@@ -533,8 +539,11 @@ function StaffCurriculumContent() {
 
               {allBlocks.length === 0 ? (
                 <Card>
-                  <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                    ยังไม่มีหมวดวิชาในหลักสูตรนี้
+                  <CardContent className="pt-6">
+                    <EmptyState
+                      icon={BookOpen}
+                      description="หลักสูตรนี้ยังไม่มีหมวดวิชา รายวิชาต้องอยู่ในหมวด จึงต้องเพิ่มหมวดวิชาก่อน แล้วค่อยเพิ่มรายวิชา"
+                    />
                   </CardContent>
                 </Card>
               ) : (

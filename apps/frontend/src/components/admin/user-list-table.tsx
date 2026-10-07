@@ -125,8 +125,8 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-muted-foreground">
                     {users.length === 0
-                      ? 'ยังไม่มีผู้ใช้งานในขอบเขตของคุณ'
-                      : 'ไม่พบผู้ใช้งานที่ตรงกับตัวกรอง'}
+                      ? 'ยังไม่มีผู้ใช้งานในขอบเขตของคุณ กด “เพิ่มผู้ใช้งาน” ที่มุมบนเพื่อสร้างบัญชีแรก'
+                      : 'ไม่พบผู้ใช้งานที่ตรงกับตัวกรอง ลองเปลี่ยนหรือล้างตัวกรองด้านบน'}
                   </td>
                 </tr>
               )}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Eye, Lock } from 'lucide-react';
+import { Eye, Lock, SearchX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from './status-badge';
 import type { StaffStudentRow } from './staff-status';
@@ -49,8 +50,11 @@ export function StaffStudentList({
   if (rows.length === 0) {
     return (
       <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก
+        <CardContent className="pt-6">
+          <EmptyState
+            icon={SearchX}
+            description="ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก ลองเปลี่ยนหรือล้างตัวกรองและคำค้นหาด้านบน"
+          />
         </CardContent>
       </Card>
     );

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { ClipboardCheck, Star, Users } from 'lucide-react';
 import { fetchCourses } from '@/lib/api/academic-record';
 import {
@@ -36,6 +37,7 @@ import {
 import { YEAR_LEVELS, yearInfoFrom } from '@/components/staff/year-info';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Select,
   SelectContent,
@@ -271,16 +273,43 @@ function StaffDashboardContent() {
             />
           </Reveal>
 
-          <Reveal index={2} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <OverviewYearTable
-                years={view.years}
-                total={view.summary}
-                totalBehind={view.totalBehind}
-              />
-            </div>
-            <OverviewStatusBreakdown summary={view.summary} />
-          </Reveal>
+          {view.summary.active === 0 ? (
+            <Reveal index={2}>
+              <Card>
+                <CardContent className="pt-6">
+                  <EmptyState
+                    icon={Users}
+                    description={
+                      scope === ALL_CURRICULA
+                        ? 'ยังไม่มีนักศึกษาที่ใช้งานอยู่ในขอบเขตที่คุณดูแล (ไม่นับนักศึกษาที่ถูกระงับ) เชิญนักศึกษาเข้าระบบ หรือติดต่อผู้ดูแลระบบหากขอบเขตของคุณยังไม่ถูกกำหนด'
+                        : 'หลักสูตรที่เลือกยังไม่มีนักศึกษาที่ใช้งานอยู่ ลองเลือก “ทุกหลักสูตรในความดูแล” จากรายการด้านบน'
+                    }
+                    action={
+                      scope === ALL_CURRICULA ? (
+                        <Link
+                          href="/staff/student-invitations"
+                          className="inline-flex min-h-11 items-center rounded border border-slate-300 px-4 text-sm font-semibold text-primary hover:bg-slate-100"
+                        >
+                          ไปที่คำเชิญนักศึกษา
+                        </Link>
+                      ) : undefined
+                    }
+                  />
+                </CardContent>
+              </Card>
+            </Reveal>
+          ) : (
+            <Reveal index={2} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <OverviewYearTable
+                  years={view.years}
+                  total={view.summary}
+                  totalBehind={view.totalBehind}
+                />
+              </div>
+              <OverviewStatusBreakdown summary={view.summary} />
+            </Reveal>
+          )}
 
           <Reveal index={3}>
             <OverviewChecklist items={checklist} />
