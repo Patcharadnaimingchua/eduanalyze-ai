@@ -14,7 +14,7 @@ export interface CourseRowActions {
 }
 
 const NO_INSTRUCTOR_BADGE =
-  'inline-flex min-h-7 items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-700';
+  'inline-flex min-h-7 items-center gap-1.5 rounded border border-amber-200 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700';
 
 function Instructors({
   row,
@@ -42,13 +42,43 @@ function Instructors({
     }
   }
 
+  // Same sheet either way: first assignment is a secondary button beside the
+  // status, later ones a plain text button under the names.
+  const assignButton = actions.onAssign ? (
+    instructors.length === 0 ? (
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 gap-1.5 px-3"
+        aria-label={`มอบหมายอาจารย์ให้ ${row.course.code}`}
+        onClick={() => actions.onAssign?.(row)}
+      >
+        <Plus aria-hidden="true" className="h-4 w-4" />
+        มอบหมายอาจารย์
+      </Button>
+    ) : (
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-11 px-3 text-brand"
+        aria-label={`เปลี่ยนอาจารย์ของ ${row.course.code}`}
+        onClick={() => actions.onAssign?.(row)}
+      >
+        เปลี่ยน
+      </Button>
+    )
+  ) : null;
+
   return (
     <div className={cn('space-y-2', compact && 'w-full')}>
       {instructors.length === 0 && (
-        <span className={NO_INSTRUCTOR_BADGE}>
-          <UserX aria-hidden="true" className="h-3.5 w-3.5" />
-          ยังไม่มีอาจารย์
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={NO_INSTRUCTOR_BADGE}>
+            <UserX aria-hidden="true" className="h-3.5 w-3.5" />
+            ยังไม่มีอาจารย์
+          </span>
+          {assignButton}
+        </div>
       )}
       {instructors.length > 0 && (
         <ul className="space-y-2">
@@ -95,18 +125,7 @@ function Instructors({
           ))}
         </ul>
       )}
-      {actions.onAssign && (
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 gap-1.5 px-3"
-          aria-label={`มอบหมายอาจารย์ให้ ${row.course.code}`}
-          onClick={() => actions.onAssign?.(row)}
-        >
-          <Plus aria-hidden="true" className="h-4 w-4" />
-          {instructors.length === 0 ? 'มอบหมายอาจารย์' : 'มอบหมาย'}
-        </Button>
-      )}
+      {instructors.length > 0 && assignButton}
     </div>
   );
 }
@@ -121,8 +140,8 @@ function EditButton({ row, actions }: { row: CourseRowData; actions: CourseRowAc
   return (
     <Button
       type="button"
-      variant="outline"
-      className="h-11 gap-1.5 px-3"
+      variant="ghost"
+      className="h-11 gap-1.5 px-3 text-brand"
       aria-label={`แก้ไขรายวิชา ${row.course.code}`}
       onClick={() => actions.onEdit?.(row)}
     >
@@ -184,7 +203,7 @@ export function CourseRows({
               key={row.course.id}
               {...mark(row.course.id)}
               className={cn(
-                'border-b border-slate-100 align-top hover:bg-slate-50',
+                'border-b border-slate-100 align-middle hover:bg-slate-50',
                 highlight(row.course.id),
               )}
             >

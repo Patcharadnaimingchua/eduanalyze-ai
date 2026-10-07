@@ -31,6 +31,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { CategoryMenu } from './category-menu';
 import { categorySummary, type CategoryBlock } from './curriculum-view';
 
 // The credit rule for a category compared with what the curriculum offers in
@@ -79,6 +80,11 @@ export function CategorySection({
     },
   });
   const formOpen = editing || !requirement;
+
+  function startEditing() {
+    if (!expanded) onToggle();
+    setEditing(true);
+  }
 
   // Flow that writes: DELETE /course-categories/:id
   async function handleDeleteCategory() {
@@ -171,34 +177,90 @@ export function CategorySection({
               </span>
             </button>
           </h3>
-          {reading && (
-            <div className="flex flex-wrap items-center gap-3">
-              {share !== null && requirement && (
-                <AnimatedRing percent={share} size={56} strokeWidth={6}>
-                  <span className="text-[10px] font-semibold tabular-nums text-primary">
-                    {block.credits}/{requirement.minCredits}
-                  </span>
-                </AnimatedRing>
-              )}
-              <span
-                className={`inline-flex min-h-7 items-start gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${
-                  reading.enough
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'border-amber-200 bg-amber-50 text-amber-700'
-                }`}
-              >
-                {reading.enough ? (
-                  <CheckCircle2 aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-                ) : (
-                  <AlertTriangle aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+          <div className="flex flex-wrap items-center gap-3">
+            {reading && (
+              <>
+                {share !== null && requirement && (
+                  <AnimatedRing percent={share} size={56} strokeWidth={6}>
+                    <span className="text-[10px] font-semibold tabular-nums text-primary">
+                      {block.credits}/{requirement.minCredits}
+                    </span>
+                  </AnimatedRing>
                 )}
-                <span className="break-words">
-                  {reading.text} ({reading.enough ? 'ครบตามเกณฑ์' : 'ยังไม่ครบตามเกณฑ์'})
+                <span
+                  className={`inline-flex min-h-7 items-start gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${
+                    reading.enough
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-amber-200 bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {reading.enough ? (
+                    <CheckCircle2 aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <AlertTriangle aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span className="break-words">
+                    {reading.text} ({reading.enough ? 'ครบตามเกณฑ์' : 'ยังไม่ครบตามเกณฑ์'})
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </>
+            )}
+            <CategoryMenu
+              categoryName={category.name}
+              onEditRule={requirement && !editing ? startEditing : undefined}
+              onDeleteRule={
+                requirement && !editing ? () => setConfirmingRequirementDelete(true) : undefined
+              }
+              onDeleteCategory={() => setConfirmingCategoryDelete(true)}
+            />
+          </div>
         </div>
+        {confirmingRequirementDelete && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <span className="min-w-0 flex-1 break-words font-semibold">
+              ลบเกณฑ์หน่วยกิตของหมวดนี้?
+            </span>
+            <Button
+              type="button"
+              variant="destructive"
+              className={SMALL}
+              disabled={busy}
+              onClick={handleDeleteRequirement}
+            >
+              ยืนยันลบเกณฑ์
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={SMALL}
+              onClick={() => setConfirmingRequirementDelete(false)}
+            >
+              ยกเลิก
+            </Button>
+          </div>
+        )}
+        {confirmingCategoryDelete && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <span className="min-w-0 flex-1 break-words font-semibold">ลบหมวดวิชานี้?</span>
+            <Button
+              type="button"
+              variant="destructive"
+              className={SMALL}
+              disabled={busy}
+              onClick={handleDeleteCategory}
+            >
+              ยืนยันลบหมวดวิชา
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={SMALL}
+              onClick={() => setConfirmingCategoryDelete(false)}
+            >
+              ยกเลิก
+            </Button>
+          </div>
+        )}
       </div>
 
       <div id={bodyId} hidden={!expanded}>
@@ -263,83 +325,7 @@ export function CategorySection({
                 </div>
               </form>
             </Form>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {confirmingRequirementDelete ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className={SMALL}
-                    disabled={busy}
-                    onClick={handleDeleteRequirement}
-                  >
-                    ยืนยันลบเกณฑ์
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={SMALL}
-                    onClick={() => setConfirmingRequirementDelete(false)}
-                  >
-                    ยกเลิก
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={SMALL}
-                    onClick={() => setEditing(true)}
-                  >
-                    แก้ไขเกณฑ์
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={SMALL}
-                    onClick={() => setConfirmingRequirementDelete(true)}
-                  >
-                    ลบเกณฑ์
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-            {confirmingCategoryDelete ? (
-              <>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className={SMALL}
-                  disabled={busy}
-                  onClick={handleDeleteCategory}
-                >
-                  ยืนยันลบหมวดวิชา
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={SMALL}
-                  onClick={() => setConfirmingCategoryDelete(false)}
-                >
-                  ยกเลิก
-                </Button>
-              </>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className={`${SMALL} text-destructive`}
-                onClick={() => setConfirmingCategoryDelete(true)}
-              >
-                ลบหมวดวิชา
-              </Button>
-            )}
-          </div>
+          ) : null}
         </div>
         {children}
       </div>

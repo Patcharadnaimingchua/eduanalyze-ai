@@ -305,12 +305,30 @@ function StaffCurriculumContent() {
               {inScope && (
                 <Button
                   type="button"
+                  variant="outline"
                   className="h-11 gap-1.5 px-4"
                   disabled={!loaded || curriculumCategories.length === 0}
                   onClick={() => setSheet({ kind: 'create', defaultCategoryId: categoryParam })}
                 >
                   <Plus aria-hidden="true" size={16} />
                   เพิ่มรายวิชาใหม่
+                </Button>
+              )}
+              {inScope && loaded && tab === 'structure' && (
+                <Button
+                  type="button"
+                  variant={showCategoryForm ? 'outline' : 'default'}
+                  className="h-11 gap-1.5 px-4"
+                  onClick={() => setShowCategoryForm((open) => !open)}
+                >
+                  {showCategoryForm ? (
+                    'ยกเลิก'
+                  ) : (
+                    <>
+                      <Plus aria-hidden="true" size={16} />
+                      เพิ่มหมวดวิชา
+                    </>
+                  )}
                 </Button>
               )}
             </div>
@@ -502,7 +520,7 @@ function StaffCurriculumContent() {
                       </Select>
                     </label>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 empty:hidden">
                     {filtered && (
                       <Button
                         type="button"
@@ -520,21 +538,6 @@ function StaffCurriculumContent() {
                         ล้างตัวกรอง
                       </Button>
                     )}
-                    <Button
-                      type="button"
-                      variant={showCategoryForm ? 'outline' : 'default'}
-                      className="h-11 gap-1.5 px-4"
-                      onClick={() => setShowCategoryForm((open) => !open)}
-                    >
-                      {showCategoryForm ? (
-                        'ยกเลิก'
-                      ) : (
-                        <>
-                          <Plus aria-hidden="true" size={16} />
-                          เพิ่มหมวดวิชา
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
