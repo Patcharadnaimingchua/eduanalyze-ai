@@ -161,7 +161,7 @@ function StaffDashboardContent() {
         title: `วิชาที่ยังไม่มีอาจารย์ผู้รับผิดชอบ ${missing.length} วิชา`,
         description:
           inCurricula > 1
-            ? `อยู่ใน ${inCurricula} หลักสูตร ปุ่มนี้เปิดหลักสูตรแรกที่มีวิชาเข้าข่าย`
+            ? `อยู่ใน ${inCurricula} หลักสูตร ไปที่หลักสูตรที่มีวิชารอมอบหมาย`
             : 'เปิดหน้าหลักสูตรเพื่อมอบหมายอาจารย์ผู้รับผิดชอบวิชา',
         action: {
           href: `/staff/curriculum?curriculumId=${firstCurriculum?.id ?? ''}&instructor=none`,

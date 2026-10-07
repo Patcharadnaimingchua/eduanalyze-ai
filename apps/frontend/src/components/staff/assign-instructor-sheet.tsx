@@ -46,11 +46,7 @@ export function AssignInstructorSheet({
 
   // Flow that writes: POST /course-instructors
   async function assign() {
-    if (!course) return;
-    if (!userId) {
-      setError('กรุณาเลือกอาจารย์ผู้รับผิดชอบวิชา');
-      return;
-    }
+    if (!course || !userId) return;
     setBusy(true);
     setError(null);
     try {
@@ -94,9 +90,20 @@ export function AssignInstructorSheet({
           emptyText="ไม่พบอาจารย์ที่ยังไม่ได้รับมอบหมาย"
           aria-label="เลือกอาจารย์ผู้รับผิดชอบวิชา"
         />
+        {!userId && (
+          <p id="assign-hint" className="text-sm text-muted-foreground">
+            เลือกอาจารย์ก่อน ปุ่ม “มอบหมาย” จึงจะกดได้
+          </p>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" className="h-11 px-5" disabled={busy} onClick={assign}>
+        <Button
+          type="button"
+          className="h-11 px-5"
+          disabled={busy || !userId}
+          aria-describedby={userId ? undefined : 'assign-hint'}
+          onClick={assign}
+        >
           {busy ? 'กำลังบันทึก...' : 'มอบหมาย'}
         </Button>
         <Button type="button" variant="outline" className="h-11 px-5" onClick={onClose}>
