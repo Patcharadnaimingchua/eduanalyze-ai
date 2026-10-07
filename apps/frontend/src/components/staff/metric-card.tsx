@@ -9,12 +9,15 @@ export function MetricCard({
   value,
   unit,
   note,
+  visual,
 }: Readonly<{
   icon: LucideIcon;
   label: string;
   value: ReactNode;
   unit?: string;
   note: ReactNode;
+  // Optional ring beside the figure; the figure and the note stay as text.
+  visual?: ReactNode;
 }>) {
   return (
     <Card className="flex flex-col gap-3 p-5">
@@ -24,10 +27,15 @@ export function MetricCard({
           <Icon aria-hidden="true" size={18} className="text-brand" />
         </span>
       </div>
-      <p className="break-words text-3xl font-bold tabular-nums text-primary">
-        {value}
-        {unit && <span className="ml-1.5 text-base font-medium text-muted-foreground">{unit}</span>}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="break-words text-3xl font-bold tabular-nums text-primary">
+          {value}
+          {unit && (
+            <span className="ml-1.5 text-base font-medium text-muted-foreground">{unit}</span>
+          )}
+        </p>
+        {visual}
+      </div>
       <p className="break-words rounded-md bg-slate-50 px-3 py-2 text-sm text-muted-foreground">
         {note}
       </p>

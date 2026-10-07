@@ -33,12 +33,14 @@ import {
 } from '@/lib/course-snapshot';
 import { yearLevelLabel } from '@/lib/course-timeline-summary';
 import { formatPercent } from '@/lib/format-percent';
+import { showAchievementRing } from '@/lib/progress-ring-geometry';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { buildCourseOverviews, formatGpa, type OverviewStatus } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { PageSection } from '@/components/layout/page-section';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { AnimatedNumber } from '@/components/ui/animated-number';
+import { AnimatedRing } from '@/components/ui/animated-ring';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -272,27 +274,36 @@ function SummarySection({ snapshot, termLabel }: Readonly<{ snapshot: CourseSnap
       </div>
       <div className="space-y-5 p-5">
         <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-8">
-          <div className="space-y-3">
-            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-6xl font-bold leading-none tabular-nums text-primary">
-                {level === 'ok' ? (
-                  <AnimatedNumber
-                    value={stats.achievedPercent}
-                    format={(n) => formatShare(n, target)}
-                  />
-                ) : (
-                  formatShare(stats.achievedPercent, target)
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+            <div className="space-y-3">
+              <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="text-6xl font-bold leading-none tabular-nums text-primary">
+                  {level === 'ok' ? (
+                    <AnimatedNumber
+                      value={stats.achievedPercent}
+                      format={(n) => formatShare(n, target)}
+                    />
+                  ) : (
+                    formatShare(stats.achievedPercent, target)
+                  )}
+                </span>
+                <span className="text-base font-medium text-muted-foreground">ได้ B ขึ้นไป</span>
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {level === 'insufficient' ? <SparseBadge>{SPARSE_SUMMARY}</SparseBadge> : <StatusOf status={status} />}
+                {level === 'low' && <LowSampleTag counted={stats.counted} />}
+                {target !== null && level !== 'insufficient' && (
+                  <span className="text-sm text-muted-foreground">(เป้าหมาย {formatPercent(target)})</span>
                 )}
-              </span>
-              <span className="text-base font-medium text-muted-foreground">ได้ B ขึ้นไป</span>
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              {level === 'insufficient' ? <SparseBadge>{SPARSE_SUMMARY}</SparseBadge> : <StatusOf status={status} />}
-              {level === 'low' && <LowSampleTag counted={stats.counted} />}
-              {target !== null && level !== 'insufficient' && (
-                <span className="text-sm text-muted-foreground">(เป้าหมาย {formatPercent(target)})</span>
-              )}
+              </div>
             </div>
+            {showAchievementRing(stats.counted, stats.achievedPercent) && (
+              <AnimatedRing percent={stats.achievedPercent} goal={target}>
+                <span className="text-center text-xs font-medium leading-tight text-muted-foreground">
+                  B<br />ขึ้นไป
+                </span>
+              </AnimatedRing>
+            )}
           </div>
           <div className="space-y-3 border-brand lg:border-l-4 lg:pl-5">
             <p className="text-sm font-medium text-primary">{summaryLine(snapshot)}</p>

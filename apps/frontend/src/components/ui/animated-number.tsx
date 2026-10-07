@@ -1,18 +1,7 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { COUNT_UP_MS, isCountable, numberText } from '@/lib/animated-number';
-import { useCountUp } from '@/lib/use-count-up';
-
-const QUERY = '(prefers-reduced-motion: reduce)';
-
-function subscribe(onChange: () => void) {
-  const media = window.matchMedia(QUERY);
-  media.addEventListener('change', onChange);
-  return () => media.removeEventListener('change', onChange);
-}
-
-const prefersReducedMotion = () => window.matchMedia(QUERY).matches;
+import { COUNT_UP_MS, numberText } from '@/lib/animated-number';
+import { useCountOnce } from '@/lib/use-count-once';
 
 // A figure that counts up once when it first appears. After that, and for a
 // missing value, it is plain text. Under reduced motion it is the final value
@@ -30,17 +19,8 @@ export function AnimatedNumber({
   fallback?: string;
   duration?: number;
 }>) {
-  const countable = isCountable(value);
-  const reduced = useSyncExternalStore(subscribe, prefersReducedMotion, () => false);
-  const counted = useCountUp(countable ? value : 0, { duration, decimals });
-  const [settled, setSettled] = useState(false);
-
-  useEffect(() => {
-    if (countable && counted === value) setSettled(true);
-  }, [countable, counted, value]);
-
-  const animating = countable && !reduced && !settled;
-  const { final, shown } = numberText(value, animating ? counted : (value ?? 0), format, fallback);
+  const current = useCountOnce(value, { duration, decimals });
+  const { final, shown } = numberText(value, current ?? 0, format, fallback);
 
   if (final === shown) return <>{final}</>;
   return (

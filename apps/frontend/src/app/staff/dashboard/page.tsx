@@ -12,6 +12,7 @@ import {
   fetchStaffYearLevels,
 } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
+import { countShare } from '@/lib/progress-ring-geometry';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -37,6 +38,7 @@ import {
 } from '@/components/staff/staff-status';
 import { YEAR_LEVELS, yearInfoFrom } from '@/components/staff/year-info';
 import { AnimatedNumber } from '@/components/ui/animated-number';
+import { AnimatedRing } from '@/components/ui/animated-ring';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -269,7 +271,20 @@ function StaffDashboardContent() {
               icon={ClipboardCheck}
               label="มีผลการเรียน"
               value={<AnimatedNumber value={view.summary.withRecords} />}
-              unit="คน"
+              unit={`คน จาก ${view.summary.active} คน`}
+              visual={
+                countShare(view.summary.withRecords, view.summary.active) === null ? undefined : (
+                  <AnimatedRing
+                    percent={countShare(view.summary.withRecords, view.summary.active) ?? 0}
+                    size={64}
+                    strokeWidth={7}
+                  >
+                    <span className="text-[11px] font-semibold tabular-nums text-primary">
+                      {view.summary.withRecords}/{view.summary.active}
+                    </span>
+                  </AnimatedRing>
+                )
+              }
               note={`ยังไม่มีข้อมูล ${view.summary.byStatus.NO_DATA} คน (${sharePercent(view.summary.byStatus.NO_DATA, view.summary.active)})`}
             />
           </Reveal>

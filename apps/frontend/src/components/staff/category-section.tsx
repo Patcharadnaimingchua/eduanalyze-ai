@@ -17,7 +17,9 @@ import {
 } from '@/lib/validation/curriculum-requirement.schema';
 import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 import { useToast } from '@/lib/toast-context';
+import { creditShare } from '@/lib/progress-ring-geometry';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AnimatedRing } from '@/components/ui/animated-ring';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -62,6 +64,7 @@ export function CategorySection({
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const reading = requirementReading(block);
+  const share = creditShare(block.credits, requirement?.minCredits);
 
   const form = useForm<CurriculumRequirementFormValues>({
     resolver: zodResolver(curriculumRequirementSchema),
@@ -148,22 +151,31 @@ export function CategorySection({
             </p>
           </div>
           {reading && (
-            <span
-              className={`inline-flex min-h-7 items-start gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${
-                reading.enough
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-amber-200 bg-amber-50 text-amber-700'
-              }`}
-            >
-              {reading.enough ? (
-                <CheckCircle2 aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-              ) : (
-                <AlertTriangle aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+            <div className="flex flex-wrap items-center gap-3">
+              {share !== null && requirement && (
+                <AnimatedRing percent={share} size={56} strokeWidth={6}>
+                  <span className="text-[10px] font-semibold tabular-nums text-primary">
+                    {block.credits}/{requirement.minCredits}
+                  </span>
+                </AnimatedRing>
               )}
-              <span className="break-words">
-                {reading.text} ({reading.enough ? 'ครบตามเกณฑ์' : 'ยังไม่ครบตามเกณฑ์'})
+              <span
+                className={`inline-flex min-h-7 items-start gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${
+                  reading.enough
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-700'
+                }`}
+              >
+                {reading.enough ? (
+                  <CheckCircle2 aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <AlertTriangle aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+                )}
+                <span className="break-words">
+                  {reading.text} ({reading.enough ? 'ครบตามเกณฑ์' : 'ยังไม่ครบตามเกณฑ์'})
+                </span>
               </span>
-            </span>
+            </div>
           )}
         </div>
 
