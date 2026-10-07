@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { isAxiosError } from "axios";
-import { Mail, Plus } from "lucide-react";
-import type { StudentInvitationListEntry } from "@eduanalyze-ai/shared-types";
-import { resendStudentInvitation } from "@/lib/api/staff";
-import { useToast } from "@/lib/toast-context";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
+import { useState } from 'react';
+import { isAxiosError } from 'axios';
+import { Mail, Plus } from 'lucide-react';
+import type { StudentInvitationListEntry } from '@eduanalyze-ai/shared-types';
+import { resendStudentInvitation } from '@/lib/api/staff';
+import { useToast } from '@/lib/toast-context';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 function formatExpiry(iso: string): string {
-  return new Date(iso).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  return new Date(iso).toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 }
 
@@ -37,8 +37,8 @@ export function StudentInvitationList({
     } catch (error) {
       toast.error(
         isAxiosError(error) && error.response?.status === 404
-          ? "ไม่พบคำเชิญนี้แล้ว — อาจถูกยกเลิกหรือลงทะเบียนไปแล้ว"
-          : "ส่งคำเชิญไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+          ? 'ไม่พบคำเชิญนี้แล้ว — อาจถูกยกเลิกหรือลงทะเบียนไปแล้ว'
+          : 'ส่งคำเชิญไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
       );
     } finally {
       setResendingId(null);
@@ -76,7 +76,7 @@ export function StudentInvitationList({
       onClick={() => handleResend(inv.id, inv.email)}
     >
       <Mail aria-hidden="true" className="h-4 w-4" />
-      {resendingId === inv.id ? "กำลังส่ง..." : "ส่งอีกครั้ง"}
+      {resendingId === inv.id ? 'กำลังส่ง...' : 'ส่งอีกครั้ง'}
       <span className="sr-only"> ให้ {inv.email}</span>
     </Button>
   );
@@ -96,21 +96,12 @@ export function StudentInvitationList({
         </thead>
         <tbody>
           {invitations.map((inv) => (
-            <tr
-              key={inv.id}
-              className="border-b border-slate-100 align-middle hover:bg-slate-50"
-            >
-              <td className="px-3 py-3 font-semibold tabular-nums">
-                {inv.studentCode}
-              </td>
+            <tr key={inv.id} className="border-b border-slate-100 align-middle hover:bg-slate-50">
+              <td className="px-3 py-3 font-semibold tabular-nums">{inv.studentCode}</td>
               <td className="break-words px-3 py-3">{inv.fullName}</td>
-              <td className="break-all px-3 py-3 text-muted-foreground">
-                {inv.email}
-              </td>
+              <td className="break-all px-3 py-3 text-muted-foreground">{inv.email}</td>
               <td className="px-3 py-3">{inv.program.code}</td>
-              <td className="px-3 py-3 tabular-nums">
-                {formatExpiry(inv.expiresAt)}
-              </td>
+              <td className="px-3 py-3 tabular-nums">{formatExpiry(inv.expiresAt)}</td>
               <td className="px-3 py-3">{resendButton(inv)}</td>
             </tr>
           ))}
@@ -119,16 +110,11 @@ export function StudentInvitationList({
 
       <ul className="space-y-3 md:hidden">
         {invitations.map((inv) => (
-          <li
-            key={inv.id}
-            className="space-y-3 rounded-lg border border-slate-200 bg-card p-4"
-          >
+          <li key={inv.id} className="space-y-3 rounded-lg border border-slate-200 bg-card p-4">
             <div>
               <p className="font-semibold tabular-nums">{inv.studentCode}</p>
               <p className="break-words">{inv.fullName}</p>
-              <p className="break-all text-sm text-muted-foreground">
-                {inv.email}
-              </p>
+              <p className="break-all text-sm text-muted-foreground">{inv.email}</p>
             </div>
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>

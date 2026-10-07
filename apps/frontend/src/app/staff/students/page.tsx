@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { Suspense, useCallback, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
-import { fetchPrograms } from "@/lib/api/organization";
-import { fetchStaffStudentRisk, fetchStaffYearLevels } from "@/lib/api/staff";
-import { usePagination } from "@/lib/use-pagination";
-import { useAuth } from "@/lib/auth-context";
-import { cn } from "@/lib/utils";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { RequireRole } from "@/components/auth/require-role";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLoadError } from "@/components/layout/page-states";
-import { Reveal } from "@/components/layout/reveal";
-import { StaffPagination } from "@/components/staff/staff-pagination";
-import { StaffStudentList } from "@/components/staff/staff-student-list";
+import { Suspense, useCallback, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { Search } from 'lucide-react';
+import { fetchPrograms } from '@/lib/api/organization';
+import { fetchStaffStudentRisk, fetchStaffYearLevels } from '@/lib/api/staff';
+import { usePagination } from '@/lib/use-pagination';
+import { useAuth } from '@/lib/auth-context';
+import { cn } from '@/lib/utils';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
+import { StaffPagination } from '@/components/staff/staff-pagination';
+import { StaffStudentList } from '@/components/staff/staff-student-list';
 import {
   SORT_LABELS,
   sortRows,
@@ -24,35 +24,25 @@ import {
   toRows,
   type SortKey,
   type StaffStatusKey,
-} from "@/components/staff/staff-status";
-import { statusLabel } from "@/components/staff/status-badge";
-import { StudentsTabs } from "@/components/staff/students-tabs";
-import {
-  YEAR_LEVELS,
-  yearInfoFrom,
-  yearLevelTitle,
-} from "@/components/staff/year-info";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+} from '@/components/staff/staff-status';
+import { statusLabel } from '@/components/staff/status-badge';
+import { StudentsTabs } from '@/components/staff/students-tabs';
+import { YEAR_LEVELS, yearInfoFrom, yearLevelTitle } from '@/components/staff/year-info';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/select';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 // Radix reserves '' for "no selection", so "all" needs a sentinel of its own.
-const ALL = "ALL";
+const ALL = 'ALL';
 // Button order follows the design: the calm statuses first, suspended last.
-const BUTTON_ORDER: StaffStatusKey[] = [
-  "NORMAL",
-  "WATCH",
-  "CRITICAL",
-  "NO_DATA",
-  "SUSPENDED",
-];
+const BUTTON_ORDER: StaffStatusKey[] = ['NORMAL', 'WATCH', 'CRITICAL', 'NO_DATA', 'SUSPENDED'];
 const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[];
 
 export default function StaffStudentsPage() {
@@ -87,20 +77,19 @@ function StaffStudentsContent() {
   // Filters live only in the URL so a reload, a Back from a student's page or
   // a link from the overview lands on the same view. replace, not push: a
   // filter change should not pile up in history.
-  const search = searchParams.get("q") ?? "";
-  const status = searchParams.get("risk") ?? ALL;
-  const programFilter = searchParams.get("program") ?? ALL;
-  const admissionFilter = searchParams.get("year") ?? ALL;
-  const levelFilter = searchParams.get("level") ?? ALL;
-  const sortParam = searchParams.get("sort") as SortKey | null;
-  const sortKey: SortKey =
-    sortParam && SORT_KEYS.includes(sortParam) ? sortParam : "severity";
+  const search = searchParams.get('q') ?? '';
+  const status = searchParams.get('risk') ?? ALL;
+  const programFilter = searchParams.get('program') ?? ALL;
+  const admissionFilter = searchParams.get('year') ?? ALL;
+  const levelFilter = searchParams.get('level') ?? ALL;
+  const sortParam = searchParams.get('sort') as SortKey | null;
+  const sortKey: SortKey = sortParam && SORT_KEYS.includes(sortParam) ? sortParam : 'severity';
 
   const updateParams = useCallback(
     (changes: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === "" || value === ALL) params.delete(key);
+        if (value === null || value === '' || value === ALL) params.delete(key);
         else params.set(key, value);
       }
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -109,39 +98,29 @@ function StaffStudentsContent() {
   );
 
   const studentsQuery = useQuery({
-    queryKey: ["staff-student-risk"],
+    queryKey: ['staff-student-risk'],
     queryFn: fetchStaffStudentRisk,
   });
   const yearsQuery = useQuery({
-    queryKey: ["staff-year-levels"],
+    queryKey: ['staff-year-levels'],
     queryFn: fetchStaffYearLevels,
   });
   const programsQuery = useQuery({
-    queryKey: ["programs"],
+    queryKey: ['programs'],
     queryFn: fetchPrograms,
   });
 
   const allRows = useMemo(
-    () =>
-      toRows(studentsQuery.data ?? [], yearInfoFrom(yearsQuery.data).levelById),
+    () => toRows(studentsQuery.data ?? [], yearInfoFrom(yearsQuery.data).levelById),
     [studentsQuery.data, yearsQuery.data],
   );
   const admissionYears = useMemo(
-    () =>
-      [...new Set(allRows.map((row) => row.admissionYear))].sort(
-        (a, b) => b - a,
-      ),
+    () => [...new Set(allRows.map((row) => row.admissionYear))].sort((a, b) => b - a),
     [allRows],
   );
-  const programIds = useMemo(
-    () => [...new Set(allRows.map((row) => row.programId))],
-    [allRows],
-  );
+  const programIds = useMemo(() => [...new Set(allRows.map((row) => row.programId))], [allRows]);
   const programNames = useMemo(
-    () =>
-      new Map(
-        (programsQuery.data ?? []).map((program) => [program.id, program.name]),
-      ),
+    () => new Map((programsQuery.data ?? []).map((program) => [program.id, program.name])),
     [programsQuery.data],
   );
 
@@ -151,10 +130,9 @@ function StaffStudentsContent() {
     return allRows.filter(
       (row) =>
         (programFilter === ALL || row.programId === programFilter) &&
-        (admissionFilter === ALL ||
-          row.admissionYear === Number(admissionFilter)) &&
+        (admissionFilter === ALL || row.admissionYear === Number(admissionFilter)) &&
         (levelFilter === ALL || row.yearLevel === Number(levelFilter)) &&
-        (term === "" ||
+        (term === '' ||
           row.fullName.toLowerCase().includes(term) ||
           row.studentCode.toLowerCase().includes(term)),
     );
@@ -173,7 +151,7 @@ function StaffStudentsContent() {
   const pagination = usePagination(
     shown,
     pageSize,
-    `${shown.length}|${shown[0]?.studentProfileId ?? ""}|${sortKey}|${pageSize}`,
+    `${shown.length}|${shown[0]?.studentProfileId ?? ''}|${sortKey}|${pageSize}`,
   );
 
   if (!user) {
@@ -188,23 +166,19 @@ function StaffStudentsContent() {
   }
 
   const statusButtons: { key: string; label: string; count: number }[] = [
-    { key: ALL, label: "ทั้งหมด", count: beforeStatus.length },
+    { key: ALL, label: 'ทั้งหมด', count: beforeStatus.length },
     ...BUTTON_ORDER.map((key) => ({
       key,
       label: statusLabel(key),
       count:
-        key === "SUSPENDED"
+        key === 'SUSPENDED'
           ? summary.suspended
-          : summary.byStatus[key as Exclude<StaffStatusKey, "SUSPENDED">],
+          : summary.byStatus[key as Exclude<StaffStatusKey, 'SUSPENDED'>],
     })),
   ];
 
   return (
-    <DashboardShell
-      role="STAFF"
-      identityLabel={user.email}
-      fullName={user.fullName}
-    >
+    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
           title="นักศึกษา"
@@ -238,13 +212,8 @@ function StaffStudentsContent() {
                 </span>
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
-                  ชั้นปี
-                </span>
-                <Select
-                  value={levelFilter}
-                  onValueChange={(v) => updateParams({ level: v })}
-                >
+                <span className="text-xs font-medium text-muted-foreground">ชั้นปี</span>
+                <Select value={levelFilter} onValueChange={(v) => updateParams({ level: v })}>
                   <SelectTrigger className="h-11" aria-label="ชั้นปี">
                     <SelectValue />
                   </SelectTrigger>
@@ -259,14 +228,10 @@ function StaffStudentsContent() {
                 </Select>
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
-                  เรียงตาม
-                </span>
+                <span className="text-xs font-medium text-muted-foreground">เรียงตาม</span>
                 <Select
                   value={sortKey}
-                  onValueChange={(v) =>
-                    updateParams({ sort: v === "severity" ? null : v })
-                  }
+                  onValueChange={(v) => updateParams({ sort: v === 'severity' ? null : v })}
                 >
                   <SelectTrigger className="h-11" aria-label="เรียงตาม">
                     <SelectValue />
@@ -282,13 +247,8 @@ function StaffStudentsContent() {
               </label>
               {programIds.length > 1 && (
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    สาขา
-                  </span>
-                  <Select
-                    value={programFilter}
-                    onValueChange={(v) => updateParams({ program: v })}
-                  >
+                  <span className="text-xs font-medium text-muted-foreground">สาขา</span>
+                  <Select value={programFilter} onValueChange={(v) => updateParams({ program: v })}>
                     <SelectTrigger className="h-11" aria-label="สาขา">
                       <SelectValue />
                     </SelectTrigger>
@@ -304,13 +264,8 @@ function StaffStudentsContent() {
                 </label>
               )}
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
-                  ปีที่เข้าศึกษา
-                </span>
-                <Select
-                  value={admissionFilter}
-                  onValueChange={(v) => updateParams({ year: v })}
-                >
+                <span className="text-xs font-medium text-muted-foreground">ปีที่เข้าศึกษา</span>
+                <Select value={admissionFilter} onValueChange={(v) => updateParams({ year: v })}>
                   <SelectTrigger className="h-11" aria-label="ปีที่เข้าศึกษา">
                     <SelectValue />
                   </SelectTrigger>
@@ -326,11 +281,7 @@ function StaffStudentsContent() {
               </label>
             </div>
 
-            <div
-              role="group"
-              aria-label="จำแนกตามสถานะทางวิชาการ"
-              className="flex flex-wrap gap-2"
-            >
+            <div role="group" aria-label="จำแนกตามสถานะทางวิชาการ" className="flex flex-wrap gap-2">
               {statusButtons.map(({ key, label, count }) => {
                 const on = status === key;
                 return (
@@ -340,17 +291,17 @@ function StaffStudentsContent() {
                     aria-pressed={on}
                     onClick={() => updateParams({ risk: key })}
                     className={cn(
-                      "inline-flex min-h-11 items-center gap-2 rounded border px-3.5 text-sm font-semibold transition motion-reduce:transition-none",
+                      'inline-flex min-h-11 items-center gap-2 rounded border px-3.5 text-sm font-semibold transition motion-reduce:transition-none',
                       on
-                        ? "border-brand bg-brand text-brand-foreground"
-                        : "border-slate-300 bg-card text-primary hover:bg-slate-50",
+                        ? 'border-brand bg-brand text-brand-foreground'
+                        : 'border-slate-300 bg-card text-primary hover:bg-slate-50',
                     )}
                   >
                     {label}
                     <span
                       className={cn(
-                        "tabular-nums text-xs",
-                        on ? "opacity-90" : "text-muted-foreground",
+                        'tabular-nums text-xs',
+                        on ? 'opacity-90' : 'text-muted-foreground',
                       )}
                     >
                       {count}
@@ -361,19 +312,14 @@ function StaffStudentsContent() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              พบ{" "}
-              <span className="font-semibold tabular-nums text-primary">
-                {shown.length}
-              </span>{" "}
-              คน (ใช้งาน{" "}
-              <span className="tabular-nums">{shownSummary.active}</span> คน,
-              ระงับ{" "}
+              พบ <span className="font-semibold tabular-nums text-primary">{shown.length}</span> คน
+              (ใช้งาน <span className="tabular-nums">{shownSummary.active}</span> คน, ระงับ{' '}
               <span className="tabular-nums">{shownSummary.suspended}</span> คน)
             </p>
             <p className="text-xs text-muted-foreground">
-              เร่งด่วน = มีรายวิชาที่ได้เกรด D+ D F หรือ U · เฝ้าระวัง =
-              มีรายวิชาที่ได้เกรด C · ปกติ = ไม่มีรายวิชาที่ได้เกรด C
-              หรือต่ำกว่า · ยังไม่มีข้อมูล = ยังไม่มีผลการเรียนที่นำมาประเมิน
+              เร่งด่วน = มีรายวิชาที่ได้เกรด D+ D F หรือ U · เฝ้าระวัง = มีรายวิชาที่ได้เกรด C ·
+              ปกติ = ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า · ยังไม่มีข้อมูล =
+              ยังไม่มีผลการเรียนที่นำมาประเมิน
             </p>
           </CardContent>
         </Card>
@@ -387,16 +333,14 @@ function StaffStudentsContent() {
             </CardContent>
           </Card>
         )}
-        {studentsQuery.isError && (
-          <PageLoadError onRetry={() => studentsQuery.refetch()} />
-        )}
+        {studentsQuery.isError && <PageLoadError onRetry={() => studentsQuery.refetch()} />}
         {studentsQuery.data && (
           <Card>
             <CardContent className="p-0 md:p-0">
               <div className="p-4 md:p-0">
                 <StaffStudentList
                   rows={pagination.pageRows}
-                  programName={(id) => programNames.get(id) ?? "—"}
+                  programName={(id) => programNames.get(id) ?? '—'}
                 />
               </div>
               <div className="px-4 pb-4 md:px-5">

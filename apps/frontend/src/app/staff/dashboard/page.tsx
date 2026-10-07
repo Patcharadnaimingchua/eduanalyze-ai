@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ClipboardCheck, Star, Users } from "lucide-react";
-import { fetchCourses } from "@/lib/api/academic-record";
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ClipboardCheck, Star, Users } from 'lucide-react';
+import { fetchCourses } from '@/lib/api/academic-record';
 import {
   fetchCourseInstructors,
   fetchStaffOverview,
   fetchStaffStudentRisk,
   fetchStaffYearLevels,
-} from "@/lib/api/staff";
-import { useAuth } from "@/lib/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { RequireRole } from "@/components/auth/require-role";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLoadError } from "@/components/layout/page-states";
-import { Reveal } from "@/components/layout/reveal";
-import { MetricCard } from "@/components/staff/metric-card";
+} from '@/lib/api/staff';
+import { useAuth } from '@/lib/auth-context';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
+import { MetricCard } from '@/components/staff/metric-card';
 import {
   CHECK_ICONS,
   OverviewChecklist,
   type ChecklistItem,
-} from "@/components/staff/overview-checklist";
-import { OverviewStatusBreakdown } from "@/components/staff/overview-status-breakdown";
-import { OverviewYearTable } from "@/components/staff/overview-year-table";
+} from '@/components/staff/overview-checklist';
+import { OverviewStatusBreakdown } from '@/components/staff/overview-status-breakdown';
+import { OverviewYearTable } from '@/components/staff/overview-year-table';
 import {
   coursesWithoutInstructor,
   readGroupGpa,
@@ -32,19 +32,19 @@ import {
   summarizeByYearLevel,
   summarizeStudents,
   toRows,
-} from "@/components/staff/staff-status";
-import { YEAR_LEVELS, yearInfoFrom } from "@/components/staff/year-info";
-import { Card, CardContent } from "@/components/ui/card";
+} from '@/components/staff/staff-status';
+import { YEAR_LEVELS, yearInfoFrom } from '@/components/staff/year-info';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const ALL_CURRICULA = "ALL";
+const ALL_CURRICULA = 'ALL';
 
 export default function StaffDashboardPage() {
   return (
@@ -62,23 +62,23 @@ function StaffDashboardContent() {
 
   // One request each for the whole page; nothing here is fetched per course.
   const studentsQuery = useQuery({
-    queryKey: ["staff-student-risk"],
+    queryKey: ['staff-student-risk'],
     queryFn: fetchStaffStudentRisk,
   });
   const yearsQuery = useQuery({
-    queryKey: ["staff-year-levels"],
+    queryKey: ['staff-year-levels'],
     queryFn: fetchStaffYearLevels,
   });
   const overviewQuery = useQuery({
-    queryKey: ["staff-overview"],
+    queryKey: ['staff-overview'],
     queryFn: fetchStaffOverview,
   });
   const coursesQuery = useQuery({
-    queryKey: ["courses"],
+    queryKey: ['courses'],
     queryFn: fetchCourses,
   });
   const assignmentsQuery = useQuery({
-    queryKey: ["course-instructors"],
+    queryKey: ['course-instructors'],
     queryFn: fetchCourseInstructors,
   });
 
@@ -121,53 +121,45 @@ function StaffDashboardContent() {
     );
   }
 
-  const scopeIds = new Set(
-    scope === ALL_CURRICULA ? curricula.map((c) => c.id) : [scope],
-  );
+  const scopeIds = new Set(scope === ALL_CURRICULA ? curricula.map((c) => c.id) : [scope]);
   const checklist: ChecklistItem[] = [];
   if (view) {
     const { summary } = view;
     if (summary.byStatus.NO_DATA > 0) {
       checklist.push({
-        key: "no-data",
+        key: 'no-data',
         icon: CHECK_ICONS.noData,
         title: `นักศึกษาที่ยังไม่มีข้อมูลผลการเรียน ${summary.byStatus.NO_DATA} คน`,
-        description: "ดูรายชื่อเพื่อตรวจว่ายังไม่ได้บันทึกผลการเรียน",
-        action: { href: "/staff/students?risk=NO_DATA", label: "ดูรายชื่อ" },
+        description: 'ดูรายชื่อเพื่อตรวจว่ายังไม่ได้บันทึกผลการเรียน',
+        action: { href: '/staff/students?risk=NO_DATA', label: 'ดูรายชื่อ' },
       });
     }
     if (summary.byStatus.CRITICAL > 0) {
       checklist.push({
-        key: "critical",
+        key: 'critical',
         icon: CHECK_ICONS.critical,
         title: `นักศึกษาที่อยู่ในระดับเร่งด่วน ${summary.byStatus.CRITICAL} คน`,
-        description: "มีรายวิชาที่ได้เกรด D+ D F หรือ U",
-        action: { href: "/staff/students?risk=CRITICAL", label: "ดูรายชื่อ" },
+        description: 'มีรายวิชาที่ได้เกรด D+ D F หรือ U',
+        action: { href: '/staff/students?risk=CRITICAL', label: 'ดูรายชื่อ' },
       });
     }
   }
   if (coursesQuery.data && assignmentsQuery.data && curricula.length > 0) {
-    const missing = coursesWithoutInstructor(
-      coursesQuery.data,
-      assignmentsQuery.data,
-      scopeIds,
-    );
+    const missing = coursesWithoutInstructor(coursesQuery.data, assignmentsQuery.data, scopeIds);
     if (missing.length > 0) {
-      const firstCurriculum = curricula.find((c) =>
-        missing.some((m) => m.curriculumId === c.id),
-      );
+      const firstCurriculum = curricula.find((c) => missing.some((m) => m.curriculumId === c.id));
       const inCurricula = new Set(missing.map((m) => m.curriculumId)).size;
       checklist.push({
-        key: "no-instructor",
+        key: 'no-instructor',
         icon: CHECK_ICONS.noInstructor,
         title: `วิชาที่ยังไม่มีอาจารย์ผู้รับผิดชอบ ${missing.length} วิชา`,
         description:
           inCurricula > 1
             ? `อยู่ใน ${inCurricula} หลักสูตร ปุ่มนี้เปิดหลักสูตรแรกที่มีวิชาเข้าข่าย`
-            : "เปิดหน้าหลักสูตรเพื่อมอบหมายอาจารย์ผู้รับผิดชอบวิชา",
+            : 'เปิดหน้าหลักสูตรเพื่อมอบหมายอาจารย์ผู้รับผิดชอบวิชา',
         action: {
-          href: `/staff/curriculum?curriculumId=${firstCurriculum?.id ?? ""}&instructor=none`,
-          label: "ดูรายวิชา",
+          href: `/staff/curriculum?curriculumId=${firstCurriculum?.id ?? ''}&instructor=none`,
+          label: 'ดูรายวิชา',
         },
       });
     }
@@ -178,26 +170,19 @@ function StaffDashboardContent() {
   if (withoutClo > 0) {
     // Information only: CLOs are set by ADMIN, so there is nothing for Staff to open.
     checklist.push({
-      key: "no-clo",
+      key: 'no-clo',
       icon: CHECK_ICONS.noClo,
       title: `วิชาที่ยังไม่มี CLO ${withoutClo} วิชา`,
       description:
-        "CLO ของรายวิชากำหนดโดยผู้ดูแลระบบ (ADMIN) หากมีวิชาที่ยังไม่มี CLO กรุณาแจ้งผู้ดูแลระบบให้เพิ่ม",
+        'CLO ของรายวิชากำหนดโดยผู้ดูแลระบบ (ADMIN) หากมีวิชาที่ยังไม่มี CLO กรุณาแจ้งผู้ดูแลระบบให้เพิ่ม',
     });
   }
 
-  const group = view
-    ? readGroupGpa(view.summary.averageGpa, view.summary.withGpa)
-    : null;
-  const loadFailed =
-    studentsQuery.isError || yearsQuery.isError || overviewQuery.isError;
+  const group = view ? readGroupGpa(view.summary.averageGpa, view.summary.withGpa) : null;
+  const loadFailed = studentsQuery.isError || yearsQuery.isError || overviewQuery.isError;
 
   return (
-    <DashboardShell
-      role="STAFF"
-      identityLabel={user.email}
-      fullName={user.fullName}
-    >
+    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
           title="ภาพรวมการศึกษาและผลการเรียน"
@@ -207,21 +192,12 @@ function StaffDashboardContent() {
               <span className="text-xs font-medium text-muted-foreground">
                 หลักสูตรและสาขาวิชาที่ดูแล
               </span>
-              <Select
-                value={scope}
-                onValueChange={setScope}
-                disabled={curricula.length === 0}
-              >
-                <SelectTrigger
-                  className="h-11"
-                  aria-label="เลือกหลักสูตรที่ต้องการดู"
-                >
+              <Select value={scope} onValueChange={setScope} disabled={curricula.length === 0}>
+                <SelectTrigger className="h-11" aria-label="เลือกหลักสูตรที่ต้องการดู">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ALL_CURRICULA}>
-                    ทุกหลักสูตรในความดูแล
-                  </SelectItem>
+                  <SelectItem value={ALL_CURRICULA}>ทุกหลักสูตรในความดูแล</SelectItem>
                   {curricula.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.label}
@@ -271,8 +247,8 @@ function StaffDashboardContent() {
             <MetricCard
               icon={Star}
               label="GPA เฉลี่ย"
-              value={group.value ?? "—"}
-              unit={group.value ? "/ 4.00" : undefined}
+              value={group.value ?? '—'}
+              unit={group.value ? '/ 4.00' : undefined}
               note={group.note}
             />
             <MetricCard

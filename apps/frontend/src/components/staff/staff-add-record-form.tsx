@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { isAxiosError } from "axios";
-import type { CourseListItem } from "@eduanalyze-ai/shared-types";
-import { createCourseRecord } from "@/lib/api/academic-record";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
+import type { CourseListItem } from '@eduanalyze-ai/shared-types';
+import { createCourseRecord } from '@/lib/api/academic-record';
 import {
   courseRecordSchema,
   type CourseRecordFormValues,
-} from "@/lib/validation/course-record.schema";
-import { GRADE_LABELS, GRADE_OPTIONS } from "@/lib/grade-label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from '@/lib/validation/course-record.schema';
+import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -21,15 +21,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { StaffCombobox } from "./staff-combobox";
+} from '@/components/ui/select';
+import { StaffCombobox } from './staff-combobox';
 
 interface SemesterOption {
   id: string;
@@ -57,7 +57,7 @@ export function StaffAddRecordForm({
   const [formKey, setFormKey] = useState(0);
   const form = useForm<CourseRecordFormValues>({
     resolver: zodResolver(courseRecordSchema),
-    defaultValues: { courseId: "", semesterId: "", grade: undefined },
+    defaultValues: { courseId: '', semesterId: '', grade: undefined },
   });
 
   const courseOptions = courses.map((c) => ({
@@ -71,14 +71,14 @@ export function StaffAddRecordForm({
     setServerError(null);
     try {
       const record = await createCourseRecord({ studentProfileId, ...values });
-      form.reset({ courseId: "", semesterId: "", grade: undefined });
+      form.reset({ courseId: '', semesterId: '', grade: undefined });
       setFormKey((key) => key + 1);
       onCreated(record.id);
     } catch (error) {
       setServerError(
         isAxiosError(error) && error.response?.status === 409
-          ? "มีการบันทึกวิชานี้ในภาคเรียนนี้ไว้แล้ว"
-          : "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+          ? 'มีการบันทึกวิชานี้ในภาคเรียนนี้ไว้แล้ว'
+          : 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
       );
     }
   }
@@ -104,10 +104,7 @@ export function StaffAddRecordForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ภาคเรียน</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder="เลือกภาคเรียน" />
@@ -115,11 +112,7 @@ export function StaffAddRecordForm({
                       </FormControl>
                       <SelectContent>
                         {semesterOptions.map((s) => (
-                          <SelectItem
-                            key={s.id}
-                            value={s.id}
-                            className="min-h-11"
-                          >
+                          <SelectItem key={s.id} value={s.id} className="min-h-11">
                             {s.label}
                           </SelectItem>
                         ))}
@@ -157,10 +150,7 @@ export function StaffAddRecordForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>เกรด</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value || undefined}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder="เลือกเกรด" />
@@ -181,14 +171,8 @@ export function StaffAddRecordForm({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="submit"
-                className="h-11 px-5"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting
-                  ? "กำลังบันทึก..."
-                  : "เพิ่มรายวิชา"}
+              <Button type="submit" className="h-11 px-5" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มรายวิชา'}
               </Button>
               <Button
                 type="button"

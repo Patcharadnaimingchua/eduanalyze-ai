@@ -1,15 +1,15 @@
-import Link from "next/link";
-import { Eye, Lock } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { StatusBadge } from "./status-badge";
-import type { StaffStudentRow } from "./staff-status";
-import { NO_DATA_LABEL } from "./student-reading";
+import Link from 'next/link';
+import { Eye, Lock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { StatusBadge } from './status-badge';
+import type { StaffStudentRow } from './staff-status';
+import { NO_DATA_LABEL } from './student-reading';
 
 const DETAIL_BUTTON =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-slate-300 bg-card px-4 text-sm font-semibold text-primary hover:bg-slate-100";
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-slate-300 bg-card px-4 text-sm font-semibold text-primary hover:bg-slate-100';
 const LOCKED_BUTTON =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-dashed border-slate-300 px-4 text-sm text-muted-foreground";
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded border border-dashed border-slate-300 px-4 text-sm text-muted-foreground';
 
 // A suspended student's detail page answers 404, so the action is a note
 // instead of a link.
@@ -23,10 +23,7 @@ function Action({ row }: { row: StaffStudentRow }) {
     );
   }
   return (
-    <Link
-      href={`/staff/students/${row.studentProfileId}`}
-      className={DETAIL_BUTTON}
-    >
+    <Link href={`/staff/students/${row.studentProfileId}`} className={DETAIL_BUTTON}>
       <Eye aria-hidden="true" className="h-4 w-4" />
       ดูรายละเอียด
       <span className="sr-only"> {row.fullName}</span>
@@ -36,12 +33,11 @@ function Action({ row }: { row: StaffStudentRow }) {
 
 // One GPA figure per person and nothing about how many grades are behind it.
 function gpaText(row: StaffStudentRow): string {
-  if (!row.isActive) return "—";
+  if (!row.isActive) return '—';
   return row.gpa === null ? NO_DATA_LABEL : row.gpa.toFixed(2);
 }
 
-const yearText = (row: StaffStudentRow) =>
-  row.yearLevel === null ? "—" : `ปี ${row.yearLevel}`;
+const yearText = (row: StaffStudentRow) => (row.yearLevel === null ? '—' : `ปี ${row.yearLevel}`);
 
 export function StaffStudentList({
   rows,
@@ -78,13 +74,11 @@ export function StaffStudentList({
             <tr
               key={row.studentProfileId}
               className={cn(
-                "border-b border-slate-100 align-middle hover:bg-slate-50",
-                !row.isActive && "text-muted-foreground",
+                'border-b border-slate-100 align-middle hover:bg-slate-50',
+                !row.isActive && 'text-muted-foreground',
               )}
             >
-              <td className="px-3 py-3 font-semibold tabular-nums">
-                {row.studentCode}
-              </td>
+              <td className="px-3 py-3 font-semibold tabular-nums">{row.studentCode}</td>
               <td className="px-3 py-3">
                 <p className="break-words font-semibold">{row.fullName}</p>
                 <p className="break-words text-xs text-muted-foreground">
@@ -92,9 +86,7 @@ export function StaffStudentList({
                 </p>
               </td>
               <td className="px-3 py-3 tabular-nums">{yearText(row)}</td>
-              <td className="px-3 py-3 text-right tabular-nums">
-                {gpaText(row)}
-              </td>
+              <td className="px-3 py-3 text-right tabular-nums">{gpaText(row)}</td>
               <td className="px-3 py-3">
                 <StatusBadge status={row.status} />
               </td>
@@ -111,8 +103,8 @@ export function StaffStudentList({
           <li
             key={row.studentProfileId}
             className={cn(
-              "space-y-3 rounded-lg border border-slate-200 bg-card p-4",
-              !row.isActive && "text-muted-foreground",
+              'space-y-3 rounded-lg border border-slate-200 bg-card p-4',
+              !row.isActive && 'text-muted-foreground',
             )}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">

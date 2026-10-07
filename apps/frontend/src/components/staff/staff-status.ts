@@ -12,9 +12,18 @@ export type StaffStatusKey = StaffRiskKey | 'SUSPENDED';
 export const SUSPENDED_LABEL = 'ระงับ';
 
 // Most urgent first; suspended last because those students are not counted.
-export const STATUS_ORDER: StaffStatusKey[] = ['CRITICAL', 'WATCH', 'NORMAL', 'NO_DATA', 'SUSPENDED'];
+export const STATUS_ORDER: StaffStatusKey[] = [
+  'CRITICAL',
+  'WATCH',
+  'NORMAL',
+  'NO_DATA',
+  'SUSPENDED',
+];
 
-type StatusInput = Pick<StaffStudentRiskEntry, 'isActive' | 'riskLevel' | 'gpa' | 'atRiskCourseCount'>;
+type StatusInput = Pick<
+  StaffStudentRiskEntry,
+  'isActive' | 'riskLevel' | 'gpa' | 'atRiskCourseCount'
+>;
 
 export function staffStatus(student: StatusInput): StaffStatusKey {
   if (!student.isActive) return 'SUSPENDED';
@@ -38,7 +47,12 @@ export interface StudentSummary {
 }
 
 export function summarizeStudents(students: readonly StatusInput[]): StudentSummary {
-  const byStatus: Record<ActiveStatusKey, number> = { CRITICAL: 0, WATCH: 0, NORMAL: 0, NO_DATA: 0 };
+  const byStatus: Record<ActiveStatusKey, number> = {
+    CRITICAL: 0,
+    WATCH: 0,
+    NORMAL: 0,
+    NO_DATA: 0,
+  };
   let suspended = 0;
   let gpaSum = 0;
   let withGpa = 0;
@@ -111,7 +125,8 @@ export const SORT_LABELS: Record<SortKey, string> = {
   gpa: 'GPA (น้อยไปมาก)',
 };
 
-const byCode = (a: StaffStudentRow, b: StaffStudentRow) => a.studentCode.localeCompare(b.studentCode);
+const byCode = (a: StaffStudentRow, b: StaffStudentRow) =>
+  a.studentCode.localeCompare(b.studentCode);
 // Missing values go last whichever way the rest is ordered.
 const byNullable = (a: number | null, b: number | null) =>
   a === b ? 0 : a === null ? 1 : b === null ? -1 : a - b;
@@ -158,9 +173,10 @@ export function coursesWithoutInstructor<C extends { id: string; curriculumId: s
   curriculumIds: ReadonlySet<string>,
 ): C[] {
   const assigned = new Set(assignments.map((assignment) => assignment.courseId));
-  return courses.filter((course) => curriculumIds.has(course.curriculumId) && !assigned.has(course.id));
+  return courses.filter(
+    (course) => curriculumIds.has(course.curriculumId) && !assigned.has(course.id),
+  );
 }
-
 
 // A share of the active students, one decimal. Zero people gives zero, not NaN.
 export function sharePercent(count: number, total: number): string {

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 import {
   AlertTriangle,
   ArrowRight,
@@ -7,8 +7,8 @@ import {
   MinusCircle,
   UserX,
   type LucideIcon,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface ChecklistItem {
   key: string;
@@ -28,9 +28,7 @@ export const CHECK_ICONS = {
 // Rows with a count of zero are not passed in, so an empty list means there is
 // nothing to check. A row without an action is information only: it names
 // something Staff cannot fix themselves.
-export function OverviewChecklist({
-  items,
-}: Readonly<{ items: ChecklistItem[] }>) {
+export function OverviewChecklist({ items }: Readonly<{ items: ChecklistItem[] }>) {
   const actionable = items.filter((item) => item.action).length;
   return (
     <Card>
@@ -47,9 +45,7 @@ export function OverviewChecklist({
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            ไม่มีรายการที่ต้องตรวจสอบในขอบเขตนี้
-          </p>
+          <p className="text-sm text-muted-foreground">ไม่มีรายการที่ต้องตรวจสอบในขอบเขตนี้</p>
         ) : (
           <ul className="space-y-2">
             {items.map(({ key, icon: Icon, title, description, action }) => (
@@ -62,12 +58,8 @@ export function OverviewChecklist({
                     <Icon aria-hidden="true" size={18} className="text-brand" />
                   </span>
                   <div className="min-w-0">
-                    <p className="break-words font-semibold text-primary">
-                      {title}
-                    </p>
-                    <p className="break-words text-sm text-muted-foreground">
-                      {description}
-                    </p>
+                    <p className="break-words font-semibold text-primary">{title}</p>
+                    <p className="break-words text-sm text-muted-foreground">{description}</p>
                   </div>
                 </div>
                 {action ? (

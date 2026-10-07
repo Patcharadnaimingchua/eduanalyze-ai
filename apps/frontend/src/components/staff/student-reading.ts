@@ -55,9 +55,7 @@ export function countGradedByCurriculum(
 }
 
 export type AverageGpaReading =
-  | { kind: 'none'; text: string }
-  | { kind: 'few'; text: string }
-  | { kind: 'ok'; text: string };
+  { kind: 'none'; text: string } | { kind: 'few'; text: string } | { kind: 'ok'; text: string };
 
 // Same threshold as the instructor pages: under INSUFFICIENT_BELOW graded
 // people the average is not shown, since it moves a lot with one student.

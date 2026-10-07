@@ -22,7 +22,10 @@ export function statusLabel(status: StaffStatusKey) {
 }
 
 // Icon + words on every badge, so the status never rests on colour alone.
-export function StatusBadge({ status, className }: Readonly<{ status: StaffStatusKey; className?: string }>) {
+export function StatusBadge({
+  status,
+  className,
+}: Readonly<{ status: StaffStatusKey; className?: string }>) {
   const { label, tone, Icon, className: own } = STATUS_VIEW[status];
   return (
     <span

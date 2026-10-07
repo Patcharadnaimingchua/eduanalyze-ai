@@ -83,6 +83,8 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   return (
     pathname === item.href ||
     (item.href === '/instructor/dashboard' && pathname.startsWith('/instructor/courses/')) ||
-    (item.matchPrefixes ?? []).some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+    (item.matchPrefixes ?? []).some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
   );
 }

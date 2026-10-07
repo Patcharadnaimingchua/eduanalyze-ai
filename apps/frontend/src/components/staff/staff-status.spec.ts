@@ -107,11 +107,19 @@ describe('readGroupGpa', () => {
   });
 
   it('gives no number under 5 people', () => {
-    expect(readGroupGpa(3.1, 4)).toEqual({ kind: 'few', value: null, note: 'ข้อมูลยังน้อย (มี GPA 4 คน)' });
+    expect(readGroupGpa(3.1, 4)).toEqual({
+      kind: 'few',
+      value: null,
+      note: 'ข้อมูลยังน้อย (มี GPA 4 คน)',
+    });
   });
 
   it('gives the number and its base from 5 people', () => {
-    expect(readGroupGpa(2.836, 134)).toEqual({ kind: 'ok', value: '2.84', note: 'เฉลี่ยจาก 134 คนที่มี GPA' });
+    expect(readGroupGpa(2.836, 134)).toEqual({
+      kind: 'ok',
+      value: '2.84',
+      note: 'เฉลี่ยจาก 134 คนที่มี GPA',
+    });
   });
 });
 
@@ -126,7 +134,8 @@ describe('sortRows', () => {
     ],
     new Map(),
   );
-  const codes = (key: Parameters<typeof sortRows>[1]) => sortRows(rows, key).map((r) => r.studentCode);
+  const codes = (key: Parameters<typeof sortRows>[1]) =>
+    sortRows(rows, key).map((r) => r.studentCode);
 
   it('orders by severity then code by default', () => {
     expect(codes('severity')).toEqual(['65002', '65001', '65003', '65004', '65000']);
@@ -142,7 +151,11 @@ describe('sortRows', () => {
 
   it('orders by year level with missing last, then by code', () => {
     const withYears = toRows(
-      [student({ studentCode: '2' }), student({ studentCode: '1' }), student({ studentCode: '3', isActive: false })],
+      [
+        student({ studentCode: '2' }),
+        student({ studentCode: '1' }),
+        student({ studentCode: '3', isActive: false }),
+      ],
       new Map([
         ['s' + (n - 2), 2],
         ['s' + (n - 1), 1],
@@ -155,12 +168,21 @@ describe('sortRows', () => {
 describe('summarizeByYearLevel', () => {
   it('builds each year from the same students and counts the behind-plan ones', () => {
     const list = [student(), student(), student(), student({ isActive: false })];
-    const rows = toRows(list, new Map([[list[0].studentProfileId, 1], [list[1].studentProfileId, 1], [list[2].studentProfileId, 2]]));
+    const rows = toRows(
+      list,
+      new Map([
+        [list[0].studentProfileId, 1],
+        [list[1].studentProfileId, 1],
+        [list[2].studentProfileId, 2],
+      ]),
+    );
     const years = summarizeByYearLevel(rows, new Set([list[1].studentProfileId]), [1, 2, 3, 4]);
     expect(years.map((y) => y.summary.active)).toEqual([2, 1, 0, 0]);
     expect(years[0].behind).toBe(1);
     // Every active student lands in exactly one year, so the table total matches the cards.
-    expect(years.reduce((sum, y) => sum + y.summary.active, 0)).toBe(summarizeStudents(list).active);
+    expect(years.reduce((sum, y) => sum + y.summary.active, 0)).toBe(
+      summarizeStudents(list).active,
+    );
   });
 });
 
@@ -173,7 +195,11 @@ describe('coursesWithoutInstructor', () => {
   ];
 
   it('lists courses of the given curricula that no assignment names', () => {
-    const result = coursesWithoutInstructor(courses, [{ courseId: 'a' }, { courseId: 'a' }], new Set(['C1', 'C2']));
+    const result = coursesWithoutInstructor(
+      courses,
+      [{ courseId: 'a' }, { courseId: 'a' }],
+      new Set(['C1', 'C2']),
+    );
     expect(result.map((c) => c.id)).toEqual(['b', 'c']);
   });
 

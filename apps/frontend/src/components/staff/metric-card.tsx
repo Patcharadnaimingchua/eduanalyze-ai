@@ -28,7 +28,9 @@ export function MetricCard({
         {value}
         {unit && <span className="ml-1.5 text-base font-medium text-muted-foreground">{unit}</span>}
       </p>
-      <p className="break-words rounded-md bg-slate-50 px-3 py-2 text-sm text-muted-foreground">{note}</p>
+      <p className="break-words rounded-md bg-slate-50 px-3 py-2 text-sm text-muted-foreground">
+        {note}
+      </p>
     </Card>
   );
 }

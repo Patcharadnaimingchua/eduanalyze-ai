@@ -24,7 +24,9 @@ export function StudentsTabs({ active, count }: Readonly<{ active: StudentsTab; 
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'inline-flex min-h-11 items-center gap-2 rounded-md px-3.5 text-sm font-semibold transition motion-reduce:transition-none',
-              isActive ? 'bg-brand text-brand-foreground' : 'text-muted-foreground hover:bg-slate-50',
+              isActive
+                ? 'bg-brand text-brand-foreground'
+                : 'text-muted-foreground hover:bg-slate-50',
             )}
           >
             <Icon aria-hidden="true" className="h-4 w-4" />

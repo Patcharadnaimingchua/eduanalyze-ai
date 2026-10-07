@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { Grade } from "@eduanalyze-ai/shared-types";
-import { GRADE_LABELS, GRADE_OPTIONS } from "@/lib/grade-label";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import type { Grade } from '@eduanalyze-ai/shared-types';
+import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 // Staff-sized copy of components/academic-record/grade-select-confirm.tsx
 // (shared with the student timeline and the instructor roster, so left as it
@@ -38,15 +38,10 @@ export function StaffGradeSelect({
     <div className="flex flex-wrap items-center gap-2">
       <Select
         value={value}
-        onValueChange={(next) =>
-          setPending(next === value ? null : (next as Grade))
-        }
+        onValueChange={(next) => setPending(next === value ? null : (next as Grade))}
         disabled={disabled}
       >
-        <SelectTrigger
-          className="h-11 w-28 shrink-0"
-          aria-label={`เกรดของ ${subject}`}
-        >
+        <SelectTrigger className="h-11 w-28 shrink-0" aria-label={`เกรดของ ${subject}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

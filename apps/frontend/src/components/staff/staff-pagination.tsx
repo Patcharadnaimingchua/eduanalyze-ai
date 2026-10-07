@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { pageWindow } from "./page-window";
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { pageWindow } from './page-window';
 
 export const PAGE_SIZES = [10, 25, 50] as const;
 
@@ -39,7 +39,7 @@ export function StaffPagination({
   onPageSizeChange: (size: number) => void;
 }>) {
   if (total === 0) return null;
-  const nav = "h-11 min-w-11 px-3";
+  const nav = 'h-11 min-w-11 px-3';
 
   return (
     <div className="flex flex-col gap-3 pt-4 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
@@ -49,10 +49,7 @@ export function StaffPagination({
         </p>
         <label className="flex items-center gap-2">
           แสดงแถว
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => onPageSizeChange(Number(v))}
-          >
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
             <SelectTrigger className="h-11 w-24" aria-label="จำนวนแถวต่อหน้า">
               <SelectValue />
             </SelectTrigger>
@@ -67,10 +64,7 @@ export function StaffPagination({
         </label>
       </div>
       {pageCount > 1 && (
-        <nav
-          aria-label="เลือกหน้า"
-          className="flex flex-wrap items-center gap-2"
-        >
+        <nav aria-label="เลือกหน้า" className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -90,10 +84,10 @@ export function StaffPagination({
               <Button
                 key={p}
                 type="button"
-                variant={p === page ? "default" : "outline"}
-                className={cn(nav, "tabular-nums")}
+                variant={p === page ? 'default' : 'outline'}
+                className={cn(nav, 'tabular-nums')}
                 aria-label={`หน้า ${p}`}
-                aria-current={p === page ? "page" : undefined}
+                aria-current={p === page ? 'page' : undefined}
                 onClick={() => onPageChange(p)}
               >
                 {p}

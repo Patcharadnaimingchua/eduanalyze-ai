@@ -1,49 +1,45 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
-import { ArrowLeft, Plus, Star } from "lucide-react";
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import { ArrowLeft, Plus, Star } from 'lucide-react';
 import {
   fetchAcademicYears,
   fetchCourses,
   fetchMyGpa,
   fetchSemesters,
-} from "@/lib/api/academic-record";
+} from '@/lib/api/academic-record';
 import {
   fetchCourseRecordsInScope,
   fetchStaffStudentRisk,
   fetchStudentProfile,
-} from "@/lib/api/staff";
-import { fetchCurricula, fetchPrograms } from "@/lib/api/organization";
-import { formatSemesterLabel } from "@/lib/grade-label";
-import { useAuth } from "@/lib/auth-context";
-import { useToast } from "@/lib/toast-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { RequireRole } from "@/components/auth/require-role";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLoadError } from "@/components/layout/page-states";
-import { PageSection } from "@/components/layout/page-section";
-import { Reveal } from "@/components/layout/reveal";
-import { MetricCard } from "@/components/staff/metric-card";
-import { StaffAddRecordForm } from "@/components/staff/staff-add-record-form";
-import { StaffRecordList } from "@/components/staff/staff-record-list";
-import { staffStatus } from "@/components/staff/staff-status";
-import { StatusBadge } from "@/components/staff/status-badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NO_DATA_LABEL } from "@/components/staff/student-reading";
-import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
+} from '@/lib/api/staff';
+import { fetchCurricula, fetchPrograms } from '@/lib/api/organization';
+import { formatSemesterLabel } from '@/lib/grade-label';
+import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
+import { MetricCard } from '@/components/staff/metric-card';
+import { StaffAddRecordForm } from '@/components/staff/staff-add-record-form';
+import { StaffRecordList } from '@/components/staff/staff-record-list';
+import { staffStatus } from '@/components/staff/staff-status';
+import { StatusBadge } from '@/components/staff/status-badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NO_DATA_LABEL } from '@/components/staff/student-reading';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 const TERM_ORDER: Record<string, number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
 
-export default function StaffStudentDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function StaffStudentDetailPage({ params }: { params: { id: string } }) {
   return (
     <ProtectedRoute>
       <RequireRole role="STAFF">
@@ -53,53 +49,49 @@ export default function StaffStudentDetailPage({
   );
 }
 
-function StaffStudentDetailContent({
-  studentProfileId,
-}: {
-  studentProfileId: string;
-}) {
+function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: string }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
 
   const profileQuery = useQuery({
-    queryKey: ["staff-student", studentProfileId],
+    queryKey: ['staff-student', studentProfileId],
     queryFn: () => fetchStudentProfile(studentProfileId),
   });
   const gpaQuery = useQuery({
-    queryKey: ["staff-student-gpa", studentProfileId],
+    queryKey: ['staff-student-gpa', studentProfileId],
     queryFn: () => fetchMyGpa(studentProfileId),
   });
   const recordsQuery = useQuery({
-    queryKey: ["staff-course-records"],
+    queryKey: ['staff-course-records'],
     queryFn: fetchCourseRecordsInScope,
   });
   // Same query key the directory list page uses — resolves from cache when
   // arriving via a "ดูรายละเอียด" link, and gives this page a risk level
   // without a dedicated per-student endpoint.
   const riskQuery = useQuery({
-    queryKey: ["staff-student-risk"],
+    queryKey: ['staff-student-risk'],
     queryFn: fetchStaffStudentRisk,
   });
   const coursesQuery = useQuery({
-    queryKey: ["courses"],
+    queryKey: ['courses'],
     queryFn: fetchCourses,
   });
   const academicYearsQuery = useQuery({
-    queryKey: ["academic-years"],
+    queryKey: ['academic-years'],
     queryFn: fetchAcademicYears,
   });
   const semestersQuery = useQuery({
-    queryKey: ["semesters"],
+    queryKey: ['semesters'],
     queryFn: fetchSemesters,
   });
   const programsQuery = useQuery({
-    queryKey: ["programs"],
+    queryKey: ['programs'],
     queryFn: fetchPrograms,
   });
   const curriculaQuery = useQuery({
-    queryKey: ["curricula"],
+    queryKey: ['curricula'],
     queryFn: fetchCurricula,
   });
 
@@ -126,10 +118,7 @@ function StaffStudentDetailContent({
       });
   }, [semestersQuery.data, yearById]);
   const semesterMap = useMemo(
-    () =>
-      new Map(
-        joinedSemesters.map((s, order) => [s.id, { label: s.label, order }]),
-      ),
+    () => new Map(joinedSemesters.map((s, order) => [s.id, { label: s.label, order }])),
     [joinedSemesters],
   );
 
@@ -145,15 +134,15 @@ function StaffStudentDetailContent({
   );
 
   function handleRecordCreated() {
-    toast.success("เพิ่มรายวิชาแล้ว");
+    toast.success('เพิ่มรายวิชาแล้ว');
     setShowAddForm(false);
     refetchRecords();
   }
 
   function refetchRecords() {
-    queryClient.invalidateQueries({ queryKey: ["staff-course-records"] });
+    queryClient.invalidateQueries({ queryKey: ['staff-course-records'] });
     queryClient.invalidateQueries({
-      queryKey: ["staff-student-gpa", studentProfileId],
+      queryKey: ['staff-student-gpa', studentProfileId],
     });
   }
 
@@ -168,24 +157,14 @@ function StaffStudentDetailContent({
     );
   }
 
-  const forbidden =
-    isAxiosError(profileQuery.error) &&
-    profileQuery.error.response?.status === 403;
+  const forbidden = isAxiosError(profileQuery.error) && profileQuery.error.response?.status === 403;
   const program = programsQuery.data?.find((p) => p.id === profile?.programId);
-  const curriculum = curriculaQuery.data?.find(
-    (c) => c.id === profile?.curriculumId,
-  );
+  const curriculum = curriculaQuery.data?.find((c) => c.id === profile?.curriculumId);
   const gpa = gpaQuery.data;
-  const risk = riskQuery.data?.find(
-    (s) => s.studentProfileId === studentProfileId,
-  );
+  const risk = riskQuery.data?.find((s) => s.studentProfileId === studentProfileId);
 
   return (
-    <DashboardShell
-      role="STAFF"
-      identityLabel={user.email}
-      fullName={user.fullName}
-    >
+    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Link
         href="/staff/students"
         className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
@@ -234,10 +213,7 @@ function StaffStudentDetailContent({
         />
       )}
       {profileQuery.isError && !forbidden && (
-        <PageLoadError
-          message="ไม่พบนักศึกษา"
-          onRetry={() => profileQuery.refetch()}
-        />
+        <PageLoadError message="ไม่พบนักศึกษา" onRetry={() => profileQuery.refetch()} />
       )}
 
       {profile && (
@@ -259,25 +235,15 @@ function StaffStudentDetailContent({
                 <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="text-xs text-muted-foreground">สาขา</dt>
-                    <dd className="break-words text-primary">
-                      {program?.name ?? "—"}
-                    </dd>
+                    <dd className="break-words text-primary">{program?.name ?? '—'}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted-foreground">
-                      ฉบับหลักสูตร
-                    </dt>
-                    <dd className="text-primary">
-                      {curriculum?.version ?? "—"}
-                    </dd>
+                    <dt className="text-xs text-muted-foreground">ฉบับหลักสูตร</dt>
+                    <dd className="text-primary">{curriculum?.version ?? '—'}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted-foreground">
-                      ปีเข้าศึกษา
-                    </dt>
-                    <dd className="tabular-nums text-primary">
-                      {profile.admissionYear}
-                    </dd>
+                    <dt className="text-xs text-muted-foreground">ปีเข้าศึกษา</dt>
+                    <dd className="tabular-nums text-primary">{profile.admissionYear}</dd>
                   </div>
                 </dl>
               </CardContent>
@@ -299,9 +265,7 @@ function StaffStudentDetailContent({
                   {gpaQuery.isLoading ? (
                     <Skeleton className="h-9 w-20" />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {NO_DATA_LABEL}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{NO_DATA_LABEL}</p>
                   )}
                 </CardContent>
               </Card>
@@ -314,12 +278,12 @@ function StaffStudentDetailContent({
               actions={
                 <Button
                   type="button"
-                  variant={showAddForm ? "outline" : "default"}
+                  variant={showAddForm ? 'outline' : 'default'}
                   className="h-11 gap-1.5 px-4"
                   onClick={() => setShowAddForm((open) => !open)}
                 >
                   {showAddForm ? (
-                    "ยกเลิก"
+                    'ยกเลิก'
                   ) : (
                     <>
                       <Plus size={16} />

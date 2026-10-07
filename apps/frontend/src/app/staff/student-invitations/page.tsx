@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 import {
   fetchStaffOverview,
   fetchStaffStudentRisk,
   fetchStudentInvitations,
-} from "@/lib/api/staff";
-import { useAuth } from "@/lib/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { RequireRole } from "@/components/auth/require-role";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { StudentsTabs } from "@/components/staff/students-tabs";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLoadError } from "@/components/layout/page-states";
-import { PageSection } from "@/components/layout/page-section";
-import { Reveal } from "@/components/layout/reveal";
-import { StudentInvitationCsvPanel } from "@/components/staff/student-invitation-csv-panel";
-import { StudentInvitationList } from "@/components/staff/student-invitation-list";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/lib/api/staff';
+import { useAuth } from '@/lib/auth-context';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StudentsTabs } from '@/components/staff/students-tabs';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { PageSection } from '@/components/layout/page-section';
+import { Reveal } from '@/components/layout/reveal';
+import { StudentInvitationCsvPanel } from '@/components/staff/student-invitation-csv-panel';
+import { StudentInvitationList } from '@/components/staff/student-invitation-list';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StaffStudentInvitationsPage() {
   return (
@@ -38,21 +38,21 @@ function StaffStudentInvitationsContent() {
   const [showCsvPanel, setShowCsvPanel] = useState(false);
 
   const overviewQuery = useQuery({
-    queryKey: ["staff-overview"],
+    queryKey: ['staff-overview'],
     queryFn: fetchStaffOverview,
   });
   // Only for the count on the first tab; the other pages already hold this list.
   const studentsQuery = useQuery({
-    queryKey: ["staff-student-risk"],
+    queryKey: ['staff-student-risk'],
     queryFn: fetchStaffStudentRisk,
   });
   const invitationsQuery = useQuery({
-    queryKey: ["student-invitations"],
+    queryKey: ['student-invitations'],
     queryFn: fetchStudentInvitations,
   });
 
   function refetchInvitations() {
-    queryClient.invalidateQueries({ queryKey: ["student-invitations"] });
+    queryClient.invalidateQueries({ queryKey: ['student-invitations'] });
   }
 
   if (!user) {
@@ -67,11 +67,7 @@ function StaffStudentInvitationsContent() {
   }
 
   return (
-    <DashboardShell
-      role="STAFF"
-      identityLabel={user.email}
-      fullName={user.fullName}
-    >
+    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
           title="นักศึกษา"
@@ -79,12 +75,12 @@ function StaffStudentInvitationsContent() {
           actions={
             <Button
               type="button"
-              variant={showCsvPanel ? "outline" : "default"}
+              variant={showCsvPanel ? 'outline' : 'default'}
               className="h-11 gap-1.5 px-4"
               onClick={() => setShowCsvPanel((open) => !open)}
             >
               {showCsvPanel ? (
-                "ยกเลิก"
+                'ยกเลิก'
               ) : (
                 <>
                   <Plus size={16} />
@@ -121,9 +117,7 @@ function StaffStudentInvitationsContent() {
       <Reveal index={1}>
         <PageSection title="คำเชิญที่ค้างอยู่">
           {invitationsQuery.isLoading && <Skeleton className="h-40 w-full" />}
-          {invitationsQuery.isError && (
-            <PageLoadError onRetry={() => invitationsQuery.refetch()} />
-          )}
+          {invitationsQuery.isError && <PageLoadError onRetry={() => invitationsQuery.refetch()} />}
           {invitationsQuery.data && (
             <StudentInvitationList
               invitations={invitationsQuery.data}

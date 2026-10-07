@@ -1,41 +1,35 @@
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { StatusBadge } from "./status-badge";
-import {
-  sharePercent,
-  type StaffStatusKey,
-  type StudentSummary,
-} from "./staff-status";
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { StatusBadge } from './status-badge';
+import { sharePercent, type StaffStatusKey, type StudentSummary } from './staff-status';
 
 const ROWS: {
-  key: Exclude<StaffStatusKey, "SUSPENDED">;
+  key: Exclude<StaffStatusKey, 'SUSPENDED'>;
   rule: string;
   bar: string;
 }[] = [
   {
-    key: "NORMAL",
-    rule: "ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า",
-    bar: "bg-emerald-500",
+    key: 'NORMAL',
+    rule: 'ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า',
+    bar: 'bg-emerald-500',
   },
-  { key: "WATCH", rule: "มีรายวิชาที่ได้เกรด C", bar: "bg-amber-500" },
+  { key: 'WATCH', rule: 'มีรายวิชาที่ได้เกรด C', bar: 'bg-amber-500' },
   {
-    key: "CRITICAL",
-    rule: "มีรายวิชาที่ได้เกรด D+ D F หรือ U",
-    bar: "bg-red-500",
+    key: 'CRITICAL',
+    rule: 'มีรายวิชาที่ได้เกรด D+ D F หรือ U',
+    bar: 'bg-red-500',
   },
   {
-    key: "NO_DATA",
-    rule: "ยังไม่มีผลการเรียนที่นำมาประเมิน",
-    bar: "bg-slate-300",
+    key: 'NO_DATA',
+    rule: 'ยังไม่มีผลการเรียนที่นำมาประเมิน',
+    bar: 'bg-slate-300',
   },
 ];
 
 // The four statuses split the active students, so the bar and the rows add up
 // to the figure on the first card. Suspended students sit below the line.
-export function OverviewStatusBreakdown({
-  summary,
-}: Readonly<{ summary: StudentSummary }>) {
+export function OverviewStatusBreakdown({ summary }: Readonly<{ summary: StudentSummary }>) {
   return (
     <Card>
       <CardHeader>
@@ -50,10 +44,7 @@ export function OverviewStatusBreakdown({
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div
-          aria-hidden="true"
-          className="flex h-3 overflow-hidden rounded-full bg-slate-100"
-        >
+        <div aria-hidden="true" className="flex h-3 overflow-hidden rounded-full bg-slate-100">
           {ROWS.map(({ key, bar }) => (
             <div
               key={key}
@@ -70,14 +61,12 @@ export function OverviewStatusBreakdown({
               <Link
                 href={`/staff/students?risk=${key}`}
                 className={cn(
-                  "flex min-h-11 items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50",
+                  'flex min-h-11 items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50',
                 )}
               >
                 <span className="min-w-0 space-y-1">
                   <StatusBadge status={key} />
-                  <span className="block break-words text-xs text-muted-foreground">
-                    {rule}
-                  </span>
+                  <span className="block break-words text-xs text-muted-foreground">{rule}</span>
                 </span>
                 <span className="shrink-0 text-right">
                   <span className="block text-lg font-semibold tabular-nums text-primary">
@@ -97,8 +86,7 @@ export function OverviewStatusBreakdown({
         >
           <StatusBadge status="SUSPENDED" />
           <span className="text-muted-foreground">
-            พักการเรียน / ระงับ{" "}
-            <span className="tabular-nums">{summary.suspended}</span> คน
+            พักการเรียน / ระงับ <span className="tabular-nums">{summary.suspended}</span> คน
             (ไม่นับรวม)
           </span>
         </Link>

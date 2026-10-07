@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { Check, ChevronDown, Search } from "lucide-react";
-import type { ComboboxOption } from "@/components/ui/combobox";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
+import { Check, ChevronDown, Search } from 'lucide-react';
+import type { ComboboxOption } from '@/components/ui/combobox';
+import { cn } from '@/lib/utils';
 
 interface StaffComboboxProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   options: ComboboxOption[];
@@ -18,25 +18,22 @@ interface StaffComboboxProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 // Same searchable select as components/ui/combobox.tsx (shared with other
 // roles, so left alone), at the Staff pages' size: a 44px trigger and rows,
 // and a long course name wraps instead of being cut with an ellipsis.
-export const StaffCombobox = React.forwardRef<
-  HTMLButtonElement,
-  StaffComboboxProps
->(
+export const StaffCombobox = React.forwardRef<HTMLButtonElement, StaffComboboxProps>(
   (
     {
       options,
       value,
       onValueChange,
-      placeholder = "เลือก...",
-      searchPlaceholder = "ค้นหา...",
-      emptyText = "ไม่พบรายการที่ตรงกัน",
+      placeholder = 'เลือก...',
+      searchPlaceholder = 'ค้นหา...',
+      emptyText = 'ไม่พบรายการที่ตรงกัน',
       className,
       ...triggerProps
     },
     ref,
   ) => {
     const [open, setOpen] = React.useState(false);
-    const [query, setQuery] = React.useState("");
+    const [query, setQuery] = React.useState('');
 
     const selected = options.find((o) => o.value === value);
     const filtered = React.useMemo(() => {
@@ -50,7 +47,7 @@ export const StaffCombobox = React.forwardRef<
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
-          if (!next) setQuery("");
+          if (!next) setQuery('');
         }}
       >
         <PopoverPrimitive.Trigger asChild>
@@ -58,23 +55,17 @@ export const StaffCombobox = React.forwardRef<
             ref={ref}
             type="button"
             className={cn(
-              "flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              'flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
               className,
             )}
             {...triggerProps}
           >
             <span
-              className={cn(
-                "min-w-0 break-words text-left",
-                !selected && "text-muted-foreground",
-              )}
+              className={cn('min-w-0 break-words text-left', !selected && 'text-muted-foreground')}
             >
               {selected ? selected.label : placeholder}
             </span>
-            <ChevronDown
-              aria-hidden="true"
-              className="h-4 w-4 shrink-0 opacity-50"
-            />
+            <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 opacity-50" />
           </button>
         </PopoverPrimitive.Trigger>
         <PopoverPrimitive.Portal>
@@ -86,11 +77,7 @@ export const StaffCombobox = React.forwardRef<
             className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
           >
             <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-1">
-              <Search
-                aria-hidden="true"
-                size={14}
-                className="shrink-0 text-slate-400"
-              />
+              <Search aria-hidden="true" size={14} className="shrink-0 text-slate-400" />
               <input
                 autoFocus
                 value={query}
@@ -101,9 +88,7 @@ export const StaffCombobox = React.forwardRef<
             </div>
             <div className="max-h-64 overflow-y-auto p-1">
               {filtered.length === 0 && (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  {emptyText}
-                </p>
+                <p className="py-4 text-center text-sm text-muted-foreground">{emptyText}</p>
               )}
               {filtered.map((option) => (
                 <button
@@ -112,17 +97,14 @@ export const StaffCombobox = React.forwardRef<
                   onClick={() => {
                     onValueChange(option.value);
                     setOpen(false);
-                    setQuery("");
+                    setQuery('');
                   }}
                   className="flex min-h-11 w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent focus:bg-accent"
                 >
                   <Check
                     aria-hidden="true"
                     size={14}
-                    className={cn(
-                      "shrink-0",
-                      option.value === value ? "opacity-100" : "opacity-0",
-                    )}
+                    className={cn('shrink-0', option.value === value ? 'opacity-100' : 'opacity-0')}
                   />
                   <span className="min-w-0 break-words">{option.label}</span>
                 </button>
@@ -134,4 +116,4 @@ export const StaffCombobox = React.forwardRef<
     );
   },
 );
-StaffCombobox.displayName = "StaffCombobox";
+StaffCombobox.displayName = 'StaffCombobox';

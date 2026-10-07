@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import type { StaffOverviewReport } from "@eduanalyze-ai/shared-types";
+import { useRef, useState } from 'react';
+import type { StaffOverviewReport } from '@eduanalyze-ai/shared-types';
 import {
   executeInvitationImport,
   InvitationCsvFormatError,
@@ -10,12 +10,12 @@ import {
   type InvitationImportResultRow,
   type ParsedInvitationRow,
   type ReadyInvitationRow,
-} from "@/lib/student-invitation-csv";
-import { toCsv, downloadCsv } from "@/lib/csv";
-import { useToast } from "@/lib/toast-context";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from '@/lib/student-invitation-csv';
+import { toCsv, downloadCsv } from '@/lib/csv';
+import { useToast } from '@/lib/toast-context';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 // Inline, not a modal — same reasoning as ScoreCsvImportPanel: no Dialog
 // primitive in this project, and this mirrors that panel's exact shape
@@ -38,24 +38,15 @@ function PreviewTable({ rows }: Readonly<{ rows: ParsedInvitationRow[] }>) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.rowNumber} className="border-b border-slate-50">
+              <td className="px-3 py-2 text-muted-foreground">{row.rowNumber}</td>
+              <td className="px-3 py-2 text-primary">{row.studentCode || '—'}</td>
+              <td className="px-3 py-2 text-muted-foreground">{row.email || '—'}</td>
+              <td className="px-3 py-2 text-muted-foreground">{row.fullName || '—'}</td>
               <td className="px-3 py-2 text-muted-foreground">
-                {row.rowNumber}
-              </td>
-              <td className="px-3 py-2 text-primary">
-                {row.studentCode || "—"}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {row.email || "—"}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {row.fullName || "—"}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {row.programCodeText || "—"} /{" "}
-                {row.curriculumVersionText || "—"}
+                {row.programCodeText || '—'} / {row.curriculumVersionText || '—'}
               </td>
               <td className="px-3 py-2">
-                {row.verdict === "ready" ? (
+                {row.verdict === 'ready' ? (
                   <Badge tone="success">พร้อมเชิญ</Badge>
                 ) : (
                   <span className="text-xs text-destructive">{row.error}</span>
@@ -69,17 +60,15 @@ function PreviewTable({ rows }: Readonly<{ rows: ParsedInvitationRow[] }>) {
   );
 }
 
-const OUTCOME_LABEL: Record<InvitationImportResultRow["outcome"], string> = {
-  invited: "ส่งคำเชิญแล้ว",
-  skipped: "ข้าม",
-  failed: "ผิดพลาด",
+const OUTCOME_LABEL: Record<InvitationImportResultRow['outcome'], string> = {
+  invited: 'ส่งคำเชิญแล้ว',
+  skipped: 'ข้าม',
+  failed: 'ผิดพลาด',
 };
 
-function ResultList({
-  results,
-}: Readonly<{ results: InvitationImportResultRow[] }>) {
-  const invited = results.filter((r) => r.outcome === "invited").length;
-  const notInvited = results.filter((r) => r.outcome !== "invited");
+function ResultList({ results }: Readonly<{ results: InvitationImportResultRow[] }>) {
+  const invited = results.filter((r) => r.outcome === 'invited').length;
+  const notInvited = results.filter((r) => r.outcome !== 'invited');
 
   return (
     <div className="space-y-2 rounded-md border border-slate-200 p-3">
@@ -90,10 +79,7 @@ function ResultList({
       {notInvited.length > 0 && (
         <ul className="space-y-1">
           {notInvited.map((r) => (
-            <li
-              key={r.rowNumber}
-              className="flex items-center justify-between gap-2 text-xs"
-            >
+            <li key={r.rowNumber} className="flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">
                 แถว {r.rowNumber} · {r.studentCode} · {OUTCOME_LABEL[r.outcome]}
               </span>
@@ -119,15 +105,13 @@ export function StudentInvitationCsvPanel({
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<ParsedInvitationRow[] | null>(null);
   const [formatError, setFormatError] = useState<string | null>(null);
-  const [results, setResults] = useState<InvitationImportResultRow[] | null>(
-    null,
-  );
+  const [results, setResults] = useState<InvitationImportResultRow[] | null>(null);
   const [importing, setImporting] = useState(false);
   const toast = useToast();
 
   async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    event.target.value = "";
+    event.target.value = '';
     if (!file) return;
 
     setFileName(file.name);
@@ -139,26 +123,20 @@ export function StudentInvitationCsvPanel({
       setRows(parseStudentInvitationCsv(await file.text(), overview));
     } catch (error) {
       setFormatError(
-        error instanceof InvitationCsvFormatError
-          ? error.message
-          : "ไม่สามารถอ่านไฟล์นี้ได้",
+        error instanceof InvitationCsvFormatError ? error.message : 'ไม่สามารถอ่านไฟล์นี้ได้',
       );
     }
   }
 
   async function onConfirm() {
     if (!rows) return;
-    const ready = rows.filter(
-      (row): row is ReadyInvitationRow => row.verdict === "ready",
-    );
+    const ready = rows.filter((row): row is ReadyInvitationRow => row.verdict === 'ready');
     setImporting(true);
     try {
       const imported = await executeInvitationImport(ready);
       setResults(imported);
       onInvited();
-      const notInvitedCount = imported.filter(
-        (r) => r.outcome !== "invited",
-      ).length;
+      const notInvitedCount = imported.filter((r) => r.outcome !== 'invited').length;
       if (notInvitedCount === 0) {
         toast.success(`ส่งคำเชิญ ${imported.length} รายการสำเร็จ`);
       } else {
@@ -167,42 +145,32 @@ export function StudentInvitationCsvPanel({
         );
       }
     } catch {
-      toast.error("ส่งคำเชิญไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      toast.error('ส่งคำเชิญไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setImporting(false);
     }
   }
 
   function onDownloadTemplate() {
-    downloadCsv(
-      "student-invitation-template.csv",
-      toCsv(STUDENT_INVITATION_CSV_HEADERS, []),
-    );
+    downloadCsv('student-invitation-template.csv', toCsv(STUDENT_INVITATION_CSV_HEADERS, []));
   }
 
-  const readyCount = rows?.filter((r) => r.verdict === "ready").length ?? 0;
+  const readyCount = rows?.filter((r) => r.verdict === 'ready').length ?? 0;
   const invalidCount = (rows?.length ?? 0) - readyCount;
 
   return (
     <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50/50 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-primary">
-          นำเข้าคำเชิญจากไฟล์ CSV
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 px-4"
-          onClick={onClose}
-        >
+        <p className="text-sm font-semibold text-primary">นำเข้าคำเชิญจากไฟล์ CSV</p>
+        <Button type="button" variant="outline" className="h-11 px-4" onClick={onClose}>
           ปิด
         </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        คอลัมน์ที่ต้องมี: รหัสนักศึกษา, อีเมล, ชื่อ-นามสกุล, รหัสสาขา,
-        ฉบับหลักสูตร, ปีเข้าศึกษา — ระบบจะส่งอีเมลเชิญให้แต่ละคน
-        ผู้ถูกเชิญยังต้องสมัครสมาชิกด้วยตนเอง ไม่มีการสร้างบัญชีให้ทันที
+        คอลัมน์ที่ต้องมี: รหัสนักศึกษา, อีเมล, ชื่อ-นามสกุล, รหัสสาขา, ฉบับหลักสูตร, ปีเข้าศึกษา —
+        ระบบจะส่งอีเมลเชิญให้แต่ละคน ผู้ถูกเชิญยังต้องสมัครสมาชิกด้วยตนเอง
+        ไม่มีการสร้างบัญชีให้ทันที
       </p>
 
       {overview.programs.length > 0 && (
@@ -213,8 +181,8 @@ export function StudentInvitationCsvPanel({
           <ul className="mt-1 space-y-0.5 pl-4">
             {overview.programs.map((program) => (
               <li key={program.programId}>
-                {program.programCode} — {program.programName} (ฉบับ:{" "}
-                {program.curricula.map((c) => c.version).join(", ") || "ไม่มี"})
+                {program.programCode} — {program.programName} (ฉบับ:{' '}
+                {program.curricula.map((c) => c.version).join(', ') || 'ไม่มี'})
               </li>
             ))}
           </ul>
@@ -237,18 +205,11 @@ export function StudentInvitationCsvPanel({
         >
           เลือกไฟล์ CSV
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 px-4"
-          onClick={onDownloadTemplate}
-        >
+        <Button type="button" variant="outline" className="h-11 px-4" onClick={onDownloadTemplate}>
           ดาวน์โหลดเทมเพลต
         </Button>
         {fileName && (
-          <span className="min-w-0 break-all text-xs text-muted-foreground">
-            {fileName}
-          </span>
+          <span className="min-w-0 break-all text-xs text-muted-foreground">{fileName}</span>
         )}
       </div>
 
@@ -267,8 +228,7 @@ export function StudentInvitationCsvPanel({
           <PreviewTable rows={rows} />
           {invalidCount > 0 && (
             <p className="text-xs text-muted-foreground">
-              แถวที่ผิดพลาดจะไม่ถูกเชิญ
-              แก้ไขไฟล์แล้วเลือกใหม่อีกครั้งเพื่อนำเข้าส่วนที่เหลือ
+              แถวที่ผิดพลาดจะไม่ถูกเชิญ แก้ไขไฟล์แล้วเลือกใหม่อีกครั้งเพื่อนำเข้าส่วนที่เหลือ
             </p>
           )}
           <div className="flex flex-wrap gap-2">
@@ -278,9 +238,7 @@ export function StudentInvitationCsvPanel({
               onClick={onConfirm}
               disabled={importing || readyCount === 0}
             >
-              {importing
-                ? "กำลังส่งคำเชิญ..."
-                : `ยืนยันส่งคำเชิญ ${readyCount} แถว`}
+              {importing ? 'กำลังส่งคำเชิญ...' : `ยืนยันส่งคำเชิญ ${readyCount} แถว`}
             </Button>
             <Button
               type="button"

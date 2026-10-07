@@ -23,7 +23,9 @@ describe('readStudentRisk', () => {
   });
 
   it('does not hide a CRITICAL student whose only grade has no GPA weight', () => {
-    expect(readStudentRisk({ riskLevel: 'CRITICAL', gpa: null, atRiskCourseCount: 1 })).toMatchObject({
+    expect(
+      readStudentRisk({ riskLevel: 'CRITICAL', gpa: null, atRiskCourseCount: 1 }),
+    ).toMatchObject({
       key: 'CRITICAL',
       tone: 'danger',
     });
@@ -58,6 +60,9 @@ describe('readAverageGpa', () => {
   });
 
   it('shows the number and its base from 5 graded people', () => {
-    expect(readAverageGpa(3.123, 5)).toEqual({ kind: 'ok', text: '3.12 · เฉลี่ยจาก 5 คนที่มีเกรด' });
+    expect(readAverageGpa(3.123, 5)).toEqual({
+      kind: 'ok',
+      text: '3.12 · เฉลี่ยจาก 5 คนที่มีเกรด',
+    });
   });
 });

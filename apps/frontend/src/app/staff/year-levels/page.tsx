@@ -1,26 +1,22 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchStaffStudentRisk, fetchStaffYearLevels } from "@/lib/api/staff";
-import { useAuth } from "@/lib/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
-import { RequireRole } from "@/components/auth/require-role";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLoadError } from "@/components/layout/page-states";
-import { Reveal } from "@/components/layout/reveal";
-import { OverviewYearTable } from "@/components/staff/overview-year-table";
-import {
-  summarizeByYearLevel,
-  summarizeStudents,
-  toRows,
-} from "@/components/staff/staff-status";
-import { StudentsTabs } from "@/components/staff/students-tabs";
-import { YEAR_LEVELS, yearInfoFrom } from "@/components/staff/year-info";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchStaffStudentRisk, fetchStaffYearLevels } from '@/lib/api/staff';
+import { useAuth } from '@/lib/auth-context';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
+import { OverviewYearTable } from '@/components/staff/overview-year-table';
+import { summarizeByYearLevel, summarizeStudents, toRows } from '@/components/staff/staff-status';
+import { StudentsTabs } from '@/components/staff/students-tabs';
+import { YEAR_LEVELS, yearInfoFrom } from '@/components/staff/year-info';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StaffYearLevelsPage() {
   return (
@@ -37,11 +33,11 @@ function StaffYearLevelsContent() {
   // The same list the overview and the student list count, with the year each
   // student is in taken from the year-level report.
   const studentsQuery = useQuery({
-    queryKey: ["staff-student-risk"],
+    queryKey: ['staff-student-risk'],
     queryFn: fetchStaffStudentRisk,
   });
   const yearsQuery = useQuery({
-    queryKey: ["staff-year-levels"],
+    queryKey: ['staff-year-levels'],
     queryFn: fetchStaffYearLevels,
   });
 
@@ -71,11 +67,7 @@ function StaffYearLevelsContent() {
   const failed = studentsQuery.isError || yearsQuery.isError;
 
   return (
-    <DashboardShell
-      role="STAFF"
-      identityLabel={user.email}
-      fullName={user.fullName}
-    >
+    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
           title="นักศึกษา"

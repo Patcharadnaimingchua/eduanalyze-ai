@@ -1,19 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import type {
-  CourseListItem,
-  StudentCourseRecord,
-} from "@eduanalyze-ai/shared-types";
-import {
-  deleteCourseRecord,
-  updateCourseRecordGrade,
-} from "@/lib/api/academic-record";
-import { usePagination } from "@/lib/use-pagination";
-import { useToast } from "@/lib/toast-context";
-import { Button } from "@/components/ui/button";
-import { StaffGradeSelect } from "./staff-grade-select";
-import { StaffPagination } from "./staff-pagination";
+import { useEffect, useMemo, useState } from 'react';
+import type { CourseListItem, StudentCourseRecord } from '@eduanalyze-ai/shared-types';
+import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
+import { usePagination } from '@/lib/use-pagination';
+import { useToast } from '@/lib/toast-context';
+import { Button } from '@/components/ui/button';
+import { StaffGradeSelect } from './staff-grade-select';
+import { StaffPagination } from './staff-pagination';
 
 export interface SemesterInfo {
   label: string;
@@ -45,17 +39,13 @@ export function StaffRecordList({
         (a, b) =>
           (semesterMap.get(a.semesterId)?.order ?? 999) -
             (semesterMap.get(b.semesterId)?.order ?? 999) ||
-          (courseMap.get(a.courseId)?.code ?? "").localeCompare(
-            courseMap.get(b.courseId)?.code ?? "",
+          (courseMap.get(a.courseId)?.code ?? '').localeCompare(
+            courseMap.get(b.courseId)?.code ?? '',
           ),
       ),
     [records, semesterMap, courseMap],
   );
-  const pagination = usePagination(
-    sorted,
-    pageSize,
-    `${records.length}|${pageSize}`,
-  );
+  const pagination = usePagination(sorted, pageSize, `${records.length}|${pageSize}`);
 
   // A row left awaiting delete-confirmation must not stay armed on another page.
   useEffect(() => {
@@ -63,17 +53,14 @@ export function StaffRecordList({
   }, [pagination.page]);
 
   // Flow that writes: PATCH /student-course-records/:id
-  async function handleGradeChange(
-    id: string,
-    grade: StudentCourseRecord["grade"],
-  ) {
+  async function handleGradeChange(id: string, grade: StudentCourseRecord['grade']) {
     setBusyId(id);
     try {
       await updateCourseRecordGrade(id, { grade });
       onChanged();
-      toast.success("บันทึกเกรดแล้ว");
+      toast.success('บันทึกเกรดแล้ว');
     } catch {
-      toast.error("บันทึกเกรดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      toast.error('บันทึกเกรดไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
@@ -86,9 +73,9 @@ export function StaffRecordList({
       await deleteCourseRecord(id);
       setConfirmingId(null);
       onChanged();
-      toast.success("ลบรายวิชาแล้ว");
+      toast.success('ลบรายวิชาแล้ว');
     } catch {
-      toast.error("ลบรายวิชาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      toast.error('ลบรายวิชาไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
@@ -96,23 +83,21 @@ export function StaffRecordList({
 
   if (records.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
-        ยังไม่มีรายวิชาที่บันทึกไว้
-      </p>
+      <p className="py-8 text-center text-sm text-muted-foreground">ยังไม่มีรายวิชาที่บันทึกไว้</p>
     );
   }
 
   const gradeControl = (record: StudentCourseRecord) => (
     <StaffGradeSelect
       value={record.grade}
-      subject={courseMap.get(record.courseId)?.code ?? "วิชานี้"}
+      subject={courseMap.get(record.courseId)?.code ?? 'วิชานี้'}
       disabled={busyId === record.id}
       onConfirm={(grade) => handleGradeChange(record.id, grade)}
     />
   );
 
   const deleteControl = (record: StudentCourseRecord) => {
-    const code = courseMap.get(record.courseId)?.code ?? "";
+    const code = courseMap.get(record.courseId)?.code ?? '';
     const isBusy = busyId === record.id;
     if (confirmingId === record.id) {
       return (
@@ -172,17 +157,13 @@ export function StaffRecordList({
               className="border-b border-slate-100 align-middle hover:bg-slate-50"
             >
               <td className="px-3 py-3 font-semibold tabular-nums">
-                {courseMap.get(record.courseId)?.code ?? "—"}
+                {courseMap.get(record.courseId)?.code ?? '—'}
               </td>
               <td className="break-words px-3 py-3">
-                {courseMap.get(record.courseId)?.name ?? "—"}
+                {courseMap.get(record.courseId)?.name ?? '—'}
               </td>
-              <td className="px-3 py-3 text-right tabular-nums">
-                {record.credits}
-              </td>
-              <td className="px-3 py-3">
-                {semesterMap.get(record.semesterId)?.label ?? "—"}
-              </td>
+              <td className="px-3 py-3 text-right tabular-nums">{record.credits}</td>
+              <td className="px-3 py-3">{semesterMap.get(record.semesterId)?.label ?? '—'}</td>
               <td className="px-3 py-3">{gradeControl(record)}</td>
               <td className="px-3 py-3">{deleteControl(record)}</td>
             </tr>
@@ -192,22 +173,17 @@ export function StaffRecordList({
 
       <ul className="space-y-3 md:hidden">
         {pagination.pageRows.map((record) => (
-          <li
-            key={record.id}
-            className="space-y-3 rounded-lg border border-slate-200 bg-card p-4"
-          >
+          <li key={record.id} className="space-y-3 rounded-lg border border-slate-200 bg-card p-4">
             <div>
               <p className="font-semibold tabular-nums">
-                {courseMap.get(record.courseId)?.code ?? "—"}
+                {courseMap.get(record.courseId)?.code ?? '—'}
               </p>
-              <p className="break-words">
-                {courseMap.get(record.courseId)?.name ?? "—"}
-              </p>
+              <p className="break-words">{courseMap.get(record.courseId)?.name ?? '—'}</p>
             </div>
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-xs text-muted-foreground">ภาคเรียน</dt>
-                <dd>{semesterMap.get(record.semesterId)?.label ?? "—"}</dd>
+                <dd>{semesterMap.get(record.semesterId)?.label ?? '—'}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">หน่วยกิต</dt>
