@@ -145,7 +145,7 @@ function StaffDashboardContent() {
         key: 'critical',
         icon: CHECK_ICONS.critical,
         title: `นักศึกษาที่อยู่ในระดับเร่งด่วน ${summary.byStatus.CRITICAL} คน`,
-        description: 'มีรายวิชาที่ได้เกรด D+ D F หรือ U',
+        description: 'GPA สะสมต่ำกว่า 1.50',
         action: { href: '/staff/students?risk=CRITICAL', label: 'ดูรายชื่อ' },
       });
     }

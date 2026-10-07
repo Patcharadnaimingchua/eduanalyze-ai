@@ -232,6 +232,11 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
               description={`${profile.studentCode} · ${profile.user.email}`}
               actions={risk && <StatusBadge status={staffStatus(risk)} />}
             />
+            {risk && risk.lowGradeCount > 0 && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                มีรายวิชา D+/D/F/U อยู่ <span className="tabular-nums">{risk.lowGradeCount}</span> วิชา
+              </p>
+            )}
           </Reveal>
 
           <Reveal index={1} className="grid grid-cols-1 gap-4 md:grid-cols-3">

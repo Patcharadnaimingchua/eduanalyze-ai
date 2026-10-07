@@ -362,9 +362,8 @@ function StaffStudentsContent() {
               <span className="tabular-nums">{shownSummary.suspended}</span> คน)
             </p>
             <p className="order-6 text-xs text-muted-foreground md:order-none">
-              เร่งด่วน = มีรายวิชาที่ได้เกรด D+ D F หรือ U · เฝ้าระวัง = มีรายวิชาที่ได้เกรด C ·
-              ปกติ = ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า · ยังไม่มีข้อมูล =
-              ยังไม่มีผลการเรียนที่นำมาประเมิน
+              เร่งด่วน = GPA สะสมต่ำกว่า 1.50 · เฝ้าระวัง = GPA สะสม 1.50–1.74 · ปกติ = GPA สะสม
+              1.75 ขึ้นไป · ยังไม่มีข้อมูล = ยังไม่มี GPA (ไม่นับเกรด W I S U)
             </p>
           </CardContent>
         </Card>

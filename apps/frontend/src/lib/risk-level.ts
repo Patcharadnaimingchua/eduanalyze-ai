@@ -2,7 +2,8 @@ import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import type { SemanticTone } from '@/lib/tone';
 
 // Display only — the split itself is decided backend-side in
-// grade-point.constant.ts's riskLevel(), so the rule lives in one place.
+// grade-point.constant.ts: gpaRiskLevel() for a student's status (Staff,
+// Admin), riskLevel() for one grade in one course (Instructor).
 export const RISK_LEVEL_LABELS: Record<RiskLevel, string> = {
   CRITICAL: 'เร่งด่วน',
   WATCH: 'เฝ้าระวัง',

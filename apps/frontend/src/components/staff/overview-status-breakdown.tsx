@@ -9,20 +9,12 @@ const ROWS: {
   rule: string;
   bar: string;
 }[] = [
-  {
-    key: 'NORMAL',
-    rule: 'ไม่มีรายวิชาที่ได้เกรด C หรือต่ำกว่า',
-    bar: 'bg-emerald-500',
-  },
-  { key: 'WATCH', rule: 'มีรายวิชาที่ได้เกรด C', bar: 'bg-amber-500' },
-  {
-    key: 'CRITICAL',
-    rule: 'มีรายวิชาที่ได้เกรด D+ D F หรือ U',
-    bar: 'bg-red-500',
-  },
+  { key: 'NORMAL', rule: 'GPA สะสม 1.75 ขึ้นไป', bar: 'bg-emerald-500' },
+  { key: 'WATCH', rule: 'GPA สะสม 1.50–1.74', bar: 'bg-amber-500' },
+  { key: 'CRITICAL', rule: 'GPA สะสมต่ำกว่า 1.50', bar: 'bg-red-500' },
   {
     key: 'NO_DATA',
-    rule: 'ยังไม่มีผลการเรียนที่นำมาประเมิน',
+    rule: 'ยังไม่มี GPA (ไม่นับเกรด W I S U)',
     bar: 'bg-slate-300',
   },
 ];
