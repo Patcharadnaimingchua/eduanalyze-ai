@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { RequireRole } from "@/components/auth/require-role";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { YearLevelOverview } from "@/components/dashboard/year-level-overview";
+import { StudentsTabs } from '@/components/staff/students-tabs';
 import { PageHeader } from "@/components/layout/page-header";
 import { PageLoadError } from "@/components/layout/page-states";
 import { Reveal } from "@/components/layout/reveal";
@@ -59,6 +60,10 @@ function StaffYearLevelsContent() {
           title="ภาพรวมชั้นปี"
           description="นักศึกษาในสาขา/หลักสูตรที่คุณดูแล แบ่งตามชั้นปี (เฉพาะนักศึกษาที่ยังไม่ถูกระงับ)"
         />
+      </Reveal>
+
+      <Reveal index={0}>
+        <StudentsTabs active="years" />
       </Reveal>
 
       {query.isLoading && <StatCardsSkeleton count={4} />}

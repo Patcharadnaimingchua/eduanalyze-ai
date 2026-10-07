@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StudentsTabs } from '@/components/staff/students-tabs';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { PageSection } from '@/components/layout/page-section';
@@ -77,6 +78,10 @@ function StaffStudentInvitationsContent() {
             </Button>
           }
         />
+      </Reveal>
+
+      <Reveal index={0}>
+        <StudentsTabs active="invitations" />
       </Reveal>
 
       {overviewQuery.isLoading && <Skeleton className="h-32 w-full" />}

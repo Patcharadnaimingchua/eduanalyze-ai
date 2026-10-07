@@ -1,0 +1,84 @@
+import { isNavItemActive, navItemsForRole } from './nav-config';
+
+// The menus of every role other than STAFF, copied from before the Staff menu
+// changed. If one of these moves, a role other than Staff has had its menu
+// altered.
+const PINNED: Record<string, [string, string][]> = {
+  STUDENT: [
+    ['แดชบอร์ด', '/dashboard'],
+    ['การติดตามผลการเรียน', '/academic-record'],
+    ['ตรวจสอบหน่วยกิต', '/credit-checker'],
+    ['การวิเคราะห์ CLO/PLO', '/clo-plo-analysis'],
+    ['สรุปความถนัด', '/aptitude-analysis'],
+    ['แผนการเรียน', '/learning-path'],
+  ],
+  INSTRUCTOR: [
+    ['แดชบอร์ด', '/instructor/dashboard'],
+    ['รายวิชาที่สอน', '/instructor/my-courses'],
+    ['นักศึกษา', '/instructor/students'],
+    ['ภาพรวมชั้นปี', '/instructor/year-levels'],
+  ],
+  ADMIN: [
+    ['ภาพรวมขอบเขต', '/admin/overview'],
+    ['ผู้ใช้งาน', '/admin/users'],
+  ],
+  SUPER_ADMIN: [
+    ['ภาพรวมหลักสูตร', '/admin/curriculum-dashboard'],
+    ['ผู้ใช้งาน', '/admin/users'],
+    ['โครงสร้างองค์กร', '/admin/organization'],
+    ['ปีการศึกษา', '/admin/academic-years'],
+  ],
+};
+
+describe('navItemsForRole', () => {
+  it.each(Object.entries(PINNED))('leaves the %s menu as it was', (role, expected) => {
+    const items = navItemsForRole(role as never);
+    expect(items.map((i) => [i.label, i.href])).toEqual(expected);
+    // Only the Staff menu uses prefix matching.
+    expect(items.every((i) => i.matchPrefixes === undefined)).toBe(true);
+  });
+
+  it('gives Staff three items', () => {
+    expect(navItemsForRole('STAFF').map((i) => [i.label, i.href])).toEqual([
+      ['ภาพรวม', '/staff/dashboard'],
+      ['นักศึกษา', '/staff/students'],
+      ['หลักสูตร', '/staff/curriculum'],
+    ]);
+  });
+});
+
+describe('isNavItemActive', () => {
+  const active = (role: string, pathname: string) =>
+    navItemsForRole(role as never)
+      .filter((i) => isNavItemActive(i, pathname))
+      .map((i) => i.label);
+
+  it('still matches other roles on the exact path only', () => {
+    expect(active('STUDENT', '/dashboard')).toEqual(['แดชบอร์ด']);
+    expect(active('STUDENT', '/dashboard/extra')).toEqual([]);
+    expect(active('ADMIN', '/admin/users')).toEqual(['ผู้ใช้งาน']);
+    expect(active('SUPER_ADMIN', '/admin/users/abc')).toEqual([]);
+    expect(active('INSTRUCTOR', '/instructor/students')).toEqual(['นักศึกษา']);
+  });
+
+  it('keeps the instructor overview lit inside a course page, as before', () => {
+    expect(active('INSTRUCTOR', '/instructor/courses/abc')).toEqual(['แดชบอร์ด']);
+  });
+
+  it('keeps Staff นักศึกษา lit on every student tab and on a student page', () => {
+    for (const path of [
+      '/staff/students',
+      '/staff/students/abc',
+      '/staff/year-levels',
+      '/staff/student-invitations',
+    ]) {
+      expect(active('STAFF', path)).toEqual(['นักศึกษา']);
+    }
+  });
+
+  it('lights one Staff item for the other pages and none for an unknown one', () => {
+    expect(active('STAFF', '/staff/dashboard')).toEqual(['ภาพรวม']);
+    expect(active('STAFF', '/staff/curriculum')).toEqual(['หลักสูตร']);
+    expect(active('STAFF', '/staff/studentsX')).toEqual([]);
+  });
+});

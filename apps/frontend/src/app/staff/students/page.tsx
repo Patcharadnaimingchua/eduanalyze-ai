@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
+import { StudentsTabs } from '@/components/staff/students-tabs';
 import { StudentDirectoryTable } from '@/components/staff/student-directory-table';
 import {
   NO_DATA_LABEL,
@@ -132,6 +133,10 @@ function StaffStudentsContent() {
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader title="ทำเนียบนักศึกษา" description="นักศึกษาในขอบเขตความรับผิดชอบของคุณ" />
+      </Reveal>
+
+      <Reveal index={0}>
+        <StudentsTabs active="list" count={studentsQuery.data?.length} />
       </Reveal>
 
       <Reveal index={1} className="flex flex-wrap items-center gap-3">
