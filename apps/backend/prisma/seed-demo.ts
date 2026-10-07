@@ -24,6 +24,9 @@ const MANIFEST = join(__dirname, '..', '.backups', 'demo-manifest.json');
 // demo students.
 const DEMO_CURRICULUM_ID = 'bc550250-7144-4518-b3ee-5ac072e09f5d';
 const DEMO_COURSE_CODES = ['01999111', '02739111', '02739321'];
+// The instructor who teaches those courses in the demo. Existing assignments (such
+// as 02739341) are left as they are; only the missing ones are inserted.
+const DEMO_INSTRUCTOR_EMAIL = 'demo-instructor@test.local';
 const STUDENT_COUNT = 150;
 const SUSPENDED_COUNT = 5; // ~3%
 const NO_RECORD_COUNT = 12; // ~8%
@@ -135,6 +138,7 @@ interface Manifest {
   userRoles: string[];
   studentProfiles: string[];
   studentCourseRecords: string[];
+  courseInstructors?: string[];
   semesters: string[];
   academicYears: string[];
 }
@@ -265,8 +269,24 @@ async function main() {
   });
   students.push(...lowStudents);
 
+  const demoInstructor = await prisma.user.findUnique({
+    where: { email: DEMO_INSTRUCTOR_EMAIL },
+    select: { id: true },
+  });
+  if (!demoInstructor) throw new Error(`${DEMO_INSTRUCTOR_EMAIL} not found; assignments cannot be added`);
+  const assigned = new Set(
+    (
+      await prisma.courseInstructor.findMany({
+        where: { userId: demoInstructor.id, courseId: { in: courses.map((c) => c.id) } },
+        select: { courseId: true },
+      })
+    ).map((a) => a.courseId),
+  );
+  const missingAssignments = courses.filter((c) => !assigned.has(c.id));
+
   console.log(`target db ok; demo courses: ${courses.map((c) => c.code).join(', ')}; program ${programId}, curriculum ${curriculum.id}`);
   console.log(`plan: ${students.length} students (${students.filter((s) => s.suspended).length} suspended, ${students.filter((s) => !s.hasRecords).length} without records), ${records.length} records`);
+  console.log(`plan: ${missingAssignments.length} course assignments for ${DEMO_INSTRUCTOR_EMAIL} (${missingAssignments.map((c) => c.code).join(', ') || 'none missing'})`);
   if (!confirm) {
     console.log('dry run only; pass --confirm to write');
     return;
@@ -274,7 +294,8 @@ async function main() {
 
   const passwordHash = (): Promise<string> => bcrypt.hash(randomBytes(32).toString('hex'), 10);
   const manifest = readManifest();
-  const added = { users: 0, userRoles: 0, studentProfiles: 0, studentCourseRecords: 0 };
+  const added = { users: 0, userRoles: 0, studentProfiles: 0, studentCourseRecords: 0, courseInstructors: 0 };
+  manifest.courseInstructors ??= [];
 
   await prisma.$transaction(
     async (tx) => {
@@ -348,6 +369,13 @@ async function main() {
       }
       if (rows.length > 0) await tx.studentCourseRecord.createMany({ data: rows });
       added.studentCourseRecords = rows.length;
+
+      for (const course of missingAssignments) {
+        const id = randomUUID();
+        await tx.courseInstructor.create({ data: { id, userId: demoInstructor.id, courseId: course.id } });
+        manifest.courseInstructors!.push(id);
+        added.courseInstructors++;
+      }
     },
     { timeout: 180000, maxWait: 30000 },
   );

@@ -5,7 +5,7 @@
 // With the manifest (apps/backend/.backups/demo-manifest.json) it deletes the
 // listed ids, and each id must still carry the demo marker (student code
 // DEMO-GEN-NNNN / email demo-gen-NNNN@test.local). Without the manifest it falls
-// back to the marker alone. Older demo rows (DEMO-STU-001, demo-*@test.local
+// back to the marker alone (and removes no course assignments, see below). Older demo rows (DEMO-STU-001, demo-*@test.local
 // accounts) do not match the marker and are never touched.
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -16,6 +16,7 @@ const prisma = new PrismaClient();
 const DEV_DB_NAME = 'eduanalyze_ai';
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', 'postgres'];
 const MANIFEST = join(__dirname, '..', '.backups', 'demo-manifest.json');
+const DEMO_INSTRUCTOR_EMAIL = 'demo-instructor@test.local';
 const CODE_MARKER = /^DEMO-GEN-\d{4}$/;
 const EMAIL_MARKER = /^demo-gen-\d{4}@test\.local$/;
 
@@ -34,6 +35,7 @@ interface Manifest {
   userRoles: string[];
   studentProfiles: string[];
   studentCourseRecords: string[];
+  courseInstructors?: string[];
   semesters?: string[];
   academicYears?: string[];
 }
@@ -62,7 +64,19 @@ async function main() {
   const roleRows = await prisma.userRole.findMany({ where: { userId: { in: userIds } }, select: { id: true } });
   const roleIds = roleRows.map((r) => r.id);
 
+  // Course assignments exist only through the manifest: without it there is no
+  // way to tell these rows from assignments that were there before, so none is
+  // removed. Each listed row must still belong to the demo instructor.
+  const assignmentRows = manifest?.courseInstructors?.length
+    ? await prisma.courseInstructor.findMany({
+        where: { id: { in: manifest.courseInstructors }, user: { email: DEMO_INSTRUCTOR_EMAIL } },
+        select: { id: true },
+      })
+    : [];
+  const assignmentIds = assignmentRows.map((a) => a.id);
+
   const counts = {
+    course_instructors: assignmentIds.length,
     student_assessment_scores: scores,
     student_course_records: recordIds.length,
     student_profiles: profileIds.length,
@@ -77,12 +91,13 @@ async function main() {
 
   const deleted = await prisma.$transaction(
     async (tx) => {
+      const ci = await tx.courseInstructor.deleteMany({ where: { id: { in: assignmentIds } } });
       const s = await tx.studentAssessmentScore.deleteMany({ where: { studentCourseRecordId: { in: recordIds } } });
       const r = await tx.studentCourseRecord.deleteMany({ where: { id: { in: recordIds } } });
       const p = await tx.studentProfile.deleteMany({ where: { id: { in: profileIds } } });
       const ur = await tx.userRole.deleteMany({ where: { id: { in: roleIds } } });
       const u = await tx.user.deleteMany({ where: { id: { in: userIds } } });
-      return { student_assessment_scores: s.count, student_course_records: r.count, student_profiles: p.count, user_roles: ur.count, users: u.count };
+      return { course_instructors: ci.count, student_assessment_scores: s.count, student_course_records: r.count, student_profiles: p.count, user_roles: ur.count, users: u.count };
     },
     { timeout: 120000, maxWait: 30000 },
   );
