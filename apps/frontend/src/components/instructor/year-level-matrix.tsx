@@ -3,12 +3,13 @@ import { yearLevelLabel } from '@/lib/course-timeline-summary';
 import { SPARSE_SUMMARY } from '@/lib/course-snapshot';
 import { centerLine, formatCourseGpa, formatMedian, summarizeGradeCenter } from '@/lib/grade-center';
 import type { GroupStats, Matrix, MatrixCell } from '@/lib/instructor-overview';
+import { cn } from '@/lib/utils';
 import { LowSampleTag } from './overview-parts';
 
 // One cell of the table: the middle grade as the big figure, the seats and the
 // course GPA under it. Under 5 graded people the middle is not given, only the
 // seats. An empty cell is a dash.
-function Cell({ cell }: Readonly<{ cell: MatrixCell | null }>) {
+function Cell({ cell, end = false }: Readonly<{ cell: MatrixCell | null; end?: boolean }>) {
   if (!cell) {
     return (
       <span className="text-muted-foreground" aria-label="ไม่มีนักศึกษา">
@@ -16,14 +17,15 @@ function Cell({ cell }: Readonly<{ cell: MatrixCell | null }>) {
       </span>
     );
   }
-  return <Figure stats={cell.stats} />;
+  return <Figure stats={cell.stats} end={end} />;
 }
 
-function Figure({ stats }: Readonly<{ stats: GroupStats }>) {
+// `end` right-aligns the figure, for the phone cards where it sits at the end of a row.
+function Figure({ stats, end = false }: Readonly<{ stats: GroupStats; end?: boolean }>) {
   const center = summarizeGradeCenter(stats.counts);
   const values = center.values;
   return (
-    <span className="block min-w-0">
+    <span className={cn('block min-w-0', end && 'text-right')}>
       <span className="block text-lg font-semibold leading-tight tabular-nums text-primary">
         {values ? (
           formatMedian(values.median)
@@ -31,7 +33,12 @@ function Figure({ stats }: Readonly<{ stats: GroupStats }>) {
           <span className="text-sm font-normal text-muted-foreground">ข้อมูลยังน้อย</span>
         )}
       </span>
-      <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+      <span
+        className={cn(
+          'flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground',
+          end && 'justify-end',
+        )}
+      >
         {stats.seats} ที่นั่ง
         {values && ` · GPA ${formatCourseGpa(values.gpa)}`}
         {stats.f > 0 && ` · F ${stats.f}`}
@@ -130,12 +137,12 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
                 {levels.map((l, i) => (
                   <span key={l} className="flex items-center justify-between gap-3 py-2">
                     <span className="text-sm text-muted-foreground">{yearLevelLabel(l)}</span>
-                    <Cell cell={row.cells[i]} />
+                    <Cell cell={row.cells[i]} end />
                   </span>
                 ))}
                 <span className="flex items-center justify-between gap-3 pt-2">
                   <span className="text-sm font-medium text-primary">รวมวิชานี้</span>
-                  <Figure stats={row.total} />
+                  <Figure stats={row.total} end />
                 </span>
               </span>
             </Link>
