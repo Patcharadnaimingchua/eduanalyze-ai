@@ -78,13 +78,10 @@ export interface YearRow {
   showNumbers: boolean;
 }
 
-export type GoalState = 'met' | 'unmet' | 'unknown';
-
 export interface GoalItem {
   cloId: string;
   code: string;
   description: string;
-  state: GoalState;
 }
 
 export const GRADE_ORDER: readonly Grade[] = [
@@ -132,7 +129,7 @@ export interface CourseSnapshot {
   empty: boolean;
   // null = year levels could not be loaded.
   years: { rows: YearRow[]; unplaced: number } | null;
-  goals: { items: GoalItem[]; met: number; unmet: number; sparse: boolean };
+  goals: { items: GoalItem[]; sparse: boolean };
   grades: {
     segments: GradeSegment[];
     scored: number;
@@ -174,15 +171,13 @@ export function buildCourseSnapshot({
     };
   }
 
-  // Met / not yet only: the backend has one share per course, so a goal's own
-  // percentage is never shown. With too few people none is judged.
+  // The backend has one share per course, so a goal has no percentage of its own
+  // and none is judged: the goals are listed in code order, and `sparse` says
+  // when there are too few people to read anything from the course share.
   const sparse = level === 'insufficient';
-  const items: GoalItem[] = course.clos.map((clo) => ({
-    cloId: clo.cloId,
-    code: clo.code,
-    description: clo.description,
-    state: sparse ? 'unknown' : clo.isAchieved ? 'met' : 'unmet',
-  }));
+  const items: GoalItem[] = [...course.clos]
+    .sort((a, b) => a.code.localeCompare(b.code, 'th', { numeric: true }))
+    .map((clo) => ({ cloId: clo.cloId, code: clo.code, description: clo.description }));
 
   const scored = GRADE_ORDER.reduce((sum, g) => sum + stats.counts[g], 0);
   const segments = GRADE_ORDER.map((grade) => ({
@@ -228,12 +223,7 @@ export function buildCourseSnapshot({
     level,
     empty: stats.seats === 0,
     years,
-    goals: {
-      items,
-      met: items.filter((g) => g.state === 'met').length,
-      unmet: items.filter((g) => g.state === 'unmet').length,
-      sparse,
-    },
+    goals: { items, sparse },
     grades: {
       segments,
       scored,
@@ -255,7 +245,6 @@ export function buildCourseSnapshot({
 
 export const SPARSE_LABEL = 'ข้อมูลยังน้อย';
 export const SPARSE_SUMMARY = 'ข้อมูลยังน้อย — สรุปได้เบื้องต้น';
-export const SPARSE_GOAL = 'ข้อมูลยังน้อย — ยังสรุปเป้าการเรียนรู้นี้ไม่ได้';
 export const SPARSE_TREND = 'ข้อมูลยังน้อย — ยังไม่ควรสรุปแนวโน้ม';
 export const EMPTY_SNAPSHOT = 'ยังไม่มีเกรดที่กรอก — เมื่อมีข้อมูล ระบบจะแสดงภาพรวมที่นี่';
 export const DATA_SOURCE_NOTE = 'ข้อมูลล่าสุดจากเกรดที่บันทึกในระบบ';

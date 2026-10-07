@@ -3,7 +3,7 @@
 import { useId, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, ChevronDown, CircleDashed, Info } from 'lucide-react';
+import { ChevronDown, CircleDashed, Info } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import {
   fetchInstructorCourseTimeline,
@@ -13,7 +13,6 @@ import {
 import {
   DATA_SOURCE_NOTE,
   EMPTY_SNAPSHOT,
-  SPARSE_GOAL,
   SPARSE_LABEL,
   SPARSE_SUMMARY,
   SPARSE_TREND,
@@ -528,46 +527,32 @@ function YearListItem({ row }: Readonly<{ row: YearRow }>) {
   );
 }
 
-function GoalRow({ goal, sparse }: Readonly<{ goal: GoalItem; sparse: boolean }>) {
-  const Icon =
-    goal.state === 'met' ? CheckCircle2 : goal.state === 'unmet' ? AlertCircle : CircleDashed;
-  const tone =
-    goal.state === 'met'
-      ? 'text-emerald-600'
-      : goal.state === 'unmet'
-        ? 'text-amber-600'
-        : 'text-slate-400';
-  const label = goal.state === 'met' ? 'ผ่านเป้า' : goal.state === 'unmet' ? 'ยังไม่ถึงเป้า' : null;
+function GoalRow({ goal }: Readonly<{ goal: GoalItem }>) {
   return (
-    <li className="flex gap-3 py-3">
-      <Icon size={18} aria-hidden="true" className={cn('mt-0.5 shrink-0', tone)} />
-      <div className="min-w-0 space-y-0.5">
-        <p className="break-words text-sm text-primary">
-          <span className="font-semibold">{goal.code}</span> {goal.description}
-        </p>
-        <p className="text-xs text-muted-foreground">{sparse ? SPARSE_GOAL : label}</p>
-      </div>
+    <li className="py-3">
+      <p className="break-words text-sm text-primary">
+        <span className="font-semibold">{goal.code}</span> {goal.description}
+      </p>
     </li>
   );
 }
 
+// The goals of the course in code order. The backend has no share per goal, so
+// nothing here is judged; the notes only say how much to trust the course share.
 function GoalsSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
-  const { goals } = snapshot;
+  const { goals, level, stats } = snapshot;
   return (
     <SectionCard
       title="เป้าการเรียนรู้"
-      description={
-        goals.items.length === 0 || goals.sparse
-          ? undefined
-          : `${goals.met} ผ่านเป้า / ${goals.unmet} ยังไม่ถึงเป้า`
-      }
+      description={goals.items.length > 0 && goals.sparse ? SPARSE_LABEL : undefined}
+      aside={level === 'low' ? <LowSampleTag counted={stats.counted} /> : undefined}
     >
       {goals.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">ยังไม่มีเป้าการเรียนรู้ที่กำหนดไว้ในวิชานี้</p>
       ) : (
         <ul className="-my-3 divide-y divide-slate-100">
           {goals.items.map((goal) => (
-            <GoalRow key={goal.cloId} goal={goal} sparse={goals.sparse} />
+            <GoalRow key={goal.cloId} goal={goal} />
           ))}
         </ul>
       )}

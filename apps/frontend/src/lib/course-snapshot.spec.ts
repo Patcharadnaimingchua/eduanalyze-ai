@@ -105,24 +105,29 @@ describe('buildCourseSnapshot', () => {
     expect(s.years!.unplaced).toBe(1);
   });
 
-  it('judges goals only from 5 people, never invents a percentage', () => {
+  it('lists the goals in code order and judges none of them', () => {
     const clos = [
-      { cloId: 'k1', code: 'CLO1', description: 'หนึ่ง', threshold: 70, isAchieved: true },
       { cloId: 'k2', code: 'CLO2', description: 'สอง', threshold: 70, isAchieved: false },
+      { cloId: 'k10', code: 'CLO10', description: 'สิบ', threshold: 70, isAchieved: true },
+      { cloId: 'k1', code: 'CLO1', description: 'หนึ่ง', threshold: 70, isAchieved: true },
     ];
     const few = buildCourseSnapshot({
       course: course({ A: 3 }, { clos }),
       seatRows: [],
       yearLevelByStudent: null,
     });
-    expect(few.goals).toMatchObject({ sparse: true, met: 0, unmet: 0 });
-    expect(few.goals.items.every((g) => g.state === 'unknown')).toBe(true);
+    expect(few.goals.sparse).toBe(true);
+    expect(few.goals.items.map((g) => g.code)).toEqual(['CLO1', 'CLO2', 'CLO10']);
     const enough = buildCourseSnapshot({
       course: course({ A: 8 }, { clos }),
       seatRows: [],
       yearLevelByStudent: null,
     });
-    expect(enough.goals).toMatchObject({ sparse: false, met: 1, unmet: 1 });
+    expect(enough.goals.sparse).toBe(false);
+    for (const g of enough.goals.items) {
+      expect(g).not.toHaveProperty('state');
+      expect(Object.keys(g).sort()).toEqual(['cloId', 'code', 'description']);
+    }
   });
 
   it('shares the A to F row out of 100 and counts F, W, I, S/U on their own', () => {

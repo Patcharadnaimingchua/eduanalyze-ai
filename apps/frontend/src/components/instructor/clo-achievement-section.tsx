@@ -1,34 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useMemo } from 'react';
 import type {
   CloAchievementEntry,
   CoursePloEntry,
   CourseCloAchievementReport,
-  Grade,
-  StudentRosterEntry,
 } from '@eduanalyze-ai/shared-types';
+import { SPARSE_SUMMARY, dataLevelOf } from '@/lib/course-snapshot';
 import { ploProgressBarColorClassName } from '@/lib/plo-color';
 import { formatPercent } from '@/lib/format-percent';
-import { GRADE_LABELS } from '@/lib/grade-label';
-import { gradeBadgeTone } from '@/lib/grade-badge-color';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSection } from '@/components/layout/page-section';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { achievementStatus } from '@/lib/achievement-status';
 import { EvidenceCoverageBadge } from './evidence-coverage-badge';
-
-// Mirrors ACHIEVED_GRADES in
-// apps/backend/src/modules/academic-record/student-course-record/grade-point.constant.ts
-// — keep in sync if that changes. Duplicated rather than shared because the
-// grade-based achievementPercent above is already computed this same way
-// server-side; this just reproduces the per-student split from data the
-// roster already carries, without a new endpoint.
-const ACHIEVED_GRADES = new Set<Grade>(['A', 'B_PLUS', 'B']);
+import { LowSampleTag } from './overview-parts';
 
 interface CourseAssessmentSummary {
   courseId: string;
@@ -37,7 +23,7 @@ interface CourseAssessmentSummary {
 }
 
 export function CloAchievementSection({
-  courseId,
+  gradedPeople,
   achievementPercent,
   clos,
   plos,
@@ -48,10 +34,10 @@ export function CloAchievementSection({
   evidenceCoverage,
   evidenceTotal,
   evidenceError,
-  roster,
-  onViewRoster,
 }: Readonly<{
-  courseId: string;
+  // People counted in the B-or-above share (W and I left out): how much the
+  // share can be trusted.
+  gradedPeople: number;
   achievementPercent: number;
   clos: CloAchievementEntry[];
   plos: CoursePloEntry[];
@@ -67,19 +53,11 @@ export function CloAchievementSection({
   evidenceCoverage: Map<string, number> | undefined;
   evidenceTotal: number | undefined;
   evidenceError: boolean;
-  // Same roster the Gradebook tab fetches — reused here (no new request)
-  // so a CRITICAL CLO row can drill down into who's behind, per grade.
-  roster: StudentRosterEntry[] | undefined;
-  onViewRoster: () => void;
 }>) {
-  const [expandedCloId, setExpandedCloId] = useState<string | null>(null);
-
-  // Grade-based achievement has no per-CLO breakdown (see ACHIEVED_GRADES
-  // comment above) — the same failing-student list applies to every
-  // CRITICAL CLO in this course, computed once here rather than per row.
-  const failingStudents = useMemo(
-    () => (roster ?? []).filter((s) => !ACHIEVED_GRADES.has(s.grade)),
-    [roster],
+  const level = dataLevelOf(gradedPeople);
+  const sortedClos = useMemo(
+    () => [...clos].sort((a, b) => a.code.localeCompare(b.code, 'th', { numeric: true })),
+    [clos],
   );
 
   const scoredAssessmentClos = useMemo(
@@ -110,12 +88,17 @@ export function CloAchievementSection({
   return (
     <div className="space-y-5">
       <PageSection title="ภาพรวมเป้าการเรียนรู้">
-        <div className="flex items-center gap-3">
-          <Progress value={achievementPercent} className="flex-1" barClassName="bg-brand" />
-          <span className="shrink-0 text-sm font-medium text-primary">
-            ได้ B ขึ้นไป {formatPercent(achievementPercent)}
-          </span>
-        </div>
+        {level === 'insufficient' ? (
+          <p className="text-sm text-muted-foreground">{SPARSE_SUMMARY}</p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <Progress value={achievementPercent} className="min-w-32 flex-1" barClassName="bg-brand" />
+            <span className="shrink-0 text-sm font-medium text-primary">
+              ได้ B ขึ้นไป {formatPercent(achievementPercent)}
+            </span>
+            {level === 'low' && <LowSampleTag counted={gradedPeople} />}
+          </div>
+        )}
         {isLoading && <Skeleton className="h-3 w-40" />}
         {isError && (
           <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ได้ B ขึ้นไปได้</p>
@@ -132,92 +115,33 @@ export function CloAchievementSection({
 
       <PageSection
         title="เป้าการเรียนรู้แต่ละข้อ"
-        description="เป้าการเรียนรู้ (CLO) คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา"
+        description="เป้าการเรียนรู้ (CLO) คือสิ่งที่นักศึกษาควรทำได้เมื่อเรียนจบวิชา ระบบยังไม่มีร้อยละรายข้อ จึงแสดงเฉพาะจำนวนคนที่มีคะแนนที่กรอกของแต่ละข้อ"
       >
-        {clos.map((clo) => {
-          // Same course-level achievementPercent for every CLO (backend
-          // limitation), but each CLO may set its own threshold.
-          const cloStatus = achievementStatus(achievementPercent, clo.threshold);
-          const isCritical = cloStatus.tone === 'danger';
-          const isExpanded = expandedCloId === clo.cloId;
-          return (
-            <div key={clo.cloId} className="rounded-md bg-slate-50 px-3 py-2">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
-                  <p className="text-sm text-primary">{clo.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    เป้า {formatPercent(clo.threshold)}
-                  </p>
-                  {isCritical && roster && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="mt-1 h-auto min-h-11 px-0 text-xs text-brand hover:bg-transparent hover:underline"
-                      onClick={() => setExpandedCloId(isExpanded ? null : clo.cloId)}
-                    >
-                      {isExpanded ? 'ซ่อนรายชื่อ' : `ดูรายชื่อนักศึกษาที่ยังไม่ผ่าน (${failingStudents.length} คน)`}
-                    </Button>
-                  )}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge tone={cloStatus.tone}>{cloStatus.label}</Badge>
-                  {evidenceError ? (
-                    <span className="text-xs text-destructive">โหลดคะแนนที่กรอกไม่สำเร็จ</span>
-                  ) : (
-                    evidenceTotal !== undefined &&
-                    evidenceCoverage !== undefined && (
-                      <EvidenceCoverageBadge
-                        coverage={{
-                          validCount: evidenceCoverage.get(clo.cloId) ?? 0,
-                          totalCount: evidenceTotal,
-                        }}
-                      />
-                    )
-                  )}
-                </div>
+        {sortedClos.map((clo) => (
+          <div key={clo.cloId} className="rounded-md bg-slate-50 px-3 py-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">{clo.code}</p>
+                <p className="break-words text-sm text-primary">{clo.description}</p>
               </div>
-
-              {isExpanded && (
-                <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
-                  <p className="text-xs text-muted-foreground">
-                    รายชื่อนี้คิดจากเกรดรวมของวิชา (เหมือนกันทุกเป้าที่ยังไม่ผ่านในวิชานี้) ไม่ใช่คะแนนเฉพาะเป้านี้
-                  </p>
-                  {failingStudents.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">ไม่มีนักศึกษาที่เกรดต่ำกว่า B</p>
-                  ) : (
-                    <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-background">
-                      {failingStudents.map((s) => (
-                        <li key={s.studentProfileId}>
-                          <Link
-                            href={`/instructor/courses/${courseId}?tab=students&student=${s.studentProfileId}`}
-                            className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <span className="min-w-0">
-                              <span className="block text-primary">{s.fullName}</span>
-                              <span className="block text-xs text-muted-foreground">
-                                {s.studentCode}
-                              </span>
-                            </span>
-                            <Badge tone={gradeBadgeTone(s.grade)}>{GRADE_LABELS[s.grade]}</Badge>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onViewRoster}
-                    className="inline-flex min-h-11 items-center text-xs text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    ไปที่แท็บนักศึกษา →
-                  </button>
-                </div>
-              )}
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                {evidenceError ? (
+                  <span className="text-xs text-destructive">โหลดคะแนนที่กรอกไม่สำเร็จ</span>
+                ) : (
+                  evidenceTotal !== undefined &&
+                  evidenceCoverage !== undefined && (
+                    <EvidenceCoverageBadge
+                      coverage={{
+                        validCount: evidenceCoverage.get(clo.cloId) ?? 0,
+                        totalCount: evidenceTotal,
+                      }}
+                    />
+                  )
+                )}
+              </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </PageSection>
 
       {(plos.length > 0 || scoredAssessmentClos.length > 0) && (

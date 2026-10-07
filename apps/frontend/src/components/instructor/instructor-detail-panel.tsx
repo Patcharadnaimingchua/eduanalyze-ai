@@ -7,6 +7,7 @@ import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instruct
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
 import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
+import { buildCourseOverviews } from '@/lib/instructor-overview';
 import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
 import { useUnsavedNavigationGuard } from '@/lib/use-unsaved-navigation-guard';
 import { PageHeader } from '@/components/layout/page-header';
@@ -158,7 +159,7 @@ export function InstructorDetailPanel({
             {activeTab === 'clo' && (
               <Reveal index={0}>
                 <CloAchievementSection
-                  courseId={course.courseId}
+                  gradedPeople={buildCourseOverviews([course])[0].stats.counted}
                   achievementPercent={course.achievementPercent}
                   clos={course.clos}
                   plos={course.plos}
@@ -169,8 +170,6 @@ export function InstructorDetailPanel({
                   evidenceCoverage={evidenceCoverageQuery.data}
                   evidenceTotal={rosterQuery.data?.length}
                   evidenceError={evidenceCoverageQuery.isError}
-                  roster={rosterQuery.data}
-                  onViewRoster={() => onTabChange('students')}
                 />
               </Reveal>
             )}
