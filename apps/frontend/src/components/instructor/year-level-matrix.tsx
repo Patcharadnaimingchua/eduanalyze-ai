@@ -11,14 +11,11 @@ import type { GroupStats, Matrix, MatrixCell } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { CARD, TEXT_LABEL } from './instructor-ui';
 
-// A small flat tag. Chips are never split across lines: they wrap whole.
-const CHIP =
-  'inline-flex items-center whitespace-nowrap rounded-full border border-slate-200 px-2 py-0.5 text-[13px] tabular-nums text-muted-foreground';
-
-// One cell: the middle grade on a one-hue tint (darker for a higher grade; the
-// letter is always written), "GPA x.xx" under it, then chips for the seats, F
-// and W. Under 5 graded people there is no middle grade, only a flat note and
-// the chips. `mode` adds the most common grade, used in the whole-course column.
+// One cell, two lines. First: the middle grade on a one-hue tint (darker for a
+// higher grade; the letter is always written) with "GPA x.xx" beside it. Second:
+// plain small grey text, the seats and the F count when there is one. Under 5
+// graded people there is no middle grade, only a flat note. `mode` adds the most
+// common grade to the second line, used in the whole-course column.
 function Figure({
   stats,
   end = false,
@@ -27,31 +24,30 @@ function Figure({
   const center = summarizeGradeCenter(stats.counts);
   const values = center.values;
   return (
-    <span
-      className={cn('flex min-h-[5.5rem] min-w-0 flex-col gap-1', end && 'items-end text-right')}
-    >
-      {values ? (
-        <span
-          className="inline-flex min-w-14 justify-center self-start rounded-md px-2 py-0.5 text-xl font-semibold leading-tight tabular-nums text-primary"
-          style={{ backgroundColor: `rgba(37, 99, 235, ${medianShade(values.median)})` }}
-        >
-          {formatMedian(values.median)}
-        </span>
-      ) : (
-        <span className="inline-flex self-start rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[13px] text-muted-foreground">
-          ข้อมูลยังน้อย
-        </span>
-      )}
-      {values && (
-        <span className="text-sm tabular-nums text-muted-foreground">
-          GPA {formatCourseGpa(values.gpa)}
-          {mode && ` · พบมากที่สุด ${formatGradeList(values.modes)}`}
-        </span>
-      )}
-      <span className={cn('flex flex-wrap gap-1.5', end && 'justify-end')}>
-        <span className={CHIP}>{stats.seats} ที่นั่ง</span>
-        {stats.f > 0 && <span className={CHIP}>F {stats.f}</span>}
-        {stats.w > 0 && <span className={CHIP}>W {stats.w}</span>}
+    <span className={cn('flex min-h-14 min-w-0 flex-col gap-1', end && 'items-end text-right')}>
+      <span className={cn('flex flex-wrap items-center gap-x-2 gap-y-1', end && 'justify-end')}>
+        {values ? (
+          <>
+            <span
+              className="inline-flex min-w-14 justify-center rounded-md px-2 py-0.5 text-xl font-semibold leading-tight tabular-nums text-primary"
+              style={{ backgroundColor: `rgba(37, 99, 235, ${medianShade(values.median)})` }}
+            >
+              {formatMedian(values.median)}
+            </span>
+            <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+              GPA {formatCourseGpa(values.gpa)}
+            </span>
+          </>
+        ) : (
+          <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[13px] text-muted-foreground">
+            ข้อมูลยังน้อย
+          </span>
+        )}
+      </span>
+      <span className={cn('text-[13px] tabular-nums text-muted-foreground', end && 'text-right')}>
+        {stats.seats} ที่นั่ง
+        {stats.f > 0 && ` · F ${stats.f}`}
+        {mode && values && ` · พบมากที่สุด ${formatGradeList(values.modes)}`}
       </span>
     </span>
   );
