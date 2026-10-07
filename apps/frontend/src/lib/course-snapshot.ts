@@ -274,10 +274,19 @@ export function summaryLine(snapshot: Pick<CourseSnapshot, 'stats' | 'target' | 
   return `จากข้อมูลที่มี ${formatShare(stats.achievedPercent, target)} ได้ B ขึ้นไป${goal}`;
 }
 
+// People with a grade, and how many of them W and I leave out of the B-or-above share.
+export function gradedPeopleParts(stats: GroupStats): { people: number; excluded: number } {
+  return { people: stats.seats, excluded: stats.seats - stats.counted };
+}
+
+export function excludedNote(excluded: number): string | null {
+  return excluded > 0 ? `ไม่รวมถอนหรือยังไม่สมบูรณ์ ${excluded} คน ในร้อยละ B ขึ้นไป` : null;
+}
+
 export function gradedPeopleLine(stats: GroupStats): string {
-  const left = stats.seats - stats.counted;
-  const base = `จากนักศึกษาที่มีเกรด ${stats.seats} คน`;
-  return left > 0 ? `${base} (ไม่รวมถอนหรือยังไม่สมบูรณ์ ${left} คน ในร้อยละ B ขึ้นไป)` : base;
+  const { people, excluded } = gradedPeopleParts(stats);
+  const note = excludedNote(excluded);
+  return `จากนักศึกษาที่มีเกรด ${people} คน${note ? ` (${note})` : ''}`;
 }
 
 export function changeLine(change: TrendChange): string {

@@ -9,7 +9,8 @@ import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { CourseOverview } from '@/components/instructor/course-overview';
+import Link from 'next/link';
+import { CourseOverview, CourseQuickActions } from '@/components/instructor/course-overview';
 import { CourseSelector, type CourseChoice } from '@/components/instructor/course-selector';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { PageHeader } from '@/components/layout/page-header';
@@ -89,10 +90,26 @@ function InstructorDashboardContent() {
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Reveal index={0}>
-          <PageHeader
-            title="แดชบอร์ดอาจารย์"
-            description="ภาพรวมผลการเรียนของรายวิชาที่คุณสอน ดูทีละวิชา"
-          />
+          <div className="space-y-2">
+            <nav aria-label="เส้นทางหน้า" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <Link href="/instructor/my-courses" className="inline-flex min-h-11 items-center hover:text-primary">
+                รายวิชาที่สอน
+              </Link>
+              {selected && (
+                <>
+                  <span aria-hidden="true">›</span>
+                  <span aria-current="page" className="break-words font-medium text-primary">
+                    {selected.code} {selected.name}
+                  </span>
+                </>
+              )}
+            </nav>
+            <PageHeader
+              title="ภาพรวมผลการเรียน"
+              description="ผลการเรียนของรายวิชาที่คุณสอน ดูทีละวิชา"
+              actions={selected && <CourseQuickActions course={selected} />}
+            />
+          </div>
         </Reveal>
 
         {dashboardQuery.isLoading && <InstructorDashboardSkeleton />}
@@ -116,6 +133,7 @@ function InstructorDashboardContent() {
             <CourseOverview
               key={selected.courseId}
               course={selected}
+              showActions={false}
               selector={
                 <CourseSelector courses={choices} activeCourseId={selected.courseId} onSelect={selectCourse} />
               }

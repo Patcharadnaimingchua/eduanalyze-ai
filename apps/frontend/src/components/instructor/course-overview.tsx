@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useId, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, CircleDashed } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CircleDashed, Info } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import {
   fetchInstructorCourseTimeline,
@@ -23,7 +23,8 @@ import {
   changeLine,
   formatShare,
   courseTermInfo,
-  gradedPeopleLine,
+  excludedNote,
+  gradedPeopleParts,
   summaryLine,
   type CourseSnapshot,
   type GoalItem,
@@ -33,26 +34,30 @@ import {
 import { yearLevelLabel } from '@/lib/course-timeline-summary';
 import { formatPercent } from '@/lib/format-percent';
 import { GRADE_LABELS } from '@/lib/grade-label';
-import { formatGpa, type OverviewStatus } from '@/lib/instructor-overview';
-import { BAR_TONE_CLASSES, type SemanticTone } from '@/lib/tone';
+import { buildCourseOverviews, formatGpa, type OverviewStatus } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { PageSection } from '@/components/layout/page-section';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GoalBar, LowSampleTag, StatusBadge } from './overview-parts';
 
-const GRADE_TONE: Record<string, SemanticTone> = {
-  A: 'success',
-  B_PLUS: 'success',
-  B: 'success',
-  C_PLUS: 'warning',
-  C: 'warning',
-  D_PLUS: 'danger',
-  D: 'danger',
-  F: 'danger',
+// Blue for B or above, grey for C, amber for D, red for F. Fixed colours rather
+// than theme classes, so the label inside each segment keeps its contrast in
+// both themes. Each segment is also named in words in the bar and below it, so
+// colour is never the only signal.
+const GRADE_BAR: Record<string, { fill: string; text: string }> = {
+  A: { fill: '#1e3a8a', text: '#ffffff' },
+  B_PLUS: { fill: '#1d4ed8', text: '#ffffff' },
+  B: { fill: '#60a5fa', text: '#0f172a' },
+  C_PLUS: { fill: '#64748b', text: '#ffffff' },
+  C: { fill: '#cbd5e1', text: '#0f172a' },
+  D_PLUS: { fill: '#f59e0b', text: '#1c1917' },
+  D: { fill: '#fcd34d', text: '#1c1917' },
+  F: { fill: '#dc2626', text: '#ffffff' },
 };
+
+const oneDecimal = (n: number) => `${n.toFixed(1)}%`;
 
 // Grey text, never a warning colour: too few people is not a problem to fix.
 function SparseBadge({ children = SPARSE_LABEL }: Readonly<{ children?: ReactNode }>) {
@@ -70,17 +75,81 @@ function StatusOf({ status }: Readonly<{ status: SnapshotStatus }>) {
 
 const barStatus = (status: SnapshotStatus): OverviewStatus => (status === 'sparse' ? 'none' : status);
 
+// The three shortcuts of one course. On the dashboard they sit in the page
+// header; on the course page they sit at the top of the overview.
+export function CourseQuickActions({
+  course,
+  showDetailLink = true,
+}: Readonly<{ course: InstructorCourseSummary; showDetailLink?: boolean }>) {
+  const base = `/instructor/courses/${course.courseId}`;
+  const seats = buildCourseOverviews([course])[0].stats.seats;
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button asChild variant="outline" className="h-11">
+        <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
+      </Button>
+      <Button asChild variant="outline" className="h-11">
+        <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({seats})</Link>
+      </Button>
+      {showDetailLink && (
+        <Button asChild variant="outline" className="h-11">
+          <Link href={base}>รายละเอียดรายวิชา</Link>
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// A titled card: heading and a short line on the left, a reference on the right.
+function SectionCard({
+  title,
+  description,
+  aside,
+  footer,
+  children,
+}: Readonly<{
+  title: ReactNode;
+  description?: ReactNode;
+  aside?: ReactNode;
+  footer?: ReactNode;
+  children: ReactNode;
+}>) {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="rounded-xl border bg-card">
+      <div className="flex flex-col gap-1 border-b px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h2 id={headingId} className="text-lg font-semibold text-primary">
+            {title}
+          </h2>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </div>
+        {aside && <div className="shrink-0 text-xs text-muted-foreground">{aside}</div>}
+      </div>
+      <div className="space-y-4 p-5">{children}</div>
+      {footer && (
+        <div className="flex items-start gap-2 rounded-b-xl border-t bg-slate-50 px-5 py-3 text-xs text-muted-foreground">
+          <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <div className="space-y-1">{footer}</div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // One course, read the same way on the dashboard and on the course page. The
 // numbers all come from buildCourseSnapshot, so the two pages cannot differ.
 export function CourseOverview({
   course,
   selector,
   showHeading = true,
+  showActions = true,
   showDetailLink = true,
 }: Readonly<{
   course: InstructorCourseSummary;
   selector?: ReactNode;
   showHeading?: boolean;
+  showActions?: boolean;
   showDetailLink?: boolean;
 }>) {
   // Same keys as the other instructor pages: one cached request each.
@@ -119,49 +188,59 @@ export function CourseOverview({
     [timelineQuery.data, course.courseId],
   );
   const yearsLoading = studentsQuery.isLoading || yearLevelsQuery.isLoading;
-
-  const base = `/instructor/courses/${course.courseId}`;
-  const metaLine = [termInfo?.termLabel, termInfo?.curriculum].filter(Boolean).join(' · ');
+  const { people, excluded } = gradedPeopleParts(snapshot.stats);
+  const note = excludedNote(excluded);
 
   return (
     <div className="space-y-6">
-      <section aria-label="วิชาที่เลือก" className="space-y-3">
-        {selector}
-        {showHeading && (
-          <h2 className="break-words text-xl font-semibold text-primary">
-            {course.code} {course.name}
-          </h2>
-        )}
-        {metaLine && <p className="text-sm text-muted-foreground">{metaLine}</p>}
-        {!snapshot.empty && (
-          <p className="text-sm text-muted-foreground">
-            {gradedPeopleLine(snapshot.stats)} · {DATA_SOURCE_NOTE}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" className="h-11">
-            <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
-          </Button>
-          <Button asChild variant="outline" className="h-11">
-            <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({snapshot.stats.seats})</Link>
-          </Button>
-          {showDetailLink && (
-            <Button asChild variant="outline" className="h-11">
-              <Link href={base}>รายละเอียดรายวิชา</Link>
-            </Button>
-          )}
+      <section aria-label="วิชาที่เลือก" className="rounded-xl border bg-card p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1 space-y-3">
+            {selector}
+            {showHeading && (
+              <h2 className="break-words text-xl font-semibold text-primary">
+                {course.code} {course.name}
+              </h2>
+            )}
+            {termInfo?.termLabel && <p className="text-sm text-muted-foreground">{termInfo.termLabel}</p>}
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start lg:max-w-sm lg:flex-col lg:items-end">
+            {termInfo?.curriculum && (
+              <span className="inline-flex items-center rounded-md border border-brand bg-brand-light px-3 py-1.5 text-xs font-medium text-brand">
+                {termInfo.curriculum}
+              </span>
+            )}
+            {!snapshot.empty && (
+              <div className="space-y-2 lg:text-right">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground lg:justify-end">
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {DATA_SOURCE_NOTE}
+                </p>
+                <div className="rounded-md bg-slate-50 px-3 py-2">
+                  <p className="text-sm text-muted-foreground">
+                    จากนักศึกษาที่มีเกรด{' '}
+                    <span className="text-xl font-semibold tabular-nums text-primary">{people}</span> คน
+                  </p>
+                  {note && <p className="text-xs text-muted-foreground">({note})</p>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+        {showActions && (
+          <div className="mt-4">
+            <CourseQuickActions course={course} showDetailLink={showDetailLink} />
+          </div>
+        )}
       </section>
 
       {snapshot.empty ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{EMPTY_SNAPSHOT}</p>
-          </CardContent>
-        </Card>
+        <section className="rounded-xl border bg-card p-5">
+          <p className="text-sm text-muted-foreground">{EMPTY_SNAPSHOT}</p>
+        </section>
       ) : (
         <>
-          <SummarySection snapshot={snapshot} />
+          <SummarySection snapshot={snapshot} termLabel={termInfo?.termLabel} />
           <YearSection snapshot={snapshot} loading={yearsLoading} />
           <GoalsSection snapshot={snapshot} />
           <GradesSection snapshot={snapshot} />
@@ -172,44 +251,63 @@ export function CourseOverview({
   );
 }
 
-function SummarySection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
+function SummarySection({ snapshot, termLabel }: Readonly<{ snapshot: CourseSnapshot; termLabel?: string }>) {
   const { stats, target, level, status } = snapshot;
+  const headingId = useId();
   return (
-    <PageSection title="สรุปผล">
-      <Card>
-        <CardContent className="space-y-4 pt-5">
+    <section aria-labelledby={headingId} className="rounded-xl border bg-card">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b px-5 py-4">
+        <h2 id={headingId} className="text-lg font-semibold text-primary">
+          สรุปผล
+        </h2>
+        {termLabel && <p className="text-xs text-muted-foreground">รอบล่าสุด {termLabel}</p>}
+      </div>
+      <div className="space-y-5 p-5">
+        <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-8">
           <div className="space-y-3">
             <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-5xl font-semibold leading-none tabular-nums text-primary">
+              <span className="text-6xl font-bold leading-none tabular-nums text-primary">
                 {formatShare(stats.achievedPercent, target)}
               </span>
-              <span className="text-sm text-muted-foreground">{summaryLine(snapshot)}</span>
+              <span className="text-base font-medium text-muted-foreground">ได้ B ขึ้นไป</span>
             </p>
-            {level !== 'insufficient' && (
-              <GoalBar percent={stats.achievedPercent} target={target} status={barStatus(status)} />
-            )}
             <div className="flex flex-wrap items-center gap-2">
               {level === 'insufficient' ? <SparseBadge>{SPARSE_SUMMARY}</SparseBadge> : <StatusOf status={status} />}
               {level === 'low' && <LowSampleTag counted={stats.counted} />}
+              {target !== null && level !== 'insufficient' && (
+                <span className="text-sm text-muted-foreground">(เป้าหมาย {formatPercent(target)})</span>
+              )}
             </div>
           </div>
-          <dl className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4">
-            <Figure label="เกรดเฉลี่ย" value={formatGpa(stats.gpa)} note={stats.gpa === null ? 'ยังไม่มีเกรดที่นำมาคิด' : 'จาก 4.00'} />
-            <Figure label="นักศึกษาที่มีเกรด" value={`${stats.seats} คน`} />
-            <Figure label="ได้ F" value={`${stats.f} คน`} />
-            <Figure label="ถอน (W)" value={`${stats.w} คน`} />
-          </dl>
-        </CardContent>
-      </Card>
-    </PageSection>
+          <div className="space-y-3 border-brand lg:border-l-4 lg:pl-5">
+            <p className="text-sm font-medium text-primary">{summaryLine(snapshot)}</p>
+            {level !== 'insufficient' && (
+              <GoalBar percent={stats.achievedPercent} target={target} status={barStatus(status)} />
+            )}
+          </div>
+        </div>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t pt-4 sm:grid-cols-3 lg:grid-cols-5">
+          <Figure label="เกรดเฉลี่ย" value={formatGpa(stats.gpa)} note={stats.gpa === null ? 'ยังไม่มีเกรดที่นำมาคิด' : 'จาก 4.00'} />
+          <Figure label="นักศึกษาที่มีเกรด" value={`${stats.seats} คน`} />
+          <Figure label="ได้ B ขึ้นไป" value={`${stats.achieved} คน`} />
+          <Figure label="ได้ F" value={`${stats.f} คน`} danger={stats.f > 0} />
+          <Figure label="ถอน (W)" value={`${stats.w} คน`} />
+        </dl>
+      </div>
+    </section>
   );
 }
 
-function Figure({ label, value, note }: Readonly<{ label: string; value: string; note?: string }>) {
+function Figure({
+  label,
+  value,
+  note,
+  danger = false,
+}: Readonly<{ label: string; value: string; note?: string; danger?: boolean }>) {
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-xl font-semibold tabular-nums text-primary">{value}</dd>
+      <dd className={cn('text-2xl font-semibold tabular-nums', danger ? 'text-red-600' : 'text-primary')}>{value}</dd>
       {note && <dd className="text-xs text-muted-foreground">{note}</dd>}
     </div>
   );
@@ -217,6 +315,14 @@ function Figure({ label, value, note }: Readonly<{ label: string; value: string;
 
 function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot; loading: boolean }>) {
   const { years, target } = snapshot;
+  const hasSparse = !!years && years.rows.some((r) => !r.showNumbers);
+  const footer =
+    years && (hasSparse || years.unplaced > 0) ? (
+      <>
+        {hasSparse && <p>{SPARSE_YEAR_NOTE}</p>}
+        {years.unplaced > 0 && <p>{years.unplaced} คนหาชั้นปีไม่พบ จึงไม่อยู่ในตารางนี้</p>}
+      </>
+    ) : undefined;
   let body: ReactNode;
   if (loading) {
     body = <Skeleton className="h-28 w-full rounded-xl" />;
@@ -227,27 +333,27 @@ function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot;
   } else {
     body = (
       <>
-        <div className="hidden overflow-hidden rounded-xl border bg-card md:block">
+        <div className="-mx-5 -my-5 hidden md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-left text-xs text-muted-foreground">
-                <th className="px-4 py-2 font-medium">ชั้นปี</th>
-                <th className="px-4 py-2 font-medium">มีเกรด (คน)</th>
-                <th className="px-4 py-2 font-medium">ได้ B ขึ้นไป{target !== null && ` (เป้า ${formatPercent(target)})`}</th>
-                <th className="px-4 py-2 font-medium">เกรดเฉลี่ย</th>
-                <th className="px-4 py-2 font-medium">สถานะ</th>
+                <th className="px-5 py-2.5 font-medium">ชั้นปี</th>
+                <th className="px-5 py-2.5 text-right font-medium">มีเกรด (คน)</th>
+                <th className="px-5 py-2.5 text-right font-medium">ได้ B ขึ้นไป</th>
+                <th className="px-5 py-2.5 text-right font-medium">เกรดเฉลี่ย</th>
+                <th className="px-5 py-2.5 font-medium">สถานะ</th>
               </tr>
             </thead>
             <tbody>
               {years.rows.map((row) => (
                 <tr key={row.yearLevel} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-semibold text-primary">{yearLevelLabel(row.yearLevel)}</td>
-                  <td className="px-4 py-3 tabular-nums">{row.stats.seats}</td>
-                  <td className="px-4 py-3 text-base font-semibold tabular-nums text-primary">
+                  <td className="px-5 py-3.5 text-base font-bold text-primary">{yearLevelLabel(row.yearLevel)}</td>
+                  <td className="px-5 py-3.5 text-right tabular-nums">{row.stats.seats}</td>
+                  <td className="px-5 py-3.5 text-right text-lg font-semibold tabular-nums text-primary">
                     {row.showNumbers ? formatShare(row.stats.achievedPercent, target) : '—'}
                   </td>
-                  <td className="px-4 py-3 tabular-nums">{row.showNumbers ? formatGpa(row.stats.gpa) : '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5 text-right tabular-nums">{row.showNumbers ? formatGpa(row.stats.gpa) : '—'}</td>
+                  <td className="px-5 py-3.5">
                     <span className="inline-flex flex-wrap items-center gap-1.5">
                       <StatusOf status={row.status} />
                       {row.level === 'low' && <LowSampleTag counted={row.stats.counted} />}
@@ -258,32 +364,31 @@ function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot;
             </tbody>
           </table>
         </div>
-        <ul className="divide-y divide-slate-100 rounded-xl border bg-card md:hidden">
+        <ul className="-my-1 divide-y md:hidden">
           {years.rows.map((row) => (
             <YearListItem key={row.yearLevel} row={row} target={target} />
           ))}
         </ul>
-        {years.rows.some((r) => !r.showNumbers) && (
-          <p className="text-xs text-muted-foreground">{SPARSE_YEAR_NOTE}</p>
-        )}
-        {years.unplaced > 0 && (
-          <p className="text-xs text-muted-foreground">{years.unplaced} คนหาชั้นปีไม่พบ จึงไม่อยู่ในตารางนี้</p>
-        )}
       </>
     );
   }
   return (
-    <PageSection title="ภาพรวมตามชั้นปี" description="ชั้นปีของนักศึกษาเทียบกับปีการศึกษาล่าสุด แสดงเฉพาะชั้นปีที่มีนักศึกษาในวิชานี้">
+    <SectionCard
+      title="ภาพรวมตามชั้นปี"
+      description="ชั้นปีของนักศึกษาเทียบกับปีการศึกษาล่าสุด แสดงเฉพาะชั้นปีที่มีนักศึกษาในวิชานี้"
+      aside={target !== null ? `เกณฑ์อ้างอิง: B ขึ้นไป ≥ ${formatPercent(target)}` : undefined}
+      footer={footer}
+    >
       {body}
-    </PageSection>
+    </SectionCard>
   );
 }
 
 function YearListItem({ row, target }: Readonly<{ row: YearRow; target: number | null }>) {
   return (
-    <li className="space-y-1 px-4 py-3">
+    <li className="space-y-1 py-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold text-primary">{yearLevelLabel(row.yearLevel)}</p>
+        <p className="text-base font-bold text-primary">{yearLevelLabel(row.yearLevel)}</p>
         <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
           <StatusOf status={row.status} />
           {row.level === 'low' && <LowSampleTag counted={row.stats.counted} />}
@@ -319,7 +424,7 @@ function GoalRow({ goal, sparse }: Readonly<{ goal: GoalItem; sparse: boolean }>
 function GoalsSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
   const { goals } = snapshot;
   return (
-    <PageSection
+    <SectionCard
       title="เป้าการเรียนรู้"
       description={
         goals.items.length === 0 || goals.sparse
@@ -330,13 +435,13 @@ function GoalsSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
       {goals.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">ยังไม่มีเป้าการเรียนรู้ที่กำหนดไว้ในวิชานี้</p>
       ) : (
-        <ul className="divide-y divide-slate-100 rounded-xl border bg-card px-4">
+        <ul className="-my-3 divide-y divide-slate-100">
           {goals.items.map((goal) => (
             <GoalRow key={goal.cloId} goal={goal} sparse={goals.sparse} />
           ))}
         </ul>
       )}
-    </PageSection>
+    </SectionCard>
   );
 }
 
@@ -344,82 +449,109 @@ function GradesSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
   const { grades } = snapshot;
   if (grades.scored === 0) {
     return (
-      <PageSection title="การกระจายเกรด">
+      <SectionCard title="การกระจายเกรด">
         <p className="text-sm text-muted-foreground">ยังไม่มีเกรด A ถึง F</p>
-      </PageSection>
+      </SectionCard>
     );
   }
   return (
-    <PageSection title="การกระจายเกรด" description="เกรดล่าสุดของนักศึกษาแต่ละคนในวิชานี้ (A ถึง F)">
-      <div className="space-y-3">
-        <div
-          role="img"
-          aria-label={grades.segments.map((s) => `${GRADE_LABELS[s.grade]} ${s.count} คน`).join(' · ')}
-          className="flex h-8 overflow-hidden rounded-lg bg-slate-100"
-        >
-          {grades.segments
-            .filter((s) => s.count > 0)
-            .map((s) => (
-              <span
-                key={s.grade}
-                className={cn('border-r border-background last:border-r-0', BAR_TONE_CLASSES[GRADE_TONE[s.grade]])}
-                style={{ width: `${s.percent}%` }}
-              />
-            ))}
-        </div>
-        <dl className="grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-8">
-          {grades.segments.map((s) => (
-            <div key={s.grade} className="flex items-start gap-1.5">
+    <SectionCard
+      title="การกระจายเกรด"
+      description="เกรดล่าสุดของนักศึกษาแต่ละคนในวิชานี้ (A ถึง F)"
+      aside={`รวม A ถึง F ${grades.scored} คน`}
+    >
+      <div
+        role="img"
+        aria-label={grades.segments.map((s) => `${GRADE_LABELS[s.grade]} ${s.count} คน`).join(' · ')}
+        className="flex h-9 overflow-hidden rounded-lg bg-slate-100"
+      >
+        {grades.segments
+          .filter((s) => s.count > 0)
+          .map((s) => (
+            <span
+              key={s.grade}
+              className="flex items-center justify-center overflow-hidden whitespace-nowrap border-r border-background text-xs font-medium last:border-r-0"
+              style={{ width: `${s.percent}%`, backgroundColor: GRADE_BAR[s.grade].fill, color: GRADE_BAR[s.grade].text }}
+            >
+              {s.percent >= 25 ? `${GRADE_LABELS[s.grade]} (${formatPercent(s.percent)})` : s.percent >= 6 ? GRADE_LABELS[s.grade] : ''}
+            </span>
+          ))}
+      </div>
+      <dl className="grid grid-cols-4 gap-x-2 gap-y-4 sm:grid-cols-8">
+        {grades.segments.map((s) => (
+          <div key={s.grade} className="space-y-0.5 text-center">
+            <dt className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <span
                 aria-hidden="true"
-                className={cn('mt-1.5 h-2.5 w-2.5 shrink-0 rounded-sm', BAR_TONE_CLASSES[GRADE_TONE[s.grade]])}
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: GRADE_BAR[s.grade].fill }}
               />
-              <div>
-                <dt className="text-xs text-muted-foreground">{GRADE_LABELS[s.grade]}</dt>
-                <dd className="text-sm font-semibold tabular-nums text-primary">{s.count}</dd>
-                <dd className="text-xs tabular-nums text-muted-foreground">{formatPercent(s.percent)}</dd>
-              </div>
-            </div>
-          ))}
-        </dl>
-        <p className="text-sm text-muted-foreground">
-          ได้ F <span className="font-semibold text-primary">{grades.f}</span> คน · ถอน (W){' '}
-          <span className="font-semibold text-primary">{grades.w}</span> คน · ยังไม่สมบูรณ์ (I){' '}
-          <span className="font-semibold text-primary">{grades.incomplete}</span> คน
-          {grades.notGraded > 0 && (
-            <>
-              {' '}
-              · ไม่คิดเกรด (S, U) <span className="font-semibold text-primary">{grades.notGraded}</span> คน
-            </>
-          )}
-        </p>
-      </div>
-    </PageSection>
+              {GRADE_LABELS[s.grade]}
+            </dt>
+            <dd className="text-xl font-semibold tabular-nums text-primary">
+              {s.count} <span className="text-xs font-normal text-muted-foreground">คน</span>
+            </dd>
+            <dd className="text-xs tabular-nums text-muted-foreground">{oneDecimal(s.percent)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="border-t pt-3 text-sm text-muted-foreground">
+        ได้ F <span className={cn('font-semibold', grades.f > 0 ? 'text-red-600' : 'text-primary')}>{grades.f}</span> คน · ถอน (W){' '}
+        <span className="font-semibold text-primary">{grades.w}</span> คน · ยังไม่สมบูรณ์ (I){' '}
+        <span className="font-semibold text-primary">{grades.incomplete}</span> คน
+        {grades.notGraded > 0 && (
+          <>
+            {' '}
+            · ไม่คิดเกรด (S, U) <span className="font-semibold text-primary">{grades.notGraded}</span> คน
+          </>
+        )}
+      </p>
+    </SectionCard>
   );
 }
 
 function TrendSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
   const { trend } = snapshot;
   return (
-    <PageSection
+    <SectionCard
       title="แนวโน้มรายภาคเรียน"
       description={trend.enough && trend.change ? changeLine(trend.change) : undefined}
     >
       {trend.enough ? (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-4 pt-2 sm:grid-cols-2 lg:grid-cols-3">
           {trend.terms.map((term) => (
-            <li key={term.key} className="space-y-1 rounded-xl border bg-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-primary">{term.label}</p>
-                {term.isLatest && <Badge tone="neutral">ภาคล่าสุด</Badge>}
-              </div>
+            <li
+              key={term.key}
+              className={cn(
+                'relative space-y-2 rounded-xl border p-4',
+                term.isLatest ? 'border-2 border-brand bg-brand-light' : 'bg-card',
+              )}
+            >
+              {term.isLatest && (
+                <span className="absolute -top-3 right-3 rounded-md bg-brand px-2 py-0.5 text-xs font-medium text-brand-foreground">
+                  ภาคล่าสุด
+                </span>
+              )}
+              <p className="text-sm font-semibold text-primary">{term.label}</p>
               {term.showNumbers ? (
-                <p className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-3xl font-semibold leading-none tabular-nums text-primary">
-                    {formatPercent(term.percent)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">ได้ B ขึ้นไป</span>
-                </p>
+                <>
+                  <p className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-4xl font-bold leading-none tabular-nums text-primary">
+                      {formatPercent(term.percent)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">ได้ B ขึ้นไป</span>
+                  </p>
+                  <div
+                    role="img"
+                    aria-label={`ได้ B ขึ้นไป ${formatPercent(term.percent)}`}
+                    className="h-2 overflow-hidden rounded-full bg-slate-100"
+                  >
+                    <span
+                      className={cn('block h-full rounded-full', term.isLatest ? 'bg-brand' : 'bg-slate-400')}
+                      style={{ width: `${Math.min(100, Math.max(0, term.percent))}%` }}
+                    />
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground">{SPARSE_LABEL} · ตัวเลข —</p>
               )}
@@ -435,6 +567,6 @@ function TrendSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
           {SPARSE_TREND} (มี {trend.termCount} ภาคเรียน ต้องมีอย่างน้อย {MIN_TERMS_FOR_TREND} ภาคเรียน)
         </p>
       )}
-    </PageSection>
+    </SectionCard>
   );
 }
