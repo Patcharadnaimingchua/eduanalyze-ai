@@ -18,7 +18,11 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { StudentFilterBar } from '@/components/instructor/student-filter-bar';
-import { StudentPersonList, StudentPersonListSkeleton } from '@/components/instructor/student-person-list';
+import {
+  StudentPersonList,
+  StudentPersonListSkeleton,
+} from '@/components/instructor/student-person-list';
+import { TEXT_PAGE } from '@/components/instructor/instructor-ui';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -105,6 +109,7 @@ function InstructorStudentsContent() {
           <PageHeader
             title="นักศึกษา"
             description={summary ?? 'นักศึกษาในวิชาที่คุณสอน เรียงจากคนที่ต้องติดตามก่อน'}
+            titleClassName={TEXT_PAGE}
           />
         </Reveal>
 
@@ -161,7 +166,12 @@ function InstructorStudentsContent() {
                       illustration="no-results"
                       description="ไม่พบนักศึกษาที่ตรงกับตัวกรองที่เลือก"
                       action={
-                        <Button type="button" variant="outline" onClick={clearFilters} className="h-11">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={clearFilters}
+                          className="h-11"
+                        >
                           ล้างตัวกรอง
                         </Button>
                       }

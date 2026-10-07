@@ -18,6 +18,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { InstructorCourseTimelineSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { TermCourseList, TermHeading } from '@/components/instructor/instructor-course-timeline';
 import { PageHeader } from '@/components/layout/page-header';
+import { TEXT_PAGE, TEXT_SECTION } from '@/components/instructor/instructor-ui';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -71,6 +72,7 @@ function InstructorMyCoursesContent() {
           <PageHeader
             title="รายวิชาที่สอน"
             description={summary ?? 'รายวิชาที่คุณได้รับมอบหมายให้สอน แยกตามภาคเรียน'}
+            titleClassName={TEXT_PAGE}
           />
         </Reveal>
 
@@ -78,9 +80,7 @@ function InstructorMyCoursesContent() {
 
         {timelineQuery.isError && (
           <Alert variant="destructive">
-            <AlertDescription>
-              ไม่สามารถโหลดข้อมูลรายวิชาได้ กรุณาลองใหม่อีกครั้ง
-            </AlertDescription>
+            <AlertDescription>ไม่สามารถโหลดข้อมูลรายวิชาได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
           </Alert>
         )}
 
@@ -100,7 +100,8 @@ function InstructorMyCoursesContent() {
         {latest && (
           <Reveal index={1}>
             <PageSection
-              title={`เทอมล่าสุด — ${termLabel(latest)}`}
+              title={`เทอมล่าสุด — ${termLabel(latest)} · ${latest.semester.courses.length} วิชา`}
+              titleClassName={TEXT_SECTION}
               actions={
                 <Button asChild variant="outline" className="h-11">
                   <Link href="/instructor/dashboard">
@@ -110,7 +111,7 @@ function InstructorMyCoursesContent() {
                 </Button>
               }
             >
-              <TermCourseList semester={latest.semester} />
+              <TermCourseList semester={latest.semester} academicYear={latest.academicYear} />
             </PageSection>
           </Reveal>
         )}
@@ -127,8 +128,8 @@ function InstructorMyCoursesContent() {
             >
               <div className="space-y-6">
                 <p className="text-xs text-muted-foreground">
-                  แสดงตามประวัติการลงทะเบียนของนักศึกษาในแต่ละวิชา
-                  หากเพิ่งได้รับมอบหมายให้สอน อาจเห็นเทอมย้อนหลังที่คุณไม่ได้เป็นผู้สอนด้วย
+                  แสดงตามประวัติการลงทะเบียนของนักศึกษาในแต่ละวิชา หากเพิ่งได้รับมอบหมายให้สอน
+                  อาจเห็นเทอมย้อนหลังที่คุณไม่ได้เป็นผู้สอนด้วย
                 </p>
                 {previousYears.map((yearGroup) => (
                   <div key={yearGroup.academicYear} className="space-y-3">
@@ -137,8 +138,8 @@ function InstructorMyCoursesContent() {
                     </h2>
                     {yearGroup.semesters.map((semester) => (
                       <div key={semester.semesterId} className="space-y-2">
-                        <TermHeading term={semester.semesterTerm} />
-                        <TermCourseList semester={semester} />
+                        <TermHeading term={semester.semesterTerm} count={semester.courses.length} />
+                        <TermCourseList semester={semester} academicYear={yearGroup.academicYear} />
                       </div>
                     ))}
                   </div>

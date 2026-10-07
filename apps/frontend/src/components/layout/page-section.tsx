@@ -6,12 +6,14 @@ export function PageSection({
   description,
   actions,
   className,
+  titleClassName,
   children,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  titleClassName?: string;
   children: ReactNode;
 }) {
   const headingId = useId();
@@ -20,7 +22,7 @@ export function PageSection({
     <section aria-labelledby={headingId} className={cn('space-y-4', className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h2 id={headingId} className="text-lg font-semibold text-primary">
+          <h2 id={headingId} className={cn('text-lg font-semibold text-primary', titleClassName)}>
             {title}
           </h2>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}

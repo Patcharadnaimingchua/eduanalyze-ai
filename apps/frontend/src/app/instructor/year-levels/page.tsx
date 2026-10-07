@@ -3,7 +3,11 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { fetchInstructorDashboard, fetchInstructorStudents, fetchInstructorYearLevels } from '@/lib/api/instructor';
+import {
+  fetchInstructorDashboard,
+  fetchInstructorStudents,
+  fetchInstructorYearLevels,
+} from '@/lib/api/instructor';
 import { buildCourseOverviews, buildCourseYearMatrix } from '@/lib/instructor-overview';
 import { buildYearLevelsSummary, worstRiskById } from '@/lib/student-directory';
 import { useAuth } from '@/lib/auth-context';
@@ -12,6 +16,7 @@ import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { YearLevelMatrix } from '@/components/instructor/year-level-matrix';
 import { InstructorYearLevelOverview } from '@/components/instructor/instructor-year-level-overview';
+import { TEXT_PAGE } from '@/components/instructor/instructor-ui';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -65,8 +70,13 @@ function InstructorYearLevelsContent() {
   const matrix = useMemo(() => {
     if (!studentsQuery.data || !query.data || courses.length === 0) return null;
     const levelByStudent = new Map<string, number>();
-    for (const b of query.data.buckets) for (const st of b.students) levelByStudent.set(st.studentProfileId, b.yearLevel);
-    return buildCourseYearMatrix(buildCourseOverviews(courses), studentsQuery.data.students, levelByStudent);
+    for (const b of query.data.buckets)
+      for (const st of b.students) levelByStudent.set(st.studentProfileId, b.yearLevel);
+    return buildCourseYearMatrix(
+      buildCourseOverviews(courses),
+      studentsQuery.data.students,
+      levelByStudent,
+    );
   }, [studentsQuery.data, query.data, courses]);
   const totalStudents = buckets.reduce((sum, b) => sum + b.students.length, 0);
   // Wait for the risk data (or its failure) so the badges and the header line
@@ -97,6 +107,7 @@ function InstructorYearLevelsContent() {
             description={
               summary ?? 'นักศึกษาที่เคยเรียนวิชาของคุณ แบ่งตามชั้นปี (ไม่รวมนักศึกษาทั้งหลักสูตร)'
             }
+            titleClassName={TEXT_PAGE}
           />
         </Reveal>
 
@@ -106,7 +117,9 @@ function InstructorYearLevelsContent() {
 
         {query.isError && (
           <Alert variant="destructive">
-            <AlertDescription>ไม่สามารถโหลดข้อมูลภาพรวมชั้นปีได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
+            <AlertDescription>
+              ไม่สามารถโหลดข้อมูลภาพรวมชั้นปีได้ กรุณาลองใหม่อีกครั้ง
+            </AlertDescription>
           </Alert>
         )}
 
@@ -148,7 +161,11 @@ function InstructorYearLevelsContent() {
           <CollapsibleSection
             framed={false}
             title="รายชื่อนักศึกษาแต่ละชั้นปี"
-            meta={<span className="text-sm font-normal text-muted-foreground">กดชั้นปีเพื่อดูรายชื่อ</span>}
+            meta={
+              <span className="text-sm font-normal text-muted-foreground">
+                กดชั้นปีเพื่อดูรายชื่อ
+              </span>
+            }
           >
             <InstructorYearLevelOverview buckets={buckets} riskById={riskById} />
           </CollapsibleSection>
