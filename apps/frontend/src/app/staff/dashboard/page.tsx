@@ -18,6 +18,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { MetricCard } from '@/components/staff/metric-card';
 import {
   CHECK_ICONS,
@@ -311,9 +312,9 @@ function StaffDashboardContent() {
             </Reveal>
           )}
 
-          <Reveal index={3}>
+          <RevealOnScroll>
             <OverviewChecklist items={checklist} />
-          </Reveal>
+          </RevealOnScroll>
         </>
       )}
     </DashboardShell>

@@ -37,6 +37,7 @@ import { GRADE_LABELS } from '@/lib/grade-label';
 import { buildCourseOverviews, formatGpa, type OverviewStatus } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { PageSection } from '@/components/layout/page-section';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -243,9 +244,15 @@ export function CourseOverview({
         <>
           <SummarySection snapshot={snapshot} termLabel={termInfo?.termLabel} />
           <YearSection snapshot={snapshot} loading={yearsLoading} />
-          <GoalsSection snapshot={snapshot} />
-          <GradesSection snapshot={snapshot} />
-          <TrendSection snapshot={snapshot} />
+          <RevealOnScroll>
+            <GoalsSection snapshot={snapshot} />
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <GradesSection snapshot={snapshot} />
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <TrendSection snapshot={snapshot} />
+          </RevealOnScroll>
         </>
       )}
     </div>
