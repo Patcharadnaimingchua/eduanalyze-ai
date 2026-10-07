@@ -18,7 +18,7 @@ import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
 import { CourseFollowUpList } from './course-follow-up-list';
-import { CourseOverviewTab } from './course-overview-tab';
+import { CourseOverview } from './course-overview';
 
 export type InstructorTab = 'overview' | 'students' | 'evidence' | 'clo';
 
@@ -138,7 +138,7 @@ export function InstructorDetailPanel({
             {activeTab === 'overview' && (
               <Reveal index={0}>
                 <div className="space-y-6">
-                  <CourseOverviewTab course={course} />
+                  <CourseOverview course={course} showHeading={false} showDetailLink={false} />
                   <CourseFollowUpList courseId={course.courseId} students={course.atRiskStudents} />
                   <CollapsibleSection
                     framed={false}
