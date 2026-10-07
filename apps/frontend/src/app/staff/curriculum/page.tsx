@@ -23,6 +23,7 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
 import { CategorySection } from '@/components/staff/category-section';
 import { CourseCategoryForm } from '@/components/staff/course-category-form';
+import { CourseEditSheet, type CourseSheetTarget } from '@/components/staff/course-edit-sheet';
 import { CourseRows } from '@/components/staff/course-rows';
 import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instructors-tab';
 import { buildCurriculumView, type InstructorFilter } from '@/components/staff/curriculum-view';
@@ -71,6 +72,7 @@ function StaffCurriculumContent() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [sheet, setSheet] = useState<CourseSheetTarget | null>(null);
 
   // The address keeps the whole selection, so a link from the overview, a
   // reload or Back lands on the same curriculum, filter and course. Older links
@@ -151,6 +153,9 @@ function StaffCurriculumContent() {
     prerequisitesQuery.data &&
     assignmentsQuery.data &&
     instructorsQuery.data;
+  const curriculumCategories = (categoriesQuery.data ?? []).filter(
+    (c) => c.curriculumId === curriculumId && c.isActive,
+  );
   const failed =
     overviewQuery.isError ||
     categoriesQuery.isError ||
@@ -215,6 +220,9 @@ function StaffCurriculumContent() {
   }
 
   const allBlocks = view?.blocks ?? [];
+  const activeCoursesInCurriculum = (coursesQuery.data ?? []).filter(
+    (c) => c.curriculumId === curriculumId && c.isActive,
+  );
   const filtered = search.trim() !== '' || categoryParam !== null || instructorFilter !== 'all';
   const tabs: { key: CurriculumTab; label: string }[] = [
     { key: 'structure', label: 'โครงสร้างหมวดวิชาและรายวิชา' },
@@ -231,35 +239,50 @@ function StaffCurriculumContent() {
           title="การจัดการหลักสูตรและรายวิชา"
           description="จัดการหมวดวิชา รายวิชา วิชาบังคับก่อน และอาจารย์ผู้รับผิดชอบวิชา ภายในขอบเขตของคุณ"
           actions={
-            <label className="block space-y-1.5 sm:w-96">
-              <span className="text-xs font-medium text-muted-foreground">หลักสูตรและสาขาวิชา</span>
-              <Select
-                value={inScope ? (curriculumId ?? undefined) : undefined}
-                onValueChange={(id) =>
-                  setParams(
-                    {
-                      curriculumId: id,
-                      categoryId: null,
-                      courseId: null,
-                      instructor: null,
-                    },
-                    'push',
-                  )
-                }
-                disabled={curricula.length === 0}
-              >
-                <SelectTrigger className="h-11 text-left" aria-label="เลือกหลักสูตร">
-                  <SelectValue placeholder="เลือกหลักสูตร" />
-                </SelectTrigger>
-                <SelectContent>
-                  {curricula.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="min-h-11">
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="block space-y-1.5 sm:w-96">
+                <span className="text-xs font-medium text-muted-foreground">
+                  หลักสูตรและสาขาวิชา
+                </span>
+                <Select
+                  value={inScope ? (curriculumId ?? undefined) : undefined}
+                  onValueChange={(id) =>
+                    setParams(
+                      {
+                        curriculumId: id,
+                        categoryId: null,
+                        courseId: null,
+                        instructor: null,
+                      },
+                      'push',
+                    )
+                  }
+                  disabled={curricula.length === 0}
+                >
+                  <SelectTrigger className="h-11 text-left" aria-label="เลือกหลักสูตร">
+                    <SelectValue placeholder="เลือกหลักสูตร" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {curricula.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="min-h-11">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              {inScope && (
+                <Button
+                  type="button"
+                  className="h-11 gap-1.5 px-4"
+                  disabled={!loaded || curriculumCategories.length === 0}
+                  onClick={() => setSheet({ kind: 'create', defaultCategoryId: categoryParam })}
+                >
+                  <Plus aria-hidden="true" size={16} />
+                  เพิ่มรายวิชาใหม่
+                </Button>
+              )}
+            </div>
           }
         />
       </Reveal>
@@ -493,7 +516,13 @@ function StaffCurriculumContent() {
                 allBlocks.map((block) => (
                   <Reveal key={block.category.id}>
                     <CategorySection block={block} onChanged={refetchAll}>
-                      <CourseRows rows={block.rows} selectedCourseId={courseId} actions={{}} />
+                      <CourseRows
+                        rows={block.rows}
+                        selectedCourseId={courseId}
+                        actions={{
+                          onEdit: (row) => setSheet({ kind: 'edit', course: row.course }),
+                        }}
+                      />
                     </CategorySection>
                   </Reveal>
                 ))
@@ -501,6 +530,18 @@ function StaffCurriculumContent() {
             </>
           )}
         </>
+      )}
+      {inScope && curriculumId && loaded && (
+        <CourseEditSheet
+          target={sheet}
+          onClose={() => setSheet(null)}
+          curriculumId={curriculumId}
+          curriculumLabel={curricula.find((c) => c.id === curriculumId)?.label ?? ''}
+          categories={curriculumCategories}
+          coursesInCurriculum={activeCoursesInCurriculum}
+          prerequisites={prerequisitesQuery.data ?? []}
+          onChanged={refetchAll}
+        />
       )}
     </DashboardShell>
   );
