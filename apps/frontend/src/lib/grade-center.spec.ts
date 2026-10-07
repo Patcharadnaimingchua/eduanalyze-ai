@@ -1,5 +1,11 @@
 import type { Grade } from '@eduanalyze-ai/shared-types';
-import { centerLine, formatGradeList, formatMedian, summarizeGradeCenter } from './grade-center';
+import {
+  centerLine,
+  formatGradeList,
+  formatMedian,
+  medianShade,
+  summarizeGradeCenter,
+} from './grade-center';
 
 const dist = (d: Partial<Record<Grade, number>>) => d;
 const values = (d: Partial<Record<Grade, number>>) => {
@@ -156,5 +162,17 @@ describe('words', () => {
     for (const d of [{}, { W: 3 }, { A: 1 }, { A: 5 }, { F: 12 }]) {
       expect(centerLine(summarizeGradeCenter(dist(d))) ?? '').not.toMatch(/NaN|undefined|Infinity/);
     }
+  });
+});
+
+describe('medianShade', () => {
+  it('is one tint that gets darker as the middle grade goes up', () => {
+    const shade = (low: Grade, high: Grade = low) => medianShade({ low, high });
+    expect(shade('F')).toBe(0.06);
+    expect(shade('A')).toBe(0.28);
+    expect(shade('C')).toBeLessThan(shade('B'));
+    expect(shade('B')).toBeLessThan(shade('A'));
+    expect(shade('B', 'B_PLUS')).toBeGreaterThan(shade('B'));
+    expect(shade('B', 'B_PLUS')).toBeLessThan(shade('B_PLUS'));
   });
 });

@@ -47,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CARD, CARD_PAD, TEXT_LABEL, TEXT_SECTION } from './instructor-ui';
 import { LowSampleTag } from './overview-parts';
+import { StatTile } from './stat-tile';
 
 // One hue, darkest for A and lightest for F, so the order reads without a
 // rainbow. Fixed colours rather than theme classes so the bars stay visible on
@@ -282,51 +283,6 @@ function SummarySection({
         )}
       </div>
     </section>
-  );
-}
-
-// One figure of the summary row. Same height across the row; the course GPA tile
-// is the big one; a zero is shown in the quiet colour and the unit stays small.
-function StatTile({
-  label,
-  value,
-  unit,
-  extra,
-  big = false,
-  zero = false,
-  className,
-}: Readonly<{
-  label: string;
-  value: ReactNode;
-  unit?: string;
-  extra?: ReactNode;
-  big?: boolean;
-  zero?: boolean;
-  className?: string;
-}>) {
-  return (
-    <div
-      className={cn(
-        'flex h-full min-w-0 flex-col justify-between gap-2 rounded-lg border border-slate-200 p-4',
-        big && 'bg-brand-light',
-        className,
-      )}
-    >
-      <dt className={TEXT_LABEL}>{label}</dt>
-      <dd className="space-y-1">
-        <p
-          className={cn(
-            'break-words font-bold leading-none tabular-nums',
-            big ? 'text-5xl' : 'text-3xl',
-            zero ? 'text-muted-foreground' : 'text-primary',
-          )}
-        >
-          {value}
-          {unit && <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>}
-        </p>
-        {extra && <div className="flex flex-wrap items-center gap-2">{extra}</div>}
-      </dd>
-    </div>
   );
 }
 

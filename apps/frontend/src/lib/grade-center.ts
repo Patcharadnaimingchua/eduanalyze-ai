@@ -138,3 +138,10 @@ export function centerLine(center: GradeCenter): string | null {
   const { modes, median, gpa } = center.values;
   return `เกรดที่พบมากที่สุด ${formatGradeList(modes)} · เกรดกลาง ${formatMedian(median)} · GPA วิชา ${formatCourseGpa(gpa)}`;
 }
+
+// How dark the middle-grade tint is: one hue, darker for a higher grade (0.06
+// for F up to 0.28 for A). A tint only; the grade letter is always written out.
+export function medianShade(median: GradeCenterValues['median']): number {
+  const points = ((GRADE_POINTS[median.low] as number) + (GRADE_POINTS[median.high] as number)) / 2;
+  return Math.round((0.06 + (points / 4) * 0.22) * 100) / 100;
+}

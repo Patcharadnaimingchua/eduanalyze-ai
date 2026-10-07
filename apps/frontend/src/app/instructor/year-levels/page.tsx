@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import {
   fetchInstructorDashboard,
@@ -9,14 +10,16 @@ import {
   fetchInstructorYearLevels,
 } from '@/lib/api/instructor';
 import { buildCourseOverviews, buildCourseYearMatrix } from '@/lib/instructor-overview';
-import { buildYearLevelsSummary, worstRiskById } from '@/lib/student-directory';
+import { buildYearLevelsFigures, worstRiskById } from '@/lib/student-directory';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { YearLevelMatrix } from '@/components/instructor/year-level-matrix';
 import { InstructorYearLevelOverview } from '@/components/instructor/instructor-year-level-overview';
-import { TEXT_PAGE } from '@/components/instructor/instructor-ui';
+import { TEXT_PAGE, TEXT_SECTION } from '@/components/instructor/instructor-ui';
+import { StatTile } from '@/components/instructor/stat-tile';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -85,7 +88,7 @@ function InstructorYearLevelsContent() {
     !!query.data &&
     (studentsQuery.isSuccess || studentsQuery.isError) &&
     (dashboardQuery.isSuccess || dashboardQuery.isError);
-  const summary = ready ? buildYearLevelsSummary(buckets, riskById) : null;
+  const figures = ready ? buildYearLevelsFigures(buckets, riskById) : null;
 
   if (!user) {
     return (
@@ -104,9 +107,7 @@ function InstructorYearLevelsContent() {
         <Reveal index={0}>
           <PageHeader
             title="ภาพรวมชั้นปี"
-            description={
-              summary ?? 'นักศึกษาที่เคยเรียนวิชาของคุณ แบ่งตามชั้นปี (ไม่รวมนักศึกษาทั้งหลักสูตร)'
-            }
+            description="นักศึกษาที่เคยเรียนวิชาของคุณ แบ่งตามชั้นปี (ไม่รวมนักศึกษาทั้งหลักสูตร)"
             titleClassName={TEXT_PAGE}
           />
         </Reveal>
@@ -141,12 +142,78 @@ function InstructorYearLevelsContent() {
           </Reveal>
         )}
 
+        {figures && figures.total > 0 && (
+          <Reveal index={1}>
+            <dl className="grid gap-3 sm:grid-cols-3">
+              <StatTile
+                label="นักศึกษา"
+                unit="คน"
+                value={<AnimatedNumber value={figures.total} />}
+                extra={
+                  <span className="text-[13px] text-muted-foreground">ที่เคยเรียนวิชาของคุณ</span>
+                }
+              />
+              <StatTile
+                label="ต้องติดตามในวิชาของคุณ"
+                unit={figures.followUps === null ? undefined : 'คน'}
+                zero={figures.followUps === 0}
+                value={
+                  figures.followUps === null ? '—' : <AnimatedNumber value={figures.followUps} />
+                }
+                extra={
+                  <span className="text-[13px] text-muted-foreground">
+                    {figures.followUps === null
+                      ? 'โหลดข้อมูลความเสี่ยงไม่ได้'
+                      : 'เกรดล่าสุด C หรือต่ำกว่าในวิชาของคุณ'}
+                  </span>
+                }
+              />
+              <StatTile
+                label="หน่วยกิตน้อยกว่าที่ควรมี"
+                unit="คน"
+                zero={figures.behind === 0}
+                value={<AnimatedNumber value={figures.behind} />}
+                extra={
+                  <span className="text-[13px] text-muted-foreground">เทียบกับแผนตามชั้นปี</span>
+                }
+              />
+            </dl>
+          </Reveal>
+        )}
+
         {ready && totalStudents > 0 && matrix && matrix.levels.length > 0 && (
           <Reveal index={1}>
             <PageSection
               title="เกรดกลาง แยกตามวิชาและชั้นปี"
-              description="นับเป็นที่นั่ง (คนที่เรียนหลายวิชาจะนับในแต่ละวิชา) ช่อง – คือวิชานั้นไม่มีนักศึกษาในชั้นปีนั้น ช่องที่มีนักศึกษาที่ได้เกรดไม่ถึง 5 ที่นั่งไม่แสดงค่ากลาง เรียงตามรหัสวิชา กดที่วิชาเพื่อดูรายละเอียด"
+              titleClassName={TEXT_SECTION}
+              description="นับเป็นที่นั่ง คนที่เรียนหลายวิชานับในแต่ละวิชา กดที่วิชาเพื่อดูรายละเอียด"
             >
+              <details className="group rounded-md border border-slate-200 bg-slate-50 px-3">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                  วิธีอ่านตาราง
+                  <ChevronDown
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                  />
+                </summary>
+                <ul className="list-disc space-y-1 pb-3 pl-5 text-sm text-muted-foreground">
+                  <li>ตัวใหญ่ในช่องคือเกรดกลางของกลุ่มนั้น พื้นหลังเข้มขึ้นเมื่อเกรดสูงขึ้น</li>
+                  <li>
+                    GPA คือค่าเฉลี่ยแต้มเกรดของวิชาในกลุ่มนั้น ส่วน F และ W คือจำนวนคนที่ได้เกรดนั้น
+                  </li>
+                  <li>ช่อง – คือวิชานั้นไม่มีนักศึกษาในชั้นปีนั้น</li>
+                  <li>
+                    ช่องที่มีนักศึกษาได้เกรด A ถึง F ไม่ถึง 5 ที่นั่งไม่แสดงเกรดกลาง แสดงเป็นข้อความ
+                    &ldquo;ข้อมูลยังน้อย&rdquo;
+                  </li>
+                  <li>
+                    คอลัมน์ &ldquo;รวมวิชานี้&rdquo; รวมทุกชั้นปีของวิชา
+                    และบอกเกรดที่พบมากที่สุดด้วย
+                  </li>
+                  <li>เรียงตามรหัสวิชา</li>
+                </ul>
+              </details>
               <YearLevelMatrix matrix={matrix} />
               {matrix.unplaced > 0 && (
                 <p className="text-xs text-muted-foreground">

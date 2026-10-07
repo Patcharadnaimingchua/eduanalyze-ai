@@ -5,7 +5,7 @@ import {
   NO_STUDENTS_IN_COURSES,
   applyStudentFilters,
   buildStudentsSummary,
-  buildYearLevelsSummary,
+  buildYearLevelsFigures,
   countByRisk,
   groupByPerson,
   parseStudentFilters,
@@ -13,9 +13,18 @@ import {
   worstRiskById,
 } from './student-directory';
 
-const GRADE: Record<RiskLevel, InstructorStudentEntry['grade']> = { CRITICAL: 'F', WATCH: 'C', NORMAL: 'A' };
+const GRADE: Record<RiskLevel, InstructorStudentEntry['grade']> = {
+  CRITICAL: 'F',
+  WATCH: 'C',
+  NORMAL: 'A',
+};
 
-function row(id: string, course: string, riskLevel: RiskLevel, name = `นักศึกษา ${id}`): InstructorStudentEntry {
+function row(
+  id: string,
+  course: string,
+  riskLevel: RiskLevel,
+  name = `นักศึกษา ${id}`,
+): InstructorStudentEntry {
   return {
     studentProfileId: id,
     studentCode: `S${id}`,
@@ -76,13 +85,19 @@ describe('applyStudentFilters', () => {
   });
 
   it('filters by worst level but keeps the counts of every level', () => {
-    const { people, counts } = applyStudentFilters(entries, { ...DEFAULT_STUDENT_FILTERS, risk: 'WATCH' });
+    const { people, counts } = applyStudentFilters(entries, {
+      ...DEFAULT_STUDENT_FILTERS,
+      risk: 'WATCH',
+    });
     expect(people.map((p) => p.studentProfileId)).toEqual(['2']);
     expect(counts).toEqual({ CRITICAL: 1, WATCH: 1, NORMAL: 2, total: 4 });
   });
 
   it('a course filter re-ranks a person by that course only', () => {
-    const { people, counts } = applyStudentFilters(entries, { ...DEFAULT_STUDENT_FILTERS, courseId: 'c-CS101' });
+    const { people, counts } = applyStudentFilters(entries, {
+      ...DEFAULT_STUDENT_FILTERS,
+      courseId: 'c-CS101',
+    });
     const s1 = people.find((p) => p.studentProfileId === '1')!;
     expect(s1.worstRisk).toBe('WATCH');
     expect(s1.others).toEqual([]);
@@ -90,7 +105,10 @@ describe('applyStudentFilters', () => {
   });
 
   it('a course the instructor does not teach matches nobody', () => {
-    const { people, counts } = applyStudentFilters(entries, { ...DEFAULT_STUDENT_FILTERS, courseId: 'c-OTHER' });
+    const { people, counts } = applyStudentFilters(entries, {
+      ...DEFAULT_STUDENT_FILTERS,
+      courseId: 'c-OTHER',
+    });
     expect(people).toEqual([]);
     expect(counts.total).toBe(0);
   });
@@ -113,7 +131,11 @@ describe('applyStudentFilters', () => {
 
 describe('parseStudentFilters / studentFiltersToQuery', () => {
   it('reads the dashboard deep link and the other filters', () => {
-    expect(parseStudentFilters(params('risk=CRITICAL'))).toEqual({ risk: 'CRITICAL', courseId: ALL, q: '' });
+    expect(parseStudentFilters(params('risk=CRITICAL'))).toEqual({
+      risk: 'CRITICAL',
+      courseId: ALL,
+      q: '',
+    });
     expect(parseStudentFilters(params('risk=WATCH&course=c-CS101&q=S1'))).toEqual({
       risk: 'WATCH',
       courseId: 'c-CS101',
@@ -143,7 +165,9 @@ describe('buildStudentsSummary', () => {
 
   it('normal: nobody at risk', () => {
     const calm = [row('3', 'CS101', 'NORMAL'), row('4', 'CS201', 'NORMAL')];
-    expect(buildStudentsSummary(calm, 2)).toBe('นักศึกษา 2 คนใน 2 วิชา · ยังไม่มีนักศึกษาที่ต้องติดตาม');
+    expect(buildStudentsSummary(calm, 2)).toBe(
+      'นักศึกษา 2 คนใน 2 วิชา · ยังไม่มีนักศึกษาที่ต้องติดตาม',
+    );
   });
 
   it('only WATCH: no urgent part', () => {
@@ -165,7 +189,10 @@ describe('buildStudentsSummary', () => {
 });
 
 type Track = 'on_track' | 'behind' | null;
-const person = (id: string, onTrackStatus: Track = 'on_track') => ({ studentProfileId: id, onTrackStatus });
+const person = (id: string, onTrackStatus: Track = 'on_track') => ({
+  studentProfileId: id,
+  onTrackStatus,
+});
 const bucket = (yearLevel: number, ...students: ReturnType<typeof person>[]) => ({
   yearLevel,
   label: yearLevel === 4 ? 'ปี 4 ขึ้นไป' : `ปี ${yearLevel}`,
@@ -182,7 +209,7 @@ describe('worstRiskById', () => {
   });
 });
 
-describe('buildYearLevelsSummary', () => {
+describe('buildYearLevelsFigures', () => {
   const risk = new Map<string, RiskLevel>([
     ['a', 'CRITICAL'],
     ['b', 'WATCH'],
@@ -190,45 +217,31 @@ describe('buildYearLevelsSummary', () => {
     ['d', 'WATCH'],
   ]);
 
-  it('at risk: names where the follow-ups are, plus behind-plan', () => {
-    const buckets = [bucket(1, person('a')), bucket(2, person('b', 'behind'), person('c'), person('d')), bucket(3), bucket(4)];
-    expect(buildYearLevelsSummary(buckets, risk)).toBe(
-      'นักศึกษา 4 คน · ต้องติดตามในวิชาของคุณ 3 คน (มากสุดที่ปี 2) · หน่วยกิตน้อยกว่าที่ควรมี 1 คน',
-    );
+  it('counts everyone, the follow-ups (urgent or watch) and those behind the plan', () => {
+    const buckets = [
+      bucket(1, person('a')),
+      bucket(2, person('b', 'behind'), person('c'), person('d')),
+    ];
+    expect(buildYearLevelsFigures(buckets, risk)).toEqual({ total: 4, followUps: 3, behind: 1 });
   });
 
-  it('lists every year when the most is tied', () => {
-    const buckets = [bucket(1, person('a')), bucket(2, person('b'))];
-    expect(buildYearLevelsSummary(buckets, risk)).toBe(
-      'นักศึกษา 2 คน · ต้องติดตามในวิชาของคุณ 2 คน (มากสุดที่ปี 1 และ ปี 2)',
-    );
+  it('follow-ups are unknown (null), not zero, when the students report is unavailable', () => {
+    expect(buildYearLevelsFigures([bucket(1, person('a', 'behind'))], null)).toEqual({
+      total: 1,
+      followUps: null,
+      behind: 1,
+    });
   });
 
-  it('normal: nobody to follow up, nobody behind', () => {
-    expect(buildYearLevelsSummary([bucket(1, person('c'))], risk)).toBe(
-      'นักศึกษา 1 คน · ยังไม่มีนักศึกษาที่ต้องติดตามในวิชาของคุณ',
-    );
+  it('a student with no risk row is not counted as a follow-up', () => {
+    expect(buildYearLevelsFigures([bucket(1, person('zzz'))], risk).followUps).toBe(0);
   });
 
-  it('leaves the risk part out when the students report is unavailable', () => {
-    expect(buildYearLevelsSummary([bucket(1, person('a', 'behind'))], null)).toBe(
-      'นักศึกษา 1 คน · หน่วยกิตน้อยกว่าที่ควรมี 1 คน',
-    );
-  });
-
-  it('a student with no risk row is unknown, not counted', () => {
-    expect(buildYearLevelsSummary([bucket(1, person('zzz'))], risk)).toBe(
-      'นักศึกษา 1 คน · ยังไม่มีนักศึกษาที่ต้องติดตามในวิชาของคุณ',
-    );
-  });
-
-  it('no data: no students at all returns null', () => {
-    expect(buildYearLevelsSummary([bucket(1), bucket(2)], risk)).toBeNull();
-    expect(buildYearLevelsSummary([], null)).toBeNull();
-  });
-
-  it('never prints NaN or undefined', () => {
-    const line = buildYearLevelsSummary([bucket(1, person('a', null))], new Map());
-    expect(line).not.toMatch(/NaN|undefined|Infinity/);
+  it('no students: all zero', () => {
+    expect(buildYearLevelsFigures([bucket(1), bucket(2)], risk)).toEqual({
+      total: 0,
+      followUps: 0,
+      behind: 0,
+    });
   });
 });
