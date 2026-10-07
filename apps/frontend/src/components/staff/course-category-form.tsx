@@ -14,15 +14,24 @@ import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
 
 export function CourseCategoryForm({
   curriculumId,
   onCreated,
+  onCancel,
 }: {
   curriculumId: string;
   onCreated: () => void;
+  onCancel: () => void;
 }) {
   const [serverError, setServerError] = useState<string | null>(null);
   const toast = useToast();
@@ -33,6 +42,7 @@ export function CourseCategoryForm({
 
   async function onSubmit(values: CourseCategoryFormValues) {
     setServerError(null);
+    // Flow that writes: POST /course-categories
     try {
       await createCourseCategory({
         curriculumId,
@@ -73,7 +83,7 @@ export function CourseCategoryForm({
                   <FormItem>
                     <FormLabel>ชื่อหมวดวิชา</FormLabel>
                     <FormControl>
-                      <Input placeholder="หมวดวิชาศึกษาทั่วไป" {...field} />
+                      <Input className="h-11" placeholder="หมวดวิชาศึกษาทั่วไป" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -87,7 +97,7 @@ export function CourseCategoryForm({
                   <FormItem>
                     <FormLabel>รหัสหมวดวิชา (ถ้ามี)</FormLabel>
                     <FormControl>
-                      <Input placeholder="GENED" {...field} />
+                      <Input className="h-11" placeholder="GENED" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,9 +105,14 @@ export function CourseCategoryForm({
               />
             </div>
 
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มหมวดวิชา'}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" className="h-11 px-5" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มหมวดวิชา'}
+              </Button>
+              <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel}>
+                ยกเลิก
+              </Button>
+            </div>
           </CardContent>
         </form>
       </Form>

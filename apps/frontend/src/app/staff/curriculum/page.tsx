@@ -1,27 +1,45 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { BookOpen, ListChecks, Plus, Search, UserX } from 'lucide-react';
 import { fetchCourses } from '@/lib/api/academic-record';
-import { fetchCourseCategories, fetchCurriculumRequirements } from '@/lib/api/staff';
+import {
+  fetchCourseCategories,
+  fetchCourseInstructors,
+  fetchCurriculumRequirements,
+  fetchInstructorsInScope,
+  fetchPrerequisites,
+  fetchStaffOverview,
+} from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
+import { cn } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
-import { PageSection } from '@/components/layout/page-section';
+import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
-import { CurriculumPicker } from '@/components/staff/curriculum-picker';
+import { CategorySection } from '@/components/staff/category-section';
 import { CourseCategoryForm } from '@/components/staff/course-category-form';
-import { CourseCategoryCard } from '@/components/staff/course-category-card';
-import { CourseForm } from '@/components/staff/course-form';
-import { CourseListTable } from '@/components/staff/course-list-table';
-import { CourseDetailPanel, type CourseDetailTab } from '@/components/staff/course-detail-panel';
+import { CourseRows } from '@/components/staff/course-rows';
+import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instructors-tab';
+import { buildCurriculumView, type InstructorFilter } from '@/components/staff/curriculum-view';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const ALL = 'ALL';
+type CurriculumTab = 'structure' | 'instructors';
 
 export default function StaffCurriculumPage() {
   return (
@@ -51,72 +69,139 @@ function StaffCurriculumContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [search, setSearch] = useState('');
   const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [showCourseForm, setShowCourseForm] = useState(false);
 
+  // The address keeps the whole selection, so a link from the overview, a
+  // reload or Back lands on the same curriculum, filter and course. Older links
+  // (tab=prerequisites / tab=instructors with a courseId) still open.
   const curriculumId = searchParams.get('curriculumId');
-  const categoryId = searchParams.get('categoryId');
+  const categoryParam = searchParams.get('categoryId');
   const courseId = searchParams.get('courseId');
-  const tabParam = searchParams.get('tab');
-  const activeTab: CourseDetailTab = tabParam === 'instructors' ? 'instructors' : 'prerequisites';
+  const instructorParam = searchParams.get('instructor');
+  const instructorFilter: InstructorFilter =
+    instructorParam === 'none' || instructorParam === 'has' ? instructorParam : 'all';
+  const tab: CurriculumTab =
+    searchParams.get('tab') === 'instructors' && !courseId ? 'instructors' : 'structure';
 
-  const categoriesQuery = useQuery({ queryKey: ['course-categories'], queryFn: fetchCourseCategories });
+  const setParams = useCallback(
+    (changes: Record<string, string | null>, mode: 'push' | 'replace' = 'replace') => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(changes)) {
+        if (value === null || value === '' || value === ALL) params.delete(key);
+        else params.set(key, value);
+      }
+      router[mode](`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
+
+  // One request per list for the whole page — nothing is fetched per course.
+  const overviewQuery = useQuery({
+    queryKey: ['staff-overview'],
+    queryFn: fetchStaffOverview,
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ['course-categories'],
+    queryFn: fetchCourseCategories,
+  });
   const requirementsQuery = useQuery({
     queryKey: ['curriculum-requirements'],
     queryFn: fetchCurriculumRequirements,
   });
-  const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: fetchCourses });
+  const coursesQuery = useQuery({
+    queryKey: ['courses'],
+    queryFn: fetchCourses,
+  });
+  const prerequisitesQuery = useQuery({
+    queryKey: ['prerequisites'],
+    queryFn: fetchPrerequisites,
+  });
+  const assignmentsQuery = useQuery({
+    queryKey: ['course-instructors'],
+    queryFn: fetchCourseInstructors,
+  });
+  const instructorsQuery = useQuery({
+    queryKey: ['instructors-in-scope'],
+    queryFn: fetchInstructorsInScope,
+  });
 
-  function setParams(next: { curriculumId?: string | null; categoryId?: string | null; courseId?: string | null; tab?: string | null }) {
-    const params = new URLSearchParams(searchParams.toString());
-    const apply = (key: string, value: string | null | undefined) => {
-      if (value === undefined) return;
-      if (value === null) params.delete(key);
-      else params.set(key, value);
-    };
-    apply('curriculumId', next.curriculumId);
-    apply('categoryId', next.categoryId);
-    apply('courseId', next.courseId);
-    apply('tab', next.tab);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  const curricula = useMemo(
+    () =>
+      (overviewQuery.data?.programs ?? []).flatMap((program) =>
+        program.curricula.map((curriculum) => ({
+          id: curriculum.curriculumId,
+          label: `${program.programCode} ${program.programName} · ฉบับ ${curriculum.version} (พ.ศ. ${curriculum.effectiveYear})`,
+        })),
+      ),
+    [overviewQuery.data],
+  );
 
-  function refetchAll() {
-    queryClient.invalidateQueries({ queryKey: ['course-categories'] });
-    queryClient.invalidateQueries({ queryKey: ['curriculum-requirements'] });
-    queryClient.invalidateQueries({ queryKey: ['courses'] });
-  }
+  // Nothing to choose between, or nothing chosen yet: start on the first one.
+  const firstCurriculumId = curricula[0]?.id;
+  useEffect(() => {
+    if (!curriculumId && firstCurriculumId) setParams({ curriculumId: firstCurriculumId });
+  }, [curriculumId, firstCurriculumId, setParams]);
 
-  function handleCategoryCreated() {
-    setShowCategoryForm(false);
-    refetchAll();
-  }
+  const inScope = curriculumId !== null && curricula.some((c) => c.id === curriculumId);
+  const loaded =
+    categoriesQuery.data &&
+    requirementsQuery.data &&
+    coursesQuery.data &&
+    prerequisitesQuery.data &&
+    assignmentsQuery.data &&
+    instructorsQuery.data;
+  const failed =
+    overviewQuery.isError ||
+    categoriesQuery.isError ||
+    requirementsQuery.isError ||
+    coursesQuery.isError ||
+    prerequisitesQuery.isError ||
+    assignmentsQuery.isError;
 
-  function handleCourseCreated() {
-    setShowCourseForm(false);
-    refetchAll();
-  }
+  const view = useMemo(() => {
+    if (!inScope || !curriculumId || !loaded) return null;
+    return buildCurriculumView({
+      curriculumId,
+      courses: coursesQuery.data!,
+      categories: categoriesQuery.data!,
+      requirements: requirementsQuery.data!,
+      prerequisites: prerequisitesQuery.data!,
+      assignments: assignmentsQuery.data!,
+      instructors: instructorsQuery.data!,
+      filters: {
+        search,
+        categoryId: categoryParam,
+        instructor: instructorFilter,
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    inScope,
+    curriculumId,
+    loaded,
+    coursesQuery.data,
+    categoriesQuery.data,
+    requirementsQuery.data,
+    prerequisitesQuery.data,
+    assignmentsQuery.data,
+    instructorsQuery.data,
+    search,
+    categoryParam,
+    instructorFilter,
+  ]);
 
-  function formToggle(open: boolean, onToggle: () => void, label: string) {
-    return (
-      <Button
-        type="button"
-        size="sm"
-        variant={open ? 'outline' : 'default'}
-        className="gap-1.5"
-        onClick={onToggle}
-      >
-        {open ? (
-          'ยกเลิก'
-        ) : (
-          <>
-            <Plus size={16} />
-            {label}
-          </>
-        )}
-      </Button>
-    );
-  }
+  const refetchAll = useCallback(() => {
+    for (const key of [
+      'course-categories',
+      'curriculum-requirements',
+      'courses',
+      'prerequisites',
+      'course-instructors',
+    ]) {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    }
+  }, [queryClient]);
 
   if (!user) {
     return (
@@ -129,118 +214,293 @@ function StaffCurriculumContent() {
     );
   }
 
-  const categoriesInCurriculum = (categoriesQuery.data ?? []).filter(
-    (c) => c.curriculumId === curriculumId,
-  );
-  const requirementByCategoryId = new Map(
-    (requirementsQuery.data ?? []).map((r) => [r.categoryId, r]),
-  );
-  const coursesInCategory = (coursesQuery.data ?? []).filter((c) => c.categoryId === categoryId);
-  const coursesInCurriculum = (coursesQuery.data ?? []).filter((c) => c.curriculumId === curriculumId);
-  const selectedCourse = coursesInCategory.find((c) => c.id === courseId) ?? null;
+  const allBlocks = view?.blocks ?? [];
+  const filtered = search.trim() !== '' || categoryParam !== null || instructorFilter !== 'all';
+  const tabs: { key: CurriculumTab; label: string }[] = [
+    { key: 'structure', label: 'โครงสร้างหมวดวิชาและรายวิชา' },
+    {
+      key: 'instructors',
+      label: `อาจารย์ผู้รับผิดชอบวิชา (ระดับหลักสูตร)${view ? ` ${view.instructorEntries.length} ท่าน` : ''}`,
+    },
+  ];
 
   return (
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
-          title="ข้อมูลหลักสูตร"
-          description="จัดการหมวดวิชา รายวิชา วิชาที่เป็นตัวก่อน และอาจารย์ผู้สอน ภายในขอบเขตของคุณ"
-        />
-      </Reveal>
-
-      <Reveal index={1}>
-        <CurriculumPicker
-          curriculumId={curriculumId}
-          onSelect={(id) => setParams({ curriculumId: id, categoryId: null, courseId: null, tab: null })}
-        />
-      </Reveal>
-
-      {curriculumId && (
-        <Reveal index={2}>
-          <PageSection
-            title="หมวดวิชา"
-            actions={formToggle(
-              showCategoryForm,
-              () => setShowCategoryForm((open) => !open),
-              'เพิ่มหมวดวิชา',
-            )}
-          >
-            {showCategoryForm && (
-              <CourseCategoryForm curriculumId={curriculumId} onCreated={handleCategoryCreated} />
-            )}
-
-            {categoriesQuery.data && categoriesInCurriculum.length === 0 ? (
-              <EmptyState
-                illustration="no-data"
-                description="ยังไม่มีหมวดวิชาในหลักสูตรนี้"
-                action={
-                  !showCategoryForm && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => setShowCategoryForm(true)}
-                    >
-                      <Plus size={16} />
-                      เพิ่มหมวดวิชา
-                    </Button>
+          title="การจัดการหลักสูตรและรายวิชา"
+          description="จัดการหมวดวิชา รายวิชา วิชาบังคับก่อน และอาจารย์ผู้รับผิดชอบวิชา ภายในขอบเขตของคุณ"
+          actions={
+            <label className="block space-y-1.5 sm:w-96">
+              <span className="text-xs font-medium text-muted-foreground">หลักสูตรและสาขาวิชา</span>
+              <Select
+                value={inScope ? (curriculumId ?? undefined) : undefined}
+                onValueChange={(id) =>
+                  setParams(
+                    {
+                      curriculumId: id,
+                      categoryId: null,
+                      courseId: null,
+                      instructor: null,
+                    },
+                    'push',
                   )
                 }
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {categoriesInCurriculum.map((category) => (
-                  <CourseCategoryCard
-                    key={category.id}
-                    category={category}
-                    requirement={requirementByCategoryId.get(category.id)}
-                    isSelected={category.id === categoryId}
-                    onSelect={() =>
-                      setParams({ categoryId: category.id, courseId: null, tab: null })
-                    }
-                    onChanged={refetchAll}
-                  />
-                ))}
-              </div>
-            )}
-          </PageSection>
-        </Reveal>
-      )}
-
-      {categoryId && (
-        <Reveal>
-          <PageSection
-            title="รายวิชาในหมวด"
-            actions={formToggle(
-              showCourseForm,
-              () => setShowCourseForm((open) => !open),
-              'เพิ่มรายวิชา',
-            )}
-          >
-            {showCourseForm && (
-              <CourseForm
-                curriculumId={curriculumId!}
-                categoryId={categoryId}
-                onCreated={handleCourseCreated}
-              />
-            )}
-            <CourseListTable
-              courses={coursesInCategory}
-              selectedCourseId={courseId}
-              onSelect={(id) => setParams({ courseId: id, tab: 'prerequisites' })}
-            />
-          </PageSection>
-        </Reveal>
-      )}
-
-      {selectedCourse && (
-        <CourseDetailPanel
-          course={selectedCourse}
-          coursesInCurriculum={coursesInCurriculum}
-          activeTab={activeTab}
-          onTabChange={(tab) => setParams({ tab })}
+                disabled={curricula.length === 0}
+              >
+                <SelectTrigger className="h-11 text-left" aria-label="เลือกหลักสูตร">
+                  <SelectValue placeholder="เลือกหลักสูตร" />
+                </SelectTrigger>
+                <SelectContent>
+                  {curricula.map((c) => (
+                    <SelectItem key={c.id} value={c.id} className="min-h-11">
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          }
         />
+      </Reveal>
+
+      {overviewQuery.data && curricula.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          คุณยังไม่มีสาขาในความดูแล — กรุณาติดต่อผู้ดูแลระบบเพื่อกำหนดขอบเขตของคุณ
+        </p>
+      )}
+      {curriculumId && overviewQuery.data && !inScope && (
+        <p className="text-sm text-amber-600">
+          หลักสูตรในลิงก์นี้อยู่นอกขอบเขตที่คุณดูแล — เลือกสาขาและฉบับจากรายการด้านบนแทน
+        </p>
+      )}
+      {failed && (
+        <PageLoadError
+          onRetry={() => {
+            overviewQuery.refetch();
+            refetchAll();
+          }}
+        />
+      )}
+
+      {inScope && !loaded && !failed && (
+        <Card>
+          <CardContent className="space-y-3 p-5">
+            <Skeleton className="h-6 w-64" />
+            <Skeleton className="h-40 w-full" />
+          </CardContent>
+        </Card>
+      )}
+
+      {view && curriculumId && (
+        <>
+          <Reveal index={1}>
+            <Card>
+              <CardContent className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3 sm:p-5">
+                <p className="flex items-center gap-2 text-sm">
+                  <BookOpen aria-hidden="true" className="h-4 w-4 shrink-0 text-brand" />
+                  <span>
+                    จำนวนรายวิชาทั้งหมด{' '}
+                    <span className="font-semibold tabular-nums">{view.totalCourses}</span> วิชา
+                  </span>
+                </p>
+                <p className="flex items-center gap-2 text-sm">
+                  <ListChecks aria-hidden="true" className="h-4 w-4 shrink-0 text-brand" />
+                  <span>
+                    รวม <span className="font-semibold tabular-nums">{view.totalCredits}</span>{' '}
+                    หน่วยกิต
+                  </span>
+                </p>
+                <p
+                  className={cn(
+                    'flex items-center gap-2 text-sm',
+                    view.withoutInstructor > 0 && 'font-medium text-red-700',
+                  )}
+                >
+                  <UserX aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  {view.withoutInstructor > 0 ? (
+                    <span>
+                      วิชาที่ยังไม่มีอาจารย์ผู้รับผิดชอบ{' '}
+                      <span className="font-semibold tabular-nums">{view.withoutInstructor}</span>{' '}
+                      วิชา
+                    </span>
+                  ) : (
+                    <span>ทุกวิชามีอาจารย์ผู้รับผิดชอบแล้ว</span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          </Reveal>
+
+          <div
+            role="tablist"
+            aria-label="ส่วนของหน้าหลักสูตร"
+            className="flex flex-wrap gap-1 rounded-lg border bg-card p-1"
+          >
+            {tabs.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() =>
+                  setParams({
+                    tab: key === 'structure' ? null : key,
+                    courseId: null,
+                  })
+                }
+                className={cn(
+                  'min-h-11 rounded-md px-3.5 text-left text-sm font-semibold transition motion-reduce:transition-none',
+                  tab === key
+                    ? 'bg-brand text-brand-foreground'
+                    : 'text-muted-foreground hover:bg-slate-50',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-muted-foreground">
+            การมอบหมายอาจารย์ผู้รับผิดชอบวิชาเป็นระดับหลักสูตร ไม่ผูกกับภาคเรียน
+            อาจารย์ที่ยังไม่ถูกมอบหมายจะไม่เห็นวิชานั้นในระบบ
+          </p>
+
+          {tab === 'instructors' && (
+            <CurriculumInstructorsTab
+              entries={view.instructorEntries}
+              courseHref={(id) => `${pathname}?curriculumId=${curriculumId}&courseId=${id}`}
+            />
+          )}
+
+          {tab === 'structure' && (
+            <>
+              <Card>
+                <CardContent className="space-y-4 p-4 sm:p-5">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1fr_16rem_14rem]">
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        ค้นหารหัสวิชาหรือชื่อรายวิชา (ไทย/อังกฤษ)
+                      </span>
+                      <span className="relative block">
+                        <Search
+                          aria-hidden="true"
+                          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                          className="h-11 pl-9"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="ค้นหารหัสวิชา หรือชื่อรายวิชา"
+                        />
+                      </span>
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">หมวดวิชา</span>
+                      <Select
+                        value={categoryParam ?? ALL}
+                        onValueChange={(v) => setParams({ categoryId: v, courseId: null })}
+                      >
+                        <SelectTrigger className="h-11" aria-label="หมวดวิชา">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>หมวดวิชาทั้งหมด</SelectItem>
+                          {(categoriesQuery.data ?? [])
+                            .filter((c) => c.curriculumId === curriculumId)
+                            .map((c) => (
+                              <SelectItem key={c.id} value={c.id} className="min-h-11">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        สถานะอาจารย์
+                      </span>
+                      <Select
+                        value={instructorFilter === 'all' ? ALL : instructorFilter}
+                        onValueChange={(v) => setParams({ instructor: v, courseId: null })}
+                      >
+                        <SelectTrigger className="h-11" aria-label="สถานะอาจารย์">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>ทั้งหมด</SelectItem>
+                          <SelectItem value="none">ยังไม่มีอาจารย์</SelectItem>
+                          <SelectItem value="has">มีอาจารย์แล้ว</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {filtered && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 px-4"
+                        onClick={() => {
+                          setSearch('');
+                          setParams({
+                            categoryId: null,
+                            instructor: null,
+                            courseId: null,
+                          });
+                        }}
+                      >
+                        ล้างตัวกรอง
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant={showCategoryForm ? 'outline' : 'default'}
+                      className="h-11 gap-1.5 px-4"
+                      onClick={() => setShowCategoryForm((open) => !open)}
+                    >
+                      {showCategoryForm ? (
+                        'ยกเลิก'
+                      ) : (
+                        <>
+                          <Plus aria-hidden="true" size={16} />
+                          เพิ่มหมวดวิชา
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {showCategoryForm && (
+                <CourseCategoryForm
+                  curriculumId={curriculumId}
+                  onCancel={() => setShowCategoryForm(false)}
+                  onCreated={() => {
+                    setShowCategoryForm(false);
+                    refetchAll();
+                  }}
+                />
+              )}
+
+              {allBlocks.length === 0 ? (
+                <Card>
+                  <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                    ยังไม่มีหมวดวิชาในหลักสูตรนี้
+                  </CardContent>
+                </Card>
+              ) : (
+                allBlocks.map((block) => (
+                  <Reveal key={block.category.id}>
+                    <CategorySection block={block} onChanged={refetchAll}>
+                      <CourseRows rows={block.rows} selectedCourseId={courseId} actions={{}} />
+                    </CategorySection>
+                  </Reveal>
+                ))
+              )}
+            </>
+          )}
+        </>
       )}
     </DashboardShell>
   );
