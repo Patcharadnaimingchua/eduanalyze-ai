@@ -5,12 +5,12 @@ import type {
   CurriculumRequirement,
   InstructorListItem,
   Prerequisite,
-} from "@eduanalyze-ai/shared-types";
+} from '@eduanalyze-ai/shared-types';
 
 // Everything the curriculum page shows, worked out from the whole-list
 // responses it already holds (one request per list, nothing per course).
 
-export type InstructorFilter = "all" | "none" | "has";
+export type InstructorFilter = 'all' | 'none' | 'has';
 
 export interface CurriculumFilters {
   search: string;
@@ -63,41 +63,35 @@ export interface CurriculumViewInput {
 }
 
 export type CreditStatus =
-  | { kind: "met"; label: string }
-  | { kind: "short"; label: string; delta: number }
-  | { kind: "over"; label: string; delta: number };
+  | { kind: 'met'; label: string }
+  | { kind: 'short'; label: string; delta: number }
+  | { kind: 'over'; label: string; delta: number };
 
 // What the category's offered credits say against its rule, in the short words
 // the header badge shows. The figures themselves are in the ring.
-export function creditStatus(
-  credits: number,
-  minCredits: number,
-): CreditStatus {
-  if (credits === minCredits) return { kind: "met", label: "ครบตามเกณฑ์" };
+export function creditStatus(credits: number, minCredits: number): CreditStatus {
+  if (credits === minCredits) return { kind: 'met', label: 'ครบตามเกณฑ์' };
   if (credits < minCredits) {
     const delta = minCredits - credits;
-    return { kind: "short", delta, label: `ขาด ${delta} หน่วยกิต` };
+    return { kind: 'short', delta, label: `ขาด ${delta} หน่วยกิต` };
   }
   const delta = credits - minCredits;
-  return { kind: "over", delta, label: `เกินเกณฑ์ ${delta} หน่วยกิต` };
+  return { kind: 'over', delta, label: `เกินเกณฑ์ ${delta} หน่วยกิต` };
 }
 
-export const UNKNOWN_INSTRUCTOR = "อาจารย์ที่ไม่อยู่ในรายชื่อ";
+export const UNKNOWN_INSTRUCTOR = 'อาจารย์ที่ไม่อยู่ในรายชื่อ';
 
 function matchesSearch(course: CourseListItem, search: string): boolean {
   const term = search.trim().toLowerCase();
-  if (term === "") return true;
-  return [course.code, course.name, course.nameEn ?? ""].some((text) =>
+  if (term === '') return true;
+  return [course.code, course.name, course.nameEn ?? ''].some((text) =>
     text.toLowerCase().includes(term),
   );
 }
 
 // The line under a collapsed category.
-export function categorySummary(
-  courseCount: number,
-  withoutInstructor: number,
-): string {
-  if (courseCount === 0) return "ยังไม่มีรายวิชา";
+export function categorySummary(courseCount: number, withoutInstructor: number): string {
+  if (courseCount === 0) return 'ยังไม่มีรายวิชา';
   return withoutInstructor > 0
     ? `${courseCount} วิชา · ยังไม่มีอาจารย์ ${withoutInstructor}`
     : `${courseCount} วิชา · มีอาจารย์ครบ`;
@@ -106,28 +100,21 @@ export function categorySummary(
 // Categories start folded. A search, an instructor or category filter, or a link
 // to one course opens the categories that have something to show.
 export function categoryOpenByDefault(
-  block: Pick<CategoryBlock, "rows">,
+  block: Pick<CategoryBlock, 'rows'>,
   filters: CurriculumFilters,
   selectedCourseId: string | null,
 ): boolean {
   if (block.rows.length === 0) return false;
   const filtered =
-    filters.search.trim() !== "" ||
-    filters.instructor !== "all" ||
-    filters.categoryId !== null;
+    filters.search.trim() !== '' || filters.instructor !== 'all' || filters.categoryId !== null;
   const linked =
-    selectedCourseId !== null &&
-    block.rows.some((r) => r.course.id === selectedCourseId);
+    selectedCourseId !== null && block.rows.some((r) => r.course.id === selectedCourseId);
   return filtered || linked;
 }
 
-export function buildCurriculumView(
-  input: CurriculumViewInput,
-): CurriculumView {
+export function buildCurriculumView(input: CurriculumViewInput): CurriculumView {
   const { curriculumId, filters } = input;
-  const courses = input.courses.filter(
-    (c) => c.curriculumId === curriculumId && c.isActive,
-  );
+  const courses = input.courses.filter((c) => c.curriculumId === curriculumId && c.isActive);
   const courseById = new Map(input.courses.map((c) => [c.id, c]));
   const instructorById = new Map(input.instructors.map((i) => [i.id, i]));
   const courseIds = new Set(courses.map((c) => c.id));
@@ -152,8 +139,8 @@ export function buildCurriculumView(
 
   const toRow = (course: CourseListItem): CourseRowData => ({
     course,
-    prerequisiteCodes: [...(prerequisitesByCourse.get(course.id) ?? [])].sort(
-      (a, b) => a.localeCompare(b),
+    prerequisiteCodes: [...(prerequisitesByCourse.get(course.id) ?? [])].sort((a, b) =>
+      a.localeCompare(b),
     ),
     instructors: (assignmentsByCourse.get(course.id) ?? []).map((a) => ({
       assignmentId: a.id,
@@ -162,11 +149,8 @@ export function buildCurriculumView(
     })),
   });
 
-  const requirementByCategory = new Map(
-    input.requirements.map((r) => [r.categoryId, r]),
-  );
-  const byCode = (a: CourseRowData, b: CourseRowData) =>
-    a.course.code.localeCompare(b.course.code);
+  const requirementByCategory = new Map(input.requirements.map((r) => [r.categoryId, r]));
+  const byCode = (a: CourseRowData, b: CourseRowData) => a.course.code.localeCompare(b.course.code);
 
   const blocks: CategoryBlock[] = input.categories
     .filter((c) => c.curriculumId === curriculumId && c.isActive)
@@ -179,28 +163,20 @@ export function buildCurriculumView(
         category,
         requirement: requirementByCategory.get(category.id),
         courseCount: inCategory.length,
-        withoutInstructor: inCategory.filter(
-          ({ instructors }) => instructors.length === 0,
-        ).length,
+        withoutInstructor: inCategory.filter(({ instructors }) => instructors.length === 0).length,
         credits: inCategory.reduce((sum, row) => sum + row.course.credits, 0),
         rows: inCategory.filter(
           ({ course, instructors }) =>
-            (filters.categoryId === null ||
-              filters.categoryId === category.id) &&
+            (filters.categoryId === null || filters.categoryId === category.id) &&
             matchesSearch(course, filters.search) &&
-            (filters.instructor === "all" ||
-              (filters.instructor === "none"
-                ? instructors.length === 0
-                : instructors.length > 0)),
+            (filters.instructor === 'all' ||
+              (filters.instructor === 'none' ? instructors.length === 0 : instructors.length > 0)),
         ),
       };
     })
-    .filter(
-      (block) =>
-        filters.categoryId === null || block.category.id === filters.categoryId,
-    );
+    .filter((block) => filters.categoryId === null || block.category.id === filters.categoryId);
 
-  const instructorCourses = new Map<string, InstructorEntry["courses"]>();
+  const instructorCourses = new Map<string, InstructorEntry['courses']>();
   for (const course of courses) {
     for (const assignment of assignmentsByCourse.get(course.id) ?? []) {
       const list = instructorCourses.get(assignment.userId) ?? [];
@@ -212,7 +188,7 @@ export function buildCurriculumView(
     .map(([userId, list]) => ({
       userId,
       name: instructorById.get(userId)?.fullName ?? UNKNOWN_INSTRUCTOR,
-      email: instructorById.get(userId)?.email ?? "",
+      email: instructorById.get(userId)?.email ?? '',
       courses: list.sort((a, b) => a.code.localeCompare(b.code)),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -220,8 +196,7 @@ export function buildCurriculumView(
   return {
     totalCourses: courses.length,
     totalCredits: courses.reduce((sum, c) => sum + c.credits, 0),
-    withoutInstructor: courses.filter((c) => !assignmentsByCourse.has(c.id))
-      .length,
+    withoutInstructor: courses.filter((c) => !assignmentsByCourse.has(c.id)).length,
     blocks,
     instructorEntries,
   };

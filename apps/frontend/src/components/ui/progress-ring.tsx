@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ProgressRingProps {
   value: number; // 0-100; both the arc and the centre text are clamped to it
   label: string;
   // 'neutral' keeps a full ring from reading as "done" (green).
-  tone?: "default" | "neutral";
+  tone?: 'default' | 'neutral';
   size?: number;
   strokeWidth?: number;
   className?: string;
@@ -19,7 +19,7 @@ interface ProgressRingProps {
 export function ProgressRing({
   value,
   label,
-  tone = "default",
+  tone = 'default',
   size = 88,
   strokeWidth = 8,
   className,
@@ -37,7 +37,7 @@ export function ProgressRing({
       aria-valuenow={Math.round(clamped)}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={cn("relative shrink-0", className)}
+      className={cn('relative shrink-0', className)}
       style={{ width: size, height: size }}
     >
       <svg
@@ -50,12 +50,7 @@ export function ProgressRing({
         aria-hidden="true"
         focusable="false"
       >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          className="stroke-slate-100"
-        />
+        <circle cx={center} cy={center} r={radius} className="stroke-slate-100" />
         <circle
           cx={center}
           cy={center}
@@ -65,12 +60,12 @@ export function ProgressRing({
           strokeDashoffset={100 - clamped}
           strokeLinecap="round"
           className={cn(
-            "transition-none motion-reduce:transition-none",
-            tone === "neutral"
-              ? "stroke-slate-500"
+            'transition-none motion-reduce:transition-none',
+            tone === 'neutral'
+              ? 'stroke-slate-500'
               : clamped >= 100
-                ? "stroke-emerald-600"
-                : "stroke-primary",
+                ? 'stroke-emerald-600'
+                : 'stroke-primary',
           )}
         />
       </svg>

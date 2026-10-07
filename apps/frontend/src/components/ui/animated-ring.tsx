@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { ringTick } from "@/lib/progress-ring-geometry";
-import { useCountOnce } from "@/lib/use-count-once";
-import { useCountUpAllowed } from "@/components/ui/count-up-policy";
-import { ProgressRing } from "@/components/ui/progress-ring";
+import type { ReactNode } from 'react';
+import { ringTick } from '@/lib/progress-ring-geometry';
+import { useCountOnce } from '@/lib/use-count-once';
+import { useCountUpAllowed } from '@/components/ui/count-up-policy';
+import { ProgressRing } from '@/components/ui/progress-ring';
 
 // ProgressRing for the non-student pages: the arc fills once, the centre is a
 // fixed text the caller supplies, and an optional goal is marked as a tick.
@@ -20,32 +20,18 @@ export function AnimatedRing({
 }: Readonly<{
   percent: number;
   goal?: number | null;
-  tone?: "default" | "neutral";
+  tone?: 'default' | 'neutral';
   size?: number;
   strokeWidth?: number;
   children: ReactNode;
 }>) {
   const enabled = useCountUpAllowed();
-  const arc =
-    useCountOnce(percent, { duration: 450, decimals: 1, enabled }) ?? percent;
-  const tick =
-    goal === null || goal === undefined
-      ? null
-      : ringTick(size, strokeWidth, goal);
+  const arc = useCountOnce(percent, { duration: 450, decimals: 1, enabled }) ?? percent;
+  const tick = goal === null || goal === undefined ? null : ringTick(size, strokeWidth, goal);
 
   return (
-    <div
-      aria-hidden="true"
-      className="relative shrink-0"
-      style={{ width: size, height: size }}
-    >
-      <ProgressRing
-        value={arc}
-        label=""
-        tone={tone}
-        size={size}
-        strokeWidth={strokeWidth}
-      >
+    <div aria-hidden="true" className="relative shrink-0" style={{ width: size, height: size }}>
+      <ProgressRing value={arc} label="" tone={tone} size={size} strokeWidth={strokeWidth}>
         {children}
       </ProgressRing>
       {tick && (

@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useId, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { isAxiosError } from "axios";
-import { AlertTriangle, CheckCircle2, ChevronDown, Info } from "lucide-react";
+import { useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
+import { AlertTriangle, CheckCircle2, ChevronDown, Info } from 'lucide-react';
 import {
   createCurriculumRequirement,
   deleteCourseCategory,
   deleteCurriculumRequirement,
   updateCurriculumRequirement,
-} from "@/lib/api/staff";
+} from '@/lib/api/staff';
 import {
   curriculumRequirementSchema,
   type CurriculumRequirementFormValues,
-} from "@/lib/validation/curriculum-requirement.schema";
-import { describeStaffWriteError } from "@/lib/describe-staff-write-error";
-import { useToast } from "@/lib/toast-context";
-import { creditShare } from "@/lib/progress-ring-geometry";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AnimatedRing } from "@/components/ui/animated-ring";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+} from '@/lib/validation/curriculum-requirement.schema';
+import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { useToast } from '@/lib/toast-context';
+import { creditShare } from '@/lib/progress-ring-geometry';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AnimatedRing } from '@/components/ui/animated-ring';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -29,24 +29,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { CategoryMenu } from "./category-menu";
-import {
-  categorySummary,
-  creditStatus,
-  type CategoryBlock,
-} from "./curriculum-view";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { CategoryMenu } from './category-menu';
+import { categorySummary, creditStatus, type CategoryBlock } from './curriculum-view';
 
 // The credit rule for a category compared with what the curriculum offers in
 // it. This is about the curriculum's own content, not about any student.
 const STATUS_STYLE = {
-  met: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  short: "border-amber-200 bg-amber-50 text-amber-700",
-  over: "border-slate-200 bg-slate-50 text-slate-700",
+  met: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  short: 'border-amber-200 bg-amber-50 text-amber-700',
+  over: 'border-slate-200 bg-slate-50 text-slate-700',
 } as const;
 
-const SMALL = "h-11 px-4";
+const SMALL = 'h-11 px-4';
 
 // One category: its name, its credit rule and the writes that belong to it
 // (set/edit/remove the rule, remove the category). The course rows go inside.
@@ -67,15 +63,11 @@ export function CategorySection({
   const bodyId = useId();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
-  const [confirmingCategoryDelete, setConfirmingCategoryDelete] =
-    useState(false);
-  const [confirmingRequirementDelete, setConfirmingRequirementDelete] =
-    useState(false);
+  const [confirmingCategoryDelete, setConfirmingCategoryDelete] = useState(false);
+  const [confirmingRequirementDelete, setConfirmingRequirementDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const status = requirement
-    ? creditStatus(block.credits, requirement.minCredits)
-    : null;
+  const status = requirement ? creditStatus(block.credits, requirement.minCredits) : null;
   const share = creditShare(block.credits, requirement?.minCredits);
 
   const form = useForm<CurriculumRequirementFormValues>({
@@ -98,13 +90,13 @@ export function CategorySection({
     setServerError(null);
     try {
       await deleteCourseCategory(category.id);
-      toast.success("ลบหมวดวิชาแล้ว");
+      toast.success('ลบหมวดวิชาแล้ว');
       onChanged();
     } catch (error) {
       setConfirmingCategoryDelete(false);
       setServerError(
         isAxiosError(error) && error.response?.status === 409
-          ? "ลบไม่ได้ เพราะยังมีวิชาอยู่ในหมวดนี้"
+          ? 'ลบไม่ได้ เพราะยังมีวิชาอยู่ในหมวดนี้'
           : describeStaffWriteError(error),
       );
     } finally {
@@ -119,7 +111,7 @@ export function CategorySection({
     setServerError(null);
     try {
       await deleteCurriculumRequirement(requirement.id);
-      toast.success("ลบเกณฑ์หน่วยกิตแล้ว");
+      toast.success('ลบเกณฑ์หน่วยกิตแล้ว');
       onChanged();
     } catch (error) {
       setServerError(describeStaffWriteError(error));
@@ -143,7 +135,7 @@ export function CategorySection({
           ...values,
         });
       }
-      toast.success("บันทึกเกณฑ์หน่วยกิตแล้ว");
+      toast.success('บันทึกเกณฑ์หน่วยกิตแล้ว');
       onChanged();
     } catch (error) {
       setServerError(describeStaffWriteError(error));
@@ -165,7 +157,7 @@ export function CategorySection({
               <ChevronDown
                 aria-hidden="true"
                 className={`mt-1.5 h-5 w-5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${
-                  expanded ? "" : "-rotate-90"
+                  expanded ? '' : '-rotate-90'
                 }`}
               />
               <span className="min-w-0">
@@ -197,7 +189,7 @@ export function CategorySection({
                       percent={share}
                       size={56}
                       strokeWidth={6}
-                      tone={status.kind === "over" ? "neutral" : "default"}
+                      tone={status.kind === 'over' ? 'neutral' : 'default'}
                     >
                       <span className="text-[10px] font-semibold tabular-nums text-primary">
                         {block.credits}/{requirement.minCredits}
@@ -208,23 +200,14 @@ export function CategorySection({
                 <span
                   className={`inline-flex min-h-7 items-start gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[status.kind]}`}
                 >
-                  {status.kind === "met" && (
-                    <CheckCircle2
-                      aria-hidden="true"
-                      className="mt-px h-3.5 w-3.5 shrink-0"
-                    />
+                  {status.kind === 'met' && (
+                    <CheckCircle2 aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
                   )}
-                  {status.kind === "short" && (
-                    <AlertTriangle
-                      aria-hidden="true"
-                      className="mt-px h-3.5 w-3.5 shrink-0"
-                    />
+                  {status.kind === 'short' && (
+                    <AlertTriangle aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
                   )}
-                  {status.kind === "over" && (
-                    <Info
-                      aria-hidden="true"
-                      className="mt-px h-3.5 w-3.5 shrink-0"
-                    />
+                  {status.kind === 'over' && (
+                    <Info aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
                   )}
                   <span className="break-words">{status.label}</span>
                 </span>
@@ -239,9 +222,7 @@ export function CategorySection({
               categoryName={category.name}
               onEditRule={requirement && !editing ? startEditing : undefined}
               onDeleteRule={
-                requirement && !editing
-                  ? () => setConfirmingRequirementDelete(true)
-                  : undefined
+                requirement && !editing ? () => setConfirmingRequirementDelete(true) : undefined
               }
               onDeleteCategory={() => setConfirmingCategoryDelete(true)}
             />
@@ -273,9 +254,7 @@ export function CategorySection({
         )}
         {confirmingCategoryDelete && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            <span className="min-w-0 flex-1 break-words font-semibold">
-              ลบหมวดวิชานี้?
-            </span>
+            <span className="min-w-0 flex-1 break-words font-semibold">ลบหมวดวิชานี้?</span>
             <Button
               type="button"
               variant="destructive"
@@ -344,7 +323,7 @@ export function CategorySection({
                     className={SMALL}
                     disabled={form.formState.isSubmitting}
                   >
-                    {requirement ? "บันทึกเกณฑ์" : "ตั้งเกณฑ์หน่วยกิต"}
+                    {requirement ? 'บันทึกเกณฑ์' : 'ตั้งเกณฑ์หน่วยกิต'}
                   </Button>
                   {editing && (
                     <Button
