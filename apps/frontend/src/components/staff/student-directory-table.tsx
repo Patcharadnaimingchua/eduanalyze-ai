@@ -6,13 +6,13 @@ import type {
   ProgramListItem,
   StaffStudentRiskEntry,
 } from '@eduanalyze-ai/shared-types';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { usePagination } from '@/lib/use-pagination';
 import { useTableSort } from '@/lib/use-table-sort';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
 import { SortHeader } from '@/components/ui/sort-header';
+import { readStudentRisk, STAFF_RISK_ORDER } from './student-reading';
 
 export function StudentDirectoryTable({
   students,
@@ -32,7 +32,7 @@ export function StudentDirectoryTable({
     program: (s) => programMap.get(s.programId)?.name,
     admissionYear: (s) => s.admissionYear,
     gpa: (s) => s.gpa,
-    risk: (s) => RISK_LEVEL_ORDER.indexOf(s.riskLevel),
+    risk: (s) => STAFF_RISK_ORDER.indexOf(readStudentRisk(s).key),
     status: (s) => (s.isActive ? 0 : 1),
   });
   // The parent re-derives `students` whenever its search/risk filter
@@ -74,6 +74,7 @@ export function StudentDirectoryTable({
               {pagination.pageRows.map((student) => {
                 const program = programMap.get(student.programId);
                 const curriculum = curriculumMap.get(student.curriculumId);
+                const risk = readStudentRisk(student);
                 return (
                   <tr
                     key={student.studentProfileId}
@@ -95,9 +96,7 @@ export function StudentDirectoryTable({
                       {student.gpa === null ? '—' : student.gpa.toFixed(2)}
                     </td>
                     <td className="py-3 pr-4">
-                      <Badge tone={RISK_LEVEL_TONES[student.riskLevel]}>
-                        {RISK_LEVEL_LABELS[student.riskLevel]}
-                      </Badge>
+                      <Badge tone={risk.tone}>{risk.label}</Badge>
                       {student.atRiskCourseCount > 0 && (
                         <span className="ml-2 text-xs text-muted-foreground">
                           {student.atRiskCourseCount} วิชา

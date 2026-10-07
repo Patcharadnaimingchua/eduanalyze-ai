@@ -13,6 +13,7 @@ import { Reveal } from '@/components/layout/reveal';
 import { StaffDashboardSummary } from '@/components/staff/staff-dashboard-summary';
 import { AtRiskStudentsCard } from '@/components/staff/at-risk-students-card';
 import { ProgramOverviewList } from '@/components/staff/program-overview-list';
+import { countGradedByCurriculum } from '@/components/staff/student-reading';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
@@ -87,9 +88,14 @@ function StaffDashboardContent() {
           title="ภาพรวมสาขา/หลักสูตรในความดูแล"
           description="จำนวนนักศึกษา, GPA เฉลี่ย, และวิชาที่ยังไม่มี CLO ต่อหลักสูตร"
         >
-          {overviewQuery.isLoading && <ListSkeleton items={3} />}
+          {(overviewQuery.isLoading || studentsQuery.isLoading) && <ListSkeleton items={3} />}
           {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
-          {overviewQuery.data && <ProgramOverviewList programs={overviewQuery.data.programs} />}
+          {overviewQuery.data && studentsQuery.data && (
+            <ProgramOverviewList
+              programs={overviewQuery.data.programs}
+              gradedByCurriculum={countGradedByCurriculum(studentsQuery.data)}
+            />
+          )}
         </PageSection>
       </Reveal>
     </DashboardShell>

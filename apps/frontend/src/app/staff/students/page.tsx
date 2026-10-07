@@ -3,11 +3,10 @@
 import { Suspense, useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import type { RiskLevel } from '@eduanalyze-ai/shared-types';
 import { fetchStaffStudentRisk } from '@/lib/api/staff';
 import { fetchCurricula, fetchPrograms } from '@/lib/api/organization';
 import { useAuth } from '@/lib/auth-context';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER } from '@/lib/risk-level';
+import { RISK_LEVEL_LABELS } from '@/lib/risk-level';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
@@ -15,6 +14,12 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
 import { StudentDirectoryTable } from '@/components/staff/student-directory-table';
+import {
+  NO_DATA_LABEL,
+  readStudentRisk,
+  STAFF_RISK_ORDER,
+  type StaffRiskKey,
+} from '@/components/staff/student-reading';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
@@ -66,7 +71,7 @@ function StaffStudentsContent() {
   // gap M10 reported. router.replace, not push: filter changes should not
   // themselves pile up in browser history.
   const search = searchParams.get('q') ?? '';
-  const riskFilter = (searchParams.get('risk') as RiskLevel | null) ?? ALL_RISK_LEVELS;
+  const riskFilter = (searchParams.get('risk') as StaffRiskKey | null) ?? ALL_RISK_LEVELS;
   const programFilter = searchParams.get('program') ?? ALL_PROGRAMS;
   const yearFilter = searchParams.get('year') ?? ALL_YEARS;
 
@@ -98,7 +103,7 @@ function StaffStudentsContent() {
     const term = search.trim().toLowerCase();
     return allStudents.filter(
       (student) =>
-        (riskFilter === ALL_RISK_LEVELS || student.riskLevel === riskFilter) &&
+        (riskFilter === ALL_RISK_LEVELS || readStudentRisk(student).key === riskFilter) &&
         (programFilter === ALL_PROGRAMS || student.programId === programFilter) &&
         (yearFilter === ALL_YEARS || student.admissionYear === Number(yearFilter)) &&
         (term === '' ||
@@ -168,9 +173,9 @@ function StaffStudentsContent() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_RISK_LEVELS}>ทุกระดับ</SelectItem>
-            {RISK_LEVEL_ORDER.map((level) => (
+            {STAFF_RISK_ORDER.map((level) => (
               <SelectItem key={level} value={level}>
-                {RISK_LEVEL_LABELS[level]}
+                {level === 'NO_DATA' ? NO_DATA_LABEL : RISK_LEVEL_LABELS[level]}
               </SelectItem>
             ))}
           </SelectContent>

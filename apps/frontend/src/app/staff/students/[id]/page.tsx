@@ -10,7 +10,6 @@ import { fetchCourseRecordsInScope, fetchStaffStudentRisk, fetchStudentProfile }
 import { fetchCurricula, fetchPrograms } from '@/lib/api/organization';
 import { formatSemesterLabel } from '@/lib/grade-label';
 import { gpaColorClassName } from '@/lib/gpa-color';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -21,6 +20,7 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { AddRecordForm } from '@/components/academic-record/add-record-form';
+import { readStudentRisk } from '@/components/staff/student-reading';
 import { StaffRecordTable } from '@/components/staff/student-record-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -196,9 +196,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
               actions={
                 <div className="flex items-center gap-2">
                   {risk && (
-                    <Badge tone={RISK_LEVEL_TONES[risk.riskLevel]}>
-                      {RISK_LEVEL_LABELS[risk.riskLevel]}
-                    </Badge>
+                    <Badge tone={readStudentRisk(risk).tone}>{readStudentRisk(risk).label}</Badge>
                   )}
                   <Badge tone={profile.isActive ? 'success' : 'neutral'}>
                     {profile.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}

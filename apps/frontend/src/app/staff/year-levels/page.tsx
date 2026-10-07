@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchStaffYearLevels } from '@/lib/api/staff';
-import { useAuth } from '@/lib/auth-context';
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { RequireRole } from '@/components/auth/require-role';
-import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { YearLevelOverview } from '@/components/dashboard/year-level-overview';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLoadError } from '@/components/layout/page-states';
-import { Reveal } from '@/components/layout/reveal';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
+import { useQuery } from "@tanstack/react-query";
+import { fetchStaffYearLevels } from "@/lib/api/staff";
+import { useAuth } from "@/lib/auth-context";
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from "@/lib/risk-level";
+import { readStudentRisk } from "@/components/staff/student-reading";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { RequireRole } from "@/components/auth/require-role";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { YearLevelOverview } from "@/components/dashboard/year-level-overview";
+import { PageHeader } from "@/components/layout/page-header";
+import { PageLoadError } from "@/components/layout/page-states";
+import { Reveal } from "@/components/layout/reveal";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton, StatCardsSkeleton } from "@/components/ui/skeleton";
 
 export default function StaffYearLevelsPage() {
   return (
@@ -28,7 +29,10 @@ export default function StaffYearLevelsPage() {
 
 function StaffYearLevelsContent() {
   const { user } = useAuth();
-  const query = useQuery({ queryKey: ['staff-year-levels'], queryFn: fetchStaffYearLevels });
+  const query = useQuery({
+    queryKey: ["staff-year-levels"],
+    queryFn: fetchStaffYearLevels,
+  });
 
   if (!user) {
     return (
@@ -45,7 +49,11 @@ function StaffYearLevelsContent() {
   const totalStudents = buckets.reduce((sum, b) => sum + b.students.length, 0);
 
   return (
-    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell
+      role="STAFF"
+      identityLabel={user.email}
+      fullName={user.fullName}
+    >
       <Reveal index={0}>
         <PageHeader
           title="ภาพรวมชั้นปี"
@@ -61,7 +69,10 @@ function StaffYearLevelsContent() {
         <Reveal index={1}>
           <Card>
             <CardContent className="pt-6">
-              <EmptyState illustration="no-students" description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล" />
+              <EmptyState
+                illustration="no-students"
+                description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล"
+              />
             </CardContent>
           </Card>
         </Reveal>
@@ -72,8 +83,12 @@ function StaffYearLevelsContent() {
           buckets={buckets}
           studentHref={(s) => `/staff/students/${s.studentProfileId}`}
           renderCardExtra={(bucket) => {
-            const critical = bucket.students.filter((s) => s.riskLevel === 'CRITICAL').length;
-            const watch = bucket.students.filter((s) => s.riskLevel === 'WATCH').length;
+            const critical = bucket.students.filter(
+              (s) => s.riskLevel === "CRITICAL",
+            ).length;
+            const watch = bucket.students.filter(
+              (s) => s.riskLevel === "WATCH",
+            ).length;
             if (critical === 0 && watch === 0) return null;
             return (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -90,14 +105,17 @@ function StaffYearLevelsContent() {
               </div>
             );
           }}
-          renderStudentExtra={(s) => (
-            <>
-              <span className="text-xs text-muted-foreground">
-                GPA {s.gpa === null ? '—' : s.gpa.toFixed(2)}
-              </span>
-              <Badge tone={RISK_LEVEL_TONES[s.riskLevel]}>{RISK_LEVEL_LABELS[s.riskLevel]}</Badge>
-            </>
-          )}
+          renderStudentExtra={(s) => {
+            const risk = readStudentRisk(s);
+            return (
+              <>
+                <span className="text-xs text-muted-foreground">
+                  GPA {s.gpa === null ? "—" : s.gpa.toFixed(2)}
+                </span>
+                <Badge tone={risk.tone}>{risk.label}</Badge>
+              </>
+            );
+          }}
         />
       )}
     </DashboardShell>
