@@ -4,6 +4,7 @@ import {
   changeLine,
   courseTermInfo,
   dataLevelOf,
+  formatShare,
   gradedPeopleLine,
   snapshotStatus,
   summaryLine,
@@ -212,5 +213,27 @@ describe('words', () => {
   it('keeps W and I out of the sentence base and says so', () => {
     const s = buildCourseSnapshot({ course: course({ A: 8, W: 2, I: 1 }), seatRows: [], yearLevelByStudent: null });
     expect(gradedPeopleLine(s.stats)).toBe('จากนักศึกษาที่มีเกรด 11 คน (ไม่รวมถอนหรือยังไม่สมบูรณ์ 3 คน ในร้อยละ B ขึ้นไป)');
+  });
+});
+
+describe('formatShare', () => {
+  it('shows one decimal only when under the goal but rounding up to it', () => {
+    expect(formatShare(69.6, 70)).toBe('69.6%');
+    expect(formatShare(69.99, 70)).toBe('69.9%');
+    expect(formatShare(70.0, 70)).toBe('70%');
+    expect(formatShare(70.4, 70)).toBe('70%');
+    expect(formatShare(65.0, 70)).toBe('65%');
+  });
+
+  it('stays a whole number with no goal or no number', () => {
+    expect(formatShare(69.6, null)).toBe('70%');
+    expect(formatShare(null, 70)).toBe('—');
+  });
+
+  it('never changes the status, which is judged on the real value', () => {
+    const stats = summarizeParts([{ counts: counts({ A: 16, C: 7 }), credits: null }]);
+    expect(Math.round(stats.achievedPercent!)).toBe(70);
+    expect(snapshotStatus(stats, 70)).toBe('near');
+    expect(summaryLine({ stats, target: 70, status: 'near' })).toBe('จากข้อมูลที่มี 69.5% ได้ B ขึ้นไป · เป้า 70%');
   });
 });

@@ -1,5 +1,5 @@
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
-import { SPARSE_SUMMARY, dataLevelOf } from './course-snapshot';
+import { SPARSE_SUMMARY, dataLevelOf, formatShare } from './course-snapshot';
 import { countFollowUps } from './follow-ups';
 import { STATUS_META, emptyCounts, statusOf, summarizeParts } from './instructor-overview';
 import { computeAchievementChange, formatAchievementChange } from './instructor-summary';
@@ -31,8 +31,8 @@ export function buildCourseDetailSummary(
   if (sparse) {
     parts.push(SPARSE_SUMMARY);
   } else if (stats.achievedPercent !== null) {
-    const percent = `ได้ B ขึ้นไป ${Math.round(stats.achievedPercent)}%`;
     const target = Number.isFinite(course.achievementThreshold) ? course.achievementThreshold : null;
+    const percent = `ได้ B ขึ้นไป ${formatShare(stats.achievedPercent, target)}`;
     parts.push(
       target === null
         ? percent

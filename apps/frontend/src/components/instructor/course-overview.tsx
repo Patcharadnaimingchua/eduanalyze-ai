@@ -21,6 +21,7 @@ import {
   MIN_TERMS_FOR_TREND,
   buildCourseSnapshot,
   changeLine,
+  formatShare,
   courseTermInfo,
   gradedPeopleLine,
   summaryLine,
@@ -180,7 +181,7 @@ function SummarySection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
           <div className="space-y-3">
             <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="text-5xl font-semibold leading-none tabular-nums text-primary">
-                {formatPercent(stats.achievedPercent)}
+                {formatShare(stats.achievedPercent, target)}
               </span>
               <span className="text-sm text-muted-foreground">{summaryLine(snapshot)}</span>
             </p>
@@ -243,7 +244,7 @@ function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot;
                   <td className="px-4 py-3 font-semibold text-primary">{yearLevelLabel(row.yearLevel)}</td>
                   <td className="px-4 py-3 tabular-nums">{row.stats.seats}</td>
                   <td className="px-4 py-3 text-base font-semibold tabular-nums text-primary">
-                    {row.showNumbers ? formatPercent(row.stats.achievedPercent) : '—'}
+                    {row.showNumbers ? formatShare(row.stats.achievedPercent, target) : '—'}
                   </td>
                   <td className="px-4 py-3 tabular-nums">{row.showNumbers ? formatGpa(row.stats.gpa) : '—'}</td>
                   <td className="px-4 py-3">
@@ -259,7 +260,7 @@ function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot;
         </div>
         <ul className="divide-y divide-slate-100 rounded-xl border bg-card md:hidden">
           {years.rows.map((row) => (
-            <YearListItem key={row.yearLevel} row={row} />
+            <YearListItem key={row.yearLevel} row={row} target={target} />
           ))}
         </ul>
         {years.rows.some((r) => !r.showNumbers) && (
@@ -278,7 +279,7 @@ function YearSection({ snapshot, loading }: Readonly<{ snapshot: CourseSnapshot;
   );
 }
 
-function YearListItem({ row }: Readonly<{ row: YearRow }>) {
+function YearListItem({ row, target }: Readonly<{ row: YearRow; target: number | null }>) {
   return (
     <li className="space-y-1 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -290,7 +291,7 @@ function YearListItem({ row }: Readonly<{ row: YearRow }>) {
       </div>
       <p className="text-sm text-muted-foreground">
         {row.showNumbers
-          ? `ได้ B ขึ้นไป ${formatPercent(row.stats.achievedPercent)} · เกรดเฉลี่ย ${formatGpa(row.stats.gpa)} · ${row.stats.seats} คน`
+          ? `ได้ B ขึ้นไป ${formatShare(row.stats.achievedPercent, target)} · เกรดเฉลี่ย ${formatGpa(row.stats.gpa)} · ${row.stats.seats} คน`
           : `มีเกรด ${row.stats.seats} คน · ตัวเลข —`}
       </p>
     </li>

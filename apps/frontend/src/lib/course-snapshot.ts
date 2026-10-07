@@ -255,11 +255,23 @@ export const EMPTY_SNAPSHOT = 'ยังไม่มีเกรดที่ก�
 export const DATA_SOURCE_NOTE = 'ข้อมูลล่าสุดจากเกรดที่บันทึกในระบบ';
 export const SPARSE_YEAR_NOTE = 'ชั้นปีที่มีนักศึกษาที่ได้เกรดไม่ถึง 5 คน ไม่แสดงตัวเลข เพราะเปลี่ยนมากเมื่อเพิ่มหรือลดหนึ่งคน';
 
+// A share set beside its goal. Whole numbers, except when it is under the goal
+// but rounds up to it: then one decimal, cut down (never up), so 69.6 reads 69.6%
+// and 69.99 reads 69.9%, not "70% ... below 70%". Only the text changes; the
+// status is still judged on the real value.
+export function formatShare(percent: number | null, target: number | null): string {
+  if (percent === null || !Number.isFinite(percent)) return formatPercent(percent);
+  if (target !== null && Number.isFinite(target) && percent < target && Math.round(percent) >= target) {
+    return `${(Math.floor(percent * 10) / 10).toFixed(1)}%`;
+  }
+  return formatPercent(percent);
+}
+
 export function summaryLine(snapshot: Pick<CourseSnapshot, 'stats' | 'target' | 'status'>): string {
   const { stats, target } = snapshot;
   if (stats.achievedPercent === null) return SPARSE_SUMMARY;
   const goal = target === null ? '' : ` · เป้า ${formatPercent(target)}`;
-  return `จากข้อมูลที่มี ${formatPercent(stats.achievedPercent)} ได้ B ขึ้นไป${goal}`;
+  return `จากข้อมูลที่มี ${formatShare(stats.achievedPercent, target)} ได้ B ขึ้นไป${goal}`;
 }
 
 export function gradedPeopleLine(stats: GroupStats): string {
