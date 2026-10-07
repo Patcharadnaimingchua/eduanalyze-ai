@@ -25,11 +25,13 @@ Commit (7): `551c4eb` คำ+นับคน · `65ae3cb` helper · `e9a6ec5` GP
 - (ก) ตัวกรองภาคเรียนจริง (เกรดเฉลี่ย / F / W / ชั้นปีรายเทอม) ต้องแก้ backend: เพิ่ม `semesterId` ให้ `GET /dashboard/instructor` ตอนนี้ทำได้แค่ % B ขึ้นไปรายเทอมจาก `semesterTrend`
 - (ข) % ผ่านเป้าแยกรายข้อของเป้าการเรียนรู้ ต้องแก้ backend (ตอนนี้คิดค่าเดียวต่อวิชา)
 - (ค) เพิ่ม `credits` ใน `GET /dashboard/instructor` (หรือเปิด endpoint วิชาของอาจารย์) เพื่อเลิกดึง `GET /courses` ทั้งแคตตาล็อก (ตอนนี้ดึง ~100 วิชา เก็บเฉพาะ 3 วิชาของอาจารย์ แต่ยังโอนข้อมูลมาที่เบราว์เซอร์)
-- (ง) คอมโพเนนต์ที่ไม่มีหน้าไหนใช้แล้วหลัง Dashboard ใหม่ (ยังไม่ลบ): `at-risk-students-card`, `clo-attention-card`, `course-insight-card`, `plo-coverage-card`, `course-comparison-chart`, `instructor-course-grid` (ฝั่ง instructor) ลบเมื่อยืนยันว่าไม่ย้อนกลับไปแนวเก่า
+- (ง) คอมโพเนนต์ที่ไม่มีหน้าไหนใช้แล้วหลัง Dashboard ใหม่ (ยังไม่ลบ): `at-risk-students-card`, `clo-attention-card`, `course-insight-card`, `plo-coverage-card`, `course-comparison-chart`, `instructor-course-grid`, `course-overview-tab`, `course-overview-list`, `dashboard-kpis`, `goals-card` (ฝั่ง instructor) ลบเมื่อยืนยันว่าไม่ย้อนกลับไปแนวเก่า
 - (จ) คำที่อยู่ในไฟล์ใช้ร่วมกับ Staff/Student ยังเป็นคำเดิม รอตัดสินใจ: เร่งด่วน/เฝ้าระวัง (`lib/risk-level.ts`), Sign Out / Academic Insights (`dashboard-shell`), "ตามหลังแผน" (Staff ชั้นปี + Student แดชบอร์ด), ตัวเลข PLO แบบ 0–5 (`PloRadarChart`, `PloProgressTable`)
 - (ฉ) ปุ่ม Back/Forward ของเบราว์เซอร์ดักเตือนค่าที่ยังไม่บันทึกไม่ได้ (ข้อจำกัดเบราว์เซอร์)
 - (ช) งานเก่าของแนวการ์ดงานอยู่ใน `git stash` "wip-commit2-task-style-2026-10-06" (ห้าม drop จนกว่าจะตัดสินใจ)
 - (ซ) assessment "Exam (Quiz, เต็ม 100)" วิชา 02739111 สร้างเมื่อ 2026-10-06 15:33 (เวลาไทย) ไม่ใช่จากสคริปต์ทดสอบ (ทุกคำขอเขียนถูกดัก) น่าจะมาจากการลองหน้าเว็บเอง ยังอยู่ในฐานข้อมูล ไม่ได้ลบ
+- (ญ) จำนวนผู้ลงทะเบียนจริง: ทุก endpoint ของ Instructor สร้างจากระเบียนเกรด (`StudentCourseRecord.grade` ไม่ว่าง และไม่มีตารางลงทะเบียน) จึงบอกไม่ได้ว่ามีกี่คนที่ยังไม่มีเกรด หน้า Course Overview จึงตัดสินความน่าเชื่อถือจากจำนวนคนที่มีเกรด (<5 ข้อมูลยังน้อย / 5–9 ตัวอย่างน้อย / ≥10 ปกติ) ถ้าจะวัดความครบข้อมูลจริงต้องมีแหล่งข้อมูลใหม่ (ตารางลงทะเบียน) เป็นงาน backend ในอนาคต
+- (ฎ) การ์ดรายภาคของแนวโน้มยังไม่มีเกรดเฉลี่ยรายภาค เพราะ `semesterTrend` ไม่มี GPA ต้องแก้ backend (รวมกับข้อ (ก))
 
 ### Staff redesign (รอทำ)
 - ตรวจความหมายของ "จาก N รายการ" ในคอมโพเนนต์ `Pagination` ที่ใช้ร่วมกัน: หน้า Instructor นับเป็น "คน" แต่ Staff อาจนับเป็น "คน × วิชา" (ยังไม่แก้ เพราะ Staff ใช้ร่วม)
