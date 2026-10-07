@@ -81,3 +81,14 @@ Three commits delivered (2026-09-30):
 ### Backend ESLint Config (pre-existing)
 `apps/backend/` has no ESLint setup. Tests (Jest 96/96), TypeScript (`tsc`), and Prisma migrations are the current gates. This is a pre-existing issue outside the M20 scope but noted here for future build-quality work.
 
+
+### Staff/Admin — สถานะนักศึกษาใช้ GPA สะสม (ตัดสินใจ 2026-10-08, **ยังไม่ push**)
+เกณฑ์ (ค่าคงที่เดียว `GPA_CRITICAL_BELOW` / `GPA_WATCH_BELOW` ใน `grade-point.constant.ts`): GPA สะสมต่ำกว่า 1.50 = เร่งด่วน · 1.50–1.74 = เฝ้าระวัง · 1.75 ขึ้นไป = ปกติ · ไม่มี GPA (ไม่นับ W/I/S/U) = ยังไม่มีข้อมูล เดิมใช้เกรดที่แย่ที่สุดรายวิชา
+- Admin "เสี่ยง" (จำนวนนักศึกษาในหลักสูตร) ใช้เกณฑ์เดียวกัน เลิก GPA < 2.0
+- Instructor คงเกณฑ์รายวิชาเดิม (เกรด D+ D F U = เร่งด่วน, C = เฝ้าระวัง) ไม่เปลี่ยน
+- หน้ารายละเอียดนักศึกษา (Staff) มีข้อความรอง "มีรายวิชา D+/D/F/U อยู่ X วิชา" ไม่ใช้ตัดสินสถานะ
+- ผลต่อเดโม: นักศึกษาที่มีแต่เกรด U (ไม่มี GPA) เดิมเป็น "เร่งด่วน" ตอนนี้เป็น "ยังไม่มีข้อมูล"
+**ที่ยังค้าง**
+- **ยืนยันเกณฑ์ 1.50 / 1.75 กับกฎของมหาวิทยาลัย** (ตอนนี้เป็นค่าที่กำหนดเอง ยังไม่ได้อ้างอิงข้อบังคับ)
+- ป้าย "เร่งด่วน/เฝ้าระวัง" ใน Instructor ความหมายต่างจาก Staff/Admin (รายวิชา vs GPA สะสม) แต่ใช้คำเดียวกันจาก `lib/risk-level.ts` รอตัดสินใจว่าจะเปลี่ยนป้ายฝั่ง Instructor หรือไม่ (ต่อจากข้อ (จ))
+- `seed-demo.ts` เปลี่ยนจากดูวิชาของ demo-instructor เป็นระบุวิชาและหลักสูตรตรงๆ (`DEMO_COURSE_CODES`, `DEMO_CURRICULUM_ID`) เพราะ demo-instructor ถูกย้ายไปสอน 02739341 หลัง seed เดิมรัน; เพิ่มนักศึกษา GPA ต่ำ DEMO-GEN-0151..0182 (32 คน, 85 รายการ)
