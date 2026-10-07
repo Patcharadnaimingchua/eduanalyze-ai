@@ -18,10 +18,21 @@ const prisma = new PrismaClient();
 const DEV_DB_NAME = 'eduanalyze_ai';
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', 'postgres'];
 const MANIFEST = join(__dirname, '..', '.backups', 'demo-manifest.json');
-const INSTRUCTOR_EMAIL = 'demo-instructor@test.local';
+// The three courses the DEMO-GEN records live in, in this curriculum (the same
+// codes also exist in another one). Named here, not read from the demo
+// instructor's assignments, because those can change without touching the
+// demo students.
+const DEMO_CURRICULUM_ID = 'bc550250-7144-4518-b3ee-5ac072e09f5d';
+const DEMO_COURSE_CODES = ['01999111', '02739111', '02739321'];
 const STUDENT_COUNT = 150;
 const SUSPENDED_COUNT = 5; // ~3%
 const NO_RECORD_COUNT = 12; // ~8%
+// Low-GPA cohort appended after the first STUDENT_COUNT (codes 0151+), so the
+// demo shows the GPA status bands: with the ~147 already active this lands
+// near 8% urgent (GPA < 1.50) and 10% watch (1.50 - 1.74) of everyone active.
+const LOW_GPA_URGENT = 12;
+const LOW_GPA_WATCH = 15;
+const LOW_GPA_NORMAL = 5; // low-ish but >= 2.00, so the cohort is not all flagged
 // Existing Semester rows only (all active in the dev DB); none is created.
 const TERMS: { year: number; term: SemesterTerm }[] = [
   { year: 2567, term: 'SECOND' },
@@ -61,6 +72,18 @@ function shuffle<T>(items: T[]): T[] {
   }
   return out;
 }
+
+// Separate PRNG for the low-GPA cohort: the main plan above must draw exactly
+// what it drew when the first 150 were inserted, or a re-run would plan new
+// records for them.
+const rngLow = makeRng(20261009);
+const GRADE_POINT: Partial<Record<Grade, number>> = { A: 4, B_PLUS: 3.5, B: 3, C_PLUS: 2.5, C: 2, D_PLUS: 1.5, D: 1, F: 0 };
+const LOW_POOL: Grade[] = ['B', 'C_PLUS', 'C', 'D_PLUS', 'D', 'F'];
+const BANDS = {
+  URGENT: (gpa: number) => gpa < 1.5,
+  WATCH: (gpa: number) => gpa >= 1.5 && gpa < 1.75,
+  NORMAL: (gpa: number) => gpa >= 2.0 && gpa < 2.5,
+};
 
 const GRADES: Grade[] = ['A', 'B_PLUS', 'B', 'C_PLUS', 'C', 'D_PLUS', 'D', 'F', 'W', 'I', 'S'];
 const EASY = [0.26, 0.22, 0.2, 0.12, 0.08, 0.03, 0.02, 0.02, 0.02, 0.02, 0.01];
@@ -125,17 +148,15 @@ async function main() {
   assertSafeTarget();
   const confirm = process.argv.includes('--confirm');
 
-  const instructor = await prisma.user.findUnique({ where: { email: INSTRUCTOR_EMAIL } });
-  if (!instructor) throw new Error(`${INSTRUCTOR_EMAIL} not found`);
-  const assigned = await prisma.courseInstructor.findMany({
-    where: { userId: instructor.id, course: { isActive: true } },
-    include: { course: true },
-    orderBy: { course: { code: 'asc' } },
+  const courses = await prisma.course.findMany({
+    where: { curriculumId: DEMO_CURRICULUM_ID, code: { in: DEMO_COURSE_CODES }, isActive: true },
+    orderBy: { code: 'asc' },
   });
-  if (assigned.length !== 3) throw new Error(`expected 3 courses for ${INSTRUCTOR_EMAIL}, found ${assigned.length}`);
-  const courses = assigned.map((a) => a.course);
+  if (courses.length !== DEMO_COURSE_CODES.length) {
+    throw new Error(`expected active courses ${DEMO_COURSE_CODES.join(', ')}, found ${courses.map((c) => c.code).join(', ') || 'none'}`);
+  }
   const curriculumIds = new Set(courses.map((c) => c.curriculumId));
-  if (curriculumIds.size !== 1) throw new Error('the instructor courses span several curricula');
+  if (curriculumIds.size !== 1) throw new Error('the demo courses span several curricula');
   const curriculum = await prisma.curriculum.findUniqueOrThrow({ where: { id: courses[0].curriculumId } });
   const programId = curriculum.programId;
 
@@ -194,7 +215,57 @@ async function main() {
     }
   });
 
-  console.log(`target db ok; instructor courses: ${courses.map((c) => c.code).join(', ')}; program ${programId}, curriculum ${curriculum.id}`);
+  // ---- low-GPA cohort: one graded attempt in each of 2-3 of the courses, grades
+  // chosen so the credit-weighted GPA lands in the wanted band ----
+  const lowStudents: PlannedStudent[] = [];
+  const bandOf: Record<string, keyof typeof BANDS> = {};
+  const wanted: (keyof typeof BANDS)[] = [
+    ...Array<keyof typeof BANDS>(LOW_GPA_URGENT).fill('URGENT'),
+    ...Array<keyof typeof BANDS>(LOW_GPA_WATCH).fill('WATCH'),
+    ...Array<keyof typeof BANDS>(LOW_GPA_NORMAL).fill('NORMAL'),
+  ];
+  for (let k = wanted.length - 1; k > 0; k--) {
+    const j = Math.floor(rngLow() * (k + 1));
+    [wanted[k], wanted[j]] = [wanted[j], wanted[k]];
+  }
+  wanted.forEach((band, k) => {
+    const i = STUDENT_COUNT + 1 + k;
+    const n = String(i).padStart(4, '0');
+    const admissionYear = 2566 + (k % 4);
+    lowStudents.push({
+      index: i,
+      code: `DEMO-GEN-${n}`,
+      email: `demo-gen-${n}@test.local`,
+      fullName: `${FIRST[Math.floor(rngLow() * FIRST.length)]} ${LAST[Math.floor(rngLow() * LAST.length)]}`,
+      admissionYear,
+      suspended: false,
+      hasRecords: true,
+      struggler: true,
+    });
+    bandOf[`DEMO-GEN-${n}`] = band;
+    const eligibleKeys = semKeys.filter((key) => Number(key.slice(0, 4)) >= admissionYear);
+    for (let attempt = 0; ; attempt++) {
+      if (attempt > 500) throw new Error(`no grade combination reaches band ${band}`);
+      const take = courses.filter(() => rngLow() < 0.8);
+      const chosen = take.length >= 2 ? take : courses;
+      const grades = chosen.map(() => LOW_POOL[Math.floor(rngLow() * LOW_POOL.length)]);
+      const credits = chosen.reduce((sum, c) => sum + c.credits, 0);
+      const gpa = chosen.reduce((sum, c, ci) => sum + GRADE_POINT[grades[ci]]! * c.credits, 0) / credits;
+      if (!BANDS[band](gpa)) continue;
+      chosen.forEach((c, ci) =>
+        records.push({
+          studentCode: `DEMO-GEN-${n}`,
+          courseId: c.id,
+          semesterKey: eligibleKeys[Math.floor(rngLow() * eligibleKeys.length)],
+          grade: grades[ci],
+        }),
+      );
+      break;
+    }
+  });
+  students.push(...lowStudents);
+
+  console.log(`target db ok; demo courses: ${courses.map((c) => c.code).join(', ')}; program ${programId}, curriculum ${curriculum.id}`);
   console.log(`plan: ${students.length} students (${students.filter((s) => s.suspended).length} suspended, ${students.filter((s) => !s.hasRecords).length} without records), ${records.length} records`);
   if (!confirm) {
     console.log('dry run only; pass --confirm to write');
