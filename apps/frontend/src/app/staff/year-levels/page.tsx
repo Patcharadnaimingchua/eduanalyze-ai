@@ -1,22 +1,26 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchStaffYearLevels } from "@/lib/api/staff";
+import { fetchStaffStudentRisk, fetchStaffYearLevels } from "@/lib/api/staff";
 import { useAuth } from "@/lib/auth-context";
-import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from "@/lib/risk-level";
-import { readStudentRisk } from "@/components/staff/student-reading";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { RequireRole } from "@/components/auth/require-role";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { YearLevelOverview } from "@/components/dashboard/year-level-overview";
-import { StudentsTabs } from '@/components/staff/students-tabs';
 import { PageHeader } from "@/components/layout/page-header";
 import { PageLoadError } from "@/components/layout/page-states";
 import { Reveal } from "@/components/layout/reveal";
-import { Badge } from "@/components/ui/badge";
+import { OverviewYearTable } from "@/components/staff/overview-year-table";
+import {
+  summarizeByYearLevel,
+  summarizeStudents,
+  toRows,
+} from "@/components/staff/staff-status";
+import { StudentsTabs } from "@/components/staff/students-tabs";
+import { YEAR_LEVELS, yearInfoFrom } from "@/components/staff/year-info";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton, StatCardsSkeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StaffYearLevelsPage() {
   return (
@@ -30,10 +34,28 @@ export default function StaffYearLevelsPage() {
 
 function StaffYearLevelsContent() {
   const { user } = useAuth();
-  const query = useQuery({
+  // The same list the overview and the student list count, with the year each
+  // student is in taken from the year-level report.
+  const studentsQuery = useQuery({
+    queryKey: ["staff-student-risk"],
+    queryFn: fetchStaffStudentRisk,
+  });
+  const yearsQuery = useQuery({
     queryKey: ["staff-year-levels"],
     queryFn: fetchStaffYearLevels,
   });
+
+  const view = useMemo(() => {
+    if (!studentsQuery.data || !yearsQuery.data) return null;
+    const info = yearInfoFrom(yearsQuery.data);
+    const rows = toRows(studentsQuery.data, info.levelById);
+    const years = summarizeByYearLevel(rows, info.behindIds, YEAR_LEVELS);
+    return {
+      summary: summarizeStudents(studentsQuery.data),
+      years,
+      totalBehind: years.reduce((sum, y) => sum + y.behind, 0),
+    };
+  }, [studentsQuery.data, yearsQuery.data]);
 
   if (!user) {
     return (
@@ -46,8 +68,7 @@ function StaffYearLevelsContent() {
     );
   }
 
-  const buckets = query.data?.buckets ?? [];
-  const totalStudents = buckets.reduce((sum, b) => sum + b.students.length, 0);
+  const failed = studentsQuery.isError || yearsQuery.isError;
 
   return (
     <DashboardShell
@@ -57,71 +78,52 @@ function StaffYearLevelsContent() {
     >
       <Reveal index={0}>
         <PageHeader
-          title="ภาพรวมชั้นปี"
-          description="นักศึกษาในสาขา/หลักสูตรที่คุณดูแล แบ่งตามชั้นปี (เฉพาะนักศึกษาที่ยังไม่ถูกระงับ)"
+          title="นักศึกษา"
+          description="นักศึกษาที่ใช้งานอยู่ในขอบเขตที่คุณดูแล แบ่งตามชั้นปี (ไม่รวมนักศึกษาที่ถูกระงับ)"
         />
       </Reveal>
 
       <Reveal index={0}>
-        <StudentsTabs active="years" />
+        <StudentsTabs active="years" count={studentsQuery.data?.length} />
       </Reveal>
 
-      {query.isLoading && <StatCardsSkeleton count={4} />}
-
-      {query.isError && <PageLoadError onRetry={() => query.refetch()} />}
-
-      {query.data && totalStudents === 0 && (
-        <Reveal index={1}>
-          <Card>
-            <CardContent className="pt-6">
-              <EmptyState
-                illustration="no-students"
-                description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล"
-              />
-            </CardContent>
-          </Card>
-        </Reveal>
+      {!view && !failed && (
+        <Card>
+          <CardContent className="space-y-3 p-5">
+            <Skeleton className="h-6 w-56" />
+            <Skeleton className="h-40 w-full" />
+          </CardContent>
+        </Card>
       )}
 
-      {query.data && totalStudents > 0 && (
-        <YearLevelOverview
-          buckets={buckets}
-          studentHref={(s) => `/staff/students/${s.studentProfileId}`}
-          renderCardExtra={(bucket) => {
-            const critical = bucket.students.filter(
-              (s) => s.riskLevel === "CRITICAL",
-            ).length;
-            const watch = bucket.students.filter(
-              (s) => s.riskLevel === "WATCH",
-            ).length;
-            if (critical === 0 && watch === 0) return null;
-            return (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {critical > 0 && (
-                  <Badge tone={RISK_LEVEL_TONES.CRITICAL}>
-                    {RISK_LEVEL_LABELS.CRITICAL} {critical}
-                  </Badge>
-                )}
-                {watch > 0 && (
-                  <Badge tone={RISK_LEVEL_TONES.WATCH}>
-                    {RISK_LEVEL_LABELS.WATCH} {watch}
-                  </Badge>
-                )}
-              </div>
-            );
-          }}
-          renderStudentExtra={(s) => {
-            const risk = readStudentRisk(s);
-            return (
-              <>
-                <span className="text-xs text-muted-foreground">
-                  GPA {s.gpa === null ? "—" : s.gpa.toFixed(2)}
-                </span>
-                <Badge tone={risk.tone}>{risk.label}</Badge>
-              </>
-            );
+      {failed && (
+        <PageLoadError
+          onRetry={() => {
+            studentsQuery.refetch();
+            yearsQuery.refetch();
           }}
         />
+      )}
+
+      {view && view.summary.active === 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <EmptyState
+              illustration="no-students"
+              description="ยังไม่มีนักศึกษาในขอบเขตที่คุณดูแล"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {view && view.summary.active > 0 && (
+        <Reveal index={1}>
+          <OverviewYearTable
+            years={view.years}
+            total={view.summary}
+            totalBehind={view.totalBehind}
+          />
+        </Reveal>
       )}
     </DashboardShell>
   );
