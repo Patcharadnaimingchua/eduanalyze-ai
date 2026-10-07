@@ -1,49 +1,29 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import {
-  fetchInstructorCourseTimeline,
-  fetchInstructorDashboard,
-  fetchInstructorStudents,
-  fetchInstructorYearLevels,
-} from '@/lib/api/instructor';
-import { fetchCourses } from '@/lib/api/academic-record';
+import { fetchInstructorCourseTimeline, fetchInstructorDashboard } from '@/lib/api/instructor';
+import { courseTermInfo } from '@/lib/course-snapshot';
 import { useAuth } from '@/lib/auth-context';
-import { splitTimeline, termLabel } from '@/lib/course-timeline-summary';
-import { describeHeadcount } from '@/lib/headcount';
-import {
-  ALL_GRADES,
-  GRADE_POINTS,
-  breakdownByYearLevel,
-  buildCourseOverviews,
-  buildOverallOverview,
-  buildOverviewSentence,
-  selectGoals,
-  sortByGap,
-  statusOf,
-} from '@/lib/instructor-overview';
-import { computeAchievementChange } from '@/lib/instructor-summary';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { AchievementChangeBadge } from '@/components/instructor/achievement-change-badge';
-import { CourseOverviewList } from '@/components/instructor/course-overview-list';
-import { DashboardKpis } from '@/components/instructor/dashboard-kpis';
-import { GoalsCard } from '@/components/instructor/goals-card';
-import { GradeBand } from '@/components/instructor/grade-band';
+import { CourseOverview } from '@/components/instructor/course-overview';
+import { CourseSelector, type CourseChoice } from '@/components/instructor/course-selector';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
-import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
   return (
     <ProtectedRoute>
-      <InstructorDashboardContent />
+      {/* useSearchParams requires a Suspense boundary in the App Router */}
+      <Suspense fallback={null}>
+        <InstructorDashboardContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
@@ -51,70 +31,48 @@ export default function InstructorDashboardPage() {
 function InstructorDashboardContent() {
   const { user } = useAuth();
   const isInstructor = !!user?.roles.includes('INSTRUCTOR');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const dashboardQuery = useQuery({
     queryKey: ['instructor-dashboard'],
     queryFn: fetchInstructorDashboard,
     enabled: isInstructor,
   });
-  const courses = useMemo(() => dashboardQuery.data?.courses ?? [], [dashboardQuery.data]);
-  const courseKey = courses.map((c) => c.courseId).join(',');
-
-  // Same keys as the students, year-levels and my-courses pages, so each is one
-  // cached request shared across them. None of the three is needed for the main
-  // numbers: without them the page shows seats, no year split and no term label.
-  const studentsQuery = useQuery({
-    queryKey: ['instructor-students'],
-    queryFn: () => fetchInstructorStudents({}),
-    enabled: isInstructor,
-  });
-  const yearLevelsQuery = useQuery({
-    queryKey: ['instructor-year-levels'],
-    queryFn: fetchInstructorYearLevels,
-    enabled: isInstructor,
-  });
+  // Only for the term and curriculum under each course name; the page works
+  // without it.
   const timelineQuery = useQuery({
     queryKey: ['instructor-course-timeline'],
     queryFn: fetchInstructorCourseTimeline,
     enabled: isInstructor,
   });
-  // GET /courses lists every course in the system. Same key and function as the
-  // course page's info section (the cache is shared and left as it is); `select`
-  // keeps only this instructor's own courses' credits and the rest is dropped
-  // here, never stored in this page.
-  const creditsQuery = useQuery({
-    queryKey: ['courses'],
-    queryFn: fetchCourses,
-    enabled: isInstructor && courseKey !== '',
-    select: useCallback(
-      (all: Awaited<ReturnType<typeof fetchCourses>>) => {
-        const mine = new Set(courseKey.split(','));
-        return new Map(all.filter((c) => mine.has(c.id)).map((c) => [c.id, c.credits]));
-      },
-      [courseKey],
-    ),
-  });
-  const credits = creditsQuery.data;
 
-  const overviews = useMemo(() => buildCourseOverviews(courses, credits), [courses, credits]);
-  const sorted = useMemo(() => sortByGap(overviews), [overviews]);
-  const overall = useMemo(() => buildOverallOverview(overviews, credits), [overviews, credits]);
-  const goals = useMemo(() => selectGoals(overviews, 5), [overviews]);
-
-  const yearLevelByStudent = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const bucket of yearLevelsQuery.data?.buckets ?? []) {
-      for (const s of bucket.students) map.set(s.studentProfileId, bucket.yearLevel);
-    }
-    return map;
-  }, [yearLevelsQuery.data]);
-  const yearCells = useMemo(
+  const courses = useMemo(() => dashboardQuery.data?.courses ?? [], [dashboardQuery.data]);
+  const choices = useMemo<CourseChoice[]>(
     () =>
-      studentsQuery.data && yearLevelsQuery.data
-        ? breakdownByYearLevel(studentsQuery.data.students, yearLevelByStudent, credits).overall
-        : null,
-    [studentsQuery.data, yearLevelsQuery.data, yearLevelByStudent, credits],
+      courses.map((c) => {
+        const info = timelineQuery.data ? courseTermInfo(timelineQuery.data.years, c.courseId) : null;
+        return {
+          courseId: c.courseId,
+          code: c.code,
+          name: c.name,
+          meta: [info?.termLabel, info?.curriculum].filter(Boolean).join(' · '),
+        };
+      }),
+    [courses, timelineQuery.data],
   );
+
+  // The chosen course lives in ?course=; a missing or unknown id falls back to
+  // the first course, so a reload or a shared link lands on the same view.
+  const courseParam = searchParams.get('course');
+  const selected = courses.find((c) => c.courseId === courseParam) ?? courses[0] ?? null;
+
+  function selectCourse(courseId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('course', courseId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
   if (!user) {
     return (
@@ -127,40 +85,13 @@ function InstructorDashboardContent() {
     );
   }
 
-  // People, not seats: the students endpoint lists every (student, course) row.
-  const people = studentsQuery.data
-    ? new Set(studentsQuery.data.students.map((s) => s.studentProfileId)).size
-    : null;
-  const seats = overall.stats.seats;
-  const headcount = describeHeadcount(people, seats);
-  const change = computeAchievementChange(courses);
-  const sentence = dashboardQuery.data ? buildOverviewSentence(overall, overviews) : null;
-  const latest = timelineQuery.data ? splitTimeline(timelineQuery.data.years).latest : null;
-
-  const hasPointSeats = ALL_GRADES.some((g) => GRADE_POINTS[g] !== null && overall.stats.counts[g] > 0);
-  const gpaNote =
-    overall.stats.gpa !== null
-      ? null
-      : !hasPointSeats
-        ? 'ยังไม่มีเกรดที่นำมาคิด'
-        : creditsQuery.isLoading
-          ? 'กำลังโหลดหน่วยกิตของวิชา'
-          : 'ยังแสดงไม่ได้ เพราะโหลดหน่วยกิตของวิชาไม่ได้ จึงถ่วงหน่วยกิตไม่ได้';
-
   return (
     <RequireRole role="INSTRUCTOR">
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Reveal index={0}>
           <PageHeader
             title="แดชบอร์ดอาจารย์"
-            description={sentence ?? 'ภาพรวมผลการเรียนและเป้าการเรียนรู้ของรายวิชาที่คุณสอน'}
-            actions={
-              latest && (
-                <Badge tone="neutral" className="px-3 py-1 text-sm">
-                  เทอมล่าสุด {termLabel(latest)}
-                </Badge>
-              )
-            }
+            description="ภาพรวมผลการเรียนของรายวิชาที่คุณสอน ดูทีละวิชา"
           />
         </Reveal>
 
@@ -180,39 +111,16 @@ function InstructorDashboardContent() {
           </Alert>
         )}
 
-        {dashboardQuery.data && courses.length > 0 && (
-          <>
-            <Reveal index={1}>
-              <div className="space-y-2">
-                <DashboardKpis
-                  overall={overall}
-                  gpaNote={gpaNote}
-                  headcount={headcount}
-                  trend={change && <AchievementChangeBadge change={change} />}
-                />
-                <p className="text-xs text-muted-foreground">
-                  ตัวเลขรวมผลล่าสุดของนักศึกษาแต่ละคนจากทุกเทอม
-                </p>
-              </div>
-            </Reveal>
-
-            <Reveal index={2}>
-              <CourseOverviewList
-                overviews={sorted}
-                yearCells={yearCells}
-                overallTarget={overall.target}
-                overallStatusOf={(p) => statusOf(p, overall.target)}
-              />
-            </Reveal>
-
-            <RevealOnScroll>
-              <GoalsCard rows={goals.rows} unmet={goals.unmet} total={goals.total} />
-            </RevealOnScroll>
-
-            <RevealOnScroll>
-              <GradeBand counts={overall.stats.counts} />
-            </RevealOnScroll>
-          </>
+        {selected && (
+          <Reveal index={1}>
+            <CourseOverview
+              key={selected.courseId}
+              course={selected}
+              selector={
+                <CourseSelector courses={choices} activeCourseId={selected.courseId} onSelect={selectCourse} />
+              }
+            />
+          </Reveal>
         )}
       </DashboardShell>
     </RequireRole>
