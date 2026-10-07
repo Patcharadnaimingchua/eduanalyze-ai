@@ -1,43 +1,59 @@
-'use client';
+"use client";
 
-import { Suspense, useCallback, useMemo } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { fetchStaffStudentRisk } from '@/lib/api/staff';
-import { fetchCurricula, fetchPrograms } from '@/lib/api/organization';
-import { useAuth } from '@/lib/auth-context';
-import { RISK_LEVEL_LABELS } from '@/lib/risk-level';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { RequireRole } from '@/components/auth/require-role';
-import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLoadError } from '@/components/layout/page-states';
-import { Reveal } from '@/components/layout/reveal';
-import { StudentsTabs } from '@/components/staff/students-tabs';
-import { StudentDirectoryTable } from '@/components/staff/student-directory-table';
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { Search } from "lucide-react";
+import { fetchPrograms } from "@/lib/api/organization";
+import { fetchStaffStudentRisk, fetchStaffYearLevels } from "@/lib/api/staff";
+import { usePagination } from "@/lib/use-pagination";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { RequireRole } from "@/components/auth/require-role";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PageHeader } from "@/components/layout/page-header";
+import { PageLoadError } from "@/components/layout/page-states";
+import { Reveal } from "@/components/layout/reveal";
+import { StaffPagination } from "@/components/staff/staff-pagination";
+import { StaffStudentList } from "@/components/staff/staff-student-list";
 import {
-  NO_DATA_LABEL,
-  readStudentRisk,
-  STAFF_RISK_ORDER,
-  type StaffRiskKey,
-} from '@/components/staff/student-reading';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+  SORT_LABELS,
+  sortRows,
+  summarizeStudents,
+  toRows,
+  type SortKey,
+  type StaffStatusKey,
+} from "@/components/staff/staff-status";
+import { statusLabel } from "@/components/staff/status-badge";
+import { StudentsTabs } from "@/components/staff/students-tabs";
+import {
+  YEAR_LEVELS,
+  yearInfoFrom,
+  yearLevelTitle,
+} from "@/components/staff/year-info";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
 
-// Radix reserves '' for "no selection", so the all-levels/programs/years
-// option needs a sentinel of its own — same pattern the instructor
-// gradebook uses for risk.
-const ALL_RISK_LEVELS = 'ALL';
-const ALL_PROGRAMS = 'ALL';
-const ALL_YEARS = 'ALL';
+// Radix reserves '' for "no selection", so "all" needs a sentinel of its own.
+const ALL = "ALL";
+// Button order follows the design: the calm statuses first, suspended last.
+const BUTTON_ORDER: StaffStatusKey[] = [
+  "NORMAL",
+  "WATCH",
+  "CRITICAL",
+  "NO_DATA",
+  "SUSPENDED",
+];
+const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[];
 
 export default function StaffStudentsPage() {
   return (
@@ -66,21 +82,25 @@ function StaffStudentsContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [pageSize, setPageSize] = useState(10);
 
-  // Filters live only in the URL (not useState) so a reload or a Back from
-  // the student detail page lands on the same filtered view — the exact
-  // gap M10 reported. router.replace, not push: filter changes should not
-  // themselves pile up in browser history.
-  const search = searchParams.get('q') ?? '';
-  const riskFilter = (searchParams.get('risk') as StaffRiskKey | null) ?? ALL_RISK_LEVELS;
-  const programFilter = searchParams.get('program') ?? ALL_PROGRAMS;
-  const yearFilter = searchParams.get('year') ?? ALL_YEARS;
+  // Filters live only in the URL so a reload, a Back from a student's page or
+  // a link from the overview lands on the same view. replace, not push: a
+  // filter change should not pile up in history.
+  const search = searchParams.get("q") ?? "";
+  const status = searchParams.get("risk") ?? ALL;
+  const programFilter = searchParams.get("program") ?? ALL;
+  const admissionFilter = searchParams.get("year") ?? ALL;
+  const levelFilter = searchParams.get("level") ?? ALL;
+  const sortParam = searchParams.get("sort") as SortKey | null;
+  const sortKey: SortKey =
+    sortParam && SORT_KEYS.includes(sortParam) ? sortParam : "severity";
 
   const updateParams = useCallback(
     (changes: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === '') params.delete(key);
+        if (value === null || value === "" || value === ALL) params.delete(key);
         else params.set(key, value);
       }
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -89,34 +109,72 @@ function StaffStudentsContent() {
   );
 
   const studentsQuery = useQuery({
-    queryKey: ['staff-student-risk'],
+    queryKey: ["staff-student-risk"],
     queryFn: fetchStaffStudentRisk,
   });
-  const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
-  const curriculaQuery = useQuery({ queryKey: ['curricula'], queryFn: fetchCurricula });
+  const yearsQuery = useQuery({
+    queryKey: ["staff-year-levels"],
+    queryFn: fetchStaffYearLevels,
+  });
+  const programsQuery = useQuery({
+    queryKey: ["programs"],
+    queryFn: fetchPrograms,
+  });
 
-  const allStudents = useMemo(() => studentsQuery.data ?? [], [studentsQuery.data]);
-  const admissionYears = useMemo(
-    () => [...new Set(allStudents.map((s) => s.admissionYear))].sort((a, b) => b - a),
-    [allStudents],
+  const allRows = useMemo(
+    () =>
+      toRows(studentsQuery.data ?? [], yearInfoFrom(yearsQuery.data).levelById),
+    [studentsQuery.data, yearsQuery.data],
   );
-  const filteredStudents = useMemo(() => {
+  const admissionYears = useMemo(
+    () =>
+      [...new Set(allRows.map((row) => row.admissionYear))].sort(
+        (a, b) => b - a,
+      ),
+    [allRows],
+  );
+  const programIds = useMemo(
+    () => [...new Set(allRows.map((row) => row.programId))],
+    [allRows],
+  );
+  const programNames = useMemo(
+    () =>
+      new Map(
+        (programsQuery.data ?? []).map((program) => [program.id, program.name]),
+      ),
+    [programsQuery.data],
+  );
+
+  // Everything except the status, so each status button can say how many it would show.
+  const beforeStatus = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return allStudents.filter(
-      (student) =>
-        (riskFilter === ALL_RISK_LEVELS || readStudentRisk(student).key === riskFilter) &&
-        (programFilter === ALL_PROGRAMS || student.programId === programFilter) &&
-        (yearFilter === ALL_YEARS || student.admissionYear === Number(yearFilter)) &&
-        (term === '' ||
-          student.fullName.toLowerCase().includes(term) ||
-          student.studentCode.toLowerCase().includes(term)),
+    return allRows.filter(
+      (row) =>
+        (programFilter === ALL || row.programId === programFilter) &&
+        (admissionFilter === ALL ||
+          row.admissionYear === Number(admissionFilter)) &&
+        (levelFilter === ALL || row.yearLevel === Number(levelFilter)) &&
+        (term === "" ||
+          row.fullName.toLowerCase().includes(term) ||
+          row.studentCode.toLowerCase().includes(term)),
     );
-  }, [allStudents, search, riskFilter, programFilter, yearFilter]);
-  const isFiltered =
-    search.trim() !== '' ||
-    riskFilter !== ALL_RISK_LEVELS ||
-    programFilter !== ALL_PROGRAMS ||
-    yearFilter !== ALL_YEARS;
+  }, [allRows, search, programFilter, admissionFilter, levelFilter]);
+  const shown = useMemo(
+    () =>
+      sortRows(
+        beforeStatus.filter((row) => status === ALL || row.status === status),
+        sortKey,
+      ),
+    [beforeStatus, status, sortKey],
+  );
+  const summary = summarizeStudents(beforeStatus);
+  const shownSummary = summarizeStudents(shown);
+
+  const pagination = usePagination(
+    shown,
+    pageSize,
+    `${shown.length}|${shown[0]?.studentProfileId ?? ""}|${sortKey}|${pageSize}`,
+  );
 
   if (!user) {
     return (
@@ -129,87 +187,233 @@ function StaffStudentsContent() {
     );
   }
 
+  const statusButtons: { key: string; label: string; count: number }[] = [
+    { key: ALL, label: "ทั้งหมด", count: beforeStatus.length },
+    ...BUTTON_ORDER.map((key) => ({
+      key,
+      label: statusLabel(key),
+      count:
+        key === "SUSPENDED"
+          ? summary.suspended
+          : summary.byStatus[key as Exclude<StaffStatusKey, "SUSPENDED">],
+    })),
+  ];
+
   return (
-    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell
+      role="STAFF"
+      identityLabel={user.email}
+      fullName={user.fullName}
+    >
       <Reveal index={0}>
-        <PageHeader title="ทำเนียบนักศึกษา" description="นักศึกษาในขอบเขตความรับผิดชอบของคุณ" />
-      </Reveal>
-
-      <Reveal index={0}>
-        <StudentsTabs active="list" count={studentsQuery.data?.length} />
-      </Reveal>
-
-      <Reveal index={1} className="flex flex-wrap items-center gap-3">
-        <Input
-          placeholder="ค้นหาชื่อหรือรหัสนักศึกษา..."
-          defaultValue={search}
-          onChange={(e) => updateParams({ q: e.target.value })}
-          className="max-w-sm"
+        <PageHeader
+          title="นักศึกษา"
+          description="นักศึกษาในขอบเขตความรับผิดชอบของคุณ แบ่งตามสถานะทางวิชาการ"
         />
-        <Select value={programFilter} onValueChange={(value) => updateParams({ program: value })}>
-          <SelectTrigger className="h-9 w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_PROGRAMS}>ทุกสาขา</SelectItem>
-            {(programsQuery.data ?? []).map((program) => (
-              <SelectItem key={program.id} value={program.id}>
-                {program.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={yearFilter} onValueChange={(value) => updateParams({ year: value })}>
-          <SelectTrigger className="h-9 w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_YEARS}>ทุกปีเข้าศึกษา</SelectItem>
-            {admissionYears.map((year) => (
-              <SelectItem key={year} value={String(year)}>
-                ปีเข้า {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={riskFilter} onValueChange={(value) => updateParams({ risk: value })}>
-          <SelectTrigger className="h-9 w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_RISK_LEVELS}>ทุกระดับ</SelectItem>
-            {STAFF_RISK_ORDER.map((level) => (
-              <SelectItem key={level} value={level}>
-                {level === 'NO_DATA' ? NO_DATA_LABEL : RISK_LEVEL_LABELS[level]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {isFiltered && (
-          <span className="text-sm text-muted-foreground">
-            พบ {filteredStudents.length} คน (ทั้งหมด {allStudents.length} คน)
-          </span>
-        )}
+      </Reveal>
+
+      <Reveal index={0}>
+        <StudentsTabs active="list" count={allRows.length} />
+      </Reveal>
+
+      <Reveal index={1}>
+        <Card>
+          <CardContent className="space-y-4 p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label className="block space-y-1.5 xl:col-span-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  ค้นหาด้วยรหัสนักศึกษาหรือชื่อ-นามสกุล
+                </span>
+                <span className="relative block">
+                  <Search
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <Input
+                    className="h-11 pl-9"
+                    placeholder="ค้นหาด้วยรหัสนักศึกษา หรือชื่อ-นามสกุล"
+                    defaultValue={search}
+                    onChange={(e) => updateParams({ q: e.target.value })}
+                  />
+                </span>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  ชั้นปี
+                </span>
+                <Select
+                  value={levelFilter}
+                  onValueChange={(v) => updateParams({ level: v })}
+                >
+                  <SelectTrigger className="h-11" aria-label="ชั้นปี">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>ทุกชั้นปี</SelectItem>
+                    {YEAR_LEVELS.map((level) => (
+                      <SelectItem key={level} value={String(level)}>
+                        {yearLevelTitle(level)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  เรียงตาม
+                </span>
+                <Select
+                  value={sortKey}
+                  onValueChange={(v) =>
+                    updateParams({ sort: v === "severity" ? null : v })
+                  }
+                >
+                  <SelectTrigger className="h-11" aria-label="เรียงตาม">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_KEYS.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {SORT_LABELS[key]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              {programIds.length > 1 && (
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    สาขา
+                  </span>
+                  <Select
+                    value={programFilter}
+                    onValueChange={(v) => updateParams({ program: v })}
+                  >
+                    <SelectTrigger className="h-11" aria-label="สาขา">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>ทุกสาขา</SelectItem>
+                      {programIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {programNames.get(id) ?? id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+              )}
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  ปีที่เข้าศึกษา
+                </span>
+                <Select
+                  value={admissionFilter}
+                  onValueChange={(v) => updateParams({ year: v })}
+                >
+                  <SelectTrigger className="h-11" aria-label="ปีที่เข้าศึกษา">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>ทุกปีที่เข้าศึกษา</SelectItem>
+                    {admissionYears.map((year) => (
+                      <SelectItem key={year} value={String(year)}>
+                        ปีเข้า {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
+
+            <div
+              role="group"
+              aria-label="จำแนกตามสถานะทางวิชาการ"
+              className="flex flex-wrap gap-2"
+            >
+              {statusButtons.map(({ key, label, count }) => {
+                const on = status === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => updateParams({ risk: key })}
+                    className={cn(
+                      "inline-flex min-h-11 items-center gap-2 rounded border px-3.5 text-sm font-semibold transition motion-reduce:transition-none",
+                      on
+                        ? "border-brand bg-brand text-brand-foreground"
+                        : "border-slate-300 bg-card text-primary hover:bg-slate-50",
+                    )}
+                  >
+                    {label}
+                    <span
+                      className={cn(
+                        "tabular-nums text-xs",
+                        on ? "opacity-90" : "text-muted-foreground",
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              พบ{" "}
+              <span className="font-semibold tabular-nums text-primary">
+                {shown.length}
+              </span>{" "}
+              คน (ใช้งาน{" "}
+              <span className="tabular-nums">{shownSummary.active}</span> คน,
+              ระงับ{" "}
+              <span className="tabular-nums">{shownSummary.suspended}</span> คน)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              เร่งด่วน = มีรายวิชาที่ได้เกรด D+ D F หรือ U · เฝ้าระวัง =
+              มีรายวิชาที่ได้เกรด C · ปกติ = ไม่มีรายวิชาที่ได้เกรด C
+              หรือต่ำกว่า · ยังไม่มีข้อมูล = ยังไม่มีผลการเรียนที่นำมาประเมิน
+            </p>
+          </CardContent>
+        </Card>
       </Reveal>
 
       <Reveal index={2}>
         {studentsQuery.isLoading && (
           <Card>
-            <CardHeader>
-              <CardTitle>ทำเนียบนักศึกษา</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <TableSkeleton cols={6} rows={6} />
             </CardContent>
           </Card>
         )}
-        {studentsQuery.isError && <PageLoadError onRetry={() => studentsQuery.refetch()} />}
+        {studentsQuery.isError && (
+          <PageLoadError onRetry={() => studentsQuery.refetch()} />
+        )}
         {studentsQuery.data && (
-          <StudentDirectoryTable
-            students={filteredStudents}
-            programs={programsQuery.data ?? []}
-            curricula={curriculaQuery.data ?? []}
-          />
+          <Card>
+            <CardContent className="p-0 md:p-0">
+              <div className="p-4 md:p-0">
+                <StaffStudentList
+                  rows={pagination.pageRows}
+                  programName={(id) => programNames.get(id) ?? "—"}
+                />
+              </div>
+              <div className="px-4 pb-4 md:px-5">
+                <StaffPagination
+                  page={pagination.page}
+                  pageCount={pagination.pageCount}
+                  total={pagination.total}
+                  rangeStart={pagination.rangeStart}
+                  rangeEnd={pagination.rangeEnd}
+                  unit="คน"
+                  pageSize={pageSize}
+                  onPageChange={pagination.setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            </CardContent>
+          </Card>
         )}
       </Reveal>
     </DashboardShell>
