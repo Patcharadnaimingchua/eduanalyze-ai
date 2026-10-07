@@ -98,7 +98,7 @@ function Instructors({
       {actions.onAssign && (
         <Button
           type="button"
-          variant={instructors.length === 0 ? 'default' : 'outline'}
+          variant="outline"
           className="h-11 gap-1.5 px-3"
           aria-label={`มอบหมายอาจารย์ให้ ${row.course.code}`}
           onClick={() => actions.onAssign?.(row)}
