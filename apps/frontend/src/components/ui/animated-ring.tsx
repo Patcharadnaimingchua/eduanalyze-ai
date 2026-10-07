@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { ringTick } from '@/lib/progress-ring-geometry';
 import { useCountOnce } from '@/lib/use-count-once';
+import { useCountUpAllowed } from '@/components/ui/count-up-policy';
 import { ProgressRing } from '@/components/ui/progress-ring';
 
 // ProgressRing for the non-student pages: the arc fills once, the centre is a
@@ -22,7 +23,8 @@ export function AnimatedRing({
   strokeWidth?: number;
   children: ReactNode;
 }>) {
-  const arc = useCountOnce(percent, { duration: 450, decimals: 1 }) ?? percent;
+  const enabled = useCountUpAllowed();
+  const arc = useCountOnce(percent, { duration: 450, decimals: 1, enabled }) ?? percent;
   const tick = goal === null || goal === undefined ? null : ringTick(size, strokeWidth, goal);
 
   return (

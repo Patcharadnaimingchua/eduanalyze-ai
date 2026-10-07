@@ -2,6 +2,7 @@
 
 import { COUNT_UP_MS, numberText } from '@/lib/animated-number';
 import { useCountOnce } from '@/lib/use-count-once';
+import { useCountUpAllowed } from './count-up-policy';
 
 // A figure that counts up once when it first appears. After that, and for a
 // missing value, it is plain text. Under reduced motion it is the final value
@@ -19,7 +20,8 @@ export function AnimatedNumber({
   fallback?: string;
   duration?: number;
 }>) {
-  const current = useCountOnce(value, { duration, decimals });
+  const enabled = useCountUpAllowed();
+  const current = useCountOnce(value, { duration, decimals, enabled });
   const { final, shown } = numberText(value, current ?? 0, format, fallback);
 
   if (final === shown) return <>{final}</>;

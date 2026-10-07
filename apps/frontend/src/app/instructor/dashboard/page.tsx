@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInstructorCourseTimeline, fetchInstructorDashboard } from '@/lib/api/instructor';
 import { courseTermInfo } from '@/lib/course-snapshot';
+import { advancePlay, INITIAL_PLAY } from '@/lib/count-up-policy';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -19,6 +20,7 @@ import { Reveal } from '@/components/layout/reveal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CountUpPolicy } from '@/components/ui/count-up-policy';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function InstructorDashboardPage() {
@@ -71,6 +73,11 @@ function InstructorDashboardContent() {
   // the first course, so a reload or a shared link lands on the same view.
   const courseParam = searchParams.get('course');
   const selected = courses.find((c) => c.courseId === courseParam) ?? courses[0] ?? null;
+
+  // The figures count up for the course shown when the page opens; switching
+  // course (or coming back to the first one) shows the values straight away.
+  const play = useRef(INITIAL_PLAY);
+  play.current = advancePlay(play.current, selected?.courseId ?? null);
 
   function selectCourse(courseId: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -138,14 +145,16 @@ function InstructorDashboardContent() {
 
         {selected && (
           <Reveal index={1}>
-            <CourseOverview
-              key={selected.courseId}
-              course={selected}
-              showActions={false}
-              selector={
-                <CourseSelector courses={choices} activeCourseId={selected.courseId} onSelect={selectCourse} />
-              }
-            />
+            <CountUpPolicy animate={play.current.animate}>
+              <CourseOverview
+                key={selected.courseId}
+                course={selected}
+                showActions={false}
+                selector={
+                  <CourseSelector courses={choices} activeCourseId={selected.courseId} onSelect={selectCourse} />
+                }
+              />
+            </CountUpPolicy>
           </Reveal>
         )}
       </DashboardShell>
