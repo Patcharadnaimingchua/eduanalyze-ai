@@ -41,7 +41,7 @@ export function CurriculumComparisonChart({
           const value = curriculum.averagePloValue;
           return (
             <div key={curriculum.curriculumId} className="flex items-center gap-3 px-2 py-1.5">
-              <div className="w-48 shrink-0 truncate text-sm">
+              <div className="w-48 shrink-0 break-words text-sm">
                 <span className="text-muted-foreground">{curriculum.programCode}</span>{' '}
                 <span className="text-primary">ฉบับ {curriculum.version}</span>
               </div>

@@ -44,7 +44,7 @@ export function OrgNodeRow({
           <Chevron size={16} className="shrink-0 text-slate-400" />
           <span className="shrink-0 text-xs text-muted-foreground">{levelLabel}</span>
           <span className="shrink-0 font-mono text-sm text-muted-foreground">{item.code}</span>
-          <span className="truncate text-sm font-medium text-primary">{item.name}</span>
+          <span className="min-w-0 break-words text-sm font-medium text-primary">{item.name}</span>
           <Badge tone={childCount > 0 ? 'success' : 'neutral'}>
             {childCount} {childLabel}
           </Badge>
