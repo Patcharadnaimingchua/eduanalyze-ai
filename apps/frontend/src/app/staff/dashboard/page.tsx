@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchStaffOverview, fetchStudentProfiles } from '@/lib/api/staff';
+import { fetchStaffOverview, fetchStaffStudentRisk } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -28,7 +28,7 @@ export default function StaffDashboardPage() {
 
 function StaffDashboardContent() {
   const { user } = useAuth();
-  const studentsQuery = useQuery({ queryKey: ['staff-students'], queryFn: fetchStudentProfiles });
+  const studentsQuery = useQuery({ queryKey: ['staff-student-risk'], queryFn: fetchStaffStudentRisk });
   const overviewQuery = useQuery({ queryKey: ['staff-overview'], queryFn: fetchStaffOverview });
 
   if (!user) {
