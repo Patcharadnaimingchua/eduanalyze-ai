@@ -448,7 +448,7 @@ function YearSection({
   } else {
     body = (
       <>
-        <div className="-mx-5 -my-5 hidden md:block">
+        <div className="-mx-5 -my-5 hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-left text-xs text-muted-foreground">

@@ -63,7 +63,7 @@ export function YearLevelMatrix({ matrix }: Readonly<{ matrix: Matrix }>) {
   const { levels, rows, footer } = matrix;
   return (
     <>
-      <div className="hidden overflow-hidden rounded-xl border bg-card md:block">
+      <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
         <table className="w-full text-sm">
           <caption className="sr-only">เกรดกลาง แยกตามวิชาและชั้นปี</caption>
           <thead>

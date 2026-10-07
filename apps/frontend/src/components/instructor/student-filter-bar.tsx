@@ -37,9 +37,9 @@ export function StudentFilterBar({
   return (
     <div className="space-y-3">
       <RiskFilterChips counts={counts} value={risk} onChange={onRiskChange} />
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <Select value={courseId} onValueChange={onCourseChange}>
-          <SelectTrigger className={cn(CONTROL_HEIGHT, 'sm:w-64')} aria-label="กรองตามวิชา">
+          <SelectTrigger className={cn(CONTROL_HEIGHT, 'w-full')} aria-label="กรองตามวิชา">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -57,10 +57,16 @@ export function StudentFilterBar({
           aria-label="ค้นหารหัสหรือชื่อนักศึกษา"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className={cn(CONTROL_HEIGHT, 'sm:max-w-xs')}
+          className={cn(CONTROL_HEIGHT, 'w-full')}
         />
         {isFiltered && (
-          <Button type="button" variant="ghost" size="sm" onClick={onClear} className={CONTROL_HEIGHT}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            className={cn(CONTROL_HEIGHT, 'justify-self-start sm:col-span-2 lg:col-span-1')}
+          >
             ล้างตัวกรอง
           </Button>
         )}

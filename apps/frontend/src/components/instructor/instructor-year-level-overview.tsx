@@ -69,7 +69,9 @@ export function InstructorYearLevelOverview({
                       </Badge>
                     ) : null,
                   )}
-                  {behindCount > 0 && <Badge tone="warning">หน่วยกิตน้อยกว่าที่ควรมี {behindCount}</Badge>}
+                  {behindCount > 0 && <Badge tone="warning" className="max-w-full shrink whitespace-normal">
+                      หน่วยกิตน้อยกว่าที่ควรมี {behindCount}
+                    </Badge>}
                 </div>
               </button>
             );
