@@ -6,6 +6,8 @@ import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-
 import { usePagination } from '@/lib/use-pagination';
 import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
+import { GRADE_LABELS } from '@/lib/grade-label';
+import { recordModeView } from './record-edit-mode';
 import { StaffGradeSelect } from './staff-grade-select';
 import { StaffPagination } from './staff-pagination';
 
@@ -21,13 +23,16 @@ export function StaffRecordList({
   records,
   courseMap,
   semesterMap,
+  editing,
   onChanged,
 }: Readonly<{
   records: StudentCourseRecord[];
   courseMap: Map<string, CourseListItem>;
   semesterMap: Map<string, SemesterInfo>;
+  editing: boolean;
   onChanged: () => void;
 }>) {
+  const mode = recordModeView(editing);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(10);
@@ -50,7 +55,7 @@ export function StaffRecordList({
   // A row left awaiting delete-confirmation must not stay armed on another page.
   useEffect(() => {
     setConfirmingId(null);
-  }, [pagination.page]);
+  }, [pagination.page, editing]);
 
   // Flow that writes: PATCH /student-course-records/:id
   async function handleGradeChange(id: string, grade: StudentCourseRecord['grade']) {
@@ -87,14 +92,17 @@ export function StaffRecordList({
     );
   }
 
-  const gradeControl = (record: StudentCourseRecord) => (
-    <StaffGradeSelect
-      value={record.grade}
-      subject={courseMap.get(record.courseId)?.code ?? 'วิชานี้'}
-      disabled={busyId === record.id}
-      onConfirm={(grade) => handleGradeChange(record.id, grade)}
-    />
-  );
+  const gradeControl = (record: StudentCourseRecord) =>
+    mode.gradeAs === 'text' ? (
+      <span className="font-semibold tabular-nums">{GRADE_LABELS[record.grade]}</span>
+    ) : (
+      <StaffGradeSelect
+        value={record.grade}
+        subject={courseMap.get(record.courseId)?.code ?? 'วิชานี้'}
+        disabled={busyId === record.id}
+        onConfirm={(grade) => handleGradeChange(record.id, grade)}
+      />
+    );
 
   const deleteControl = (record: StudentCourseRecord) => {
     const code = courseMap.get(record.courseId)?.code ?? '';
@@ -147,7 +155,7 @@ export function StaffRecordList({
             <th className="px-3 py-3 text-right font-semibold">หน่วยกิต</th>
             <th className="px-3 py-3 font-semibold">ภาคเรียน</th>
             <th className="px-3 py-3 font-semibold">เกรด</th>
-            <th className="px-3 py-3 font-semibold">การจัดการ</th>
+            {mode.showDelete && <th className="px-3 py-3 font-semibold">การจัดการ</th>}
           </tr>
         </thead>
         <tbody>
@@ -165,7 +173,7 @@ export function StaffRecordList({
               <td className="px-3 py-3 text-right tabular-nums">{record.credits}</td>
               <td className="px-3 py-3">{semesterMap.get(record.semesterId)?.label ?? '—'}</td>
               <td className="px-3 py-3">{gradeControl(record)}</td>
-              <td className="px-3 py-3">{deleteControl(record)}</td>
+              {mode.showDelete && <td className="px-3 py-3">{deleteControl(record)}</td>}
             </tr>
           ))}
         </tbody>
@@ -194,7 +202,7 @@ export function StaffRecordList({
               <p className="mb-1 text-xs text-muted-foreground">เกรด</p>
               {gradeControl(record)}
             </div>
-            <div>{deleteControl(record)}</div>
+            {mode.showDelete && <div>{deleteControl(record)}</div>}
           </li>
         ))}
       </ul>

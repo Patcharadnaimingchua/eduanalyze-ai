@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { ArrowLeft, Plus, Star } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Pencil, Plus, Star } from 'lucide-react';
 import {
   fetchAcademicYears,
   fetchCourses,
@@ -28,6 +28,11 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { MetricCard } from '@/components/staff/metric-card';
+import {
+  GRADE_SAVES_NOW_DETAIL,
+  GRADE_SAVES_NOW_NOTICE,
+  recordModeView,
+} from '@/components/staff/record-edit-mode';
 import { StaffAddRecordForm } from '@/components/staff/staff-add-record-form';
 import { StaffRecordList } from '@/components/staff/staff-record-list';
 import { staffStatus } from '@/components/staff/staff-status';
@@ -54,6 +59,9 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
   const queryClient = useQueryClient();
   const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
+  // Viewing is the default; nothing on the page can write until editing is turned on.
+  const [editing, setEditing] = useState(false);
+  const mode = recordModeView(editing);
 
   const profileQuery = useQuery({
     queryKey: ['staff-student', studentProfileId],
@@ -276,24 +284,62 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
             <PageSection
               title="ผลการเรียนรายวิชา"
               actions={
-                <Button
-                  type="button"
-                  variant={showAddForm ? 'outline' : 'default'}
-                  className="h-11 gap-1.5 px-4"
-                  onClick={() => setShowAddForm((open) => !open)}
-                >
-                  {showAddForm ? (
-                    'ยกเลิก'
-                  ) : (
-                    <>
-                      <Plus size={16} />
-                      เพิ่มรายวิชา
-                    </>
-                  )}
-                </Button>
+                editing ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={showAddForm ? 'outline' : 'default'}
+                      className="h-11 gap-1.5 px-4"
+                      onClick={() => setShowAddForm((open) => !open)}
+                    >
+                      {showAddForm ? (
+                        'ยกเลิกการเพิ่ม'
+                      ) : (
+                        <>
+                          <Plus aria-hidden="true" size={16} />
+                          เพิ่มรายวิชา
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 gap-1.5 px-4"
+                      onClick={() => {
+                        setEditing(false);
+                        setShowAddForm(false);
+                      }}
+                    >
+                      <Check aria-hidden="true" size={16} />
+                      เสร็จสิ้น
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 gap-1.5 px-4"
+                    onClick={() => setEditing(true)}
+                  >
+                    <Pencil aria-hidden="true" size={16} />
+                    แก้ไขผลการเรียน
+                  </Button>
+                )
               }
             >
-              {showAddForm && (
+              {mode.showNotice && (
+                <p
+                  role="note"
+                  className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+                >
+                  <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    <span className="font-semibold">{GRADE_SAVES_NOW_NOTICE}</span>{' '}
+                    {GRADE_SAVES_NOW_DETAIL} · การเพิ่มและการลบรายวิชาก็บันทึกทันทีเช่นกัน
+                  </span>
+                </p>
+              )}
+              {mode.showAddCourse && showAddForm && (
                 <StaffAddRecordForm
                   studentProfileId={studentProfileId}
                   courses={filteredCourses}
@@ -312,6 +358,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
                     records={ownRecords}
                     courseMap={courseMap}
                     semesterMap={semesterMap}
+                    editing={editing}
                     onChanged={refetchRecords}
                   />
                 </CardContent>
