@@ -16,6 +16,7 @@ import { BelowThresholdLists } from '@/components/admin/below-threshold-lists';
 import { CurriculumComparisonChart } from '@/components/admin/curriculum-comparison-chart';
 import { CurriculumTierSummary } from '@/components/admin/curriculum-tier-summary';
 import { SystemCurriculumList } from '@/components/admin/system-curriculum-list';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
@@ -76,13 +77,13 @@ function CurriculumDashboardContent() {
               <StatCard
                 icon={Users}
                 label="นักศึกษาทั้งหมด"
-                value={data.totals.studentCount}
+                value={<AnimatedNumber value={data.totals.studentCount} />}
                 suffix="คน"
               />
               <StatCard
                 icon={GraduationCap}
                 label="พร้อมสำเร็จการศึกษา"
-                value={data.totals.graduationReadyCount}
+                value={<AnimatedNumber value={data.totals.graduationReadyCount} />}
                 suffix="คน"
                 badge={
                   data.totals.graduationReadyPercent === null
@@ -96,7 +97,7 @@ function CurriculumDashboardContent() {
               <StatCard
                 icon={AlertTriangle}
                 label="นักศึกษากลุ่มเสี่ยง (GPA ต่ำกว่า 2.00)"
-                value={data.totals.studentsAtRiskCount}
+                value={<AnimatedNumber value={data.totals.studentsAtRiskCount} />}
                 suffix="คน"
               />
             </div>

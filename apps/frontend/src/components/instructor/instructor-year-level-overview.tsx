@@ -7,6 +7,7 @@ import type { RiskLevel, YearLevelBucket } from '@eduanalyze-ai/shared-types';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import { cn } from '@/lib/utils';
 import { Reveal } from '@/components/layout/reveal';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -56,7 +57,9 @@ export function InstructorYearLevelOverview({
                   <GraduationCap className="h-4 w-4 text-brand" />
                   {bucket.label}
                 </div>
-                <p className="mt-2 text-2xl font-semibold text-primary">{bucket.students.length}</p>
+                <p className="mt-2 text-2xl font-semibold text-primary">
+                  <AnimatedNumber value={bucket.students.length} />
+                </p>
                 <p className="text-xs text-muted-foreground">คน</p>
                 <div className="mt-2 flex flex-wrap gap-1.5 empty:hidden">
                   {(['CRITICAL', 'WATCH'] as const).map((level) =>

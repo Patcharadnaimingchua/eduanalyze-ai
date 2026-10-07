@@ -34,6 +34,7 @@ import {
   toRows,
 } from '@/components/staff/staff-status';
 import { YEAR_LEVELS, yearInfoFrom } from '@/components/staff/year-info';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -240,21 +241,31 @@ function StaffDashboardContent() {
             <MetricCard
               icon={Users}
               label="นักศึกษาในความดูแล"
-              value={view.summary.active}
+              value={<AnimatedNumber value={view.summary.active} />}
               unit="คน"
               note={`ระงับ ${view.summary.suspended} คน (ไม่นับรวม)`}
             />
             <MetricCard
               icon={Star}
               label="GPA เฉลี่ย"
-              value={group.value ?? '—'}
+              value={
+                group.kind === 'ok' ? (
+                  <AnimatedNumber
+                    value={view.summary.averageGpa}
+                    decimals={2}
+                    format={(n) => n.toFixed(2)}
+                  />
+                ) : (
+                  '—'
+                )
+              }
               unit={group.value ? '/ 4.00' : undefined}
               note={group.note}
             />
             <MetricCard
               icon={ClipboardCheck}
               label="มีผลการเรียน"
-              value={view.summary.withRecords}
+              value={<AnimatedNumber value={view.summary.withRecords} />}
               unit="คน"
               note={`ยังไม่มีข้อมูล ${view.summary.byStatus.NO_DATA} คน (${sharePercent(view.summary.byStatus.NO_DATA, view.summary.active)})`}
             />

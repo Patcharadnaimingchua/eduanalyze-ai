@@ -32,6 +32,7 @@ import { CourseRows } from '@/components/staff/course-rows';
 import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instructors-tab';
 import { buildCurriculumView, type InstructorFilter } from '@/components/staff/curriculum-view';
 import { Button } from '@/components/ui/button';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -342,13 +343,17 @@ function StaffCurriculumContent() {
                   <BookOpen aria-hidden="true" className="h-4 w-4 shrink-0 text-brand" />
                   <span>
                     จำนวนรายวิชาทั้งหมด{' '}
-                    <span className="font-semibold tabular-nums">{view.totalCourses}</span> วิชา
+                    <span className="font-semibold tabular-nums">
+                      <AnimatedNumber value={view.totalCourses} />
+                    </span> วิชา
                   </span>
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <ListChecks aria-hidden="true" className="h-4 w-4 shrink-0 text-brand" />
                   <span>
-                    รวม <span className="font-semibold tabular-nums">{view.totalCredits}</span>{' '}
+                    รวม <span className="font-semibold tabular-nums">
+                      <AnimatedNumber value={view.totalCredits} />
+                    </span>{' '}
                     หน่วยกิต
                   </span>
                 </p>
@@ -362,7 +367,9 @@ function StaffCurriculumContent() {
                   {view.withoutInstructor > 0 ? (
                     <span>
                       วิชาที่ยังไม่มีอาจารย์ผู้รับผิดชอบ{' '}
-                      <span className="font-semibold tabular-nums">{view.withoutInstructor}</span>{' '}
+                      <span className="font-semibold tabular-nums">
+                        <AnimatedNumber value={view.withoutInstructor} />
+                      </span>{' '}
                       วิชา
                     </span>
                   ) : (

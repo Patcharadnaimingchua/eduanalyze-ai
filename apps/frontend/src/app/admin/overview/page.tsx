@@ -13,6 +13,7 @@ import { PageLoadError } from '@/components/layout/page-states';
 import { PageSection } from '@/components/layout/page-section';
 import { Reveal } from '@/components/layout/reveal';
 import { AdminScopeCurriculumList } from '@/components/admin/admin-scope-curriculum-list';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 
@@ -73,17 +74,17 @@ function AdminOverviewContent() {
           <Reveal index={1}>
             <PageSection title="ขอบเขตที่ดูแล">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <StatCard icon={Landmark} label="คณะ" value={data.scope.facultyCount} suffix="คณะ" />
+                <StatCard icon={Landmark} label="คณะ" value={<AnimatedNumber value={data.scope.facultyCount} />} suffix="คณะ" />
                 <StatCard
                   icon={Building2}
                   label="ภาควิชา"
-                  value={data.scope.departmentCount}
+                  value={<AnimatedNumber value={data.scope.departmentCount} />}
                   suffix="ภาควิชา"
                 />
                 <StatCard
                   icon={GraduationCap}
                   label="สาขา"
-                  value={data.scope.programCount}
+                  value={<AnimatedNumber value={data.scope.programCount} />}
                   suffix="สาขา"
                 />
               </div>
@@ -93,18 +94,18 @@ function AdminOverviewContent() {
           <Reveal index={2}>
             <PageSection title="ผู้ใช้งานในขอบเขต">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-                <StatCard icon={UserCog} label="เจ้าหน้าที่ (STAFF)" value={data.userCounts.staff} suffix="คน" />
+                <StatCard icon={UserCog} label="เจ้าหน้าที่ (STAFF)" value={<AnimatedNumber value={data.userCounts.staff} />} suffix="คน" />
                 <StatCard
                   icon={Users}
                   label="อาจารย์ (INSTRUCTOR)"
-                  value={data.userCounts.instructor}
+                  value={<AnimatedNumber value={data.userCounts.instructor} />}
                   suffix="คน"
                 />
-                <StatCard icon={ShieldCheck} label="ผู้ดูแล (ADMIN)" value={data.userCounts.admin} suffix="คน" />
+                <StatCard icon={ShieldCheck} label="ผู้ดูแล (ADMIN)" value={<AnimatedNumber value={data.userCounts.admin} />} suffix="คน" />
                 <StatCard
                   icon={GraduationCap}
                   label="นักศึกษา (STUDENT)"
-                  value={data.userCounts.student}
+                  value={<AnimatedNumber value={data.userCounts.student} />}
                   suffix="คน"
                 />
               </div>

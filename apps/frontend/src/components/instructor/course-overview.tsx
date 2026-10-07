@@ -37,6 +37,7 @@ import { GRADE_LABELS } from '@/lib/grade-label';
 import { buildCourseOverviews, formatGpa, type OverviewStatus } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { PageSection } from '@/components/layout/page-section';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -267,7 +268,14 @@ function SummarySection({ snapshot, termLabel }: Readonly<{ snapshot: CourseSnap
           <div className="space-y-3">
             <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="text-6xl font-bold leading-none tabular-nums text-primary">
-                {formatShare(stats.achievedPercent, target)}
+                {level === 'ok' ? (
+                  <AnimatedNumber
+                    value={stats.achievedPercent}
+                    format={(n) => formatShare(n, target)}
+                  />
+                ) : (
+                  formatShare(stats.achievedPercent, target)
+                )}
               </span>
               <span className="text-base font-medium text-muted-foreground">ได้ B ขึ้นไป</span>
             </p>
@@ -287,11 +295,14 @@ function SummarySection({ snapshot, termLabel }: Readonly<{ snapshot: CourseSnap
           </div>
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-t pt-4 sm:grid-cols-3 lg:grid-cols-5">
-          <Figure label="เกรดเฉลี่ย" value={formatGpa(stats.gpa)} note={stats.gpa === null ? 'ยังไม่มีเกรดที่นำมาคิด' : 'จาก 4.00'} />
-          <Figure label="นักศึกษาที่มีเกรด" value={`${stats.seats} คน`} />
-          <Figure label="ได้ B ขึ้นไป" value={`${stats.achieved} คน`} />
-          <Figure label="ได้ F" value={`${stats.f} คน`} danger={stats.f > 0} />
-          <Figure label="ถอน (W)" value={`${stats.w} คน`} />
+          <Figure
+            label="เกรดเฉลี่ย"
+            value={<AnimatedNumber value={stats.gpa} decimals={2} format={(n) => n.toFixed(2)} />}
+            note={stats.gpa === null ? 'ยังไม่มีเกรดที่นำมาคิด' : 'จาก 4.00'} />
+          <Figure label="นักศึกษาที่มีเกรด" value={<><AnimatedNumber value={stats.seats} /> คน</>} />
+          <Figure label="ได้ B ขึ้นไป" value={<><AnimatedNumber value={stats.achieved} /> คน</>} />
+          <Figure label="ได้ F" value={<><AnimatedNumber value={stats.f} /> คน</>} danger={stats.f > 0} />
+          <Figure label="ถอน (W)" value={<><AnimatedNumber value={stats.w} /> คน</>} />
         </dl>
       </div>
     </section>
@@ -303,7 +314,7 @@ function Figure({
   value,
   note,
   danger = false,
-}: Readonly<{ label: string; value: string; note?: string; danger?: boolean }>) {
+}: Readonly<{ label: string; value: ReactNode; note?: string; danger?: boolean }>) {
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{label}</dt>
