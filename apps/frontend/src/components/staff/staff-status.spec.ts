@@ -2,6 +2,7 @@ import type { StaffStudentRiskEntry } from '@eduanalyze-ai/shared-types';
 import {
   coursesWithoutInstructor,
   readGroupGpa,
+  sharePercent,
   sortRows,
   staffStatus,
   summarizeByYearLevel,
@@ -178,5 +179,12 @@ describe('coursesWithoutInstructor', () => {
 
   it('leaves out curricula that are not in scope', () => {
     expect(coursesWithoutInstructor(courses, [], new Set(['C2'])).map((c) => c.id)).toEqual(['c']);
+  });
+});
+
+describe('sharePercent', () => {
+  it('gives one decimal and never NaN', () => {
+    expect(sharePercent(112, 148)).toBe('75.7%');
+    expect(sharePercent(0, 0)).toBe('0.0%');
   });
 });

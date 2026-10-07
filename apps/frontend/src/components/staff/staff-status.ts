@@ -161,3 +161,8 @@ export function coursesWithoutInstructor<C extends { id: string; curriculumId: s
   return courses.filter((course) => curriculumIds.has(course.curriculumId) && !assigned.has(course.id));
 }
 
+
+// A share of the active students, one decimal. Zero people gives zero, not NaN.
+export function sharePercent(count: number, total: number): string {
+  return total === 0 ? '0.0%' : `${((count / total) * 100).toFixed(1)}%`;
+}

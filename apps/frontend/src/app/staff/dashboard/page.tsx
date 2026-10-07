@@ -1,21 +1,50 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchStaffOverview, fetchStaffStudentRisk } from '@/lib/api/staff';
-import { useAuth } from '@/lib/auth-context';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { RequireRole } from '@/components/auth/require-role';
-import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLoadError } from '@/components/layout/page-states';
-import { PageSection } from '@/components/layout/page-section';
-import { Reveal } from '@/components/layout/reveal';
-import { StaffDashboardSummary } from '@/components/staff/staff-dashboard-summary';
-import { AtRiskStudentsCard } from '@/components/staff/at-risk-students-card';
-import { ProgramOverviewList } from '@/components/staff/program-overview-list';
-import { countGradedByCurriculum } from '@/components/staff/student-reading';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ClipboardCheck, Star, Users } from "lucide-react";
+import { fetchCourses } from "@/lib/api/academic-record";
+import {
+  fetchCourseInstructors,
+  fetchStaffOverview,
+  fetchStaffStudentRisk,
+  fetchStaffYearLevels,
+} from "@/lib/api/staff";
+import { useAuth } from "@/lib/auth-context";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { RequireRole } from "@/components/auth/require-role";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PageHeader } from "@/components/layout/page-header";
+import { PageLoadError } from "@/components/layout/page-states";
+import { Reveal } from "@/components/layout/reveal";
+import { MetricCard } from "@/components/staff/metric-card";
+import {
+  CHECK_ICONS,
+  OverviewChecklist,
+  type ChecklistItem,
+} from "@/components/staff/overview-checklist";
+import { OverviewStatusBreakdown } from "@/components/staff/overview-status-breakdown";
+import { OverviewYearTable } from "@/components/staff/overview-year-table";
+import {
+  coursesWithoutInstructor,
+  readGroupGpa,
+  sharePercent,
+  summarizeByYearLevel,
+  summarizeStudents,
+  toRows,
+} from "@/components/staff/staff-status";
+import { YEAR_LEVELS, yearInfoFrom } from "@/components/staff/year-info";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ALL_CURRICULA = "ALL";
 
 export default function StaffDashboardPage() {
   return (
@@ -29,8 +58,57 @@ export default function StaffDashboardPage() {
 
 function StaffDashboardContent() {
   const { user } = useAuth();
-  const studentsQuery = useQuery({ queryKey: ['staff-student-risk'], queryFn: fetchStaffStudentRisk });
-  const overviewQuery = useQuery({ queryKey: ['staff-overview'], queryFn: fetchStaffOverview });
+  const [scope, setScope] = useState(ALL_CURRICULA);
+
+  // One request each for the whole page; nothing here is fetched per course.
+  const studentsQuery = useQuery({
+    queryKey: ["staff-student-risk"],
+    queryFn: fetchStaffStudentRisk,
+  });
+  const yearsQuery = useQuery({
+    queryKey: ["staff-year-levels"],
+    queryFn: fetchStaffYearLevels,
+  });
+  const overviewQuery = useQuery({
+    queryKey: ["staff-overview"],
+    queryFn: fetchStaffOverview,
+  });
+  const coursesQuery = useQuery({
+    queryKey: ["courses"],
+    queryFn: fetchCourses,
+  });
+  const assignmentsQuery = useQuery({
+    queryKey: ["course-instructors"],
+    queryFn: fetchCourseInstructors,
+  });
+
+  const curricula = useMemo(
+    () =>
+      (overviewQuery.data?.programs ?? []).flatMap((program) =>
+        program.curricula.map((curriculum) => ({
+          id: curriculum.curriculumId,
+          label: `${program.programCode} ${program.programName} · ฉบับ ${curriculum.version}`,
+          coursesWithoutClo: curriculum.coursesWithoutClo,
+        })),
+      ),
+    [overviewQuery.data],
+  );
+
+  const view = useMemo(() => {
+    if (!studentsQuery.data || !yearsQuery.data) return null;
+    const inScope = studentsQuery.data.filter(
+      (s) => scope === ALL_CURRICULA || s.curriculumId === scope,
+    );
+    const yearInfo = yearInfoFrom(yearsQuery.data);
+    const rows = toRows(inScope, yearInfo.levelById);
+    const summary = summarizeStudents(inScope);
+    const years = summarizeByYearLevel(rows, yearInfo.behindIds, YEAR_LEVELS);
+    return {
+      summary,
+      years,
+      totalBehind: years.reduce((sum, y) => sum + y.behind, 0),
+    };
+  }, [studentsQuery.data, yearsQuery.data, scope]);
 
   if (!user) {
     return (
@@ -43,61 +121,185 @@ function StaffDashboardContent() {
     );
   }
 
+  const scopeIds = new Set(
+    scope === ALL_CURRICULA ? curricula.map((c) => c.id) : [scope],
+  );
+  const checklist: ChecklistItem[] = [];
+  if (view) {
+    const { summary } = view;
+    if (summary.byStatus.NO_DATA > 0) {
+      checklist.push({
+        key: "no-data",
+        icon: CHECK_ICONS.noData,
+        title: `นักศึกษาที่ยังไม่มีข้อมูลผลการเรียน ${summary.byStatus.NO_DATA} คน`,
+        description: "ดูรายชื่อเพื่อตรวจว่ายังไม่ได้บันทึกผลการเรียน",
+        action: { href: "/staff/students?risk=NO_DATA", label: "ดูรายชื่อ" },
+      });
+    }
+    if (summary.byStatus.CRITICAL > 0) {
+      checklist.push({
+        key: "critical",
+        icon: CHECK_ICONS.critical,
+        title: `นักศึกษาที่อยู่ในระดับเร่งด่วน ${summary.byStatus.CRITICAL} คน`,
+        description: "มีรายวิชาที่ได้เกรด D+ D F หรือ U",
+        action: { href: "/staff/students?risk=CRITICAL", label: "ดูรายชื่อ" },
+      });
+    }
+  }
+  if (coursesQuery.data && assignmentsQuery.data && curricula.length > 0) {
+    const missing = coursesWithoutInstructor(
+      coursesQuery.data,
+      assignmentsQuery.data,
+      scopeIds,
+    );
+    if (missing.length > 0) {
+      const firstCurriculum = curricula.find((c) =>
+        missing.some((m) => m.curriculumId === c.id),
+      );
+      const inCurricula = new Set(missing.map((m) => m.curriculumId)).size;
+      checklist.push({
+        key: "no-instructor",
+        icon: CHECK_ICONS.noInstructor,
+        title: `วิชาที่ยังไม่มีอาจารย์ผู้รับผิดชอบ ${missing.length} วิชา`,
+        description:
+          inCurricula > 1
+            ? `อยู่ใน ${inCurricula} หลักสูตร ปุ่มนี้เปิดหลักสูตรแรกที่มีวิชาเข้าข่าย`
+            : "เปิดหน้าหลักสูตรเพื่อมอบหมายอาจารย์ผู้รับผิดชอบวิชา",
+        action: {
+          href: `/staff/curriculum?curriculumId=${firstCurriculum?.id ?? ""}&instructor=none`,
+          label: "ดูรายวิชา",
+        },
+      });
+    }
+  }
+  const withoutClo = curricula
+    .filter((c) => scopeIds.has(c.id))
+    .reduce((sum, c) => sum + c.coursesWithoutClo, 0);
+  if (withoutClo > 0) {
+    // Information only: CLOs are set by ADMIN, so there is nothing for Staff to open.
+    checklist.push({
+      key: "no-clo",
+      icon: CHECK_ICONS.noClo,
+      title: `วิชาที่ยังไม่มี CLO ${withoutClo} วิชา`,
+      description:
+        "CLO ของรายวิชากำหนดโดยผู้ดูแลระบบ (ADMIN) หากมีวิชาที่ยังไม่มี CLO กรุณาแจ้งผู้ดูแลระบบให้เพิ่ม",
+    });
+  }
+
+  const group = view
+    ? readGroupGpa(view.summary.averageGpa, view.summary.withGpa)
+    : null;
+  const loadFailed =
+    studentsQuery.isError || yearsQuery.isError || overviewQuery.isError;
+
   return (
-    <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell
+      role="STAFF"
+      identityLabel={user.email}
+      fullName={user.fullName}
+    >
       <Reveal index={0}>
         <PageHeader
-          title="แดชบอร์ดเจ้าหน้าที่"
-          description="ภาพรวมนักศึกษาและหลักสูตรในขอบเขตของคุณ"
+          title="ภาพรวมการศึกษาและผลการเรียน"
+          description="สรุปผลการเรียนและนักศึกษาที่ต้องติดตามในขอบเขตที่คุณดูแล"
+          actions={
+            <label className="block space-y-1.5 sm:w-80">
+              <span className="text-xs font-medium text-muted-foreground">
+                หลักสูตรและสาขาวิชาที่ดูแล
+              </span>
+              <Select
+                value={scope}
+                onValueChange={setScope}
+                disabled={curricula.length === 0}
+              >
+                <SelectTrigger
+                  className="h-11"
+                  aria-label="เลือกหลักสูตรที่ต้องการดู"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_CURRICULA}>
+                    ทุกหลักสูตรในความดูแล
+                  </SelectItem>
+                  {curricula.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          }
         />
       </Reveal>
 
-      <Reveal index={1}>
-        {studentsQuery.isLoading && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-4 w-40" />
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Skeleton className="h-9 w-16" />
-                  <Skeleton className="h-4 w-32" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        {studentsQuery.isError && <PageLoadError onRetry={() => studentsQuery.refetch()} />}
-        {studentsQuery.data && <StaffDashboardSummary students={studentsQuery.data} />}
-      </Reveal>
-
-      {/* Above the program list: who needs attention comes before what the
-          numbers average out to. */}
-      {overviewQuery.data && (
-        <Reveal index={2}>
-          <AtRiskStudentsCard
-            students={overviewQuery.data.atRiskStudents}
-            summary={overviewQuery.data.atRiskSummary}
-          />
-        </Reveal>
+      {loadFailed && (
+        <PageLoadError
+          onRetry={() => {
+            studentsQuery.refetch();
+            yearsQuery.refetch();
+            overviewQuery.refetch();
+          }}
+        />
       )}
 
-      <Reveal index={3}>
-        <PageSection
-          title="ภาพรวมสาขา/หลักสูตรในความดูแล"
-          description="จำนวนนักศึกษา, GPA เฉลี่ย, และวิชาที่ยังไม่มี CLO ต่อหลักสูตร"
-        >
-          {(overviewQuery.isLoading || studentsQuery.isLoading) && <ListSkeleton items={3} />}
-          {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
-          {overviewQuery.data && studentsQuery.data && (
-            <ProgramOverviewList
-              programs={overviewQuery.data.programs}
-              gradedByCurriculum={countGradedByCurriculum(studentsQuery.data)}
+      {!view && !loadFailed && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="space-y-3 p-5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-9 w-24" />
+                <Skeleton className="h-8 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {view && group && (
+        <>
+          <Reveal index={1} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <MetricCard
+              icon={Users}
+              label="นักศึกษาในความดูแล"
+              value={view.summary.active}
+              unit="คน"
+              note={`ระงับ ${view.summary.suspended} คน (ไม่นับรวม)`}
             />
-          )}
-        </PageSection>
-      </Reveal>
+            <MetricCard
+              icon={Star}
+              label="GPA เฉลี่ย"
+              value={group.value ?? "—"}
+              unit={group.value ? "/ 4.00" : undefined}
+              note={group.note}
+            />
+            <MetricCard
+              icon={ClipboardCheck}
+              label="มีผลการเรียน"
+              value={view.summary.withRecords}
+              unit="คน"
+              note={`ยังไม่มีข้อมูล ${view.summary.byStatus.NO_DATA} คน (${sharePercent(view.summary.byStatus.NO_DATA, view.summary.active)})`}
+            />
+          </Reveal>
+
+          <Reveal index={2} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <OverviewYearTable
+                years={view.years}
+                total={view.summary}
+                totalBehind={view.totalBehind}
+              />
+            </div>
+            <OverviewStatusBreakdown summary={view.summary} />
+          </Reveal>
+
+          <Reveal index={3}>
+            <OverviewChecklist items={checklist} />
+          </Reveal>
+        </>
+      )}
     </DashboardShell>
   );
 }
