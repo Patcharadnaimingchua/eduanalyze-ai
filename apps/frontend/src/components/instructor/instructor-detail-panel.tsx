@@ -160,7 +160,6 @@ export function InstructorDetailPanel({
                 <CloAchievementSection
                   courseId={course.courseId}
                   achievementPercent={course.achievementPercent}
-                  achievementThreshold={course.achievementThreshold}
                   clos={course.clos}
                   plos={course.plos}
                   courseAssessment={course.courseAssessment}

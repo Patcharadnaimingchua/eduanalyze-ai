@@ -39,7 +39,6 @@ interface CourseAssessmentSummary {
 export function CloAchievementSection({
   courseId,
   achievementPercent,
-  achievementThreshold,
   clos,
   plos,
   courseAssessment,
@@ -54,7 +53,6 @@ export function CloAchievementSection({
 }: Readonly<{
   courseId: string;
   achievementPercent: number;
-  achievementThreshold: number;
   clos: CloAchievementEntry[];
   plos: CoursePloEntry[];
   courseAssessment: CourseAssessmentSummary;
@@ -75,7 +73,6 @@ export function CloAchievementSection({
   onViewRoster: () => void;
 }>) {
   const [expandedCloId, setExpandedCloId] = useState<string | null>(null);
-  const courseStatus = achievementStatus(achievementPercent, achievementThreshold);
 
   // Grade-based achievement has no per-CLO breakdown (see ACHIEVED_GRADES
   // comment above) — the same failing-student list applies to every
@@ -114,19 +111,18 @@ export function CloAchievementSection({
     <div className="space-y-5">
       <PageSection title="ภาพรวมเป้าการเรียนรู้">
         <div className="flex items-center gap-3">
-          <Progress value={achievementPercent} className="flex-1" barClassName="bg-emerald-600" />
-          <Badge tone={courseStatus.tone}>{courseStatus.label}</Badge>
+          <Progress value={achievementPercent} className="flex-1" barClassName="bg-brand" />
           <span className="shrink-0 text-sm font-medium text-primary">
             ได้ B ขึ้นไป {formatPercent(achievementPercent)}
           </span>
         </div>
         {isLoading && <Skeleton className="h-3 w-40" />}
         {isError && (
-          <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ผ่านเป้าได้</p>
+          <p className="text-xs text-destructive">ไม่สามารถโหลดจำนวนนักศึกษาที่ได้ B ขึ้นไปได้</p>
         )}
         {detail && (
           <p className="text-xs text-muted-foreground">
-            {detail.achievedStudents} จาก {detail.totalStudents} คนผ่านเป้า
+            ได้ B ขึ้นไป {detail.achievedStudents} จาก {detail.totalStudents} คน
           </p>
         )}
         <p className="text-xs text-muted-foreground">
