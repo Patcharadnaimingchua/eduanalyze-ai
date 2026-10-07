@@ -18,6 +18,7 @@ import {
   buildCourseSnapshot,
   changeLine,
   courseTermInfo,
+  dataLevelOf,
   formatPointsChange,
   summaryLine,
   type CourseSnapshot,
@@ -44,22 +45,22 @@ import { AnimatedNumber } from '@/components/ui/animated-number';
 import { AnimatedRing } from '@/components/ui/animated-ring';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CARD, CARD_PAD, TEXT_SECTION } from './instructor-ui';
+import { CARD, CARD_PAD, TEXT_LABEL, TEXT_SECTION } from './instructor-ui';
 import { LowSampleTag } from './overview-parts';
 
-// Blue for B or above, grey for C, amber for D, red for F. Fixed colours rather
-// than theme classes, so the label inside each segment keeps its contrast in
-// both themes. Each segment is also named in words in the bar and below it, so
-// colour is never the only signal.
-const GRADE_BAR: Record<string, { fill: string; text: string }> = {
-  A: { fill: '#1e3a8a', text: '#ffffff' },
-  B_PLUS: { fill: '#1d4ed8', text: '#ffffff' },
-  B: { fill: '#60a5fa', text: '#0f172a' },
-  C_PLUS: { fill: '#64748b', text: '#ffffff' },
-  C: { fill: '#cbd5e1', text: '#0f172a' },
-  D_PLUS: { fill: '#f59e0b', text: '#1c1917' },
-  D: { fill: '#fcd34d', text: '#1c1917' },
-  F: { fill: '#dc2626', text: '#ffffff' },
+// One hue, darkest for A and lightest for F, so the order reads without a
+// rainbow. Fixed colours rather than theme classes so the bars stay visible on
+// the track in both themes. Every row also carries the grade, the count and the
+// share in words, so colour is never the only signal.
+const GRADE_FILL: Record<string, string> = {
+  A: '#1e3a8a',
+  B_PLUS: '#1e40af',
+  B: '#1d4ed8',
+  C_PLUS: '#2563eb',
+  C: '#3b82f6',
+  D_PLUS: '#60a5fa',
+  D: '#93c5fd',
+  F: '#bfdbfe',
 };
 
 const oneDecimal = (n: number) => `${n.toFixed(1)}%`;
@@ -181,36 +182,70 @@ function SummarySection({
         <h2 id={headingId} className={TEXT_SECTION}>
           สรุปผล
         </h2>
-        {termLabel && <p className="text-xs text-muted-foreground">รอบล่าสุด {termLabel}</p>}
+        {termLabel && <p className={TEXT_LABEL}>รอบล่าสุด {termLabel}</p>}
       </div>
-      <div className="space-y-5 p-5">
-        <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-8">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-            <div className="space-y-3">
-              {values ? (
+      <div className={`space-y-5 ${CARD_PAD}`}>
+        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+          <StatTile
+            big
+            className="col-span-2"
+            label="GPA ของวิชา"
+            zero={!values}
+            value={
+              values ? (
+                center.level === 'ok' ? (
+                  <AnimatedNumber value={values.gpa} decimals={2} format={formatCourseGpa} />
+                ) : (
+                  formatCourseGpa(values.gpa)
+                )
+              ) : (
+                '—'
+              )
+            }
+            extra={
+              values ? (
                 <>
-                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <span className="text-6xl font-bold leading-none tabular-nums text-primary">
-                      {center.level === 'ok' ? (
-                        <AnimatedNumber value={values.gpa} decimals={2} format={formatCourseGpa} />
-                      ) : (
-                        formatCourseGpa(values.gpa)
-                      )}
-                    </span>
-                    <span className="text-base font-medium text-muted-foreground">GPA ของวิชา</span>
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      ≈ เกรด {gradeText(values.nearest)} (จาก 4.00)
-                    </span>
-                    {center.level === 'low' && <LowSampleTag counted={center.people} />}
-                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    ≈ เกรด {gradeText(values.nearest)} (จาก 4.00)
+                  </span>
+                  {center.level === 'low' && <LowSampleTag counted={center.people} />}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">{formatGradeTally(stats.counts)}</p>
-              )}
-            </div>
-            {values && showAchievementRing(stats.counted, stats.achievedPercent) && (
+                <span className="text-sm text-muted-foreground">
+                  {formatGradeTally(stats.counts)}
+                </span>
+              )
+            }
+          />
+          <StatTile
+            label="นักศึกษาที่มีเกรด"
+            unit="คน"
+            zero={stats.seats === 0}
+            value={<AnimatedNumber value={stats.seats} />}
+          />
+          <StatTile
+            label="ได้ B ขึ้นไป"
+            unit="คน"
+            zero={stats.achieved === 0}
+            value={<AnimatedNumber value={stats.achieved} />}
+          />
+          <StatTile
+            label="ได้ F"
+            unit="คน"
+            zero={stats.f === 0}
+            value={<AnimatedNumber value={stats.f} />}
+          />
+          <StatTile
+            label="ถอน (W)"
+            unit="คน"
+            zero={stats.w === 0}
+            value={<AnimatedNumber value={stats.w} />}
+          />
+        </dl>
+
+        {values && (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-t pt-5">
+            {showAchievementRing(stats.counted, stats.achievedPercent) && (
               <AnimatedRing percent={stats.achievedPercent}>
                 <span className="text-center text-xs font-medium leading-tight text-muted-foreground">
                   B<br />
@@ -218,9 +253,7 @@ function SummarySection({
                 </span>
               </AnimatedRing>
             )}
-          </div>
-          {values && (
-            <div className="space-y-3 border-brand lg:border-l-4 lg:pl-5">
+            <div className="min-w-0 flex-1 basis-64 space-y-3 border-brand lg:border-l-4 lg:pl-5">
               <p className="text-sm font-medium text-primary">{summaryLine(snapshot)}</p>
               <details className="group rounded-md border bg-slate-50 px-3">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
@@ -232,6 +265,8 @@ function SummarySection({
                   />
                 </summary>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 pb-3 sm:grid-cols-3">
+                  <Figure small label="เกรดที่พบมากที่สุด" value={formatGradeList(values.modes)} />
+                  <Figure small label="เกรดกลาง" value={formatMedian(values.median)} />
                   <Figure small label="เกรดสูงสุดที่พบ" value={gradeText(values.highest)} />
                   <Figure small label="เกรดต่ำสุดที่พบ" value={gradeText(values.lowest)} />
                   <Figure
@@ -243,55 +278,55 @@ function SummarySection({
                 </dl>
               </details>
             </div>
-          )}
-        </div>
-        <dl
-          className={cn(
-            'grid grid-cols-2 gap-x-4 gap-y-4 border-t pt-4',
-            values ? 'sm:grid-cols-3 lg:grid-cols-6' : 'sm:grid-cols-4',
-          )}
-        >
-          {values && (
-            <>
-              <Figure label="เกรดที่พบมากที่สุด" value={formatGradeList(values.modes)} />
-              <Figure label="เกรดกลาง" value={formatMedian(values.median)} />
-            </>
-          )}
-          <Figure
-            label="นักศึกษาที่มีเกรด"
-            value={
-              <>
-                <AnimatedNumber value={stats.seats} /> คน
-              </>
-            }
-          />
-          <Figure
-            label="ได้ B ขึ้นไป"
-            value={
-              <>
-                <AnimatedNumber value={stats.achieved} /> คน
-              </>
-            }
-          />
-          <Figure
-            label="ได้ F"
-            value={
-              <>
-                <AnimatedNumber value={stats.f} /> คน
-              </>
-            }
-          />
-          <Figure
-            label="ถอน (W)"
-            value={
-              <>
-                <AnimatedNumber value={stats.w} /> คน
-              </>
-            }
-          />
-        </dl>
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+// One figure of the summary row. Same height across the row; the course GPA tile
+// is the big one; a zero is shown in the quiet colour and the unit stays small.
+function StatTile({
+  label,
+  value,
+  unit,
+  extra,
+  big = false,
+  zero = false,
+  className,
+}: Readonly<{
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  extra?: ReactNode;
+  big?: boolean;
+  zero?: boolean;
+  className?: string;
+}>) {
+  return (
+    <div
+      className={cn(
+        'flex h-full min-w-0 flex-col justify-between gap-2 rounded-lg border border-slate-200 p-4',
+        big && 'bg-brand-light',
+        className,
+      )}
+    >
+      <dt className={TEXT_LABEL}>{label}</dt>
+      <dd className="space-y-1">
+        <p
+          className={cn(
+            'break-words font-bold leading-none tabular-nums',
+            big ? 'text-5xl' : 'text-3xl',
+            zero ? 'text-muted-foreground' : 'text-primary',
+          )}
+        >
+          {value}
+          {unit && <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>}
+        </p>
+        {extra && <div className="flex flex-wrap items-center gap-2">{extra}</div>}
+      </dd>
+    </div>
   );
 }
 
@@ -471,57 +506,59 @@ function GradesSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
       </SectionCard>
     );
   }
+  // Under 5 people a bar shows nothing a count does not: chips, no chart.
+  const fewPeople = dataLevelOf(grades.scored) === 'insufficient';
   return (
     <SectionCard
       title="การกระจายเกรด"
       description="เกรดล่าสุดของนักศึกษาแต่ละคนในวิชานี้ (A ถึง F)"
       aside={`รวม A ถึง F ${grades.scored} คน`}
     >
-      <div
-        role="img"
-        aria-label={grades.segments
-          .map((s) => `${GRADE_LABELS[s.grade]} ${s.count} คน`)
-          .join(' · ')}
-        className="flex h-9 overflow-hidden rounded-lg bg-slate-100"
-      >
-        {grades.segments
-          .filter((s) => s.count > 0)
-          .map((s) => (
-            <span
+      {fewPeople ? (
+        <ul className="flex flex-wrap gap-2">
+          {grades.segments
+            .filter((s) => s.count > 0)
+            .map((s) => (
+              <li
+                key={s.grade}
+                className="inline-flex min-h-9 items-center gap-2 rounded-full border border-slate-200 px-3 text-sm"
+              >
+                <span className="font-semibold text-primary">{GRADE_LABELS[s.grade]}</span>
+                <span className="tabular-nums text-muted-foreground">{s.count} คน</span>
+              </li>
+            ))}
+        </ul>
+      ) : (
+        <ul className="space-y-2">
+          {grades.segments.map((s) => (
+            <li
               key={s.grade}
-              className="flex items-center justify-center overflow-hidden whitespace-nowrap border-r border-background text-xs font-medium last:border-r-0"
-              style={{
-                width: `${s.percent}%`,
-                backgroundColor: GRADE_BAR[s.grade].fill,
-                color: GRADE_BAR[s.grade].text,
-              }}
+              className={cn('flex items-center gap-3', s.count === 0 && 'text-muted-foreground')}
             >
-              {s.percent >= 25
-                ? `${GRADE_LABELS[s.grade]} (${formatPercent(s.percent)})`
-                : s.percent >= 6
-                  ? GRADE_LABELS[s.grade]
-                  : ''}
-            </span>
+              <span className="w-8 shrink-0 text-sm font-semibold tabular-nums text-primary">
+                {GRADE_LABELS[s.grade]}
+              </span>
+              <div
+                role="img"
+                aria-label={`${GRADE_LABELS[s.grade]} ${s.count} คน ${oneDecimal(s.percent)}`}
+                className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100"
+              >
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    width: `${s.count === 0 ? 0 : Math.max(2, Math.min(100, s.percent))}%`,
+                    backgroundColor: GRADE_FILL[s.grade],
+                  }}
+                />
+              </div>
+              <span className="w-28 shrink-0 text-right text-sm tabular-nums">
+                <span className="font-semibold text-primary">{s.count}</span>{' '}
+                <span className="text-muted-foreground">คน · {oneDecimal(s.percent)}</span>
+              </span>
+            </li>
           ))}
-      </div>
-      <dl className="grid grid-cols-4 gap-x-2 gap-y-4 sm:grid-cols-8">
-        {grades.segments.map((s) => (
-          <div key={s.grade} className="space-y-0.5 text-center">
-            <dt className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              <span
-                aria-hidden="true"
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: GRADE_BAR[s.grade].fill }}
-              />
-              {GRADE_LABELS[s.grade]}
-            </dt>
-            <dd className="text-xl font-semibold tabular-nums text-primary">
-              {s.count} <span className="text-xs font-normal text-muted-foreground">คน</span>
-            </dd>
-            <dd className="text-xs tabular-nums text-muted-foreground">{oneDecimal(s.percent)}</dd>
-          </div>
-        ))}
-      </dl>
+        </ul>
+      )}
       <p className="border-t pt-3 text-sm text-muted-foreground">
         ได้ F <span className="font-semibold text-primary">{grades.f}</span> คน · ถอน (W){' '}
         <span className="font-semibold text-primary">{grades.w}</span> คน · ยังไม่สมบูรณ์ (I){' '}
