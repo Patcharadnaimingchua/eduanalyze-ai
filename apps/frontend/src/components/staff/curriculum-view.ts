@@ -29,6 +29,8 @@ export interface CategoryBlock {
   requirement: CurriculumRequirement | undefined;
   // All the category's courses, whatever the filters say.
   courseCount: number;
+  // Of those, how many have nobody assigned, whatever the filters say.
+  withoutInstructor: number;
   credits: number;
   // Only what the filters let through.
   rows: CourseRowData[];
@@ -68,6 +70,29 @@ function matchesSearch(course: CourseListItem, search: string): boolean {
   return [course.code, course.name, course.nameEn ?? ''].some((text) =>
     text.toLowerCase().includes(term),
   );
+}
+
+// The line under a collapsed category.
+export function categorySummary(courseCount: number, withoutInstructor: number): string {
+  if (courseCount === 0) return 'ยังไม่มีรายวิชา';
+  return withoutInstructor > 0
+    ? `${courseCount} วิชา · ยังไม่มีอาจารย์ ${withoutInstructor}`
+    : `${courseCount} วิชา · มีอาจารย์ครบ`;
+}
+
+// Categories start folded. A search, an instructor or category filter, or a link
+// to one course opens the categories that have something to show.
+export function categoryOpenByDefault(
+  block: Pick<CategoryBlock, 'rows'>,
+  filters: CurriculumFilters,
+  selectedCourseId: string | null,
+): boolean {
+  if (block.rows.length === 0) return false;
+  const filtered =
+    filters.search.trim() !== '' || filters.instructor !== 'all' || filters.categoryId !== null;
+  const linked =
+    selectedCourseId !== null && block.rows.some((r) => r.course.id === selectedCourseId);
+  return filtered || linked;
 }
 
 export function buildCurriculumView(input: CurriculumViewInput): CurriculumView {
@@ -121,6 +146,7 @@ export function buildCurriculumView(input: CurriculumViewInput): CurriculumView 
         category,
         requirement: requirementByCategory.get(category.id),
         courseCount: inCategory.length,
+        withoutInstructor: inCategory.filter(({ instructors }) => instructors.length === 0).length,
         credits: inCategory.reduce((sum, row) => sum + row.course.credits, 0),
         rows: inCategory.filter(
           ({ course, instructors }) =>

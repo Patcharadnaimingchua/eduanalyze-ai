@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
 import {
   createCurriculumRequirement,
   deleteCourseCategory,
@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import type { CategoryBlock } from './curriculum-view';
+import { categorySummary, type CategoryBlock } from './curriculum-view';
 
 // The credit rule for a category compared with what the curriculum offers in
 // it. This is about the curriculum's own content, not about any student.
@@ -49,14 +49,19 @@ const SMALL = 'h-11 px-4';
 // (set/edit/remove the rule, remove the category). The course rows go inside.
 export function CategorySection({
   block,
+  expanded,
+  onToggle,
   onChanged,
   children,
 }: Readonly<{
   block: CategoryBlock;
+  expanded: boolean;
+  onToggle: () => void;
   onChanged: () => void;
   children: React.ReactNode;
 }>) {
   const { category, requirement } = block;
+  const bodyId = useId();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [confirmingCategoryDelete, setConfirmingCategoryDelete] = useState(false);
@@ -137,19 +142,35 @@ export function CategorySection({
     <Card className="overflow-hidden">
       <div className="space-y-3 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="break-words text-lg font-semibold text-primary">
-              {category.name}
-              {category.code && (
-                <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({category.code})
+          <h3 className="min-w-0 flex-1 text-lg font-semibold text-primary">
+            <button
+              type="button"
+              aria-expanded={expanded}
+              aria-controls={bodyId}
+              onClick={onToggle}
+              className="flex min-h-11 w-full items-start gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={`mt-1.5 h-5 w-5 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${
+                  expanded ? '' : '-rotate-90'
+                }`}
+              />
+              <span className="min-w-0">
+                <span className="block break-words">
+                  {category.name}
+                  {category.code && (
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">
+                      ({category.code})
+                    </span>
+                  )}
                 </span>
-              )}
-            </h3>
-            <p className="text-sm tabular-nums text-muted-foreground">
-              {block.courseCount} รายวิชา
-            </p>
-          </div>
+                <span className="block text-sm font-normal tabular-nums text-muted-foreground">
+                  {categorySummary(block.courseCount, block.withoutInstructor)}
+                </span>
+              </span>
+            </button>
+          </h3>
           {reading && (
             <div className="flex flex-wrap items-center gap-3">
               {share !== null && requirement && (
@@ -178,146 +199,150 @@ export function CategorySection({
             </div>
           )}
         </div>
+      </div>
 
-        {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
-        )}
+      <div id={bodyId} hidden={!expanded}>
+        <div className="space-y-3 px-4 pb-4 sm:px-5 sm:pb-5">
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
 
-        {formOpen ? (
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmitRequirement)}
-              className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[12rem_12rem_auto]"
-            >
-              <FormField
-                control={form.control}
-                name="minCredits"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>หน่วยกิตขั้นต่ำ</FormLabel>
-                    <FormControl>
-                      <Input type="number" className="h-11" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="minCourses"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>จำนวนวิชาขั้นต่ำ (ถ้ามี)</FormLabel>
-                    <FormControl>
-                      <Input type="number" className="h-11" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-1">
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className={SMALL}
-                  disabled={form.formState.isSubmitting}
-                >
-                  {requirement ? 'บันทึกเกณฑ์' : 'ตั้งเกณฑ์หน่วยกิต'}
-                </Button>
-                {editing && (
+          {formOpen ? (
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmitRequirement)}
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[12rem_12rem_auto]"
+              >
+                <FormField
+                  control={form.control}
+                  name="minCredits"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>หน่วยกิตขั้นต่ำ</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="h-11" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="minCourses"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>จำนวนวิชาขั้นต่ำ (ถ้ามี)</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="h-11" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-1">
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className={SMALL}
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {requirement ? 'บันทึกเกณฑ์' : 'ตั้งเกณฑ์หน่วยกิต'}
+                  </Button>
+                  {editing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={SMALL}
+                      onClick={() => setEditing(false)}
+                    >
+                      ยกเลิก
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {confirmingRequirementDelete ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className={SMALL}
+                    disabled={busy}
+                    onClick={handleDeleteRequirement}
+                  >
+                    ยืนยันลบเกณฑ์
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className={SMALL}
-                    onClick={() => setEditing(false)}
+                    onClick={() => setConfirmingRequirementDelete(false)}
                   >
                     ยกเลิก
                   </Button>
-                )}
-              </div>
-            </form>
-          </Form>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {confirmingRequirementDelete ? (
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={SMALL}
+                    onClick={() => setEditing(true)}
+                  >
+                    แก้ไขเกณฑ์
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={SMALL}
+                    onClick={() => setConfirmingRequirementDelete(true)}
+                  >
+                    ลบเกณฑ์
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+            {confirmingCategoryDelete ? (
               <>
                 <Button
                   type="button"
                   variant="destructive"
                   className={SMALL}
                   disabled={busy}
-                  onClick={handleDeleteRequirement}
+                  onClick={handleDeleteCategory}
                 >
-                  ยืนยันลบเกณฑ์
+                  ยืนยันลบหมวดวิชา
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   className={SMALL}
-                  onClick={() => setConfirmingRequirementDelete(false)}
+                  onClick={() => setConfirmingCategoryDelete(false)}
                 >
                   ยกเลิก
                 </Button>
               </>
             ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={SMALL}
-                  onClick={() => setEditing(true)}
-                >
-                  แก้ไขเกณฑ์
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={SMALL}
-                  onClick={() => setConfirmingRequirementDelete(true)}
-                >
-                  ลบเกณฑ์
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-          {confirmingCategoryDelete ? (
-            <>
-              <Button
-                type="button"
-                variant="destructive"
-                className={SMALL}
-                disabled={busy}
-                onClick={handleDeleteCategory}
-              >
-                ยืนยันลบหมวดวิชา
-              </Button>
               <Button
                 type="button"
                 variant="outline"
-                className={SMALL}
-                onClick={() => setConfirmingCategoryDelete(false)}
+                className={`${SMALL} text-destructive`}
+                onClick={() => setConfirmingCategoryDelete(true)}
               >
-                ยกเลิก
+                ลบหมวดวิชา
               </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              className={`${SMALL} text-destructive`}
-              onClick={() => setConfirmingCategoryDelete(true)}
-            >
-              ลบหมวดวิชา
-            </Button>
-          )}
+            )}
+          </div>
         </div>
+        {children}
       </div>
-      {children}
     </Card>
   );
 }

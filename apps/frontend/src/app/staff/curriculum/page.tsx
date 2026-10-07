@@ -30,7 +30,11 @@ import { AssignInstructorSheet } from '@/components/staff/assign-instructor-shee
 import { CourseEditSheet, type CourseSheetTarget } from '@/components/staff/course-edit-sheet';
 import { CourseRows } from '@/components/staff/course-rows';
 import { CurriculumInstructorsTab } from '@/components/staff/curriculum-instructors-tab';
-import { buildCurriculumView, type InstructorFilter } from '@/components/staff/curriculum-view';
+import {
+  buildCurriculumView,
+  categoryOpenByDefault,
+  type InstructorFilter,
+} from '@/components/staff/curriculum-view';
 import { Button } from '@/components/ui/button';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -81,6 +85,9 @@ function StaffCurriculumContent() {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [sheet, setSheet] = useState<CourseSheetTarget | null>(null);
   const [assignCourseId, setAssignCourseId] = useState<string | null>(null);
+  // What the user folded or unfolded by hand; any change of search or filter
+  // starts over from the automatic choice.
+  const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
 
   // The address keeps the whole selection, so a link from the overview, a
   // reload or Back lands on the same curriculum, filter and course. Older links
@@ -93,6 +100,10 @@ function StaffCurriculumContent() {
     instructorParam === 'none' || instructorParam === 'has' ? instructorParam : 'all';
   const tab: CurriculumTab =
     searchParams.get('tab') === 'instructors' && !courseId ? 'instructors' : 'structure';
+
+  useEffect(() => {
+    setManualOpen({});
+  }, [search, categoryParam, instructorFilter, courseId]);
 
   const setParams = useCallback(
     (changes: Record<string, string | null>, mode: 'push' | 'replace' = 'replace') => {
@@ -351,13 +362,15 @@ function StaffCurriculumContent() {
                     จำนวนรายวิชาทั้งหมด{' '}
                     <span className="font-semibold tabular-nums">
                       <AnimatedNumber value={view.totalCourses} />
-                    </span> วิชา
+                    </span>{' '}
+                    วิชา
                   </span>
                 </p>
                 <p className="flex items-center gap-2 text-sm">
                   <ListChecks aria-hidden="true" className="h-4 w-4 shrink-0 text-brand" />
                   <span>
-                    รวม <span className="font-semibold tabular-nums">
+                    รวม{' '}
+                    <span className="font-semibold tabular-nums">
                       <AnimatedNumber value={view.totalCredits} />
                     </span>{' '}
                     หน่วยกิต
@@ -547,21 +560,37 @@ function StaffCurriculumContent() {
                   </CardContent>
                 </Card>
               ) : (
-                allBlocks.map((block) => (
-                  <Reveal key={block.category.id}>
-                    <CategorySection block={block} onChanged={refetchAll}>
-                      <CourseRows
-                        rows={block.rows}
-                        selectedCourseId={courseId}
-                        actions={{
-                          onEdit: (row) => setSheet({ kind: 'edit', course: row.course }),
-                          onAssign: (row) => setAssignCourseId(row.course.id),
-                          onWithdraw: withdraw,
-                        }}
-                      />
-                    </CategorySection>
-                  </Reveal>
-                ))
+                allBlocks.map((block) => {
+                  const open =
+                    manualOpen[block.category.id] ??
+                    categoryOpenByDefault(
+                      block,
+                      { search, categoryId: categoryParam, instructor: instructorFilter },
+                      courseId,
+                    );
+                  return (
+                    <Reveal key={block.category.id}>
+                      <CategorySection
+                        block={block}
+                        expanded={open}
+                        onToggle={() =>
+                          setManualOpen((prev) => ({ ...prev, [block.category.id]: !open }))
+                        }
+                        onChanged={refetchAll}
+                      >
+                        <CourseRows
+                          rows={block.rows}
+                          selectedCourseId={courseId}
+                          actions={{
+                            onEdit: (row) => setSheet({ kind: 'edit', course: row.course }),
+                            onAssign: (row) => setAssignCourseId(row.course.id),
+                            onWithdraw: withdraw,
+                          }}
+                        />
+                      </CategorySection>
+                    </Reveal>
+                  );
+                })
               )}
             </>
           )}

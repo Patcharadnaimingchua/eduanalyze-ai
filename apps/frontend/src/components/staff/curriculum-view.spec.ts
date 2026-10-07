@@ -6,7 +6,13 @@ import type {
   InstructorListItem,
   Prerequisite,
 } from '@eduanalyze-ai/shared-types';
-import { buildCurriculumView, type CurriculumFilters, UNKNOWN_INSTRUCTOR } from './curriculum-view';
+import {
+  buildCurriculumView,
+  categoryOpenByDefault,
+  categorySummary,
+  type CurriculumFilters,
+  UNKNOWN_INSTRUCTOR,
+} from './curriculum-view';
 
 const T = '2026-01-01T00:00:00Z';
 const course = (
@@ -147,5 +153,47 @@ describe('buildCurriculumView', () => {
       'CPE101',
       'CPE201',
     ]);
+  });
+});
+
+describe('categorySummary', () => {
+  it('says how many courses and how many still have no instructor', () => {
+    expect(categorySummary(5, 2)).toBe('5 วิชา · ยังไม่มีอาจารย์ 2');
+    expect(categorySummary(5, 0)).toBe('5 วิชา · มีอาจารย์ครบ');
+    expect(categorySummary(0, 0)).toBe('ยังไม่มีรายวิชา');
+  });
+});
+
+describe('category counts and default folding', () => {
+  it('counts courses without an instructor per category, whatever the filters say', () => {
+    const all = view();
+    expect(all.blocks.reduce((sum, b) => sum + b.withoutInstructor, 0)).toBe(all.withoutInstructor);
+    const searched = view({ ...none, search: 'zzz-no-match' });
+    expect(searched.blocks.map((b) => b.withoutInstructor)).toEqual(
+      all.blocks.map((b) => b.withoutInstructor),
+    );
+  });
+
+  it('starts folded when nothing is filtered', () => {
+    expect(view().blocks.some((b) => categoryOpenByDefault(b, none, null))).toBe(false);
+  });
+
+  it('opens only the categories that have results for the instructor filter or a search', () => {
+    const filters: CurriculumFilters = { ...none, instructor: 'none' };
+    const opened = view(filters).blocks.map((b) => categoryOpenByDefault(b, filters, null));
+    const expected = view(filters).blocks.map((b) => b.rows.length > 0);
+    expect(opened).toEqual(expected);
+    expect(opened.some(Boolean)).toBe(true);
+    const search: CurriculumFilters = { ...none, search: 'zzz-no-match' };
+    expect(view(search).blocks.some((b) => categoryOpenByDefault(b, search, null))).toBe(false);
+  });
+
+  it('opens the category of a linked course', () => {
+    const blocks = view().blocks;
+    const target = blocks.find((b) => b.rows.length > 0)!;
+    const id = target.rows[0].course.id;
+    expect(categoryOpenByDefault(target, none, id)).toBe(true);
+    const other = blocks.find((b) => b !== target && b.rows.length > 0);
+    if (other) expect(categoryOpenByDefault(other, none, id)).toBe(false);
   });
 });
