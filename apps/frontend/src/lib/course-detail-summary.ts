@@ -1,5 +1,7 @@
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
+import { SPARSE_SUMMARY, dataLevelOf } from './course-snapshot';
 import { countFollowUps } from './follow-ups';
+import { STATUS_META, emptyCounts, statusOf, summarizeParts } from './instructor-overview';
 import { computeAchievementChange, formatAchievementChange } from './instructor-summary';
 
 // Pure, rule-based header line for /instructor/courses/[courseId]. Reads only
@@ -8,34 +10,34 @@ import { computeAchievementChange, formatAchievementChange } from './instructor-
 
 export const NO_STUDENTS_IN_COURSE = 'ยังไม่มีนักศึกษาลงทะเบียนในวิชานี้';
 
-const isPositiveCount = (n: number) => Number.isFinite(n) && n > 0;
-
 // Parts, most useful first, each dropped when its data is missing or not a
 // real number: achievement vs the bar, people to follow up, CLO status, then
-// the latest-term arrow.
+// the latest-term arrow. The share and its verdict come from the same reading
+// as the overview below (course-snapshot), never from the backend's own
+// percent, so the two lines cannot disagree; under 5 graded people no verdict
+// is given.
 export function buildCourseDetailSummary(
   course: Pick<
     InstructorCourseSummary,
-    | 'studentCount'
-    | 'achievementPercent'
-    | 'achievementThreshold'
-    | 'atRiskStudents'
-    | 'clos'
-    | 'semesterTrend'
+    'gradeDistribution' | 'achievementThreshold' | 'atRiskStudents' | 'clos' | 'semesterTrend'
   >,
 ): string {
-  if (!isPositiveCount(course.studentCount)) return NO_STUDENTS_IN_COURSE;
+  const stats = summarizeParts([{ counts: { ...emptyCounts(), ...course.gradeDistribution }, credits: null }]);
+  if (stats.seats === 0) return NO_STUDENTS_IN_COURSE;
 
   const parts: string[] = [];
+  const sparse = dataLevelOf(stats.counted) === 'insufficient';
 
-  if (Number.isFinite(course.achievementPercent)) {
-    const percent = `ได้ B ขึ้นไป ${Math.round(course.achievementPercent)}%`;
-    if (Number.isFinite(course.achievementThreshold)) {
-      const verdict = course.achievementPercent < course.achievementThreshold ? 'ยังไม่ถึงเป้า' : 'ผ่านเป้า';
-      parts.push(`${percent} ${verdict} ${course.achievementThreshold}%`);
-    } else {
-      parts.push(percent);
-    }
+  if (sparse) {
+    parts.push(SPARSE_SUMMARY);
+  } else if (stats.achievedPercent !== null) {
+    const percent = `ได้ B ขึ้นไป ${Math.round(stats.achievedPercent)}%`;
+    const target = Number.isFinite(course.achievementThreshold) ? course.achievementThreshold : null;
+    parts.push(
+      target === null
+        ? percent
+        : `${percent} ${STATUS_META[statusOf(stats.achievedPercent, target)].label} ${target}%`,
+    );
   }
 
   const followUps = countFollowUps([course]);
@@ -46,7 +48,7 @@ export function buildCourseDetailSummary(
       : 'ยังไม่มีนักศึกษาที่ต้องติดตาม',
   );
 
-  if (course.clos.length > 0) {
+  if (!sparse && course.clos.length > 0) {
     const missed = course.clos.filter((clo) => !clo.isAchieved).length;
     parts.push(
       missed > 0 ? `เป้าการเรียนรู้ยังไม่ผ่าน ${missed} จาก ${course.clos.length}` : `เป้าการเรียนรู้ผ่านครบ ${course.clos.length} ข้อ`,
