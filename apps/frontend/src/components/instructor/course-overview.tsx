@@ -1,9 +1,8 @@
 'use client';
 
 import { useId, useMemo, type ReactNode } from 'react';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, CircleDashed, Info } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import {
   fetchInstructorCourseTimeline,
@@ -11,10 +10,8 @@ import {
   fetchInstructorYearLevels,
 } from '@/lib/api/instructor';
 import {
-  DATA_SOURCE_NOTE,
   EMPTY_SNAPSHOT,
   SPARSE_LABEL,
-  SPARSE_SUMMARY,
   SPARSE_TREND,
   SPARSE_YEAR_NOTE,
   MIN_TERMS_FOR_TREND,
@@ -22,8 +19,6 @@ import {
   changeLine,
   courseTermInfo,
   formatPointsChange,
-  excludedNote,
-  gradedPeopleParts,
   summaryLine,
   type CourseSnapshot,
   type GoalItem,
@@ -41,15 +36,15 @@ import {
 } from '@/lib/grade-center';
 import { showAchievementRing } from '@/lib/progress-ring-geometry';
 import { GRADE_LABELS } from '@/lib/grade-label';
-import { buildCourseOverviews, formatGpa } from '@/lib/instructor-overview';
+import { formatGpa } from '@/lib/instructor-overview';
 import { cn } from '@/lib/utils';
 import { PageSection } from '@/components/layout/page-section';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { AnimatedRing } from '@/components/ui/animated-ring';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CARD, CARD_PAD, TEXT_SECTION } from './instructor-ui';
 import { LowSampleTag } from './overview-parts';
 
 // Blue for B or above, grey for C, amber for D, red for F. Fixed colours rather
@@ -69,41 +64,6 @@ const GRADE_BAR: Record<string, { fill: string; text: string }> = {
 
 const oneDecimal = (n: number) => `${n.toFixed(1)}%`;
 
-// Grey text, never a warning colour: too few people is not a problem to fix.
-function SparseBadge({ children = SPARSE_LABEL }: Readonly<{ children?: ReactNode }>) {
-  return (
-    <Badge tone="neutral" className="gap-1 px-2.5 py-1 text-sm">
-      <CircleDashed size={14} aria-hidden="true" />
-      {children}
-    </Badge>
-  );
-}
-
-// The three shortcuts of one course. On the dashboard they sit in the page
-// header; on the course page they sit at the top of the overview.
-export function CourseQuickActions({
-  course,
-  showDetailLink = true,
-}: Readonly<{ course: InstructorCourseSummary; showDetailLink?: boolean }>) {
-  const base = `/instructor/courses/${course.courseId}`;
-  const seats = buildCourseOverviews([course])[0].stats.seats;
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button asChild variant="outline" className="h-11">
-        <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
-      </Button>
-      <Button asChild variant="outline" className="h-11">
-        <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({seats})</Link>
-      </Button>
-      {showDetailLink && (
-        <Button asChild variant="outline" className="h-11">
-          <Link href={base}>รายละเอียดรายวิชา</Link>
-        </Button>
-      )}
-    </div>
-  );
-}
-
 // A titled card: heading and a short line on the left, a reference on the right.
 function SectionCard({
   title,
@@ -120,17 +80,17 @@ function SectionCard({
 }>) {
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId} className="rounded-xl border bg-card">
+    <section aria-labelledby={headingId} className={CARD}>
       <div className="flex flex-col gap-1 border-b px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h2 id={headingId} className="text-lg font-semibold text-primary">
+          <h2 id={headingId} className={TEXT_SECTION}>
             {title}
           </h2>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
         {aside && <div className="shrink-0 text-xs text-muted-foreground">{aside}</div>}
       </div>
-      <div className="space-y-4 p-5">{children}</div>
+      <div className={`space-y-4 ${CARD_PAD}`}>{children}</div>
       {footer && (
         <div className="flex items-start gap-2 rounded-b-xl border-t bg-slate-50 px-5 py-3 text-xs text-muted-foreground">
           <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
@@ -143,19 +103,8 @@ function SectionCard({
 
 // One course, read the same way on the dashboard and on the course page. The
 // numbers all come from buildCourseSnapshot, so the two pages cannot differ.
-export function CourseOverview({
-  course,
-  selector,
-  showHeading = true,
-  showActions = true,
-  showDetailLink = true,
-}: Readonly<{
-  course: InstructorCourseSummary;
-  selector?: ReactNode;
-  showHeading?: boolean;
-  showActions?: boolean;
-  showDetailLink?: boolean;
-}>) {
+// Which course it is (name, term, actions) is the CourseHero's job.
+export function CourseOverview({ course }: Readonly<{ course: InstructorCourseSummary }>) {
   // Same keys as the other instructor pages: one cached request each.
   const studentsQuery = useQuery({
     queryKey: ['instructor-students'],
@@ -192,59 +141,11 @@ export function CourseOverview({
     [timelineQuery.data, course.courseId],
   );
   const yearsLoading = studentsQuery.isLoading || yearLevelsQuery.isLoading;
-  const { people, excluded } = gradedPeopleParts(snapshot.stats);
-  const note = excludedNote(excluded);
 
   return (
     <div className="space-y-6">
-      <section aria-label="วิชาที่เลือก" className="rounded-xl border bg-card p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 flex-1 space-y-3">
-            {selector}
-            {showHeading && (
-              <h2 className="break-words text-xl font-semibold text-primary">
-                {course.code} {course.name}
-              </h2>
-            )}
-            {termInfo?.termLabel && (
-              <p className="text-sm text-muted-foreground">{termInfo.termLabel}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start lg:max-w-sm lg:flex-col lg:items-end">
-            {termInfo?.curriculum && (
-              <span className="inline-flex items-center rounded-md border border-brand bg-brand-light px-3 py-1.5 text-xs font-medium text-brand">
-                {termInfo.curriculum}
-              </span>
-            )}
-            {!snapshot.empty && (
-              <div className="space-y-2 lg:text-right">
-                <p className="flex items-center gap-2 text-xs text-muted-foreground lg:justify-end">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500" />
-                  {DATA_SOURCE_NOTE}
-                </p>
-                <div className="rounded-md bg-slate-50 px-3 py-2">
-                  <p className="text-sm text-muted-foreground">
-                    จากนักศึกษาที่มีเกรด{' '}
-                    <span className="text-xl font-semibold tabular-nums text-primary">
-                      {people}
-                    </span>{' '}
-                    คน
-                  </p>
-                  {note && <p className="text-xs text-muted-foreground">({note})</p>}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {showActions && (
-          <div className="mt-4">
-            <CourseQuickActions course={course} showDetailLink={showDetailLink} />
-          </div>
-        )}
-      </section>
-
       {snapshot.empty ? (
-        <section className="rounded-xl border bg-card p-5">
+        <section className={`${CARD} ${CARD_PAD}`}>
           <p className="text-sm text-muted-foreground">{EMPTY_SNAPSHOT}</p>
         </section>
       ) : (
@@ -275,9 +176,9 @@ function SummarySection({
   const center = useMemo(() => summarizeGradeCenter(stats.counts), [stats.counts]);
   const values = center.values;
   return (
-    <section aria-labelledby={headingId} className="rounded-xl border bg-card">
+    <section aria-labelledby={headingId} className={CARD}>
       <div className="flex flex-wrap items-end justify-between gap-2 border-b px-5 py-4">
-        <h2 id={headingId} className="text-lg font-semibold text-primary">
+        <h2 id={headingId} className={TEXT_SECTION}>
           สรุปผล
         </h2>
         {termLabel && <p className="text-xs text-muted-foreground">รอบล่าสุด {termLabel}</p>}
@@ -306,10 +207,7 @@ function SummarySection({
                   </div>
                 </>
               ) : (
-                <>
-                  <SparseBadge>{SPARSE_SUMMARY}</SparseBadge>
-                  <p className="text-sm text-muted-foreground">{formatGradeTally(stats.counts)}</p>
-                </>
+                <p className="text-sm text-muted-foreground">{formatGradeTally(stats.counts)}</p>
               )}
             </div>
             {values && showAchievementRing(stats.counted, stats.achievedPercent) && (
@@ -402,7 +300,12 @@ function Figure({
   value,
   note,
   small = false,
-}: Readonly<{ label: string; value: ReactNode; note?: string; small?: boolean }>) {
+}: Readonly<{
+  label: string;
+  value: ReactNode;
+  note?: string;
+  small?: boolean;
+}>) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -544,7 +447,6 @@ function GoalsSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
   return (
     <SectionCard
       title="เป้าการเรียนรู้"
-      description={goals.items.length > 0 && goals.sparse ? SPARSE_LABEL : undefined}
       aside={level === 'low' ? <LowSampleTag counted={stats.counted} /> : undefined}
     >
       {goals.items.length === 0 ? (
@@ -677,7 +579,9 @@ function TrendSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
                         'block h-full rounded-full',
                         term.isLatest ? 'bg-brand' : 'bg-slate-400',
                       )}
-                      style={{ width: `${Math.min(100, Math.max(0, term.percent))}%` }}
+                      style={{
+                        width: `${Math.min(100, Math.max(0, term.percent))}%`,
+                      }}
                     />
                   </div>
                 </>

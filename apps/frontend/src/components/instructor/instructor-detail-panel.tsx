@@ -6,11 +6,9 @@ import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
 import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instructor';
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
-import { buildCourseDetailSummary } from '@/lib/course-detail-summary';
 import { buildCourseOverviews } from '@/lib/instructor-overview';
 import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
 import { useUnsavedNavigationGuard } from '@/lib/use-unsaved-navigation-guard';
-import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
@@ -19,6 +17,7 @@ import { StudentRosterTable } from './student-roster-table';
 import { AssessmentEvidenceSection } from './assessment-evidence-section';
 import { CourseInfoSection } from './course-info-section';
 import { CourseFollowUpList } from './course-follow-up-list';
+import { CourseHero } from './course-hero';
 import { CourseOverview } from './course-overview';
 
 export type InstructorTab = 'overview' | 'students' | 'evidence' | 'clo';
@@ -101,17 +100,16 @@ export function InstructorDetailPanel({
   });
 
   function handleGradebookChanged() {
-    void queryClient.invalidateQueries({ queryKey: ['course-roster', course.courseId] });
+    void queryClient.invalidateQueries({
+      queryKey: ['course-roster', course.courseId],
+    });
     void queryClient.invalidateQueries({ queryKey: ['instructor-dashboard'] });
   }
 
   return (
     <>
       <Reveal index={0}>
-        <PageHeader
-          title={course.name}
-          description={`${course.code} · ${buildCourseDetailSummary(course)}`}
-        />
+        <CourseHero course={course} heading="h1" />
       </Reveal>
 
       <Reveal index={1}>
@@ -139,7 +137,7 @@ export function InstructorDetailPanel({
             {activeTab === 'overview' && (
               <Reveal index={0}>
                 <div className="space-y-6">
-                  <CourseOverview course={course} showHeading={false} showDetailLink={false} />
+                  <CourseOverview course={course} />
                   <CourseFollowUpList courseId={course.courseId} students={course.atRiskStudents} />
                   <CollapsibleSection
                     framed={false}

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import type { InstructorCourseSummary } from '@eduanalyze-ai/shared-types';
-import { cn } from '@/lib/utils';
 
 // Pill style from sm up (a menu on phones), deliberately distinct from InstructorDetailPanel's underline
 // tabs — those switch panels within one course, this switches which course
@@ -19,11 +18,12 @@ export function CourseTabStrip({
   activeCourseId: string;
   tabParam: string | null;
 }>) {
-  if (courses.length < 2) return null;
+  // The course on show is named in the hero below, so only the others are listed.
+  const others = courses.filter((c) => c.courseId !== activeCourseId);
+  if (others.length === 0) return null;
 
   const hrefFor = (course: InstructorCourseSummary) =>
     `/instructor/courses/${course.courseId}${tabParam ? `?tab=${tabParam}` : ''}`;
-  const active = courses.find((c) => c.courseId === activeCourseId);
 
   return (
     <>
@@ -36,14 +36,7 @@ export function CourseTabStrip({
         className="group rounded-lg border border-slate-200 bg-card sm:hidden"
       >
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-          <span className="min-w-0">
-            <span className="block text-xs text-muted-foreground">
-              รายวิชาที่สอน ({courses.length}) · กดเพื่อสลับ
-            </span>
-            <span className="block text-sm font-medium text-primary">
-              {active ? `${active.code} ${active.name}` : 'เลือกวิชา'}
-            </span>
-          </span>
+          <span className="text-sm font-medium text-primary">สลับไปวิชาอื่น ({others.length})</span>
           <ChevronDown
             size={16}
             aria-hidden="true"
@@ -52,17 +45,12 @@ export function CourseTabStrip({
         </summary>
         <nav aria-label="สลับรายวิชา" className="border-t border-slate-100">
           <ul className="divide-y divide-slate-100">
-            {courses.map((course) => {
-              const isActive = course.courseId === activeCourseId;
+            {others.map((course) => {
               return (
                 <li key={course.courseId}>
                   <Link
                     href={hrefFor(course)}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={cn(
-                      'flex min-h-11 items-center px-4 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      isActive ? 'bg-brand-light font-medium text-brand' : 'text-slate-600 hover:text-brand',
-                    )}
+                    className="flex min-h-11 items-center px-4 py-2 text-sm text-slate-600 transition hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {course.code} {course.name}
                   </Link>
@@ -73,20 +61,14 @@ export function CourseTabStrip({
         </nav>
       </details>
 
-      <nav aria-label="สลับรายวิชา" className="hidden flex-wrap gap-2 sm:flex">
-        {courses.map((course) => {
-          const isActive = course.courseId === activeCourseId;
+      <nav aria-label="สลับรายวิชา" className="hidden flex-wrap items-center gap-2 sm:flex">
+        <span className="text-[13px] text-muted-foreground">สลับไปวิชา</span>
+        {others.map((course) => {
           return (
             <Link
               key={course.courseId}
               href={hrefFor(course)}
-              aria-current={isActive ? 'page' : undefined}
-              className={cn(
-                'inline-flex min-h-11 max-w-full items-center rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                isActive
-                  ? 'border-brand bg-brand-light text-brand'
-                  : 'border-slate-200 text-slate-600 hover:border-brand hover:text-brand',
-              )}
+              className="inline-flex min-h-11 max-w-full items-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className="min-w-0">
                 {course.code} {course.name}

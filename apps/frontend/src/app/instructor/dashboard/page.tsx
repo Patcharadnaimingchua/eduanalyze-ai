@@ -12,7 +12,9 @@ import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
-import { CourseOverview, CourseQuickActions } from '@/components/instructor/course-overview';
+import { CourseHero } from '@/components/instructor/course-hero';
+import { CourseOverview } from '@/components/instructor/course-overview';
+import { TEXT_PAGE } from '@/components/instructor/instructor-ui';
 import { CourseSelector, type CourseChoice } from '@/components/instructor/course-selector';
 import { InstructorDashboardSkeleton } from '@/components/instructor/instructor-dashboard-skeleton';
 import { PageHeader } from '@/components/layout/page-header';
@@ -58,7 +60,9 @@ function InstructorDashboardContent() {
   const choices = useMemo<CourseChoice[]>(
     () =>
       courses.map((c) => {
-        const info = timelineQuery.data ? courseTermInfo(timelineQuery.data.years, c.courseId) : null;
+        const info = timelineQuery.data
+          ? courseTermInfo(timelineQuery.data.years, c.courseId)
+          : null;
         return {
           courseId: c.courseId,
           code: c.code,
@@ -101,23 +105,21 @@ function InstructorDashboardContent() {
       <DashboardShell role="INSTRUCTOR" identityLabel={user.email} fullName={user.fullName}>
         <Reveal index={0}>
           <div className="space-y-2">
-            <nav aria-label="เส้นทางหน้า" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-              <Link href="/instructor/my-courses" className="inline-flex min-h-11 items-center hover:text-primary">
+            <nav
+              aria-label="เส้นทางหน้า"
+              className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
+            >
+              <Link
+                href="/instructor/my-courses"
+                className="inline-flex min-h-11 items-center hover:text-primary"
+              >
                 รายวิชาที่สอน
               </Link>
-              {selected && (
-                <>
-                  <span aria-hidden="true">›</span>
-                  <span aria-current="page" className="break-words font-medium text-primary">
-                    {selected.code} {selected.name}
-                  </span>
-                </>
-              )}
             </nav>
             <PageHeader
               title="ภาพรวมผลการเรียน"
               description="ผลการเรียนของรายวิชาที่คุณสอน ดูทีละวิชา"
-              actions={selected && <CourseQuickActions course={selected} />}
+              titleClassName={TEXT_PAGE}
             />
           </div>
         </Reveal>
@@ -126,9 +128,7 @@ function InstructorDashboardContent() {
 
         {dashboardQuery.isError && (
           <Alert variant="destructive">
-            <AlertDescription>
-              ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง
-            </AlertDescription>
+            <AlertDescription>ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
           </Alert>
         )}
 
@@ -145,16 +145,23 @@ function InstructorDashboardContent() {
 
         {selected && (
           <Reveal index={1}>
-            <CountUpPolicy animate={play.current.animate}>
-              <CourseOverview
-                key={selected.courseId}
+            <div className="space-y-6">
+              <CourseHero
                 course={selected}
-                showActions={false}
-                selector={
-                  <CourseSelector courses={choices} activeCourseId={selected.courseId} onSelect={selectCourse} />
+                heading="h2"
+                detailHref={`/instructor/courses/${selected.courseId}`}
+                switcher={
+                  <CourseSelector
+                    courses={choices}
+                    activeCourseId={selected.courseId}
+                    onSelect={selectCourse}
+                  />
                 }
               />
-            </CountUpPolicy>
+              <CountUpPolicy animate={play.current.animate}>
+                <CourseOverview key={selected.courseId} course={selected} />
+              </CountUpPolicy>
+            </div>
           </Reveal>
         )}
       </DashboardShell>
