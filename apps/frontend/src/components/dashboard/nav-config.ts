@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BookOpen,
   Building2,
   CalendarClock,
@@ -21,7 +22,7 @@ export interface NavItem {
   icon: LucideIcon;
   href: string;
   // Extra paths (the path itself or anything below it) that keep this item lit.
-  // Only the Staff menu sets it; every other item matches on its href alone.
+  // Only the Staff and Admin menus set it; every other item matches on its href alone.
   matchPrefixes?: string[];
 }
 
@@ -53,7 +54,20 @@ const SUPER_ADMIN_NAV_ITEMS: NavItem[] = [
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { label: 'ภาพรวมขอบเขต', icon: LayoutGrid, href: '/admin/overview' },
-  { label: 'ผู้ใช้งาน', icon: Users, href: '/admin/users' },
+  {
+    label: 'ผู้ใช้งาน',
+    icon: Users,
+    href: '/admin/users',
+    // A user's own page lives under /admin/users/[id].
+    matchPrefixes: ['/admin/users'],
+  },
+  {
+    label: 'คุณภาพหลักสูตร',
+    icon: BarChart3,
+    href: '/admin/curriculum',
+    // The list and each curriculum's quality page (/admin/curriculum/[id]).
+    matchPrefixes: ['/admin/curriculum'],
+  },
 ];
 
 const STAFF_NAV_ITEMS: NavItem[] = [

@@ -18,10 +18,6 @@ const PINNED: Record<string, [string, string][]> = {
     ['นักศึกษา', '/instructor/students'],
     ['ภาพรวมชั้นปี', '/instructor/year-levels'],
   ],
-  ADMIN: [
-    ['ภาพรวมขอบเขต', '/admin/overview'],
-    ['ผู้ใช้งาน', '/admin/users'],
-  ],
   SUPER_ADMIN: [
     ['ภาพรวมหลักสูตร', '/admin/curriculum-dashboard'],
     ['ผู้ใช้งาน', '/admin/users'],
@@ -31,6 +27,14 @@ const PINNED: Record<string, [string, string][]> = {
 };
 
 describe('navItemsForRole', () => {
+  it('gives Admin three items, in this order', () => {
+    expect(navItemsForRole('ADMIN').map((i) => [i.label, i.href])).toEqual([
+      ['ภาพรวมขอบเขต', '/admin/overview'],
+      ['ผู้ใช้งาน', '/admin/users'],
+      ['คุณภาพหลักสูตร', '/admin/curriculum'],
+    ]);
+  });
+
   it.each(Object.entries(PINNED))('leaves the %s menu as it was', (role, expected) => {
     const items = navItemsForRole(role as never);
     expect(items.map((i) => [i.label, i.href])).toEqual(expected);
@@ -53,10 +57,21 @@ describe('isNavItemActive', () => {
       .filter((i) => isNavItemActive(i, pathname))
       .map((i) => i.label);
 
+  it('keeps the Admin menu lit on the pages below an item', () => {
+    expect(active('ADMIN', '/admin/overview')).toEqual(['ภาพรวมขอบเขต']);
+    expect(active('ADMIN', '/admin/users')).toEqual(['ผู้ใช้งาน']);
+    expect(active('ADMIN', '/admin/users/abc')).toEqual(['ผู้ใช้งาน']);
+    expect(active('ADMIN', '/admin/curriculum')).toEqual(['คุณภาพหลักสูตร']);
+    expect(active('ADMIN', '/admin/curriculum/abc')).toEqual(['คุณภาพหลักสูตร']);
+  });
+
+  it('does not light SUPER_ADMIN items on Admin-only prefixes', () => {
+    expect(active('SUPER_ADMIN', '/admin/curriculum/abc')).toEqual([]);
+  });
+
   it('still matches other roles on the exact path only', () => {
     expect(active('STUDENT', '/dashboard')).toEqual(['แดชบอร์ด']);
     expect(active('STUDENT', '/dashboard/extra')).toEqual([]);
-    expect(active('ADMIN', '/admin/users')).toEqual(['ผู้ใช้งาน']);
     expect(active('SUPER_ADMIN', '/admin/users/abc')).toEqual([]);
     expect(active('INSTRUCTOR', '/instructor/students')).toEqual(['นักศึกษา']);
   });

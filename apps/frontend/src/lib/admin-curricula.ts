@@ -1,0 +1,84 @@
+import type {
+  AdminScopeCurriculumEntry,
+  AdminScopeProgram,
+  CurriculumDataState,
+} from '@eduanalyze-ai/shared-types';
+
+// What the Admin curriculum pages derive from GET /dashboard/admin/scope-overview,
+// kept apart from React so the filters and counts can be tested on their own.
+
+export type CurriculumTab = 'ALL' | CurriculumDataState;
+
+export const CURRICULUM_TAB_LABELS: Record<CurriculumTab, string> = {
+  ALL: 'ทั้งหมด',
+  HAS_STUDENTS: 'มีนักศึกษา',
+  STRUCTURE_ONLY: 'มีแต่โครงสร้าง',
+  EMPTY: 'ว่าง',
+};
+
+export const CURRICULUM_TAB_ORDER: CurriculumTab[] = [
+  'ALL',
+  'HAS_STUDENTS',
+  'STRUCTURE_ONLY',
+  'EMPTY',
+];
+
+export function countByTab(
+  entries: readonly AdminScopeCurriculumEntry[],
+): Record<CurriculumTab, number> {
+  const counts: Record<CurriculumTab, number> = {
+    ALL: entries.length,
+    HAS_STUDENTS: 0,
+    STRUCTURE_ONLY: 0,
+    EMPTY: 0,
+  };
+  for (const entry of entries) counts[entry.dataState] += 1;
+  return counts;
+}
+
+// An entry carries only its programCode; the department and faculty live on
+// the scope's program list, so the two are joined here.
+export interface CurriculumPlace {
+  departmentName: string;
+  facultyName: string;
+}
+
+export function placeOf(
+  entry: Pick<AdminScopeCurriculumEntry, 'programCode'>,
+  programs: readonly AdminScopeProgram[],
+): CurriculumPlace | null {
+  const program = programs.find((p) => p.code === entry.programCode);
+  return program
+    ? { departmentName: program.departmentName, facultyName: program.facultyName }
+    : null;
+}
+
+export function filterCurricula(
+  entries: readonly AdminScopeCurriculumEntry[],
+  tab: CurriculumTab,
+  search: string,
+): AdminScopeCurriculumEntry[] {
+  const term = search.trim().toLowerCase();
+  return entries.filter(
+    (entry) =>
+      (tab === 'ALL' || entry.dataState === tab) &&
+      (term === '' ||
+        entry.programName.toLowerCase().includes(term) ||
+        entry.programCode.toLowerCase().includes(term) ||
+        entry.version.toLowerCase().includes(term)),
+  );
+}
+
+export function findCurriculum(
+  entries: readonly AdminScopeCurriculumEntry[],
+  curriculumId: string,
+): AdminScopeCurriculumEntry | null {
+  return entries.find((entry) => entry.curriculumId === curriculumId) ?? null;
+}
+
+// Share of the scope's people held by one role, as a whole percent; null
+// when the scope has nobody at all (never a bare 0/0).
+export function shareOfPeople(count: number, total: number): number | null {
+  if (!(total > 0)) return null;
+  return Math.round((count / total) * 100);
+}
