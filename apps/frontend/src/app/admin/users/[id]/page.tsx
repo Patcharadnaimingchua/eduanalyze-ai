@@ -7,6 +7,8 @@ import { ArrowLeft } from 'lucide-react';
 import { fetchUser, updateUserActiveStatus } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { fetchDepartments, fetchPrograms } from '@/lib/api/organization';
+import { manageLockReason, suspendBlockReason } from '@/lib/admin-user-guard';
 import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -19,6 +21,7 @@ import { UserScopesSection } from '@/components/admin/user-scopes-section';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
 
@@ -36,12 +39,30 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
   const { user: requester } = useAuth();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [confirmingSuspend, setConfirmingSuspend] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const toast = useToast();
 
   const userQuery = useQuery({
     queryKey: ['admin-users', userId],
     queryFn: () => fetchUser(userId),
+  });
+
+  const needsCoverageCheck = !!requester && !requester.roles.includes('SUPER_ADMIN');
+  const ownUserQuery = useQuery({
+    queryKey: ['admin-users', requester?.userId],
+    queryFn: () => fetchUser(requester!.userId),
+    enabled: needsCoverageCheck,
+  });
+  const departmentsQuery = useQuery({
+    queryKey: ['departments'],
+    queryFn: fetchDepartments,
+    enabled: needsCoverageCheck,
+  });
+  const programsQuery = useQuery({
+    queryKey: ['programs'],
+    queryFn: fetchPrograms,
+    enabled: needsCoverageCheck,
   });
 
   if (!requester) {
@@ -58,6 +79,25 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
   const requesterIsSuperAdmin = requester.roles.includes('SUPER_ADMIN');
   const isSelf = requester.userId === userId;
 
+  const roleScopeLockReason = userQuery.data
+    ? manageLockReason({ isSelf, requesterIsSuperAdmin, targetRoles: userQuery.data.roles })
+    : null;
+  const org =
+    departmentsQuery.data && programsQuery.data
+      ? { departments: departmentsQuery.data, programs: programsQuery.data }
+      : null;
+  const suspendBlocked =
+    userQuery.data && userQuery.data.isActive
+      ? suspendBlockReason({
+          isSelf,
+          requesterIsSuperAdmin,
+          targetRoles: userQuery.data.roles,
+          targetScopes: userQuery.data.scopes,
+          ownScopes: ownUserQuery.data?.scopes ?? null,
+          org,
+        })
+      : roleScopeLockReason;
+
   function refetch() {
     queryClient.invalidateQueries({ queryKey: ['admin-users', userId] });
     queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -70,10 +110,17 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
     try {
       await updateUserActiveStatus(userId, { isActive: !userQuery.data.isActive });
       toast.success(userQuery.data.isActive ? 'ระงับการใช้งานบัญชีแล้ว' : 'เปิดใช้งานบัญชีอีกครั้งแล้ว');
+      setConfirmingSuspend(false);
       refetch();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (err) {
+      const message =
+        (err as { response?: { status?: number; data?: { message?: string } } }).response?.status === 403
+          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message ??
+            'ไม่มีสิทธิ์ดำเนินการนี้')
+          : 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      setConfirmingSuspend(false);
+      setServerError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -146,16 +193,26 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
                 <CardTitle>สถานะบัญชี</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between gap-3 rounded-md bg-slate-50 px-3 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
                   <span className="text-sm text-muted-foreground">
                     {userQuery.data.isActive
                       ? 'บัญชีนี้เข้าสู่ระบบได้ตามปกติ'
                       : 'บัญชีนี้ถูกระงับ ไม่สามารถเข้าสู่ระบบได้'}
                   </span>
-                  {isSelf ? (
-                    <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>
+                  {suspendBlocked ? (
+                    <span className="max-w-md text-xs text-muted-foreground" role="note">
+                      {suspendBlocked}
+                    </span>
                   ) : (
-                    <Button type="button" variant="outline" size="sm" disabled={busy} onClick={handleToggleActive}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      disabled={busy}
+                      onClick={() =>
+                        userQuery.data.isActive ? setConfirmingSuspend(true) : handleToggleActive()
+                      }
+                    >
                       {userQuery.data.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งานอีกครั้ง'}
                     </Button>
                   )}
@@ -170,7 +227,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
               roles={userQuery.data.roles}
               hasScopes={userQuery.data.scopes.length > 0}
               requesterIsSuperAdmin={requesterIsSuperAdmin}
-              isSelf={isSelf}
+              lockedReason={roleScopeLockReason}
               onChanged={refetch}
             />
           </Reveal>
@@ -180,12 +237,32 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
             <UserScopesSection
               userId={userId}
               scopes={userQuery.data.scopes}
-              isSelf={isSelf}
+              lockedReason={roleScopeLockReason}
               onChanged={refetch}
             />
             </div>
           </Reveal>
         </>
+      )}
+
+      {userQuery.data && (
+        <ConfirmDialog
+          open={confirmingSuspend}
+          onOpenChange={setConfirmingSuspend}
+          title={`ระงับบัญชีของ ${userQuery.data.fullName}?`}
+          description={
+            <>
+              <p>
+                {userQuery.data.fullName} ({userQuery.data.email}) จะเข้าสู่ระบบไม่ได้ทันที
+                และเซสชันที่ใช้งานอยู่จะใช้งานต่อไม่ได้
+              </p>
+              <p className="mt-2">เปิดใช้งานอีกครั้งได้ภายหลังจากหน้านี้</p>
+            </>
+          }
+          confirmLabel="ระงับบัญชี"
+          busy={busy}
+          onConfirm={handleToggleActive}
+        />
       )}
     </DashboardShell>
   );

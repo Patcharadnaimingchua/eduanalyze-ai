@@ -22,14 +22,14 @@ export function UserRolesSection({
   roles,
   hasScopes,
   requesterIsSuperAdmin,
-  isSelf,
+  lockedReason,
   onChanged,
 }: {
   userId: string;
   roles: Role[];
   hasScopes: boolean;
   requesterIsSuperAdmin: boolean;
-  isSelf: boolean;
+  lockedReason: string | null;
   onChanged: () => void;
 }) {
   const [confirmingRole, setConfirmingRole] = useState<Role | null>(null);
@@ -105,17 +105,17 @@ export function UserRolesSection({
             {roles.map((role) => (
               <li
                 key={role}
-                className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted px-3 py-2"
               >
                 <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
-                {isSelf ? (
-                  <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>
+                {lockedReason ? (
+                  <span className="text-xs text-muted-foreground">{lockedReason}</span>
                 ) : confirmingRole === role ? (
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       variant="destructive"
-                      size="sm"
+                      className="min-h-11"
                       disabled={busy}
                       onClick={() => handleRevoke(role)}
                     >
@@ -124,14 +124,14 @@ export function UserRolesSection({
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      className="min-h-11"
                       onClick={() => setConfirmingRole(null)}
                     >
                       ยกเลิก
                     </Button>
                   </div>
                 ) : (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingRole(role)}>
+                  <Button type="button" variant="ghost" className="min-h-11" onClick={() => setConfirmingRole(role)}>
                     ลบ
                   </Button>
                 )}
@@ -140,8 +140,8 @@ export function UserRolesSection({
           </ul>
         )}
 
-        {availableRoles.length > 0 && (
-          <div className="flex items-end gap-3 border-t border-slate-100 pt-3">
+        {!lockedReason && availableRoles.length > 0 && (
+          <div className="flex items-end gap-3 border-t border-border pt-3">
             <div className="w-56">
               <Select value={selectedRole || undefined} onValueChange={setSelectedRole}>
                 <SelectTrigger>
@@ -156,7 +156,7 @@ export function UserRolesSection({
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button" variant="outline" size="sm" disabled={!selectedRole || busy} onClick={handleAssign}>
+            <Button type="button" variant="outline" className="min-h-11" disabled={!selectedRole || busy} onClick={handleAssign}>
               เพิ่มบทบาท
             </Button>
           </div>

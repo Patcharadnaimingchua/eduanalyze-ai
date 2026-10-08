@@ -18,12 +18,12 @@ import { ScopeSelector } from './scope-selector';
 export function UserScopesSection({
   userId,
   scopes,
-  isSelf,
+  lockedReason,
   onChanged,
 }: {
   userId: string;
   scopes: UserScope[];
-  isSelf: boolean;
+  lockedReason: string | null;
   onChanged: () => void;
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -84,19 +84,19 @@ export function UserScopesSection({
             {scopes.map((scope) => (
               <li
                 key={scope.id}
-                className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm"
               >
                 <span>
                   {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
                 </span>
-                {isSelf ? (
-                  <span className="text-xs text-muted-foreground">ไม่สามารถแก้ไขบัญชีของตัวเองที่นี่</span>
+                {lockedReason ? (
+                  <span className="text-xs text-muted-foreground">{lockedReason}</span>
                 ) : confirmingId === scope.id ? (
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       variant="destructive"
-                      size="sm"
+                      className="min-h-11"
                       disabled={busyId === scope.id}
                       onClick={() => handleRevoke(scope.id)}
                     >
@@ -105,14 +105,14 @@ export function UserScopesSection({
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      className="min-h-11"
                       onClick={() => setConfirmingId(null)}
                     >
                       ยกเลิก
                     </Button>
                   </div>
                 ) : (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingId(scope.id)}>
+                  <Button type="button" variant="ghost" className="min-h-11" onClick={() => setConfirmingId(scope.id)}>
                     ลบ
                   </Button>
                 )}
@@ -121,17 +121,19 @@ export function UserScopesSection({
           </ul>
         )}
 
+        {!lockedReason && (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3"
+            className="flex flex-wrap items-end gap-3 border-t border-border pt-3"
           >
             <ScopeSelector />
-            <Button type="submit" variant="outline" size="sm" disabled={form.formState.isSubmitting}>
+            <Button type="submit" variant="outline" className="min-h-11" disabled={form.formState.isSubmitting}>
               เพิ่มขอบเขต
             </Button>
           </form>
         </Form>
+        )}
       </CardContent>
     </Card>
   );
