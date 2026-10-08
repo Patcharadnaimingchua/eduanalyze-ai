@@ -19,6 +19,12 @@ export interface SendMailParams {
 // Gmail account password will NOT work since Google blocks plain SMTP
 // auth on the real password). Kept swappable: nothing outside this file
 // knows it's Gmail specifically, only SMTP_HOST/PORT/USER/PASS/FROM.
+// Logs carry a shortened address (a***@domain), never the full one.
+function maskEmail(address: string): string {
+  const [local, domain] = address.split('@');
+  return domain ? `${local.slice(0, 1)}***@${domain}` : '***';
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -68,7 +74,7 @@ export class EmailService {
       });
     } catch (error) {
       this.logger.error(
-        `Failed to send email to ${params.to}: ${(error as Error).message}`,
+        `Failed to send email to ${maskEmail(params.to)}: ${(error as Error).message}`,
       );
       throw error;
     }

@@ -77,3 +77,18 @@ describe('UserScopeService ADMIN target rule', () => {
     expect(assign).toHaveBeenCalled();
   });
 });
+
+describe('UserScopeService own-scope protection', () => {
+  it.each(['SUPER_ADMIN', 'ADMIN'] as Role[])(
+    '%s cannot revoke a scope that belongs to themselves (Thai 403)',
+    async (role) => {
+      const { service, revokeScope } = setup(['STAFF']);
+      // The mocked scope row belongs to userId "target".
+      const self = { ...admin, userId: 'target', roles: [role] };
+      const call = service.revoke('s1', self);
+      await expect(call).rejects.toThrow(ForbiddenException);
+      await expect(call).rejects.toThrow('ขอบเขตของตัวเอง');
+      expect(revokeScope).not.toHaveBeenCalled();
+    },
+  );
+});

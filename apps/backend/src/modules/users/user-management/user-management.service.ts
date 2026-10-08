@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -20,8 +21,13 @@ import { UserScopeService } from '../user-scope/user-scope.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { assertMayManageTarget } from './admin-manage-target.util';
 
+const SUPER_ADMIN_PEER_MESSAGE = 'ไม่สามารถระงับหรือเปลี่ยนสถานะบัญชีผู้ดูแลระบบสูงสุดคนอื่นได้';
+const SELF_ROLE_MESSAGE = 'ไม่สามารถถอดบทบาทของตัวเองได้';
+
 @Injectable()
 export class UserManagementService {
+  private readonly logger = new Logger(UserManagementService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
@@ -211,6 +217,9 @@ export class UserManagementService {
     // the target is outside the ADMIN's scope, no special-case branch.
     const target = await this.findOne(id, requester);
     assertMayManageTarget(target.roles, requester);
+    if (target.roles.includes('SUPER_ADMIN')) {
+      throw new ForbiddenException(SUPER_ADMIN_PEER_MESSAGE);
+    }
 
     // Suspending is account-wide, so an ADMIN may only do it when every
     // scope the target holds sits inside the ADMIN's own scope.
@@ -239,9 +248,9 @@ export class UserManagementService {
 
   async resendInvitation(id: string, requester: RequestUser) {
     await this.findOne(id, requester);
-    const token = await this.pendingInvitationService.resend(id);
-    const user = await this.userService.findById(id);
-    console.warn(`[INVITE MOCK] Would send invitation token "${token}" to ${user.email}`);
+    await this.pendingInvitationService.resend(id);
+    // Event only: the token is a secret and must never reach the logs.
+    this.logger.log(`Invitation reissued for user ${id}`);
     return { message: 'Invitation resent' };
   }
 
@@ -251,6 +260,9 @@ export class UserManagementService {
   }
 
   async revokeRole(id: string, role: Role, requester: RequestUser) {
+    if (id === requester.userId) {
+      throw new ForbiddenException(SELF_ROLE_MESSAGE);
+    }
     await this.assertRoleActionAllowed(id, role, requester);
     return this.userRoleService.revokeRole(id, role);
   }

@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { RequestUser } from '../../auth/request-user.interface';
 import { UserManagementService } from './user-management.service';
@@ -172,5 +172,68 @@ describe('UserManagementService role changes', () => {
     const { service, userRoleService } = setup({ target: staff('p1') });
     await service.assignRole('target', 'ADMIN', requester('sa', ['SUPER_ADMIN']));
     expect(userRoleService.assignRole).toHaveBeenCalledWith('target', 'ADMIN');
+  });
+});
+
+describe('UserManagementService SUPER_ADMIN safeguards', () => {
+  const sa = requester('sa', ['SUPER_ADMIN']);
+
+  it.each([false, true])('SUPER_ADMIN cannot set another SUPER_ADMIN active=%s (Thai 403)', async (active) => {
+    const { service, userService } = setup({
+      target: { roles: ['SUPER_ADMIN'], scopes: [] },
+    });
+    const call = service.updateActiveStatus('target', active, sa);
+    await expect(call).rejects.toThrow(ForbiddenException);
+    await expect(call).rejects.toThrow('ผู้ดูแลระบบสูงสุดคนอื่น');
+    expect(userService.setActiveStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(['SUPER_ADMIN', 'ADMIN'] as Role[])(
+    '%s cannot revoke a role from their own account',
+    async (role) => {
+      const { service, userRoleService } = setup({ target: staff('p1') });
+      const call = service.revokeRole('me', 'STAFF', requester('me', [role]));
+      await expect(call).rejects.toThrow(ForbiddenException);
+      await expect(call).rejects.toThrow('ถอดบทบาทของตัวเอง');
+      expect(userRoleService.revokeRole).not.toHaveBeenCalled();
+    },
+  );
+
+  it('SUPER_ADMIN can still revoke a role from someone else', async () => {
+    const { service, userRoleService } = setup({ target: staff('p1') });
+    await service.revokeRole('target', 'STAFF', sa);
+    expect(userRoleService.revokeRole).toHaveBeenCalledWith('target', 'STAFF');
+  });
+});
+
+describe('UserManagementService.resendInvitation logging', () => {
+  it('never writes the invitation token to any log channel', async () => {
+    const secret = 'super-secret-invite-token';
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const logConsole = jest.spyOn(console, 'log').mockImplementation();
+    const userService = {
+      findOneWhere: jest.fn().mockResolvedValue({ id: 'target', scopes: [], userRoles: [] }),
+      findById: jest.fn().mockResolvedValue({ id: 'target', email: 'x@x.test' }),
+    };
+    const service = new UserManagementService(
+      {} as never,
+      userService as never,
+      {} as never,
+      {} as never,
+      { buildUserScopeOrFilter: jest.fn().mockResolvedValue([]) } as never,
+      { resend: jest.fn().mockResolvedValue(secret) } as never,
+      {} as never,
+      {} as never,
+    );
+    await service.resendInvitation('target', requester('sa', ['SUPER_ADMIN']));
+    const logged = JSON.stringify([
+      ...logSpy.mock.calls,
+      ...warnSpy.mock.calls,
+      ...logConsole.mock.calls,
+    ]);
+    expect(logged).not.toContain(secret);
+    expect(logSpy).toHaveBeenCalled();
+    jest.restoreAllMocks();
   });
 });

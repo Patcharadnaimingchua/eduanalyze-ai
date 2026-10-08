@@ -15,6 +15,8 @@ import { ProgramService } from '../../organization/program/program.service';
 import { UserService } from '../user/user.service';
 import { assertMayManageTarget } from '../user-management/admin-manage-target.util';
 
+const SELF_SCOPE_MESSAGE = 'ไม่สามารถแก้ไขขอบเขตของตัวเองได้';
+
 @Injectable()
 export class UserScopeService {
   constructor(
@@ -97,7 +99,7 @@ export class UserScopeService {
       // their access is role-gated, not scope-gated, so this check would
       // be a no-op restriction for them regardless.
       if (requester.userId === targetUserId) {
-        throw new ForbiddenException('Cannot modify your own scope');
+        throw new ForbiddenException(SELF_SCOPE_MESSAGE);
       }
       await this.assertTargetManageable(targetUserId, requester);
 
@@ -133,10 +135,12 @@ export class UserScopeService {
       throw new NotFoundException(`Scope ${scopeId} not found`);
     }
 
+    // Nobody — SUPER_ADMIN included — may remove their own scope.
+    if (requester.userId === scope.userId) {
+      throw new ForbiddenException(SELF_SCOPE_MESSAGE);
+    }
+
     if (!requester.roles.includes('SUPER_ADMIN')) {
-      if (requester.userId === scope.userId) {
-        throw new ForbiddenException('Cannot modify your own scope');
-      }
       await this.assertTargetManageable(scope.userId, requester);
 
       const effectiveScopes = await this.scopeResolverService.getEffectiveScopes(
