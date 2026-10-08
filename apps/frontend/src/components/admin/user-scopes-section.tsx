@@ -9,6 +9,8 @@ import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
 import { useScopeTargetName } from '@/lib/use-scope-target-name';
 import { scopeSchema, type ScopeFormValues } from '@/lib/validation/scope.schema';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { RevokeButton } from './revoke-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/lib/toast-context';
@@ -32,6 +34,7 @@ export function UserScopesSection({
   const toast = useToast();
 
   const resolveTargetName = useScopeTargetName();
+  const confirmingScope = scopes.find((scope) => scope.id === confirmingId) ?? null;
 
   const form = useForm<ScopeFormValues>({
     resolver: zodResolver(scopeSchema),
@@ -68,7 +71,7 @@ export function UserScopesSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>ขอบเขตความรับผิดชอบ (Scope)</CardTitle>
+        <CardTitle>ขอบเขตความรับผิดชอบ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {serverError && (
@@ -91,30 +94,8 @@ export function UserScopesSection({
                 </span>
                 {lockedReason ? (
                   <span className="text-xs text-muted-foreground">{lockedReason}</span>
-                ) : confirmingId === scope.id ? (
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      className="min-h-11"
-                      disabled={busyId === scope.id}
-                      onClick={() => handleRevoke(scope.id)}
-                    >
-                      ยืนยัน
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="min-h-11"
-                      onClick={() => setConfirmingId(null)}
-                    >
-                      ยกเลิก
-                    </Button>
-                  </div>
                 ) : (
-                  <Button type="button" variant="ghost" className="min-h-11" onClick={() => setConfirmingId(scope.id)}>
-                    ลบ
-                  </Button>
+                  <RevokeButton label="ถอดขอบเขต" onClick={() => setConfirmingId(scope.id)} />
                 )}
               </li>
             ))}
@@ -135,6 +116,19 @@ export function UserScopesSection({
         </Form>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={confirmingScope !== null}
+        onOpenChange={(open) => !open && setConfirmingId(null)}
+        title="ถอดขอบเขตความรับผิดชอบ?"
+        description={
+          confirmingScope
+            ? `ผู้ใช้นี้จะไม่เข้าถึงข้อมูลของ${SCOPE_LEVEL_LABELS[confirmingScope.level]}${resolveTargetName(confirmingScope)} ได้อีก`
+            : ''
+        }
+        confirmLabel="ถอดขอบเขต"
+        busy={busyId !== null}
+        onConfirm={() => confirmingScope && handleRevoke(confirmingScope.id)}
+      />
     </Card>
   );
 }

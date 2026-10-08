@@ -129,10 +129,10 @@ export function DashboardShell({
         <button
           type="button"
           onClick={() => logout()}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
+          className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
         >
           <LogOut size={16} />
-          Sign Out
+          ออกจากระบบ
         </button>
       </div>
     </>

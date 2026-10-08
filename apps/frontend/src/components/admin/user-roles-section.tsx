@@ -8,6 +8,8 @@ import { useToast } from '@/lib/toast-context';
 import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { RevokeButton } from './revoke-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -110,30 +112,8 @@ export function UserRolesSection({
                 <Badge tone={ROLE_BADGE_TONE[role]}>{ROLE_LABEL_TH[role]}</Badge>
                 {lockedReason ? (
                   <span className="text-xs text-muted-foreground">{lockedReason}</span>
-                ) : confirmingRole === role ? (
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      className="min-h-11"
-                      disabled={busy}
-                      onClick={() => handleRevoke(role)}
-                    >
-                      ยืนยัน
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="min-h-11"
-                      onClick={() => setConfirmingRole(null)}
-                    >
-                      ยกเลิก
-                    </Button>
-                  </div>
                 ) : (
-                  <Button type="button" variant="ghost" className="min-h-11" onClick={() => setConfirmingRole(role)}>
-                    ลบ
-                  </Button>
+                  <RevokeButton label="ถอดบทบาท" onClick={() => setConfirmingRole(role)} />
                 )}
               </li>
             ))}
@@ -144,12 +124,12 @@ export function UserRolesSection({
           <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
             <div className="w-full sm:w-56">
               <Select value={selectedRole || undefined} onValueChange={setSelectedRole}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="เพิ่มบทบาท" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
+                    <SelectItem key={role} value={role} className="min-h-11">
                       {ROLE_LABEL_TH[role]}
                     </SelectItem>
                   ))}
@@ -167,6 +147,19 @@ export function UserRolesSection({
           </p>
         )}
       </CardContent>
+      <ConfirmDialog
+        open={confirmingRole !== null}
+        onOpenChange={(open) => !open && setConfirmingRole(null)}
+        title={confirmingRole ? `ถอดบทบาท${ROLE_LABEL_TH[confirmingRole]}?` : ''}
+        description={
+          confirmingRole
+            ? `ผู้ใช้นี้จะไม่มีบทบาท${ROLE_LABEL_TH[confirmingRole]}อีกต่อไป และใช้งานส่วนของบทบาทนี้ไม่ได้ทันที`
+            : ''
+        }
+        confirmLabel="ถอดบทบาท"
+        busy={busy}
+        onConfirm={() => confirmingRole && handleRevoke(confirmingRole)}
+      />
     </Card>
   );
 }
