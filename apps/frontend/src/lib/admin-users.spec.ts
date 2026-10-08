@@ -1,0 +1,63 @@
+import type { AdminUserSummary, Role } from '@eduanalyze-ai/shared-types';
+import { formatThaiDate, summarizeUsers } from './admin-users';
+
+function user(roles: Role[], opts: { isActive?: boolean; scopes?: number } = {}): AdminUserSummary {
+  return {
+    id: Math.random().toString(36),
+    email: 'a@b.c',
+    fullName: 'x',
+    isActive: opts.isActive ?? true,
+    mustChangePassword: false,
+    createdAt: '2025-09-08T00:00:00.000Z',
+    updatedAt: '2025-09-08T00:00:00.000Z',
+    roles,
+    scopes: Array.from({ length: opts.scopes ?? 0 }, (_, i) => ({ id: `s${i}` })) as never,
+  };
+}
+
+describe('summarizeUsers', () => {
+  it('counts totals, suspended and each role', () => {
+    const summary = summarizeUsers([
+      user(['INSTRUCTOR']),
+      user(['INSTRUCTOR'], { isActive: false }),
+      user(['STAFF'], { scopes: 1 }),
+      user(['ADMIN'], { scopes: 1 }),
+    ]);
+    expect(summary).toMatchObject({
+      total: 4,
+      active: 3,
+      suspended: 1,
+      byRole: { INSTRUCTOR: 2, STAFF: 1, ADMIN: 1, SUPER_ADMIN: 0 },
+    });
+  });
+
+  it('counts a person with two roles under both', () => {
+    const summary = summarizeUsers([user(['INSTRUCTOR', 'STAFF'], { scopes: 1 })]);
+    expect(summary.byRole.INSTRUCTOR).toBe(1);
+    expect(summary.byRole.STAFF).toBe(1);
+    expect(summary.total).toBe(1);
+  });
+
+  it('flags only STAFF/ADMIN without a scope', () => {
+    const summary = summarizeUsers([
+      user(['STAFF']),
+      user(['ADMIN'], { scopes: 1 }),
+      user(['INSTRUCTOR']),
+      user(['SUPER_ADMIN']),
+    ]);
+    expect(summary.withoutScope).toBe(1);
+  });
+
+  it('handles an empty list', () => {
+    expect(summarizeUsers([]).total).toBe(0);
+  });
+});
+
+describe('formatThaiDate', () => {
+  it('uses the Buddhist year', () => {
+    expect(formatThaiDate('2025-09-08T05:00:00.000Z')).toContain('2568');
+  });
+  it('returns a dash for a bad date', () => {
+    expect(formatThaiDate('nope')).toBe('—');
+  });
+});

@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldOff, UserCog, Users, UsersRound } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateUserResponse } from '@eduanalyze-ai/shared-types';
+import { summarizeUsers } from '@/lib/admin-users';
 import { fetchUsers } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { StatCard } from '@/components/dashboard/stat-card';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
@@ -18,7 +20,8 @@ import { UserListTable } from '@/components/admin/user-list-table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
+import { AnimatedNumber } from '@/components/ui/animated-number';
+import { Skeleton, StatCardsSkeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 export default function AdminUsersPage() {
   return (
@@ -50,6 +53,7 @@ function AdminUsersContent() {
   }
 
   const requesterIsSuperAdmin = user.roles.includes('SUPER_ADMIN');
+  const summary = usersQuery.data ? summarizeUsers(usersQuery.data) : null;
 
   function handleCreated(result: CreateUserResponse) {
     setCreatedUser(result);
@@ -69,14 +73,14 @@ function AdminUsersContent() {
     >
       <Reveal index={0}>
         <PageHeader
-          title="ผู้ใช้งาน"
-          description="จัดการบัญชีอาจารย์ เจ้าหน้าที่ และผู้ดูแลระบบ"
+          title="การจัดการผู้ใช้งาน"
+          description="ตรวจสอบสิทธิ์และสถานะบัญชีบุคลากรในขอบเขตที่รับผิดชอบ"
           actions={
             !createdUser && (
               <Button
                 type="button"
                 variant={showCreateForm ? 'outline' : 'default'}
-                className="gap-1.5"
+                className="h-11 gap-1.5"
                 onClick={() => setShowCreateForm((open) => !open)}
               >
                 {showCreateForm ? (
@@ -93,23 +97,75 @@ function AdminUsersContent() {
         />
       </Reveal>
 
+      {usersQuery.isLoading && <StatCardsSkeleton count={4} />}
+      {summary && (
+        <Reveal index={1}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              icon={UsersRound}
+              label="บัญชีทั้งหมด"
+              value={<AnimatedNumber value={summary.total} />}
+              suffix="บัญชี"
+              footer={
+                <p className="text-xs text-muted-foreground">ใช้งานอยู่ {summary.active} บัญชี</p>
+              }
+            />
+            <StatCard
+              icon={Users}
+              label="อาจารย์"
+              value={<AnimatedNumber value={summary.byRole.INSTRUCTOR} />}
+              suffix="คน"
+            />
+            <StatCard
+              icon={UserCog}
+              label="เจ้าหน้าที่"
+              value={<AnimatedNumber value={summary.byRole.STAFF} />}
+              suffix="คน"
+            />
+            <StatCard
+              icon={ShieldOff}
+              label="ระงับการใช้งาน"
+              value={<AnimatedNumber value={summary.suspended} />}
+              suffix="บัญชี"
+              footer={
+                summary.withoutScope > 0 ? (
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                    ยังไม่กำหนดขอบเขต {summary.withoutScope} บัญชี
+                  </p>
+                ) : null
+              }
+            />
+          </div>
+        </Reveal>
+      )}
+
       {createdUser && (
-        <Card className={createdUser.passwordSetupEmailSent ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}>
+        <Card
+          className={
+            createdUser.passwordSetupEmailSent
+              ? 'border-emerald-200 bg-emerald-50'
+              : 'border-amber-200 bg-amber-50'
+          }
+        >
           <CardContent className="space-y-4 pt-6">
-            <p className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}>
+            <p
+              className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}
+            >
               เพิ่มผู้ใช้งานสำเร็จ — {createdUser.fullName} ({createdUser.email})
             </p>
             {createdUser.passwordSetupEmailSent ? (
               <Alert>
                 <AlertDescription>
-                  ระบบส่งอีเมลตั้งรหัสผ่านให้ {createdUser.email} แล้ว — ผู้ใช้จะได้รับลิงก์สำหรับตั้งรหัสผ่านของตัวเอง
+                  ระบบส่งอีเมลตั้งรหัสผ่านให้ {createdUser.email} แล้ว —
+                  ผู้ใช้จะได้รับลิงก์สำหรับตั้งรหัสผ่านของตัวเอง
                 </AlertDescription>
               </Alert>
             ) : (
               <Alert variant="destructive">
                 <AlertDescription>
-                  ส่งอีเมลไม่สำเร็จ (ระบบส่งอีเมลขัดข้อง) — บัญชีถูกสร้างแล้ว แจ้งให้ผู้ใช้กด &ldquo;ลืมรหัสผ่าน&rdquo;
-                  ที่หน้าเข้าสู่ระบบด้วยอีเมล {createdUser.email} เพื่อตั้งรหัสผ่านเอง
+                  ส่งอีเมลไม่สำเร็จ (ระบบส่งอีเมลขัดข้อง) — บัญชีถูกสร้างแล้ว แจ้งให้ผู้ใช้กด
+                  &ldquo;ลืมรหัสผ่าน&rdquo; ที่หน้าเข้าสู่ระบบด้วยอีเมล {createdUser.email}{' '}
+                  เพื่อตั้งรหัสผ่านเอง
                 </AlertDescription>
               </Alert>
             )}
@@ -134,7 +190,7 @@ function AdminUsersContent() {
         </Reveal>
       )}
 
-      <Reveal index={1}>
+      <Reveal index={2}>
         {usersQuery.isLoading && (
           <Card>
             <CardHeader>

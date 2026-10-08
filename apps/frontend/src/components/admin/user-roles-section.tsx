@@ -141,8 +141,8 @@ export function UserRolesSection({
         )}
 
         {!lockedReason && availableRoles.length > 0 && (
-          <div className="flex items-end gap-3 border-t border-border pt-3">
-            <div className="w-56">
+          <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
+            <div className="w-full sm:w-56">
               <Select value={selectedRole || undefined} onValueChange={setSelectedRole}>
                 <SelectTrigger>
                   <SelectValue placeholder="เพิ่มบทบาท" />

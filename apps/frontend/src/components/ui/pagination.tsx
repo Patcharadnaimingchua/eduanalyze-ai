@@ -11,6 +11,7 @@ export function Pagination({
   total,
   rangeStart,
   rangeEnd,
+  touch = false,
   onPageChange,
 }: {
   page: number;
@@ -18,6 +19,8 @@ export function Pagination({
   total: number;
   rangeStart: number;
   rangeEnd: number;
+  // 44px buttons for pages that must meet the touch-target rule; off by default.
+  touch?: boolean;
   onPageChange: (page: number) => void;
 }) {
   if (pageCount <= 1) return null;
@@ -32,7 +35,7 @@ export function Pagination({
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 w-8 p-0"
+          className={touch ? 'h-11 w-11 p-0' : 'h-8 w-8 p-0'}
           aria-label="หน้าก่อนหน้า"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
@@ -46,7 +49,7 @@ export function Pagination({
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 w-8 p-0"
+          className={touch ? 'h-11 w-11 p-0' : 'h-8 w-8 p-0'}
           aria-label="หน้าถัดไป"
           disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}

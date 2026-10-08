@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ArrowRight, UserRound } from 'lucide-react';
 import type { AdminUserSummary, Role } from '@eduanalyze-ai/shared-types';
+import { formatThaiDate } from '@/lib/admin-users';
 import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
 import { usePagination } from '@/lib/use-pagination';
 import { useScopeTargetName } from '@/lib/use-scope-target-name';
@@ -10,10 +12,18 @@ import { roleNeedsScope } from '@/lib/user-scope-requirement';
 import { useTableSort } from '@/lib/use-table-sort';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Badge } from '@/components/ui/badge';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
 
 const ALL = 'ALL';
@@ -22,7 +32,81 @@ const ACTIVE = 'ACTIVE';
 const SUSPENDED = 'SUSPENDED';
 
 // STUDENT never appears here (the list endpoint excludes them).
-const FILTERABLE_ROLES = (Object.keys(ROLE_LABEL_TH) as Role[]).filter((role) => role !== 'STUDENT');
+const FILTERABLE_ROLES = (Object.keys(ROLE_LABEL_TH) as Role[]).filter(
+  (role) => role !== 'STUDENT',
+);
+
+// The status is always written out; the dot only repeats it.
+function StatusChip({ isActive }: Readonly<{ isActive: boolean }>) {
+  return (
+    <Badge tone={isActive ? 'success' : 'neutral'} className="gap-1.5 whitespace-nowrap">
+      <span
+        aria-hidden="true"
+        className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500' : 'bg-slate-400')}
+      />
+      {isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
+    </Badge>
+  );
+}
+
+function UserAvatar() {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand"
+    >
+      <UserRound size={18} />
+    </span>
+  );
+}
+
+function RoleBadges({ roles }: Readonly<{ roles: Role[] }>) {
+  return (
+    <>
+      {roles.map((role) => (
+        <Badge key={role} tone={ROLE_BADGE_TONE[role]}>
+          {ROLE_LABEL_TH[role]}
+        </Badge>
+      ))}
+    </>
+  );
+}
+
+function ScopeBadges({
+  user,
+  resolveTargetName,
+}: Readonly<{
+  user: AdminUserSummary;
+  resolveTargetName: ReturnType<typeof useScopeTargetName>;
+}>) {
+  return (
+    <>
+      {user.scopes.map((scope) => (
+        <Badge key={scope.id} tone="neutral" className="whitespace-normal text-left">
+          {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
+        </Badge>
+      ))}
+      {user.scopes.length === 0 &&
+        (roleNeedsScope(user.roles) ? (
+          <Badge tone="warning">ยังไม่กำหนดขอบเขต</Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ))}
+    </>
+  );
+}
+
+function DetailLink({ id, className }: Readonly<{ id: string; className?: string }>) {
+  return (
+    <Link
+      href={`/admin/users/${id}`}
+      className={cn(buttonVariants({ variant: 'outline' }), 'h-11 gap-1.5', className)}
+    >
+      ดูรายละเอียด
+      <ArrowRight size={14} aria-hidden="true" />
+    </Link>
+  );
+}
 
 export function UserListTable({ users }: { users: AdminUserSummary[] }) {
   const resolveTargetName = useScopeTargetName();
@@ -50,6 +134,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
     fullName: (u) => u.fullName,
     email: (u) => u.email,
     status: (u) => (u.isActive ? 0 : 1),
+    createdAt: (u) => u.createdAt,
   });
   const pagination = usePagination(
     sort.sorted,
@@ -63,43 +148,58 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
         <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Input
             placeholder="ค้นหาชื่อหรืออีเมล..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
+            className="h-11 sm:max-w-xs"
           />
-          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as Role | typeof ALL)}>
-            <SelectTrigger className="h-9 w-44" aria-label="กรองตามบทบาท">
+          <Select
+            value={roleFilter}
+            onValueChange={(value) => setRoleFilter(value as Role | typeof ALL)}
+          >
+            <SelectTrigger className="h-11 w-full sm:w-44" aria-label="กรองตามบทบาท">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>ทุกบทบาท</SelectItem>
+              <SelectItem className="min-h-11" value={ALL}>
+                ทุกบทบาท
+              </SelectItem>
               {FILTERABLE_ROLES.map((role) => (
-                <SelectItem key={role} value={role}>
+                <SelectItem key={role} value={role} className="min-h-11">
                   {ROLE_LABEL_TH[role]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-40" aria-label="กรองตามสถานะ">
+            <SelectTrigger className="h-11 w-full sm:w-40" aria-label="กรองตามสถานะ">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>ทุกสถานะ</SelectItem>
-              <SelectItem value={ACTIVE}>ใช้งานอยู่</SelectItem>
-              <SelectItem value={SUSPENDED}>ระงับการใช้งาน</SelectItem>
+              <SelectItem className="min-h-11" value={ALL}>
+                ทุกสถานะ
+              </SelectItem>
+              <SelectItem className="min-h-11" value={ACTIVE}>
+                ใช้งานอยู่
+              </SelectItem>
+              <SelectItem className="min-h-11" value={SUSPENDED}>
+                ระงับการใช้งาน
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="h-9 w-52" aria-label="กรองตามขอบเขต">
+            <SelectTrigger className="h-11 w-full sm:w-52" aria-label="กรองตามขอบเขต">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>ขอบเขตทั้งหมด</SelectItem>
-              <SelectItem value={NO_SCOPE}>ยังไม่กำหนดขอบเขต</SelectItem>
+              <SelectItem className="min-h-11" value={ALL}>
+                ขอบเขตทั้งหมด
+              </SelectItem>
+              <SelectItem className="min-h-11" value={NO_SCOPE}>
+                ยังไม่กำหนดขอบเขต
+              </SelectItem>
             </SelectContent>
           </Select>
           {isFiltered && (
@@ -108,72 +208,103 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
             </span>
           )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-muted-foreground">
-                <SortHeader {...sort.sortProps('fullName')}>ชื่อ-นามสกุล</SortHeader>
-                <SortHeader {...sort.sortProps('email')}>อีเมล</SortHeader>
-                <th className="py-2 pr-4 font-medium">บทบาท</th>
-                <th className="py-2 pr-4 font-medium">ขอบเขต</th>
-                <SortHeader {...sort.sortProps('status')}>สถานะ</SortHeader>
-                <th className="py-2 pr-0 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                    {users.length === 0
-                      ? 'ยังไม่มีผู้ใช้งานในขอบเขตของคุณ กด “เพิ่มผู้ใช้งาน” ที่มุมบนเพื่อสร้างบัญชีแรก'
-                      : 'ไม่พบผู้ใช้งานที่ตรงกับตัวกรอง ลองเปลี่ยนหรือล้างตัวกรองด้านบน'}
-                  </td>
-                </tr>
-              )}
+        {filtered.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">
+            {users.length === 0
+              ? 'ยังไม่มีผู้ใช้งานในขอบเขตของคุณ กด “เพิ่มผู้ใช้งาน” ที่มุมบนเพื่อสร้างบัญชีแรก'
+              : 'ไม่พบผู้ใช้งานที่ตรงกับตัวกรอง ลองเปลี่ยนหรือล้างตัวกรองด้านบน'}
+          </p>
+        ) : (
+          <>
+            {/* Phone: one card per person, so the page never scrolls sideways. */}
+            <ul className="space-y-3 md:hidden">
               {pagination.pageRows.map((user) => (
-                <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50">
-                  <td className="py-3 pr-4 text-primary">{user.fullName}</td>
-                  <td className="py-3 pr-4 text-muted-foreground">{user.email}</td>
-                  <td className="py-3 pr-4">
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.roles.map((role) => (
-                        <Badge key={role} tone={ROLE_BADGE_TONE[role]}>
-                          {ROLE_LABEL_TH[role]}
-                        </Badge>
-                      ))}
+                <li key={user.id} className="rounded-lg border p-4">
+                  <div className="flex items-start gap-3">
+                    <UserAvatar />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="break-words font-semibold text-primary">{user.fullName}</p>
+                      <p className="break-all text-sm text-muted-foreground">{user.email}</p>
                     </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.scopes.map((scope) => (
-                        <Badge key={scope.id} tone="neutral">
-                          {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
-                        </Badge>
-                      ))}
-                      {user.scopes.length === 0 &&
-                        (roleNeedsScope(user.roles) ? (
-                          <Badge tone="warning">ยังไม่กำหนดขอบเขต</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        ))}
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <Badge tone={user.isActive ? 'success' : 'neutral'}>
-                      {user.isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
-                    </Badge>
-                  </td>
-                  <td className="py-3 pr-0 text-right">
-                    <Link href={`/admin/users/${user.id}`} className="text-sm font-medium text-brand hover:underline">
-                      จัดการ
-                    </Link>
-                  </td>
-                </tr>
+                    <StatusChip isActive={user.isActive} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <RoleBadges roles={user.roles} />
+                    <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    สร้างเมื่อ {formatThaiDate(user.createdAt)}
+                  </p>
+                  <DetailLink id={user.id} className="mt-3 w-full" />
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <Pagination {...pagination} onPageChange={pagination.setPage} />
+            </ul>
+
+            <div className="hidden md:block">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b bg-slate-50 text-muted-foreground dark:bg-slate-900/40">
+                    <SortHeader {...sort.sortProps('fullName')} className="px-3 py-3">
+                      ชื่อ-นามสกุล
+                    </SortHeader>
+                    <SortHeader {...sort.sortProps('email')} className="px-3 py-3">
+                      อีเมล
+                    </SortHeader>
+                    <th className="px-3 py-3 font-medium">บทบาท</th>
+                    <th className="px-3 py-3 font-medium">ขอบเขต</th>
+                    <SortHeader {...sort.sortProps('status')} className="px-3 py-3">
+                      สถานะ
+                    </SortHeader>
+                    <SortHeader {...sort.sortProps('createdAt')} className="px-3 py-3">
+                      วันที่สร้าง
+                    </SortHeader>
+                    <th className="px-3 py-3">
+                      <span className="sr-only">การดำเนินการ</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagination.pageRows.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="min-h-[52px] border-b align-top hover:bg-slate-50 dark:hover:bg-slate-900/40"
+                    >
+                      <td className="px-3 py-3">
+                        <span className="flex items-start gap-3">
+                          <UserAvatar />
+                          <span className="break-words font-medium text-primary">
+                            {user.fullName}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="break-all px-3 py-3 text-muted-foreground">{user.email}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          <RoleBadges roles={user.roles} />
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusChip isActive={user.isActive} />
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 tabular-nums text-muted-foreground">
+                        {formatThaiDate(user.createdAt)}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        <DetailLink id={user.id} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        <Pagination {...pagination} touch onPageChange={pagination.setPage} />
       </CardContent>
     </Card>
   );
