@@ -75,10 +75,3 @@ export function findCurriculum(
 ): AdminScopeCurriculumEntry | null {
   return entries.find((entry) => entry.curriculumId === curriculumId) ?? null;
 }
-
-// Share of the scope's people held by one role, as a whole percent; null
-// when the scope has nobody at all (never a bare 0/0).
-export function shareOfPeople(count: number, total: number): number | null {
-  if (!(total > 0)) return null;
-  return Math.round((count / total) * 100);
-}

@@ -1,11 +1,5 @@
 import type { AdminScopeCurriculumEntry, AdminScopeProgram } from '@eduanalyze-ai/shared-types';
-import {
-  countByTab,
-  filterCurricula,
-  findCurriculum,
-  placeOf,
-  shareOfPeople,
-} from './admin-curricula';
+import { countByTab, filterCurricula, findCurriculum, placeOf } from './admin-curricula';
 
 function entry(
   id: string,
@@ -85,14 +79,5 @@ describe('findCurriculum', () => {
   it('finds by id or returns null', () => {
     expect(findCurriculum(ENTRIES, 'c')?.programCode).toBe('DS');
     expect(findCurriculum(ENTRIES, 'nope')).toBeNull();
-  });
-});
-
-describe('shareOfPeople', () => {
-  it('rounds to a whole percent', () => {
-    expect(shareOfPeople(1, 3)).toBe(33);
-  });
-  it('is null for an empty scope', () => {
-    expect(shareOfPeople(0, 0)).toBeNull();
   });
 });

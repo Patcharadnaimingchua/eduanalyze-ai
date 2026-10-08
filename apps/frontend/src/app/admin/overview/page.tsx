@@ -3,14 +3,12 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, GraduationCap, Landmark, ShieldCheck, UserCog, Users } from 'lucide-react';
+import { Building2, GraduationCap, Landmark, ShieldCheck, UserCog } from 'lucide-react';
 import { fetchAdminScopeOverview } from '@/lib/api/admin';
-import {
-  countByTab,
-  filterCurricula,
-  shareOfPeople,
-  type CurriculumTab,
-} from '@/lib/admin-curricula';
+import { fetchUser } from '@/lib/api/user-management';
+import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
+import { useScopeTargetName } from '@/lib/use-scope-target-name';
+import { countByTab, filterCurricula, type CurriculumTab } from '@/lib/admin-curricula';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
@@ -45,6 +43,14 @@ function AdminOverviewContent() {
     queryKey: ['admin-scope-overview'],
     queryFn: fetchAdminScopeOverview,
   });
+  // The scope itself (level + unit name), not the parent faculty it sits under.
+  const ownUserQuery = useQuery({
+    queryKey: ['admin-users', user?.userId],
+    queryFn: () => fetchUser(user!.userId),
+    enabled: !!user,
+  });
+  const resolveTargetName = useScopeTargetName();
+  const ownScopes = ownUserQuery.data?.scopes ?? [];
   const data = overviewQuery.data;
   const entries = data?.curricula.entries;
   const tabCounts = useMemo(() => countByTab(entries ?? []), [entries]);
@@ -62,20 +68,6 @@ function AdminOverviewContent() {
   }
 
   const isEmptyScope = data && data.scope.programCount === 0;
-  const facultyNames = [...new Set((data?.scope.programs ?? []).map((p) => p.facultyName))];
-  const peopleTotal = data
-    ? data.userCounts.staff +
-      data.userCounts.instructor +
-      data.userCounts.admin +
-      data.userCounts.student
-    : 0;
-  const shareFooter = (count: number) => {
-    const share = shareOfPeople(count, peopleTotal);
-    return share === null ? null : (
-      <p className="text-xs text-muted-foreground">คิดเป็น {share}% ของผู้ใช้งานทั้งหมดในขอบเขต</p>
-    );
-  };
-
   return (
     <DashboardShell role="ADMIN" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
@@ -83,11 +75,17 @@ function AdminOverviewContent() {
           title="ภาพรวมขอบเขต"
           description="คณะ ภาควิชา และสาขาที่คุณดูแล จำนวนผู้ใช้งานแยกตามบทบาท และหลักสูตรในความดูแล"
           actions={
-            facultyNames.length > 0 && (
-              <p className="rounded-lg border bg-card px-4 py-2 text-sm">
-                <span className="block text-xs text-muted-foreground">ขอบเขตที่รับผิดชอบ</span>
-                <span className="font-semibold text-primary">{facultyNames.join(' · ')}</span>
-              </p>
+            ownScopes.length > 0 && (
+              <div className="rounded-lg border bg-card px-4 py-2 text-sm">
+                <p className="text-xs text-muted-foreground">ขอบเขตที่รับผิดชอบ</p>
+                <ul className="space-y-0.5">
+                  {ownScopes.map((scope) => (
+                    <li key={scope.id} className="break-words font-semibold text-primary">
+                      {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )
           }
         />
@@ -108,25 +106,28 @@ function AdminOverviewContent() {
       {data && !isEmptyScope && (
         <>
           <Reveal index={1}>
-            <PageSection title="ขอบเขตที่ดูแล">
+            <PageSection
+              title="หน่วยงานที่เกี่ยวข้องกับขอบเขตของคุณ"
+              description="นับคณะและภาควิชาต้นสังกัดของสาขาที่อยู่ในขอบเขตของคุณ ไม่ใช่ขอบเขตที่คุณถือโดยตรง"
+            >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <StatCard
                   icon={Landmark}
-                  label="คณะในขอบเขต"
+                  label="คณะที่เกี่ยวข้อง"
                   value={<AnimatedNumber value={data.scope.facultyCount} />}
                   suffix="คณะ"
                 />
                 <StatCard
                   icon={Building2}
-                  label="ภาควิชาในขอบเขต"
+                  label="ภาควิชาที่เกี่ยวข้อง"
                   value={<AnimatedNumber value={data.scope.departmentCount} />}
                   suffix="ภาควิชา"
                 />
                 <StatCard
                   icon={GraduationCap}
-                  label="สาขาวิชาในขอบเขต"
+                  label="สาขาที่เกี่ยวข้อง"
                   value={<AnimatedNumber value={data.scope.programCount} />}
-                  suffix="สาขาวิชา"
+                  suffix="สาขา"
                 />
               </div>
             </PageSection>
@@ -137,34 +138,24 @@ function AdminOverviewContent() {
               title="สรุปจำนวนผู้ใช้งานแยกตามบทบาท"
               description="นับเฉพาะบัญชีที่ใช้งานอยู่ภายในขอบเขตของคุณ"
             >
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard
-                  icon={Users}
-                  label="อาจารย์ผู้สอน"
-                  value={<AnimatedNumber value={data.userCounts.instructor} />}
-                  suffix="คน"
-                  footer={shareFooter(data.userCounts.instructor)}
-                />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <StatCard
                   icon={UserCog}
-                  label="เจ้าหน้าที่ทะเบียน"
+                  label="เจ้าหน้าที่"
                   value={<AnimatedNumber value={data.userCounts.staff} />}
                   suffix="คน"
-                  footer={shareFooter(data.userCounts.staff)}
                 />
                 <StatCard
                   icon={ShieldCheck}
                   label="ผู้ดูแลระบบ"
                   value={<AnimatedNumber value={data.userCounts.admin} />}
                   suffix="คน"
-                  footer={shareFooter(data.userCounts.admin)}
                 />
                 <StatCard
                   icon={GraduationCap}
                   label="นักศึกษา"
                   value={<AnimatedNumber value={data.userCounts.student} />}
                   suffix="คน"
-                  footer={shareFooter(data.userCounts.student)}
                 />
               </div>
             </PageSection>
