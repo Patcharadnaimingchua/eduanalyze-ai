@@ -1,5 +1,5 @@
 import { AxiosError, AxiosHeaders } from 'axios';
-import { GENERIC_ERROR, describeApiError } from './describe-api-error';
+import { GENERIC_ERROR, INVALID_INPUT_ERROR, describeApiError } from './describe-api-error';
 
 function httpError(status: number, data?: unknown) {
   return new AxiosError('x', 'ERR', undefined, undefined, {
@@ -18,7 +18,7 @@ describe('describeApiError', () => {
     );
   });
 
-  it('joins a list of messages', () => {
+  it('joins a list of messages when they are Thai', () => {
     expect(describeApiError(httpError(400, { message: ['ก', 'ข'] }))).toBe('ก · ข');
   });
 
@@ -28,10 +28,27 @@ describe('describeApiError', () => {
     );
   });
 
-  it('falls back when a 4xx has no usable message', () => {
-    expect(describeApiError(httpError(400))).toBe(GENERIC_ERROR);
-    expect(describeApiError(httpError(400, { message: '  ' }))).toBe(GENERIC_ERROR);
+  it('ignores an English-only message: invalid-input sentence for 400/422, generic otherwise', () => {
+    expect(describeApiError(httpError(400, { message: 'email must be an email' }))).toBe(
+      INVALID_INPUT_ERROR,
+    );
+    expect(describeApiError(httpError(422, { message: ['name should not be empty'] }))).toBe(
+      INVALID_INPUT_ERROR,
+    );
+    expect(describeApiError(httpError(403, { message: 'Forbidden' }))).toBe(GENERIC_ERROR);
+    expect(describeApiError(httpError(404, { message: 'Not Found' }))).toBe(GENERIC_ERROR);
+  });
+
+  it('treats an empty or missing message like English-only', () => {
+    expect(describeApiError(httpError(400))).toBe(INVALID_INPUT_ERROR);
+    expect(describeApiError(httpError(400, { message: '  ' }))).toBe(INVALID_INPUT_ERROR);
     expect(describeApiError(httpError(404, { message: 42 }))).toBe(GENERIC_ERROR);
+  });
+
+  it('shows a mixed Thai and English message', () => {
+    expect(describeApiError(httpError(403, { message: 'ไม่มีสิทธิ์ (scope)' }))).toBe(
+      'ไม่มีสิทธิ์ (scope)',
+    );
   });
 
   it('gives the generic sentence for a 5xx, even with a message', () => {
@@ -45,7 +62,10 @@ describe('describeApiError', () => {
     expect(describeApiError(undefined)).toBe(GENERIC_ERROR);
   });
 
-  it('accepts a custom fallback', () => {
+  it('accepts a custom fallback, which also replaces the invalid-input sentence', () => {
     expect(describeApiError(httpError(500), {}, 'สร้างไม่สำเร็จ')).toBe('สร้างไม่สำเร็จ');
+    expect(describeApiError(httpError(400, { message: 'bad' }), {}, 'สร้างไม่สำเร็จ')).toBe(
+      'สร้างไม่สำเร็จ',
+    );
   });
 });

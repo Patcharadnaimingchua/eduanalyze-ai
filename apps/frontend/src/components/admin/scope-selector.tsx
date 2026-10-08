@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { Info } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFormContext } from 'react-hook-form';
 import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organization';
@@ -35,10 +36,14 @@ export function ScopeSelector({
   levelFieldName = 'level',
   targetFieldName = 'targetId',
   allowed,
+  limitedToOwnScope = false,
 }: {
   levelFieldName?: string;
   targetFieldName?: string;
   allowed?: AllowedScopeTargets;
+  // True when `allowed` was narrowed by the requester's own scope: with one unit
+  // left, a note says why there is no choice.
+  limitedToOwnScope?: boolean;
 }) {
   const { control, watch, resetField, setValue } = useFormContext();
   const level = watch(levelFieldName);
@@ -115,72 +120,80 @@ export function ScopeSelector({
   }, [onlyTargetId, currentTarget, targetFieldName, setValue]);
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row">
-      <FormField
-        control={control}
-        name={levelFieldName}
-        render={({ field }) => (
-          <FormItem className="md:w-48">
-            <FormLabel>ระดับขอบเขต</FormLabel>
-            {onlyLevel ? (
-              <p className="flex min-h-11 items-center text-sm font-medium text-primary">
-                {SCOPE_LEVEL_LABELS[onlyLevel]}
-              </p>
-            ) : (
-              <Select
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  resetField(targetFieldName, { defaultValue: '' });
-                }}
-                value={field.value || undefined}
-              >
-                <FormControl>
-                  <SelectTrigger className="min-h-11">
-                    <SelectValue placeholder="เลือกระดับ" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {levels.map((value) => (
-                    <SelectItem key={value} value={value} className="min-h-11">
-                      {SCOPE_LEVEL_LABELS[value]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name={targetFieldName}
-        render={({ field }) => (
-          <FormItem className="flex-1 md:min-w-[22rem]">
-            <FormLabel>หน่วยงาน</FormLabel>
-            {onlyTarget ? (
-              <p className="flex min-h-11 items-center break-words text-sm font-medium text-primary">
-                {onlyTarget.label}
-              </p>
-            ) : (
-              <FormControl>
-                <Combobox
-                  className={TRIGGER_CLASS}
-                  options={targetOptions}
+    <div className="space-y-2">
+      <div className="flex flex-col gap-3 md:flex-row">
+        <FormField
+          control={control}
+          name={levelFieldName}
+          render={({ field }) => (
+            <FormItem className="md:w-48">
+              <FormLabel>ระดับขอบเขต</FormLabel>
+              {onlyLevel ? (
+                <p className="flex min-h-11 items-center text-sm font-medium text-primary">
+                  {SCOPE_LEVEL_LABELS[onlyLevel]}
+                </p>
+              ) : (
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    resetField(targetFieldName, { defaultValue: '' });
+                  }}
                   value={field.value || undefined}
-                  onValueChange={field.onChange}
-                  disabled={!level}
-                  placeholder="เลือกหน่วยงาน"
-                  searchPlaceholder="ค้นหาชื่อ รหัส หรือคณะ..."
-                  emptyText="ไม่พบหน่วยงานที่ตรงกับคำค้นหา"
-                />
-              </FormControl>
-            )}
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+                >
+                  <FormControl>
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="เลือกระดับ" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {levels.map((value) => (
+                      <SelectItem key={value} value={value} className="min-h-11">
+                        {SCOPE_LEVEL_LABELS[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name={targetFieldName}
+          render={({ field }) => (
+            <FormItem className="flex-1 md:min-w-[22rem]">
+              <FormLabel>หน่วยงาน</FormLabel>
+              {onlyTarget ? (
+                <p className="flex min-h-11 items-center break-words text-sm font-medium text-primary">
+                  {onlyTarget.label}
+                </p>
+              ) : (
+                <FormControl>
+                  <Combobox
+                    className={TRIGGER_CLASS}
+                    options={targetOptions}
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                    disabled={!level}
+                    placeholder="เลือกหน่วยงาน"
+                    searchPlaceholder="ค้นหาชื่อ รหัส หรือคณะ..."
+                    emptyText="ไม่พบหน่วยงานที่ตรงกับคำค้นหา"
+                  />
+                </FormControl>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      {limitedToOwnScope && onlyTarget && (
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Info aria-hidden="true" size={14} className="mt-0.5 shrink-0" />
+          คุณมีสิทธิ์กำหนดขอบเขตได้เฉพาะหน่วยงานนี้ (ตามขอบเขตความรับผิดชอบของคุณ)
+        </p>
+      )}
     </div>
   );
 }

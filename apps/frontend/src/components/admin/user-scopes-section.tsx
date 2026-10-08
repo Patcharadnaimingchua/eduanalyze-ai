@@ -73,6 +73,24 @@ export function UserScopesSection({
     requesterScopes,
     scopes,
   ]);
+  // The Admin's own scope itself reaches a single unit, so the lack of a choice is
+  // about their rights and not just about what this user already holds.
+  const limitedToOneUnit = useMemo(() => {
+    if (requesterIsSuperAdmin || !requesterScopes) return false;
+    if (!facultiesQuery.data || !departmentsQuery.data || !programsQuery.data) return false;
+    const own = allowedScopeTargets(requesterScopes, {
+      faculties: facultiesQuery.data,
+      departments: departmentsQuery.data,
+      programs: programsQuery.data,
+    });
+    return own.FACULTY.size + own.DEPARTMENT.size + own.PROGRAM.size === 1;
+  }, [
+    requesterIsSuperAdmin,
+    requesterScopes,
+    facultiesQuery.data,
+    departmentsQuery.data,
+    programsQuery.data,
+  ]);
   const nothingToAdd = allowed !== null && allowedLevels(allowed).length === 0;
 
   const confirmingScope = scopes.find((scope) => scope.id === confirmingId) ?? null;
@@ -159,7 +177,7 @@ export function UserScopesSection({
                 className="flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-end"
               >
                 <div className="flex-1">
-                  <ScopeSelector allowed={allowed} />
+                  <ScopeSelector allowed={allowed} limitedToOwnScope={limitedToOneUnit} />
                 </div>
                 <Button
                   type="submit"

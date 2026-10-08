@@ -247,6 +247,7 @@ export function CreateUserForm({
                       levelFieldName="scopeLevel"
                       targetFieldName="scopeTargetId"
                       allowed={allowed}
+                  limitedToOwnScope={needsScopeFilter}
                     />
                   ))}
               </>
