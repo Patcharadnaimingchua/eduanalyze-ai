@@ -1,10 +1,11 @@
-import { isAxiosError } from 'axios';
+import { describeApiError } from '@/lib/describe-api-error';
 
+// Known statuses keep their organisation-specific sentence; any other 4xx shows
+// the server's own message, and 5xx/network failures the generic one.
 export function describeOrgWriteError(error: unknown, conflictMessage: string) {
-  if (isAxiosError(error)) {
-    if (error.response?.status === 409) return conflictMessage;
-    if (error.response?.status === 403) return 'คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้';
-    if (error.response?.status === 404) return 'ไม่พบรายการนี้แล้ว อาจถูกปิดใช้งานไปก่อนหน้า';
-  }
-  return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+  return describeApiError(error, {
+    409: conflictMessage,
+    403: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้',
+    404: 'ไม่พบรายการนี้แล้ว อาจถูกปิดใช้งานไปก่อนหน้า',
+  });
 }

@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RevokeButton } from './revoke-button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -66,8 +67,8 @@ export function UserRolesSection({
       toast.success(`เพิ่มบทบาท ${ROLE_LABEL_TH[selectedRole as Role]} แล้ว`);
       setSelectedRole('');
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeApiError(error));
     } finally {
       setBusy(false);
     }
@@ -81,8 +82,8 @@ export function UserRolesSection({
       toast.success(`ถอนบทบาท ${ROLE_LABEL_TH[role]} แล้ว`);
       setConfirmingRole(null);
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeApiError(error));
     } finally {
       setBusy(false);
     }
@@ -95,9 +96,7 @@ export function UserRolesSection({
       </CardHeader>
       <CardContent className="space-y-4">
         {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
+          <ApiErrorAlert message={serverError} />
         )}
 
         {roles.length === 0 ? (

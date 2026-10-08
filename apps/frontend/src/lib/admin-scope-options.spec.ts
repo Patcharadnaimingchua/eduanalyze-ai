@@ -1,5 +1,11 @@
 import type { UserScope } from '@eduanalyze-ai/shared-types';
-import { allowedLevels, allowedScopeTargets, type ScopeOrg } from './admin-scope-options';
+import {
+  allActiveScopeTargets,
+  allowedLevels,
+  allowedScopeTargets,
+  excludeHeldScopes,
+  type ScopeOrg,
+} from './admin-scope-options';
 
 const ORG: ScopeOrg = {
   faculties: [
@@ -64,5 +70,48 @@ describe('allowedScopeTargets', () => {
 
   it('allows nothing without any scope', () => {
     expect(allowedLevels(allowedScopeTargets([], ORG))).toEqual([]);
+  });
+});
+
+describe('excludeHeldScopes', () => {
+  const own = [scope({ level: 'FACULTY', facultyId: 'f1' })];
+
+  it('drops the units the target already holds, level by level', () => {
+    const allowed = allowedScopeTargets(own, ORG);
+    const left = excludeHeldScopes(allowed, [
+      scope({ level: 'DEPARTMENT', departmentId: 'd1' }),
+      scope({ level: 'FACULTY', facultyId: 'f1' }),
+    ]);
+    expect(left.FACULTY.size).toBe(0);
+    expect(left.DEPARTMENT.size).toBe(0);
+    expect(ids(left.PROGRAM)).toEqual(['p1']); // a held department does not remove its programs
+    expect(allowedLevels(left)).toEqual(['PROGRAM']);
+  });
+
+  it('leaves nothing to offer when everything is held', () => {
+    const allowed = allowedScopeTargets([scope({ level: 'PROGRAM', programId: 'p1' })], ORG);
+    const left = excludeHeldScopes(allowed, [scope({ level: 'PROGRAM', programId: 'p1' })]);
+    expect(allowedLevels(left)).toEqual([]);
+  });
+
+  it('does not change the set it is given', () => {
+    const allowed = allowedScopeTargets(own, ORG);
+    excludeHeldScopes(allowed, [scope({ level: 'FACULTY', facultyId: 'f1' })]);
+    expect(allowed.FACULTY.size).toBe(1);
+  });
+
+  it('ignores a held unit that was not on offer', () => {
+    const allowed = allowedScopeTargets(own, ORG);
+    const left = excludeHeldScopes(allowed, [scope({ level: 'FACULTY', facultyId: 'f2' })]);
+    expect(ids(left.FACULTY)).toEqual(['f1']);
+  });
+});
+
+describe('allActiveScopeTargets', () => {
+  it('lists every active unit and nothing inactive', () => {
+    const all = allActiveScopeTargets(ORG);
+    expect(ids(all.FACULTY)).toEqual(['f1', 'f2']);
+    expect(ids(all.DEPARTMENT)).toEqual(['d1', 'd3']);
+    expect(ids(all.PROGRAM)).toEqual(['p1', 'p2']);
   });
 });

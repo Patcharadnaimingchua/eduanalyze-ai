@@ -22,7 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -78,11 +79,7 @@ export function AcademicYearCard({
       onChanged();
     } catch (error) {
       setConfirmingYearDelete(false);
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('ลบไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'ลบไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้' }));
     } finally {
       setBusyId(null);
     }
@@ -97,11 +94,7 @@ export function AcademicYearCard({
       onChanged();
     } catch (error) {
       setConfirmingSemesterId(null);
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('ลบไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'ลบไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่' }));
     } finally {
       setBusyId(null);
     }
@@ -114,8 +107,8 @@ export function AcademicYearCard({
       toast.success('เพิ่มภาคเรียนแล้ว');
       form.reset({ term: undefined });
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeApiError(error));
     }
   }
 
@@ -152,11 +145,7 @@ export function AcademicYearCard({
       setEditingYear(false);
       onChanged();
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('มีปีการศึกษานี้อยู่ในระบบแล้ว');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'มีปีการศึกษานี้อยู่ในระบบแล้ว' }));
     }
   }
 
@@ -173,11 +162,7 @@ export function AcademicYearCard({
       setEditingSemesterId(null);
       onChanged();
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('ภาคเรียนนี้มีอยู่ในปีการศึกษานี้แล้ว');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'ภาคเรียนนี้มีอยู่ในปีการศึกษานี้แล้ว' }));
     }
   }
 
@@ -256,9 +241,7 @@ export function AcademicYearCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
+          <ApiErrorAlert message={serverError} />
         )}
 
         {sortedSemesters.length === 0 ? (

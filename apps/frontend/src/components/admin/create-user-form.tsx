@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
 import type { CreateUserRequest, CreateUserResponse, Role } from '@eduanalyze-ai/shared-types';
 import { allowedLevels, allowedScopeTargets } from '@/lib/admin-scope-options';
 import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organization';
@@ -14,6 +13,8 @@ import { createUserSchema, type CreateUserFormValues } from '@/lib/validation/cr
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -140,13 +141,7 @@ export function CreateUserForm({
       const result = await createUser(payload);
       onCreated(result);
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('อีเมลนี้ถูกใช้งานแล้ว');
-      } else if (isAxiosError(error) && error.response?.status === 403) {
-        setServerError('คุณไม่มีสิทธิ์เพิ่มผู้ใช้งานนี้ (นอกขอบเขตความรับผิดชอบของคุณ)');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'อีเมลนี้ถูกใช้งานแล้ว' }));
     }
   }
 
@@ -159,12 +154,7 @@ export function CreateUserForm({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {serverError && (
-              <Alert
-                role="alert"
-                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
-              >
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
+              <ApiErrorAlert message={serverError} />
             )}
 
             {scopeLoadFailed ? (

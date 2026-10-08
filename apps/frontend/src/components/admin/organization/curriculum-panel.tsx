@@ -9,7 +9,7 @@ import { curriculumSchema, type CurriculumFormValues } from '@/lib/validation/or
 import { useToast } from '@/lib/toast-context';
 import { describeOrgWriteError } from './org-errors';
 import { DeactivateButton } from './deactivate-button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -218,9 +218,7 @@ function CurriculumForm({
         className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3"
       >
         {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
+          <ApiErrorAlert message={serverError} />
         )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {FIELDS.map((f) => (

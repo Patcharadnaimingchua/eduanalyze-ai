@@ -1,9 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UserScope } from '@eduanalyze-ai/shared-types';
+import {
+  allActiveScopeTargets,
+  allowedLevels,
+  allowedScopeTargets,
+  excludeHeldScopes,
+} from '@/lib/admin-scope-options';
+import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organization';
 import { createUserScope, deleteUserScope } from '@/lib/api/user-management';
 import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
 import { useScopeTargetName } from '@/lib/use-scope-target-name';
@@ -11,7 +19,8 @@ import { scopeSchema, type ScopeFormValues } from '@/lib/validation/scope.schema
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RevokeButton } from './revoke-button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/lib/toast-context';
 import { Form } from '@/components/ui/form';
@@ -21,11 +30,16 @@ export function UserScopesSection({
   userId,
   scopes,
   lockedReason,
+  requesterIsSuperAdmin,
+  requesterScopes,
   onChanged,
 }: {
   userId: string;
   scopes: UserScope[];
   lockedReason: string | null;
+  requesterIsSuperAdmin: boolean;
+  // The requester's own scopes; null until loaded (not needed for a SUPER_ADMIN).
+  requesterScopes: UserScope[] | null;
   onChanged: () => void;
 }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -34,12 +48,42 @@ export function UserScopesSection({
   const toast = useToast();
 
   const resolveTargetName = useScopeTargetName();
+  const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
+  const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
+  const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
+  // What may be added: units inside the requester's own scope (any, for a
+  // SUPER_ADMIN), minus those this user already holds. null while loading.
+  const allowed = useMemo(() => {
+    if (!facultiesQuery.data || !departmentsQuery.data || !programsQuery.data) return null;
+    const org = {
+      faculties: facultiesQuery.data,
+      departments: departmentsQuery.data,
+      programs: programsQuery.data,
+    };
+    if (!requesterIsSuperAdmin && !requesterScopes) return null;
+    const base = requesterIsSuperAdmin
+      ? allActiveScopeTargets(org)
+      : allowedScopeTargets(requesterScopes ?? [], org);
+    return excludeHeldScopes(base, scopes);
+  }, [
+    facultiesQuery.data,
+    departmentsQuery.data,
+    programsQuery.data,
+    requesterIsSuperAdmin,
+    requesterScopes,
+    scopes,
+  ]);
+  const nothingToAdd = allowed !== null && allowedLevels(allowed).length === 0;
+
   const confirmingScope = scopes.find((scope) => scope.id === confirmingId) ?? null;
 
   const form = useForm<ScopeFormValues>({
     resolver: zodResolver(scopeSchema),
     defaultValues: { level: undefined, targetId: '' },
   });
+
+  const pickedLevel = form.watch('level');
+  const pickedTarget = form.watch('targetId');
 
   async function onSubmit(values: ScopeFormValues) {
     setServerError(null);
@@ -48,8 +92,8 @@ export function UserScopesSection({
       toast.success('เพิ่มขอบเขตความรับผิดชอบแล้ว');
       form.reset({ level: undefined, targetId: '' });
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeApiError(error));
     }
   }
 
@@ -61,8 +105,8 @@ export function UserScopesSection({
       toast.success('ถอนขอบเขตความรับผิดชอบแล้ว');
       setConfirmingId(null);
       onChanged();
-    } catch {
-      setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      setServerError(describeApiError(error));
     } finally {
       setBusyId(null);
     }
@@ -74,11 +118,7 @@ export function UserScopesSection({
         <CardTitle>ขอบเขตความรับผิดชอบ</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
-        )}
+        {serverError && <ApiErrorAlert message={serverError} />}
 
         {scopes.length === 0 ? (
           <p className="text-sm text-muted-foreground">ยังไม่มีขอบเขตความรับผิดชอบ</p>
@@ -102,19 +142,36 @@ export function UserScopesSection({
           </ul>
         )}
 
-        {!lockedReason && (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-wrap items-end gap-3 border-t border-border pt-3"
-          >
-            <ScopeSelector />
-            <Button type="submit" variant="outline" className="min-h-11" disabled={form.formState.isSubmitting}>
-              เพิ่มขอบเขต
-            </Button>
-          </form>
-        </Form>
-        )}
+        {!lockedReason &&
+          (allowed === null ? (
+            <p className="border-t border-border pt-3 text-sm text-muted-foreground">
+              กำลังโหลดหน่วยงานที่เพิ่มได้...
+            </p>
+          ) : nothingToAdd ? (
+            <p className="border-t border-border pt-3 text-sm text-muted-foreground">
+              ไม่มีหน่วยงานที่เพิ่มเป็นขอบเขตให้ผู้ใช้นี้ได้แล้ว —
+              ผู้ใช้ถืออยู่ครบทุกหน่วยในขอบเขตของคุณ หรือคุณไม่มีสิทธิ์มอบขอบเขตเพิ่ม
+            </p>
+          ) : (
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:items-end"
+              >
+                <div className="flex-1">
+                  <ScopeSelector allowed={allowed} />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={form.formState.isSubmitting || !pickedLevel || !pickedTarget}
+                >
+                  เพิ่มขอบเขต
+                </Button>
+              </form>
+            </Form>
+          ))}
       </CardContent>
       <ConfirmDialog
         open={confirmingScope !== null}

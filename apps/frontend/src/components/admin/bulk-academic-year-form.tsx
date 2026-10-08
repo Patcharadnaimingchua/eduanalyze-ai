@@ -1,8 +1,8 @@
 'use client';
 
+import { describeApiError } from '@/lib/describe-api-error';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { isAxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SemesterTerm } from '@eduanalyze-ai/shared-types';
 import {
@@ -61,11 +61,13 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
       );
       onCreated();
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        toast.error('มีการสร้างรายการเดียวกันพร้อมกัน ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง');
-      } else {
-        toast.error('สร้างไม่สำเร็จ ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง');
-      }
+      toast.error(
+        describeApiError(
+          error,
+          { 409: 'มีการสร้างรายการเดียวกันพร้อมกัน ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง' },
+          'สร้างไม่สำเร็จ ไม่มีรายการใดถูกบันทึก กรุณาลองใหม่อีกครั้ง',
+        ),
+      );
     }
   }
 

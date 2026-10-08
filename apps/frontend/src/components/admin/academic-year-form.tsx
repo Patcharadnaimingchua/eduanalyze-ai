@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
 import { bulkCreateAcademicYears } from '@/lib/api/admin';
 import { fetchAcademicYears } from '@/lib/api/academic-record';
 import { ALL_TERMS } from '@/lib/bulk-academic-year';
@@ -14,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
@@ -51,11 +51,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
       form.reset({ year: undefined });
       onCreated();
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('มีปีการศึกษานี้อยู่ในระบบแล้ว');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(describeApiError(error, { 409: 'มีปีการศึกษานี้อยู่ในระบบแล้ว' }));
     }
   }
 
@@ -68,9 +64,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {serverError && (
-              <Alert variant="destructive">
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
+              <ApiErrorAlert message={serverError} />
             )}
 
             <div className="flex items-end gap-3">

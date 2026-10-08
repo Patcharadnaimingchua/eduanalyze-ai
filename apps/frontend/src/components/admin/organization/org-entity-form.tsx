@@ -7,7 +7,7 @@ import { orgEntitySchema, type OrgEntityFormValues } from '@/lib/validation/orga
 import { describeOrgWriteError } from './org-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export function OrgEntityForm({
@@ -40,9 +40,7 @@ export function OrgEntityForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
         {serverError && (
-          <Alert variant="destructive">
-            <AlertDescription>{serverError}</AlertDescription>
-          </Alert>
+          <ApiErrorAlert message={serverError} />
         )}
         <div className="flex flex-wrap items-start gap-3">
           <FormField

@@ -64,3 +64,35 @@ export function allowedScopeTargets(
 export function allowedLevels(allowed: AllowedScopeTargets): ScopeLevel[] {
   return SCOPE_LEVEL_ORDER.filter((level) => allowed[level].size > 0);
 }
+
+// Every active unit: what a SUPER_ADMIN, who has no scope limit, may name.
+export function allActiveScopeTargets(org: ScopeOrg): AllowedScopeTargets {
+  return {
+    FACULTY: new Set(org.faculties.filter((f) => f.isActive).map((f) => f.id)),
+    DEPARTMENT: new Set(org.departments.filter((d) => d.isActive).map((d) => d.id)),
+    PROGRAM: new Set(org.programs.filter((p) => p.isActive).map((p) => p.id)),
+  };
+}
+
+// Takes out the units the target user already holds, so the form never offers a
+// scope the API would answer with a conflict.
+export function excludeHeldScopes(
+  allowed: AllowedScopeTargets,
+  held: readonly Pick<UserScope, 'level' | 'facultyId' | 'departmentId' | 'programId'>[],
+): AllowedScopeTargets {
+  const result: AllowedScopeTargets = {
+    FACULTY: new Set(allowed.FACULTY),
+    DEPARTMENT: new Set(allowed.DEPARTMENT),
+    PROGRAM: new Set(allowed.PROGRAM),
+  };
+  for (const scope of held) {
+    const id =
+      scope.level === 'FACULTY'
+        ? scope.facultyId
+        : scope.level === 'DEPARTMENT'
+          ? scope.departmentId
+          : scope.programId;
+    if (id) result[scope.level].delete(id);
+  }
+  return result;
+}

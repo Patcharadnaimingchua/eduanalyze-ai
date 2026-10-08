@@ -21,6 +21,8 @@ import { UserScopesSection } from '@/components/admin/user-scopes-section';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { describeApiError } from '@/lib/describe-api-error';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
@@ -113,11 +115,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
       setConfirmingSuspend(false);
       refetch();
     } catch (err) {
-      const message =
-        (err as { response?: { status?: number; data?: { message?: string } } }).response?.status === 403
-          ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message ??
-            'ไม่มีสิทธิ์ดำเนินการนี้')
-          : 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      const message = describeApiError(err);
       setConfirmingSuspend(false);
       setServerError(message);
       toast.error(message);
@@ -218,9 +216,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
           </Reveal>
 
           {serverError && (
-            <Alert variant="destructive">
-              <AlertDescription>{serverError}</AlertDescription>
-            </Alert>
+            <ApiErrorAlert message={serverError} />
           )}
 
           {roleNeedsScope(userQuery.data.roles) && userQuery.data.scopes.length === 0 && (
@@ -285,6 +281,8 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
               userId={userId}
               scopes={userQuery.data.scopes}
               lockedReason={roleScopeLockReason}
+              requesterIsSuperAdmin={requesterIsSuperAdmin}
+              requesterScopes={ownUserQuery.data?.scopes ?? null}
               onChanged={refetch}
             />
             </div>
