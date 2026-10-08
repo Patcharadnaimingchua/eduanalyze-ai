@@ -106,7 +106,7 @@ export function StaffAddRecordForm({
                     <FormLabel>ภาคเรียน</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="min-h-11">
                           <SelectValue placeholder="เลือกภาคเรียน" />
                         </SelectTrigger>
                       </FormControl>
@@ -152,7 +152,7 @@ export function StaffAddRecordForm({
                     <FormLabel>เกรด</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="min-h-11">
                           <SelectValue placeholder="เลือกเกรด" />
                         </SelectTrigger>
                       </FormControl>

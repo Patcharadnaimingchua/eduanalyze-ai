@@ -226,7 +226,7 @@ export function CreateUserForm({
                         <FormLabel>บทบาท</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                           <FormControl>
-                            <SelectTrigger className="h-11">
+                            <SelectTrigger className="min-h-11">
                               <SelectValue placeholder="เลือกบทบาท" />
                             </SelectTrigger>
                           </FormControl>

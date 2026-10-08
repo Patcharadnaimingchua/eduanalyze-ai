@@ -255,7 +255,7 @@ function StaffStudentsContent() {
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">ชั้นปี</span>
                   <Select value={levelFilter} onValueChange={(v) => updateParams({ level: v })}>
-                    <SelectTrigger className="h-11" aria-label="ชั้นปี">
+                    <SelectTrigger className="min-h-11" aria-label="ชั้นปี">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -274,7 +274,7 @@ function StaffStudentsContent() {
                     value={sortKey}
                     onValueChange={(v) => updateParams({ sort: v === 'severity' ? null : v })}
                   >
-                    <SelectTrigger className="h-11" aria-label="เรียงตาม">
+                    <SelectTrigger className="min-h-11" aria-label="เรียงตาม">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +293,7 @@ function StaffStudentsContent() {
                       value={programFilter}
                       onValueChange={(v) => updateParams({ program: v })}
                     >
-                      <SelectTrigger className="h-11" aria-label="สาขา">
+                      <SelectTrigger className="min-h-11" aria-label="สาขา">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -310,7 +310,7 @@ function StaffStudentsContent() {
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">ปีที่เข้าศึกษา</span>
                   <Select value={admissionFilter} onValueChange={(v) => updateParams({ year: v })}>
-                    <SelectTrigger className="h-11" aria-label="ปีที่เข้าศึกษา">
+                    <SelectTrigger className="min-h-11" aria-label="ปีที่เข้าศึกษา">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

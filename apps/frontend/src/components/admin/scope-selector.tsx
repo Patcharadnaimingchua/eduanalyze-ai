@@ -29,7 +29,7 @@ import {
 // (Admin creating an account). A list with one entry is chosen for them and
 // shown as text; omitted, nothing is filtered.
 const TRIGGER_CLASS =
-  'flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 export function ScopeSelector({
   levelFieldName = 'level',
@@ -135,7 +135,7 @@ export function ScopeSelector({
                 value={field.value || undefined}
               >
                 <FormControl>
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className="min-h-11">
                     <SelectValue placeholder="เลือกระดับ" />
                   </SelectTrigger>
                 </FormControl>

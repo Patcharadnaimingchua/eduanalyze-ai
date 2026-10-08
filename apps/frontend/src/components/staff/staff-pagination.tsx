@@ -50,7 +50,7 @@ export function StaffPagination({
         <label className="flex items-center gap-2">
           แสดงแถว
           <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-            <SelectTrigger className="h-11 w-24" aria-label="จำนวนแถวต่อหน้า">
+            <SelectTrigger className="min-h-11 w-24" aria-label="จำนวนแถวต่อหน้า">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

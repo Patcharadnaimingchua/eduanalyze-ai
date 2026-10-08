@@ -41,7 +41,7 @@ export function StaffGradeSelect({
         onValueChange={(next) => setPending(next === value ? null : (next as Grade))}
         disabled={disabled}
       >
-        <SelectTrigger className="h-11 w-28 shrink-0" aria-label={`เกรดของ ${subject}`}>
+        <SelectTrigger className="min-h-11 w-28 shrink-0" aria-label={`เกรดของ ${subject}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

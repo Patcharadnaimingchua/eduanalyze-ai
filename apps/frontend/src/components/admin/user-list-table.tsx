@@ -159,7 +159,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
             value={roleFilter}
             onValueChange={(value) => setRoleFilter(value as Role | typeof ALL)}
           >
-            <SelectTrigger className="h-11 w-full sm:w-44" aria-label="กรองตามบทบาท">
+            <SelectTrigger className="min-h-11 w-full sm:w-44" aria-label="กรองตามบทบาท">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -174,7 +174,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-11 w-full sm:w-40" aria-label="กรองตามสถานะ">
+            <SelectTrigger className="min-h-11 w-full sm:w-40" aria-label="กรองตามสถานะ">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -190,7 +190,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
             </SelectContent>
           </Select>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="h-11 w-full sm:w-52" aria-label="กรองตามขอบเขต">
+            <SelectTrigger className="min-h-11 w-full sm:w-52" aria-label="กรองตามขอบเขต">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

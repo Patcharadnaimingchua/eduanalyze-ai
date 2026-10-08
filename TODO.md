@@ -111,3 +111,8 @@ Three commits delivered (2026-09-30):
 - **อาจารย์ที่ไม่มีขอบเขต:** ไม่ขึ้นใน `/admin/users` และ `userCounts.instructor` ของ `/dashboard/admin/scope-overview` ไม่นับ ส่วน `GET /users/instructors` คืนอาจารย์ทั้งระบบ (ตั้งใจ แก้แค่คำอธิบาย Swagger แล้ว)
 - ADMIN เพิ่ม STAFF ให้บัญชีที่ยังไม่มีบทบาท STAFF (เช่น อาจารย์) ไม่ได้แล้ว เพราะ ADMIN จัดการได้เฉพาะบัญชี STAFF ต้องให้ SUPER_ADMIN เพิ่มให้
 - หน้า `/admin/users/[id]` ยังไม่เคยดูผลจริงบนหน้าจอ (dialog ยืนยัน, ปุ่มสูง 44px, dark mode)
+
+### ข้อความที่ยังถูกตัดด้วย "…" (ตรวจ 2026-10-08, ยังไม่แก้)
+- `components/credit-checker/prerequisite-flow-node.tsx:45` — ชื่อรายวิชาในกราฟวิชาบังคับก่อนใช้ `truncate` (มี `title` แสดงเต็มเมื่อชี้เมาส์ แต่ไม่มีบนมือถือ)
+- `components/instructor/instructor-course-card.tsx` — มี `truncate` แต่ไม่มีหน้าไหนใช้ (รอลบ)
+- ไม่พบ `text-ellipsis` / `line-clamp` ที่อื่น (ที่มี `truncate` ใน Combobox/Select แก้แล้ว)

@@ -290,7 +290,7 @@ function StaffCurriculumContent() {
                   }
                   disabled={curricula.length === 0}
                 >
-                  <SelectTrigger className="h-11 text-left" aria-label="เลือกหลักสูตร">
+                  <SelectTrigger className="min-h-11 text-left" aria-label="เลือกหลักสูตร">
                     <SelectValue placeholder="เลือกหลักสูตร" />
                   </SelectTrigger>
                   <SelectContent>
@@ -486,7 +486,7 @@ function StaffCurriculumContent() {
                         value={categoryParam ?? ALL}
                         onValueChange={(v) => setParams({ categoryId: v, courseId: null })}
                       >
-                        <SelectTrigger className="h-11" aria-label="หมวดวิชา">
+                        <SelectTrigger className="min-h-11" aria-label="หมวดวิชา">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -509,7 +509,7 @@ function StaffCurriculumContent() {
                         value={instructorFilter === 'all' ? ALL : instructorFilter}
                         onValueChange={(v) => setParams({ instructor: v, courseId: null })}
                       >
-                        <SelectTrigger className="h-11" aria-label="สถานะอาจารย์">
+                        <SelectTrigger className="min-h-11" aria-label="สถานะอาจารย์">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

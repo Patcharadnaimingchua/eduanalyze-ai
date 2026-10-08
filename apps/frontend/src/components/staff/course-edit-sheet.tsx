@@ -201,7 +201,7 @@ export function CourseEditSheet({
                     onValueChange={(v) => field.onChange(v === 'true')}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="min-h-11">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
