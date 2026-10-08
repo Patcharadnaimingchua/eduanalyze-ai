@@ -180,7 +180,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 pb-24 md:p-8 md:pb-24">
           {skeleton ? (
             <LoadingGate ready={ready} skeleton={skeleton}>
               {children}
