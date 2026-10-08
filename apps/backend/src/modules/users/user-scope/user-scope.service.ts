@@ -13,6 +13,7 @@ import { FacultyService } from '../../organization/faculty/faculty.service';
 import { DepartmentService } from '../../organization/department/department.service';
 import { ProgramService } from '../../organization/program/program.service';
 import { UserService } from '../user/user.service';
+import { assertMayManageTarget } from '../user-management/admin-manage-target.util';
 
 @Injectable()
 export class UserScopeService {
@@ -98,6 +99,7 @@ export class UserScopeService {
       if (requester.userId === targetUserId) {
         throw new ForbiddenException('Cannot modify your own scope');
       }
+      await this.assertTargetManageable(targetUserId, requester);
 
       const ancestry = await this.scopeResolverService.resolveAncestryForLevel(
         level,
@@ -135,6 +137,7 @@ export class UserScopeService {
       if (requester.userId === scope.userId) {
         throw new ForbiddenException('Cannot modify your own scope');
       }
+      await this.assertTargetManageable(scope.userId, requester);
 
       const effectiveScopes = await this.scopeResolverService.getEffectiveScopes(
         requester.userId,
@@ -152,6 +155,20 @@ export class UserScopeService {
     }
 
     return this.revokeScope(scopeId);
+  }
+
+  private async assertTargetManageable(
+    targetUserId: string,
+    requester: RequestUser,
+  ) {
+    const rows = await this.prisma.userRole.findMany({
+      where: { userId: targetUserId },
+      select: { role: true },
+    });
+    assertMayManageTarget(
+      rows.map((row) => row.role),
+      requester,
+    );
   }
 
   private async assertUserVisible(targetUserId: string, requester: RequestUser) {

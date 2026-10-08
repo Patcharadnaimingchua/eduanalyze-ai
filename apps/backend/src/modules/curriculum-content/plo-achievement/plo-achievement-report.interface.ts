@@ -90,8 +90,9 @@ export interface CurriculumPloAchievementReport {
   studentCount: number;
   averageGpa: number | null;
   gpaSampleSize: number;
-  // gpa !== null && gpa < 2.0 — a confirmed, deliberately narrow product
-  // decision (see Phase 9 Chunk 4 plan). Excludes gpa === null students
+  // gpa !== null && gpaRiskLevel(gpa) !== 'NORMAL', i.e. GPA below
+  // GPA_WATCH_BELOW (1.75; CRITICAL below 1.50) — a confirmed, deliberately
+  // narrow product decision. Excludes gpa === null students
   // ("no data" is not the same as "at risk").
   studentsAtRiskCount: number;
   graduationReadyCount: number;

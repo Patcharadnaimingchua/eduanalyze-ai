@@ -18,6 +18,7 @@ import { UserService } from '../user/user.service';
 import { UserRoleService } from '../user-role/user-role.service';
 import { UserScopeService } from '../user-scope/user-scope.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { assertMayManageTarget } from './admin-manage-target.util';
 
 @Injectable()
 export class UserManagementService {
@@ -201,9 +202,38 @@ export class UserManagementService {
   }
 
   async updateActiveStatus(id: string, isActive: boolean, requester: RequestUser) {
+    // Enforced here, not just in the UI: nobody (SUPER_ADMIN included) may
+    // lock themselves out.
+    if (id === requester.userId) {
+      throw new ForbiddenException('ไม่สามารถระงับหรือเปลี่ยนสถานะบัญชีของตัวเองได้');
+    }
     // Reuses the same scope-filtered lookup as findOne — a natural 404 if
     // the target is outside the ADMIN's scope, no special-case branch.
-    await this.findOne(id, requester);
+    const target = await this.findOne(id, requester);
+    assertMayManageTarget(target.roles, requester);
+
+    // Suspending is account-wide, so an ADMIN may only do it when every
+    // scope the target holds sits inside the ADMIN's own scope.
+    if (!isActive && !requester.roles.includes('SUPER_ADMIN')) {
+      const effectiveScopes = await this.scopeResolverService.getEffectiveScopes(
+        requester.userId,
+      );
+      const allCovered = target.scopes.every((scope) =>
+        this.scopeResolverService.isCovered(
+          {
+            facultyId: scope.facultyId,
+            departmentId: scope.departmentId,
+            programId: scope.programId,
+          },
+          effectiveScopes,
+        ),
+      );
+      if (!allCovered) {
+        throw new ForbiddenException(
+          'ผู้ใช้นี้มีขอบเขตนอกเหนือขอบเขตของคุณ จึงระงับทั้งบัญชีไม่ได้ กรุณาถอดขอบเขตของคุณออกจากผู้ใช้นี้แทน',
+        );
+      }
+    }
     return this.userService.setActiveStatus(id, isActive);
   }
 
@@ -244,7 +274,8 @@ export class UserManagementService {
       );
     }
     // Natural 404 if the target is outside the ADMIN's scope.
-    await this.findOne(id, requester);
+    const target = await this.findOne(id, requester);
+    assertMayManageTarget(target.roles, requester);
 
     if (!requester.roles.includes('SUPER_ADMIN') && role !== 'STAFF') {
       throw new ForbiddenException('ADMIN may only manage the STAFF role');

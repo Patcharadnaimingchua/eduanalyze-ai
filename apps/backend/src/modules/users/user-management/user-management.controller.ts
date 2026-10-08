@@ -66,7 +66,7 @@ export class UserManagementController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary:
-      'List INSTRUCTOR-role users within the requester scope (STAFF-reachable, unlike GET /users) — for picking an instructor to assign to a course. Returns id/fullName/email only.',
+      'List every INSTRUCTOR-role user in the system (not filtered by the requester scope, since instructors are tied to courses via CourseInstructor rather than UserScope; STAFF-reachable, unlike GET /users) — for picking an instructor to assign to a course. Returns id/fullName/email only.',
   })
   @ApiResponse({ status: 200, description: 'List of instructors' })
   findInstructors() {
@@ -88,7 +88,10 @@ export class UserManagementController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Suspend or reactivate a user' })
+  @ApiOperation({
+    summary:
+      'Suspend or reactivate a user. Never your own account (403). ADMIN: STAFF-only targets, and suspending requires every scope of the target to be inside the ADMIN scope (403 otherwise).',
+  })
   @ApiResponse({ status: 200, description: 'Active status updated' })
   @ApiResponse({ status: 404, description: 'User not found or outside your scope' })
   updateActiveStatus(
