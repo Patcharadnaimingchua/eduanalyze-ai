@@ -4,16 +4,18 @@ import type {
   RadarPoint,
   RiskLevel,
 } from '@eduanalyze-ai/shared-types';
-import { formatFiveScale } from '@/lib/five-scale';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
 import {
+  CLOSE_SCORES_NOTE,
   LITTLE_DATA_LABEL,
+  formatGpa,
+  formatPloScore,
+  ploScoresAreClose,
   gpaBarPercent,
   hasLittleData,
   sortCohorts,
   summarizeLowestClos,
 } from '@/lib/admin-curriculum-quality';
-import { BADGE_TONE_CLASSES } from '@/lib/tone';
 import { STATUS_RULES } from '@/components/staff/staff-status';
 import { NO_DATA_LABEL } from '@/components/staff/student-reading';
 import { Badge } from '@/components/ui/badge';
@@ -25,31 +27,52 @@ import { Info, Layers } from 'lucide-react';
 
 const LEGEND_ORDER: RiskLevel[] = ['CRITICAL', 'WATCH', 'NORMAL'];
 
-// The same rules, in the same words, as the Staff pages (STATUS_RULES). Each
-// chip carries its name and rule in text; the colour only repeats it.
+// Each item is a dot (its colour repeats the tone) plus the status name and its
+// rule in text, so the meaning never rests on colour. Rules come from the same
+// STATUS_RULES the Staff pages print.
+const DOT_CLASSES: Record<'danger' | 'warning' | 'success' | 'neutral', string> = {
+  danger: 'bg-red-500',
+  warning: 'bg-amber-500',
+  success: 'bg-emerald-500',
+  neutral: 'bg-slate-400',
+};
+
+function LegendItem({
+  dot,
+  name,
+  rule,
+}: Readonly<{ dot: keyof typeof DOT_CLASSES; name: string; rule: string }>) {
+  return (
+    <li className="flex items-start gap-2 text-sm">
+      <span
+        aria-hidden="true"
+        className={cn('mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full', DOT_CLASSES[dot])}
+      />
+      <span>
+        <span className="font-semibold text-primary">{name}</span>
+        <span className="text-muted-foreground"> = {rule}</span>
+      </span>
+    </li>
+  );
+}
+
 export function StatusCriteria() {
   return (
     <Card>
-      <CardContent className="space-y-3 p-4 sm:p-5">
+      <CardContent className="space-y-2 p-4">
         <p className="text-sm font-semibold text-primary">
-          เกณฑ์สถานะนักศึกษา (ใช้เหมือนฝั่งเจ้าหน้าที่)
+          เกณฑ์สถานะนักศึกษา (เกณฑ์เดียวกันทั้งระบบ)
         </p>
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="flex flex-wrap gap-x-6 gap-y-2">
           {LEGEND_ORDER.map((level) => (
-            <li
+            <LegendItem
               key={level}
-              className={cn(
-                'rounded-md border px-3 py-2 text-sm',
-                BADGE_TONE_CLASSES[RISK_LEVEL_TONES[level]],
-              )}
-            >
-              <span className="font-semibold">{RISK_LEVEL_LABELS[level]}</span> ={' '}
-              {STATUS_RULES[level]}
-            </li>
+              dot={RISK_LEVEL_TONES[level]}
+              name={RISK_LEVEL_LABELS[level]}
+              rule={STATUS_RULES[level]}
+            />
           ))}
-          <li className={cn('rounded-md border px-3 py-2 text-sm', BADGE_TONE_CLASSES.neutral)}>
-            <span className="font-semibold">{NO_DATA_LABEL}</span> = {STATUS_RULES.NO_DATA}
-          </li>
+          <LegendItem dot="neutral" name={NO_DATA_LABEL} rule={STATUS_RULES.NO_DATA} />
         </ul>
       </CardContent>
     </Card>
@@ -80,6 +103,9 @@ export function LowestSection({
                 <h4 className="text-sm font-semibold text-muted-foreground">
                   PLO ที่ต่ำที่สุด (คะแนนเต็ม 5)
                 </h4>
+                {ploScoresAreClose(plos) && (
+                  <p className="text-xs text-muted-foreground">{CLOSE_SCORES_NOTE}</p>
+                )}
                 <ol className="space-y-2">
                   {plos.map((plo, index) => (
                     <li
@@ -91,7 +117,7 @@ export function LowestSection({
                         {plo.name}
                       </span>
                       <Badge tone="warning" className="tabular-nums">
-                        เฉลี่ย {formatFiveScale(plo.value)} / 5.0
+                        เฉลี่ย {formatPloScore(plo.value)} / 5.00
                       </Badge>
                     </li>
                   ))}
@@ -114,7 +140,7 @@ export function LowestSection({
                         {clo.courseCode} {clo.courseName}
                       </span>
                       <Badge tone="warning" className="tabular-nums">
-                        {Math.round(clo.achievementPercent)}% ได้ B ขึ้นไป
+                        {clo.achievementPercent.toFixed(2)}% ได้ B ขึ้นไป
                       </Badge>
                     </li>
                   ))}
@@ -147,7 +173,7 @@ function CohortRow({ cohort }: Readonly<{ cohort: CohortPloAchievementReport }>)
       <div className="flex items-baseline justify-between gap-3 text-sm">
         <span className="text-muted-foreground">GPA เฉลี่ยรุ่น</span>
         <span className="font-semibold tabular-nums text-primary">
-          {cohort.averageGpa === null ? NO_DATA_LABEL : `${cohort.averageGpa.toFixed(2)} / 4.00`}
+          {cohort.averageGpa === null ? NO_DATA_LABEL : `${formatGpa(cohort.averageGpa)} / 4.00`}
         </span>
       </div>
       <Progress

@@ -4,7 +4,13 @@ import { Progress } from '@/components/ui/progress';
 
 // Same 0–5 scale as the radar it sits under, so a PLO never reads as
 // "2.5" on the chart and "50%" in the list right below it.
-export function PloProgressTable({ radar }: Readonly<{ radar: RadarPoint[] }>) {
+export function PloProgressTable({
+  radar,
+  formatValue = formatFiveScale,
+}: Readonly<{
+  radar: RadarPoint[];
+  formatValue?: (percent: number | null, noDataLabel?: string) => string;
+}>) {
   return (
     <ul className="space-y-4">
       {radar.map((plo) => (
@@ -15,7 +21,7 @@ export function PloProgressTable({ radar }: Readonly<{ radar: RadarPoint[] }>) {
               <span className="text-muted-foreground">{plo.name}</span>
             </span>
             <span className="shrink-0 font-medium tabular-nums text-primary">
-              {formatFiveScale(plo.value, 'ไม่มีข้อมูล')}
+              {formatValue(plo.value, 'ไม่มีข้อมูล')}
               {plo.value !== null && <span className="font-normal text-muted-foreground"> / 5.0</span>}
             </span>
           </div>

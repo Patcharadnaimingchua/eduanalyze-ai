@@ -10,14 +10,26 @@ import { PloProgressTable } from './plo-progress-table';
 
 const COMPACT_SIZE = 260;
 
-export function PloRadarCard({ radar }: Readonly<{ radar: RadarPoint[] }>) {
+export function PloRadarCard({
+  radar,
+  size = COMPACT_SIZE,
+  formatValue,
+  labelClassName,
+}: Readonly<{
+  radar: RadarPoint[];
+  size?: number;
+  formatValue?: (percent: number | null, noDataLabel?: string) => string;
+  labelClassName?: string;
+}>) {
   const [showTable, setShowTable] = useState(false);
   const tableId = useId();
 
   return (
     <PloRadarChart
       radar={radar}
-      size={COMPACT_SIZE}
+      size={size}
+      formatValue={formatValue}
+      labelClassName={labelClassName}
       title="คะแนนเฉลี่ยราย PLO (เต็ม 5)"
       footer={
         <div className="space-y-4 border-t pt-4">
@@ -35,7 +47,7 @@ export function PloRadarCard({ radar }: Readonly<{ radar: RadarPoint[] }>) {
           </Button>
           {showTable && (
             <div id={tableId}>
-              <PloProgressTable radar={radar} />
+              <PloProgressTable radar={radar} formatValue={formatValue} />
             </div>
           )}
         </div>

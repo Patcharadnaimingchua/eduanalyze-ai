@@ -4,10 +4,14 @@ import type {
   RadarPoint,
 } from '@eduanalyze-ai/shared-types';
 import {
+  CLOSE_SCORES_NOTE,
+  formatGpa,
+  formatPloScore,
   gpaBarPercent,
   hasAnyPloData,
   hasLittleData,
   lowestPlos,
+  ploScoresAreClose,
   sortCohorts,
   summarizeLowestClos,
 } from './admin-curriculum-quality';
@@ -103,5 +107,53 @@ describe('hasAnyPloData', () => {
     expect(hasAnyPloData([plo('A', null)])).toBe(false);
     expect(hasAnyPloData([plo('A', null), plo('B', 0)])).toBe(true);
     expect(hasAnyPloData([])).toBe(false);
+  });
+});
+
+describe('formatGpa', () => {
+  it('always has two decimals', () => {
+    expect(formatGpa(2.5)).toBe('2.50');
+    expect(formatGpa(3)).toBe('3.00');
+    expect(formatGpa(2.345)).toBe('2.35');
+  });
+  it('shows the no-data label for null, never 0.00', () => {
+    expect(formatGpa(null)).toBe('—');
+    expect(formatGpa(null, 'ยังไม่มีข้อมูล')).toBe('ยังไม่มีข้อมูล');
+  });
+});
+
+describe('formatPloScore', () => {
+  it('writes the five-point score with two decimals', () => {
+    expect(formatPloScore(60)).toBe('3.00');
+    expect(formatPloScore(61.2)).toBe('3.06');
+    expect(formatPloScore(0)).toBe('0.00');
+    expect(formatPloScore(null)).toBe('—');
+  });
+});
+
+describe('ranking uses the raw value, not the rounded text', () => {
+  it('orders two PLOs that print the same', () => {
+    // 60.21 and 60.24 percent both print 3.01 on the five-point scale
+    const radar = [plo('PLO1', 60.24), plo('PLO2', 60.21)];
+    expect(formatPloScore(60.24)).toBe(formatPloScore(60.21));
+    expect(lowestPlos(radar).map((p) => p.code)).toEqual(['PLO2', 'PLO1']);
+  });
+});
+
+describe('ploScoresAreClose', () => {
+  it('is true when the listed scores differ by less than 0.05 points', () => {
+    expect(ploScoresAreClose([plo('A', 60), plo('B', 60.5), plo('C', 60.9)])).toBe(true);
+  });
+  it('is false at 0.05 points or more', () => {
+    expect(ploScoresAreClose([plo('A', 60), plo('B', 61)])).toBe(false); // exactly 0.05
+    expect(ploScoresAreClose([plo('A', 50), plo('B', 70)])).toBe(false);
+  });
+  it('needs at least two measured scores', () => {
+    expect(ploScoresAreClose([plo('A', 60)])).toBe(false);
+    expect(ploScoresAreClose([plo('A', 60), plo('B', null)])).toBe(false);
+    expect(ploScoresAreClose([])).toBe(false);
+  });
+  it('has the note text the page shows', () => {
+    expect(CLOSE_SCORES_NOTE).toContain('ใกล้เคียงกัน');
   });
 });

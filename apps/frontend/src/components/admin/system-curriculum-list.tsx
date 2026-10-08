@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FolderOpen, Users } from 'lucide-react';
 import type { SystemCurriculumEntry } from '@eduanalyze-ai/shared-types';
+import { formatGpa } from '@/lib/admin-curriculum-quality';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -47,7 +48,7 @@ function CurriculumRow({ curriculum }: { curriculum: SystemCurriculumEntry }) {
               <Badge tone="success">{curriculum.studentCount} นักศึกษา</Badge>
               <Badge tone="neutral">
                 GPA เฉลี่ย{' '}
-                {curriculum.averageGpa === null ? '—' : curriculum.averageGpa.toFixed(2)}
+                {formatGpa(curriculum.averageGpa)}
               </Badge>
               <Badge tone="neutral">
                 PLO เฉลี่ย{' '}

@@ -56,3 +56,26 @@ export function sortCohorts(
 export function hasAnyPloData(radar: readonly RadarPoint[]): boolean {
   return radar.some((plo) => plo.value !== null);
 }
+
+// GPA is always written with two decimals ("2.50"), wherever /admin/** shows one.
+export function formatGpa(gpa: number | null, noDataLabel = '—'): string {
+  return gpa === null ? noDataLabel : gpa.toFixed(2);
+}
+
+// A PLO value (0-100 percent, stored raw) as the five-point score with two
+// decimals. Only the text is rounded; ranking always uses the raw value.
+export function formatPloScore(percent: number | null, noDataLabel = '—'): string {
+  return percent === null ? noDataLabel : ((percent / 100) * 5).toFixed(2);
+}
+
+export const CLOSE_SCORES_NOTE = 'คะแนนต่ำสุดใกล้เคียงกัน ลำดับด้านล่างใช้อ้างอิงเท่านั้น';
+const CLOSE_SCORE_SPREAD = 0.05;
+
+// True when the listed PLOs span less than 0.05 points on the five-point scale,
+// so their order is not a meaningful ranking.
+export function ploScoresAreClose(plos: readonly RadarPoint[]): boolean {
+  const values = plos.map((p) => p.value).filter((v): v is number => v !== null);
+  if (values.length < 2) return false;
+  const spread = ((Math.max(...values) - Math.min(...values)) / 100) * 5;
+  return spread < CLOSE_SCORE_SPREAD;
+}

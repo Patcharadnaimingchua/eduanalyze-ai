@@ -8,6 +8,8 @@ import { findCurriculum, placeOf } from '@/lib/admin-curricula';
 import {
   LITTLE_DATA_LABEL,
   GPA_SCALE_MAX,
+  formatGpa,
+  formatPloScore,
   hasAnyPloData,
   hasLittleData,
   lowestPlos,
@@ -161,7 +163,7 @@ function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId
                   report.averageGpa === null ? (
                     <span className="text-lg font-medium">ยังไม่มีข้อมูล</span>
                   ) : (
-                    <AnimatedNumber value={report.averageGpa} decimals={2} />
+                    <AnimatedNumber value={report.averageGpa} decimals={2} format={formatGpa} />
                   )
                 }
                 suffix={report.averageGpa === null ? undefined : `/ ${GPA_SCALE_MAX.toFixed(2)}`}
@@ -208,7 +210,12 @@ function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId
             <div className="space-y-4 xl:col-span-2">
               <RevealOnScroll>
                 {hasAnyPloData(report.radar) ? (
-                  <PloRadarCard radar={report.radar} />
+                  <PloRadarCard
+                    radar={report.radar}
+                    size={440}
+                    formatValue={formatPloScore}
+                    labelClassName="fill-primary text-[13px] font-medium"
+                  />
                 ) : (
                   <Card>
                     <CardContent className="pt-6">

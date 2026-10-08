@@ -27,6 +27,8 @@ export function PloRadarChart({
   footer,
   selectedPloId,
   onSelectPlo,
+  formatValue = formatFiveScale,
+  labelClassName = 'fill-primary text-[11px] font-medium',
 }: {
   radar: RadarPoint[];
   size?: number;
@@ -44,6 +46,10 @@ export function PloRadarChart({
   // click target alongside its pill-row selector.
   selectedPloId?: string | null;
   onSelectPlo?: (ploId: string) => void;
+  // How a PLO value is written in the labels and tooltips; the student pages
+  // keep the one-decimal five-point scale.
+  formatValue?: (percent: number | null, noDataLabel?: string) => string;
+  labelClassName?: string;
 }) {
   const total = radar.length;
   const center = size / 2;
@@ -89,7 +95,12 @@ export function PloRadarChart({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          className="h-auto max-w-full"
+        >
           {/* Background rings */}
           {RING_FRACTIONS.map((fraction) => {
             const ringPoints = Array.from({ length: total }, (_, i) =>
@@ -162,7 +173,7 @@ export function PloRadarChart({
                 />
               </TooltipTrigger>
               <TooltipContent>
-                {radar[i].code}: {formatFiveScale(radar[i].value, 'ไม่มีข้อมูล')}
+                {radar[i].code}: {formatValue(radar[i].value, 'ไม่มีข้อมูล')}
               </TooltipContent>
             </Tooltip>
           ))}
@@ -201,13 +212,13 @@ export function PloRadarChart({
                 y={labelPos.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-primary text-[11px] font-medium"
+                className={labelClassName}
               >
                 <tspan x={labelPos.x} dy="-0.3em">
                   {plo.code}
                 </tspan>
                 <tspan x={labelPos.x} dy="1.2em">
-                  {formatFiveScale(plo.value, 'ไม่มีข้อมูล')}
+                  {formatValue(plo.value, 'ไม่มีข้อมูล')}
                 </tspan>
               </text>
             );
