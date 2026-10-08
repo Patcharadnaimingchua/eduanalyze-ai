@@ -1,7 +1,9 @@
 import type {
   AdminScopeCurriculumEntry,
+  AdminScopeOverviewReport,
   AdminScopeProgram,
   CurriculumDataState,
+  SystemCurriculumOverviewReport,
 } from '@eduanalyze-ai/shared-types';
 
 // What the Admin curriculum pages derive from GET /dashboard/admin/scope-overview,
@@ -74,4 +76,44 @@ export function findCurriculum(
   curriculumId: string,
 ): AdminScopeCurriculumEntry | null {
   return entries.find((entry) => entry.curriculumId === curriculumId) ?? null;
+}
+
+// What both curriculum pages render, whichever API fed them: an Admin's
+// scope overview or the Super Admin's system-wide one.
+export interface CurriculumDirectory {
+  entries: AdminScopeCurriculumEntry[];
+  // Empty for the Super Admin: the system report carries no department or
+  // faculty names, so the pages show no place line for them.
+  programs: AdminScopeProgram[];
+  // Admin: 0 means no scope was granted. Super Admin: unscoped, so this is
+  // the number of curricula (0 means the system has none).
+  isEmpty: boolean;
+}
+
+export function directoryFromScopeOverview(report: AdminScopeOverviewReport): CurriculumDirectory {
+  return {
+    entries: report.curricula.entries,
+    programs: report.scope.programs,
+    isEmpty: report.scope.programCount === 0,
+  };
+}
+
+export function directoryFromSystemOverview(
+  report: SystemCurriculumOverviewReport,
+): CurriculumDirectory {
+  return {
+    entries: report.curricula.map((c) => ({
+      curriculumId: c.curriculumId,
+      version: c.version,
+      effectiveYear: c.effectiveYear,
+      programCode: c.programCode,
+      programName: c.programName,
+      dataState: c.dataState,
+      studentCount: c.studentCount,
+      courseCount: c.courseCount,
+      ploCount: c.ploCount,
+    })),
+    programs: [],
+    isEmpty: report.curricula.length === 0,
+  };
 }

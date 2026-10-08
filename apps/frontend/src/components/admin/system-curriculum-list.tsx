@@ -7,11 +7,10 @@ import { formatGpa } from '@/lib/admin-curriculum-quality';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// No per-curriculum route exists (org-tree.tsx has no query-param
-// deep-link support) — every row links to the org structure page itself,
-// where the curriculum lives inside its program's CurriculumPanel. Still
-// a real <a> (keyboard-reachable, right-click "open in new tab", announced
-// as a link by a screen reader), just not a focused deep link.
+// A curriculum with data opens its quality page. One nobody has built yet
+// has no quality to show, so it links to the org structure page instead,
+// where it lives inside its program's CurriculumPanel (org-tree.tsx has no
+// deep link, so that is not a focused one).
 const ORG_STRUCTURE_HREF = '/admin/organization';
 
 // Three tiers, not one empty state. A curriculum nobody has enrolled in
@@ -34,8 +33,8 @@ function CurriculumRow({ curriculum }: { curriculum: SystemCurriculumEntry }) {
   return (
     <li>
       <Link
-        href={ORG_STRUCTURE_HREF}
-        className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm transition hover:bg-slate-100"
+        href={`/admin/curriculum/${curriculum.curriculumId}`}
+        className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm transition hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-800"
       >
         <span className="min-w-0">
           <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
@@ -92,7 +91,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <CardContent>
           {active.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users size={16} className="shrink-0 text-slate-300" aria-hidden="true" />
+              <Users size={16} className="shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
               ยังไม่มีหลักสูตรใดที่มีนักศึกษาลงทะเบียน
             </p>
           ) : (
@@ -109,7 +108,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
+              <Users size={18} className="shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
               จัดทำหลักสูตรแล้ว แต่ยังไม่มีนักศึกษา ({structureOnly.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -130,7 +129,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FolderOpen size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
+              <FolderOpen size={18} className="shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
               ยังไม่ได้จัดทำหลักสูตร ({empty.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -143,7 +142,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
                 <li key={curriculum.curriculumId}>
                   <Link
                     href={ORG_STRUCTURE_HREF}
-                    className="block rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100"
+                    className="block rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-800"
                   >
                     <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
                     ฉบับ {curriculum.version}

@@ -51,11 +51,12 @@ export function OrgNodeRow({
         </button>
         <div className="flex items-start gap-1">
           {!editing && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
+            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setEditing(true)}>
               แก้ไข
             </Button>
           )}
           <DeactivateButton
+            itemLabel={`${levelLabel}${item.name}`}
             blockedReason={
               childCount > 0 ? `ยังมี ${childCount} ${childLabel}ที่ใช้งานอยู่` : undefined
             }
@@ -95,7 +96,7 @@ export function AddOrgEntity({
 
   if (!open) {
     return (
-      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setOpen(true)}>
         + {label}
       </Button>
     );

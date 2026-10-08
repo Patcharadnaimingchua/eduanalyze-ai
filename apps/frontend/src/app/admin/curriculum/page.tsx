@@ -1,11 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Search, ShieldCheck } from 'lucide-react';
-import { fetchAdminScopeOverview } from '@/lib/api/admin';
 import { countByTab, filterCurricula, type CurriculumTab } from '@/lib/admin-curricula';
 import { useAuth } from '@/lib/auth-context';
+import { useCurriculumDirectory } from '@/lib/use-curriculum-directory';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import { AdminCurriculumCards, CurriculumTabs } from '@/components/admin/admin-curriculum-cards';
@@ -20,7 +19,7 @@ import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 export default function AdminCurriculumListPage() {
   return (
     <ProtectedRoute>
-      <RequireRole role="ADMIN">
+      <RequireRole role={['ADMIN', 'SUPER_ADMIN']}>
         <AdminCurriculumListContent />
       </RequireRole>
     </ProtectedRoute>
@@ -31,12 +30,10 @@ function AdminCurriculumListContent() {
   const { user } = useAuth();
   const [tab, setTab] = useState<CurriculumTab>('ALL');
   const [search, setSearch] = useState('');
-  const overviewQuery = useQuery({
-    queryKey: ['admin-scope-overview'],
-    queryFn: fetchAdminScopeOverview,
-  });
+  const isSuperAdmin = user?.roles.includes('SUPER_ADMIN') ?? false;
+  const overviewQuery = useCurriculumDirectory(isSuperAdmin);
   const data = overviewQuery.data;
-  const entries = data?.curricula.entries;
+  const entries = data?.entries;
   const tabCounts = useMemo(() => countByTab(entries ?? []), [entries]);
   const visible = useMemo(
     () => filterCurricula(entries ?? [], tab, search),
@@ -55,25 +52,33 @@ function AdminCurriculumListContent() {
   }
 
   return (
-    <DashboardShell role="ADMIN" identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell role={isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'} identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
           title="คุณภาพหลักสูตร"
-          description="เลือกหลักสูตรในขอบเขตที่คุณดูแลเพื่อดูผลลัพธ์การเรียนรู้ (PLO) และสถานะนักศึกษา"
+          description={
+            isSuperAdmin
+              ? 'เลือกหลักสูตรเพื่อดูผลลัพธ์การเรียนรู้ (PLO) และสถานะนักศึกษา'
+              : 'เลือกหลักสูตรในขอบเขตที่คุณดูแลเพื่อดูผลลัพธ์การเรียนรู้ (PLO) และสถานะนักศึกษา'
+          }
         />
       </Reveal>
 
       {overviewQuery.isLoading && <StatCardsSkeleton count={3} />}
       {overviewQuery.isError && <PageLoadError onRetry={() => overviewQuery.refetch()} />}
 
-      {data && data.scope.programCount === 0 && (
+      {data?.isEmpty && (
         <EmptyState
           icon={ShieldCheck}
-          description="บัญชีนี้ยังไม่ได้รับมอบขอบเขต (คณะ/ภาควิชา/สาขา) ใดๆ — ติดต่อผู้ดูแลระบบสูงสุดเพื่อขอมอบขอบเขต"
+          description={
+            isSuperAdmin
+              ? 'ยังไม่มีหลักสูตรในระบบ'
+              : 'บัญชีนี้ยังไม่ได้รับมอบขอบเขต (คณะ/ภาควิชา/สาขา) ใดๆ — ติดต่อผู้ดูแลระบบสูงสุดเพื่อขอมอบขอบเขต'
+          }
         />
       )}
 
-      {data && data.scope.programCount > 0 && (
+      {data && !data.isEmpty && (
         <Reveal index={1}>
           <div className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -94,7 +99,7 @@ function AdminCurriculumListContent() {
             </div>
             <AdminCurriculumCards
               entries={visible}
-              programs={data.scope.programs}
+              programs={data.programs}
               filtered={tab !== 'ALL' || search.trim() !== ''}
             />
           </div>

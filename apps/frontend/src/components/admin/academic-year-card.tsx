@@ -24,6 +24,7 @@ import { useToast } from '@/lib/toast-context';
 import { Input } from '@/components/ui/input';
 import { describeApiError } from '@/lib/describe-api-error';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
+import { DeactivateConfirm } from '@/components/admin/deactivate-confirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,6 +51,7 @@ export function AcademicYearCard({
   const [serverError, setServerError] = useState<string | null>(null);
 
   const sortedSemesters = [...semesters].sort((a, b) => TERM_ORDER[a.term] - TERM_ORDER[b.term]);
+  const confirmingSemester = semesters.find((s) => s.id === confirmingSemesterId);
   const usedTerms = new Set(semesters.map((s) => s.term));
   const availableTerms = (Object.keys(SEMESTER_TERM_LABELS) as Semester['term'][]).filter(
     (term) => !usedTerms.has(term),
@@ -75,13 +77,13 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await deleteAcademicYear(academicYear.id);
-      toast.success('ลบปีการศึกษาแล้ว');
+      toast.success('ปิดใช้งานปีการศึกษาแล้ว');
       onChanged();
     } catch (error) {
-      setConfirmingYearDelete(false);
-      setServerError(describeApiError(error, { 409: 'ลบไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้' }));
+      setServerError(describeApiError(error, { 409: 'ปิดใช้งานไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้' }));
     } finally {
       setBusyId(null);
+      setConfirmingYearDelete(false);
     }
   }
 
@@ -90,13 +92,13 @@ export function AcademicYearCard({
     setServerError(null);
     try {
       await deleteSemester(id);
-      toast.success('ลบภาคเรียนแล้ว');
+      toast.success('ปิดใช้งานภาคเรียนแล้ว');
       onChanged();
     } catch (error) {
-      setConfirmingSemesterId(null);
-      setServerError(describeApiError(error, { 409: 'ลบไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่' }));
+      setServerError(describeApiError(error, { 409: 'ปิดใช้งานไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่' }));
     } finally {
       setBusyId(null);
+      setConfirmingSemesterId(null);
     }
   }
 
@@ -187,10 +189,10 @@ export function AcademicYearCard({
                   </FormItem>
                 )}
               />
-              <Button type="submit" size="sm" disabled={yearEditForm.formState.isSubmitting}>
+              <Button type="submit" size="sm" className="min-h-11" disabled={yearEditForm.formState.isSubmitting}>
                 บันทึก
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditingYear(false)}>
+              <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setEditingYear(false)}>
                 ยกเลิก
               </Button>
             </form>
@@ -201,42 +203,20 @@ export function AcademicYearCard({
             {isCurrent && <Badge tone="success">ปีปัจจุบัน</Badge>}
           </div>
         )}
-        {confirmingYearDelete ? (
+        {!editingYear && (
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              disabled={busyId === academicYear.id}
-              onClick={handleDeleteYear}
-            >
-              ยืนยันลบ
+            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={startEditingYear}>
+              แก้ไข
             </Button>
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmingYearDelete(false)}
+              variant="ghost"
+              size="sm" className="min-h-11"
+              onClick={() => setConfirmingYearDelete(true)}
             >
-              ยกเลิก
+              ปิดใช้งานปีการศึกษา
             </Button>
           </div>
-        ) : (
-          !editingYear && (
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={startEditingYear}>
-                แก้ไข
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmingYearDelete(true)}
-              >
-                ลบปีการศึกษา
-              </Button>
-            </div>
-          )
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -292,7 +272,7 @@ export function AcademicYearCard({
                         />
                         <Button
                           type="submit"
-                          size="sm"
+                          size="sm" className="min-h-11"
                           disabled={semesterEditForm.formState.isSubmitting}
                         >
                           บันทึก
@@ -300,7 +280,7 @@ export function AcademicYearCard({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="sm" className="min-h-11"
                           onClick={() => setEditingSemesterId(null)}
                         >
                           ยกเลิก
@@ -310,46 +290,24 @@ export function AcademicYearCard({
                   ) : (
                     <>
                       <span>{SEMESTER_TERM_LABELS[semester.term]}</span>
-                      {confirmingSemesterId === semester.id ? (
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            disabled={busyId === semester.id}
-                            onClick={() => handleDeleteSemester(semester.id)}
-                          >
-                            ยืนยัน
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setConfirmingSemesterId(null)}
-                          >
-                            ยกเลิก
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => startEditingSemester(semester)}
-                          >
-                            แก้ไข
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConfirmingSemesterId(semester.id)}
-                          >
-                            ลบ
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm" className="min-h-11"
+                          onClick={() => startEditingSemester(semester)}
+                        >
+                          แก้ไข
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm" className="min-h-11"
+                          onClick={() => setConfirmingSemesterId(semester.id)}
+                        >
+                          ปิดใช้งาน
+                        </Button>
+                      </div>
                     </>
                   )}
                 </li>
@@ -362,7 +320,7 @@ export function AcademicYearCard({
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="sm" className="min-h-11"
             disabled={busyId === academicYear.id}
             onClick={fillMissingSemesters}
           >
@@ -399,13 +357,27 @@ export function AcademicYearCard({
                   </FormItem>
                 )}
               />
-              <Button type="submit" variant="outline" size="sm" disabled={form.formState.isSubmitting}>
+              <Button type="submit" variant="outline" size="sm" className="min-h-11" disabled={form.formState.isSubmitting}>
                 เพิ่มภาคเรียน
               </Button>
             </form>
           </Form>
         )}
       </CardContent>
+      <DeactivateConfirm
+        open={confirmingYearDelete}
+        onOpenChange={setConfirmingYearDelete}
+        itemLabel={`ปีการศึกษา ${academicYear.year}`}
+        busy={busyId === academicYear.id}
+        onConfirm={handleDeleteYear}
+      />
+      <DeactivateConfirm
+        open={confirmingSemesterId !== null}
+        onOpenChange={(open) => !open && setConfirmingSemesterId(null)}
+        itemLabel={`${confirmingSemester ? SEMESTER_TERM_LABELS[confirmingSemester.term] : 'ภาคเรียน'} ปีการศึกษา ${academicYear.year}`}
+        busy={busyId !== null && busyId === confirmingSemesterId}
+        onConfirm={() => confirmingSemesterId && handleDeleteSemester(confirmingSemesterId)}
+      />
     </Card>
   );
 }

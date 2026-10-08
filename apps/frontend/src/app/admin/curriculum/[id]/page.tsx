@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ArrowLeft, CheckCircle2, GraduationCap, Sigma, Users } from 'lucide-react';
-import { fetchAdminScopeOverview, fetchCurriculumQuality } from '@/lib/api/admin';
+import { fetchCurriculumQuality } from '@/lib/api/admin';
 import { findCurriculum, placeOf } from '@/lib/admin-curricula';
 import {
   LITTLE_DATA_LABEL,
@@ -15,6 +15,7 @@ import {
   lowestPlos,
 } from '@/lib/admin-curriculum-quality';
 import { useAuth } from '@/lib/auth-context';
+import { useCurriculumDirectory } from '@/lib/use-curriculum-directory';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { RequireRole } from '@/components/auth/require-role';
 import {
@@ -37,7 +38,7 @@ import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
 export default function AdminCurriculumQualityPage({ params }: { params: { id: string } }) {
   return (
     <ProtectedRoute>
-      <RequireRole role="ADMIN">
+      <RequireRole role={['ADMIN', 'SUPER_ADMIN']}>
         <AdminCurriculumQualityContent curriculumId={params.id} />
       </RequireRole>
     </ProtectedRoute>
@@ -46,10 +47,8 @@ export default function AdminCurriculumQualityPage({ params }: { params: { id: s
 
 function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId: string }>) {
   const { user } = useAuth();
-  const overviewQuery = useQuery({
-    queryKey: ['admin-scope-overview'],
-    queryFn: fetchAdminScopeOverview,
-  });
+  const isSuperAdmin = user?.roles.includes('SUPER_ADMIN') ?? false;
+  const overviewQuery = useCurriculumDirectory(isSuperAdmin);
   const qualityQuery = useQuery({
     queryKey: ['admin-curriculum-quality', curriculumId],
     queryFn: () => fetchCurriculumQuality(curriculumId),
@@ -68,15 +67,15 @@ function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId
   }
 
   const overview = overviewQuery.data;
-  const entry = overview ? findCurriculum(overview.curricula.entries, curriculumId) : null;
-  const place = entry && overview ? placeOf(entry, overview.scope.programs) : null;
+  const entry = overview ? findCurriculum(overview.entries, curriculumId) : null;
+  const place = entry && overview ? placeOf(entry, overview.programs) : null;
   const report = qualityQuery.data;
   // The overview lists only what the requester's scope covers, so a curriculum
   // missing from it is outside that scope however the address got here.
   const outOfScope = overview !== undefined && entry === null;
 
   return (
-    <DashboardShell role="ADMIN" identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell role={isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'} identityLabel={user.email} fullName={user.fullName}>
       <Link
         href="/admin/curriculum"
         className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
@@ -85,7 +84,11 @@ function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId
         กลับไปรายการหลักสูตร
       </Link>
 
-      {outOfScope && <PageLoadError message="ไม่พบหลักสูตรนี้ในขอบเขตที่คุณดูแล" />}
+      {outOfScope && (
+        <PageLoadError
+          message={isSuperAdmin ? 'ไม่พบหลักสูตรนี้' : 'ไม่พบหลักสูตรนี้ในขอบเขตที่คุณดูแล'}
+        />
+      )}
       {!outOfScope && qualityQuery.isError && (
         <PageLoadError
           message="ไม่พบหลักสูตร หรือไม่มีสิทธิ์เข้าถึงข้อมูลคุณภาพของหลักสูตรนี้"

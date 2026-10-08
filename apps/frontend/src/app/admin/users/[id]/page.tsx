@@ -220,7 +220,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
           )}
 
           {roleNeedsScope(userQuery.data.roles) && userQuery.data.scopes.length === 0 && (
-            <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+            <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
               <AlertDescription>
                 ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ — {MISSING_SCOPE_WARNING}{' '}
                 <a href="#user-scopes" className="font-medium underline">

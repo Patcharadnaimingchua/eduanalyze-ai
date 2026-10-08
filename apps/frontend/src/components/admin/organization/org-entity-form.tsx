@@ -71,10 +71,10 @@ export function OrgEntityForm({
           />
         </div>
         <div className="flex gap-2">
-          <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
+          <Button type="submit" size="sm" className="min-h-11" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? 'กำลังบันทึก...' : submitLabel}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onCancel}>
             ยกเลิก
           </Button>
         </div>

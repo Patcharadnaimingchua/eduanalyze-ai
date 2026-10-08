@@ -165,12 +165,12 @@ export function OrgTree() {
           placeholder="ค้นหาชื่อ/รหัส คณะ ภาควิชา สาขา หรือฉบับหลักสูตร..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-9 max-w-sm"
+          className="h-11 max-w-sm"
         />
-        <Button type="button" variant="outline" size="sm" onClick={expandAll}>
+        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={expandAll}>
           ขยายทั้งหมด
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(new Set())}>
+        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setExpanded(new Set())}>
           ยุบทั้งหมด
         </Button>
       </div>

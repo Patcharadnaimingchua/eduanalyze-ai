@@ -103,7 +103,7 @@ function AcademicYearsAdminContent() {
       {openForm === 'bulk' && (
         <Reveal className="space-y-2">
           <BulkAcademicYearForm onCreated={refetchAll} />
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOpenForm(null)}>
+          <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setOpenForm(null)}>
             ปิดฟอร์ม
           </Button>
         </Reveal>
@@ -152,7 +152,7 @@ function AcademicYearsAdminContent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="gap-1.5"
+                      className="min-h-11 gap-1.5"
                       onClick={() => setOpenForm('single')}
                     >
                       <Plus size={16} />

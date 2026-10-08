@@ -2,14 +2,18 @@
 
 import { useState } from 'react';
 import { describeOrgWriteError } from './org-errors';
+import { DeactivateConfirm } from '@/components/admin/deactivate-confirm';
 import { Button } from '@/components/ui/button';
 
 // Client-side blockedReason is UX only; the backend's 409 is the authority.
 export function DeactivateButton({
+  itemLabel,
   blockedReason,
   conflictMessage,
   onConfirm,
 }: {
+  // Names the item in the dialog, e.g. "คณะวิศวกรรมศาสตร์".
+  itemLabel: string;
   blockedReason?: string;
   conflictMessage: string;
   onConfirm: () => Promise<void>;
@@ -24,38 +28,35 @@ export function DeactivateButton({
     try {
       await onConfirm();
     } catch (err) {
-      setConfirming(false);
       setError(describeOrgWriteError(err, conflictMessage));
     } finally {
       setBusy(false);
+      setConfirming(false);
     }
   }
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {confirming ? (
-        <div className="flex gap-2">
-          <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={handleConfirm}>
-            ยืนยันปิดใช้งาน
-          </Button>
-          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setConfirming(false)}>
-            ยกเลิก
-          </Button>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={!!blockedReason}
-          title={blockedReason}
-          onClick={() => setConfirming(true)}
-        >
-          ปิดใช้งาน
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="min-h-11"
+        disabled={!!blockedReason}
+        title={blockedReason}
+        onClick={() => setConfirming(true)}
+      >
+        ปิดใช้งาน
+      </Button>
       {blockedReason && <p className="text-xs text-muted-foreground">{blockedReason}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
+      <DeactivateConfirm
+        open={confirming}
+        onOpenChange={setConfirming}
+        itemLabel={itemLabel}
+        busy={busy}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }
