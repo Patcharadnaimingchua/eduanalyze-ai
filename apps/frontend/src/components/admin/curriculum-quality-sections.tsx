@@ -1,0 +1,186 @@
+import type {
+  CohortPloAchievementReport,
+  LowestCloEntry,
+  RadarPoint,
+  RiskLevel,
+} from '@eduanalyze-ai/shared-types';
+import { formatFiveScale } from '@/lib/five-scale';
+import { RISK_LEVEL_LABELS, RISK_LEVEL_TONES } from '@/lib/risk-level';
+import {
+  LITTLE_DATA_LABEL,
+  gpaBarPercent,
+  hasLittleData,
+  sortCohorts,
+  summarizeLowestClos,
+} from '@/lib/admin-curriculum-quality';
+import { BADGE_TONE_CLASSES } from '@/lib/tone';
+import { STATUS_RULES } from '@/components/staff/staff-status';
+import { NO_DATA_LABEL } from '@/components/staff/student-reading';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { Info, Layers } from 'lucide-react';
+
+const LEGEND_ORDER: RiskLevel[] = ['CRITICAL', 'WATCH', 'NORMAL'];
+
+// The same rules, in the same words, as the Staff pages (STATUS_RULES). Each
+// chip carries its name and rule in text; the colour only repeats it.
+export function StatusCriteria() {
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-4 sm:p-5">
+        <p className="text-sm font-semibold text-primary">
+          เกณฑ์สถานะนักศึกษา (ใช้เหมือนฝั่งเจ้าหน้าที่)
+        </p>
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {LEGEND_ORDER.map((level) => (
+            <li
+              key={level}
+              className={cn(
+                'rounded-md border px-3 py-2 text-sm',
+                BADGE_TONE_CLASSES[RISK_LEVEL_TONES[level]],
+              )}
+            >
+              <span className="font-semibold">{RISK_LEVEL_LABELS[level]}</span> ={' '}
+              {STATUS_RULES[level]}
+            </li>
+          ))}
+          <li className={cn('rounded-md border px-3 py-2 text-sm', BADGE_TONE_CLASSES.neutral)}>
+            <span className="font-semibold">{NO_DATA_LABEL}</span> = {STATUS_RULES.NO_DATA}
+          </li>
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function LowestSection({
+  plos,
+  clos,
+}: Readonly<{ plos: RadarPoint[]; clos: LowestCloEntry[] }>) {
+  const { shown, hiddenCount } = summarizeLowestClos(clos);
+  const none = plos.length === 0 && clos.length === 0;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>PLO / CLO ที่ต่ำสุด</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {none ? (
+          <EmptyState
+            icon={Info}
+            description="ยังไม่มีผลการประเมิน PLO/CLO ของหลักสูตรนี้ จึงยังจัดอันดับไม่ได้"
+          />
+        ) : (
+          <>
+            {plos.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground">
+                  PLO ที่ต่ำที่สุด (คะแนนเต็ม 5)
+                </h4>
+                <ol className="space-y-2">
+                  {plos.map((plo, index) => (
+                    <li
+                      key={plo.ploId}
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3 dark:bg-slate-900/40"
+                    >
+                      <span className="min-w-0 break-words text-sm">
+                        {index + 1}. <span className="font-semibold text-primary">{plo.code}</span>{' '}
+                        {plo.name}
+                      </span>
+                      <Badge tone="warning" className="tabular-nums">
+                        เฉลี่ย {formatFiveScale(plo.value)} / 5.0
+                      </Badge>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {shown.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground">
+                  CLO ที่ต่ำที่สุด (สัดส่วนนักศึกษาที่ได้ B ขึ้นไป)
+                </h4>
+                <ul className="space-y-2">
+                  {shown.map((clo) => (
+                    <li
+                      key={clo.cloId}
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3 dark:bg-slate-900/40"
+                    >
+                      <span className="min-w-0 break-words text-sm">
+                        <span className="font-semibold text-primary">{clo.code}</span> ·{' '}
+                        {clo.courseCode} {clo.courseName}
+                      </span>
+                      <Badge tone="warning" className="tabular-nums">
+                        {Math.round(clo.achievementPercent)}% ได้ B ขึ้นไป
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+                {hiddenCount > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    และอีก {hiddenCount} CLO ที่มีค่าเท่ากัน (CLO
+                    ในรายวิชาเดียวกันใช้ค่าของรายวิชานั้น)
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CohortRow({ cohort }: Readonly<{ cohort: CohortPloAchievementReport }>) {
+  const little = hasLittleData(cohort.gpaSampleSize);
+  return (
+    <li className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-900/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold text-primary">รุ่นปี {cohort.admissionYear}</p>
+        <Badge tone="neutral" className="tabular-nums">
+          {cohort.studentCount} คน
+        </Badge>
+      </div>
+      <div className="flex items-baseline justify-between gap-3 text-sm">
+        <span className="text-muted-foreground">GPA เฉลี่ยรุ่น</span>
+        <span className="font-semibold tabular-nums text-primary">
+          {cohort.averageGpa === null ? NO_DATA_LABEL : `${cohort.averageGpa.toFixed(2)} / 4.00`}
+        </span>
+      </div>
+      <Progress
+        value={gpaBarPercent(cohort.averageGpa)}
+        label={`GPA เฉลี่ยรุ่นปี ${cohort.admissionYear}`}
+        barClassName="bg-brand"
+      />
+      <p className="text-xs text-muted-foreground tabular-nums">
+        คำนวณจากนักศึกษาที่มีเกรด {cohort.gpaSampleSize} จาก {cohort.studentCount} คน
+      </p>
+      {little && <Badge tone="warning">{LITTLE_DATA_LABEL}</Badge>}
+    </li>
+  );
+}
+
+export function CohortComparison({ cohorts }: Readonly<{ cohorts: CohortPloAchievementReport[] }>) {
+  const sorted = sortCohorts(cohorts);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>เทียบรุ่น (ปีที่เข้าศึกษา)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sorted.length === 0 ? (
+          <EmptyState icon={Layers} description="ยังไม่มีนักศึกษาในรุ่นใดของหลักสูตรนี้" />
+        ) : (
+          <ul className="space-y-3">
+            {sorted.map((cohort) => (
+              <CohortRow key={cohort.admissionYear} cohort={cohort} />
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

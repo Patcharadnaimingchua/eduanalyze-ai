@@ -348,6 +348,45 @@ export interface ProblematicCloEntry {
   threshold: number;
 }
 
+// Mirrors the backend's CurriculumDashboardReport (GET /dashboard/curriculum/:id).
+export interface LowestCloEntry {
+  cloId: string;
+  code: string;
+  description: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  achievementPercent: number;
+}
+
+export interface CohortPloAchievementReport {
+  curriculumId: string;
+  admissionYear: number;
+  studentCount: number;
+  averageGpa: number | null;
+  gpaSampleSize: number;
+  radar: RadarPoint[];
+  strengths: RadarPoint[];
+  areasForImprovement: RadarPoint[];
+}
+
+export interface CurriculumDashboardReport {
+  curriculumId: string;
+  studentCount: number;
+  averageGpa: number | null;
+  gpaSampleSize: number;
+  studentsAtRiskCount: number;
+  graduationReadyCount: number;
+  graduationReadyPercent: number | null;
+  radar: RadarPoint[];
+  strengths: RadarPoint[];
+  areasForImprovement: RadarPoint[];
+  lowestPlo: RadarPoint | null;
+  lowestClos: LowestCloEntry[];
+  courseAnalytics: { courseId: string; code: string; name: string; achievementPercent: number }[];
+  cohortComparison: CohortPloAchievementReport[];
+}
+
 export interface SystemCurriculumOverviewReport {
   totals: {
     curriculumCount: number;

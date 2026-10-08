@@ -4,6 +4,7 @@ import type {
   BulkCreateAcademicYearsRequest,
   BulkCreateAcademicYearsResponse,
   CreateAcademicYearRequest,
+  CurriculumDashboardReport,
   CreateSemesterRequest,
   Semester,
   SystemCurriculumOverviewReport,
@@ -51,6 +52,13 @@ export async function fetchSystemCurriculumOverview() {
 export async function fetchAdminScopeOverview() {
   const { data } = await apiClient.get<AdminScopeOverviewReport>(
     '/dashboard/admin/scope-overview',
+  );
+  return data;
+}
+
+export async function fetchCurriculumQuality(curriculumId: string) {
+  const { data } = await apiClient.get<CurriculumDashboardReport>(
+    `/dashboard/curriculum/${curriculumId}`,
   );
   return data;
 }

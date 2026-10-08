@@ -1,0 +1,58 @@
+import type {
+  CohortPloAchievementReport,
+  LowestCloEntry,
+  RadarPoint,
+} from '@eduanalyze-ai/shared-types';
+import { INSUFFICIENT_BELOW } from '@/lib/course-snapshot';
+
+// What the Admin curriculum quality page works out from
+// GET /dashboard/curriculum/:id, apart from React so it can be tested alone.
+
+export const LOWEST_SHOWN = 3;
+export const GPA_SCALE_MAX = 4;
+
+// The PLOs with the lowest measured value, lowest first. A PLO with no data
+// (value null) is not "lowest" — nothing was measured — so it is left out.
+// Ties break on code so the order never shuffles between renders.
+export function lowestPlos(radar: readonly RadarPoint[], limit = LOWEST_SHOWN): RadarPoint[] {
+  return radar
+    .filter((plo): plo is RadarPoint & { value: number } => plo.value !== null)
+    .sort((a, b) => a.value - b.value || a.code.localeCompare(b.code))
+    .slice(0, limit);
+}
+
+// lowestClos holds EVERY CLO tied at the minimum, and CLOs in one course
+// share that course's number, so a tie can be long: show the first few and
+// say how many more share the value.
+export function summarizeLowestClos(
+  clos: readonly LowestCloEntry[],
+  limit = LOWEST_SHOWN,
+): { shown: LowestCloEntry[]; hiddenCount: number } {
+  const ordered = [...clos].sort((a, b) => a.code.localeCompare(b.code));
+  return { shown: ordered.slice(0, limit), hiddenCount: Math.max(0, ordered.length - limit) };
+}
+
+// Fewer people with a GPA than INSUFFICIENT_BELOW: numbers may be shown but
+// not read as a verdict. Judged on people with a GPA, not on enrolment.
+export function hasLittleData(gpaSampleSize: number): boolean {
+  return !(gpaSampleSize >= INSUFFICIENT_BELOW);
+}
+
+export const LITTLE_DATA_LABEL = 'ข้อมูลยังน้อย — สรุปได้เบื้องต้น';
+
+// GPA as a 0-100 bar fill; null (nobody graded) is an empty bar, never a 0.00.
+export function gpaBarPercent(gpa: number | null): number {
+  if (gpa === null) return 0;
+  return Math.max(0, Math.min(100, (gpa / GPA_SCALE_MAX) * 100));
+}
+
+// Oldest intake first, the order the page reads as "older to newer".
+export function sortCohorts(
+  cohorts: readonly CohortPloAchievementReport[],
+): CohortPloAchievementReport[] {
+  return [...cohorts].sort((a, b) => a.admissionYear - b.admissionYear);
+}
+
+export function hasAnyPloData(radar: readonly RadarPoint[]): boolean {
+  return radar.some((plo) => plo.value !== null);
+}

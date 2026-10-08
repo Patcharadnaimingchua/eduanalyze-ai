@@ -1,0 +1,235 @@
+'use client';
+
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, ArrowLeft, CheckCircle2, GraduationCap, Sigma, Users } from 'lucide-react';
+import { fetchAdminScopeOverview, fetchCurriculumQuality } from '@/lib/api/admin';
+import { findCurriculum, placeOf } from '@/lib/admin-curricula';
+import {
+  LITTLE_DATA_LABEL,
+  GPA_SCALE_MAX,
+  hasAnyPloData,
+  hasLittleData,
+  lowestPlos,
+} from '@/lib/admin-curriculum-quality';
+import { useAuth } from '@/lib/auth-context';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { RequireRole } from '@/components/auth/require-role';
+import {
+  CohortComparison,
+  LowestSection,
+  StatusCriteria,
+} from '@/components/admin/curriculum-quality-sections';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
+import { StatCard } from '@/components/dashboard/stat-card';
+import { PageLoadError } from '@/components/layout/page-states';
+import { Reveal } from '@/components/layout/reveal';
+import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
+import { AnimatedNumber } from '@/components/ui/animated-number';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton, StatCardsSkeleton } from '@/components/ui/skeleton';
+
+export default function AdminCurriculumQualityPage({ params }: { params: { id: string } }) {
+  return (
+    <ProtectedRoute>
+      <RequireRole role="ADMIN">
+        <AdminCurriculumQualityContent curriculumId={params.id} />
+      </RequireRole>
+    </ProtectedRoute>
+  );
+}
+
+function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId: string }>) {
+  const { user } = useAuth();
+  const overviewQuery = useQuery({
+    queryKey: ['admin-scope-overview'],
+    queryFn: fetchAdminScopeOverview,
+  });
+  const qualityQuery = useQuery({
+    queryKey: ['admin-curriculum-quality', curriculumId],
+    queryFn: () => fetchCurriculumQuality(curriculumId),
+    retry: false,
+  });
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="space-y-3">
+          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  const overview = overviewQuery.data;
+  const entry = overview ? findCurriculum(overview.curricula.entries, curriculumId) : null;
+  const place = entry && overview ? placeOf(entry, overview.scope.programs) : null;
+  const report = qualityQuery.data;
+  // The overview lists only what the requester's scope covers, so a curriculum
+  // missing from it is outside that scope however the address got here.
+  const outOfScope = overview !== undefined && entry === null;
+
+  return (
+    <DashboardShell role="ADMIN" identityLabel={user.email} fullName={user.fullName}>
+      <Link
+        href="/admin/curriculum"
+        className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft size={14} aria-hidden="true" />
+        กลับไปรายการหลักสูตร
+      </Link>
+
+      {outOfScope && <PageLoadError message="ไม่พบหลักสูตรนี้ในขอบเขตที่คุณดูแล" />}
+      {!outOfScope && qualityQuery.isError && (
+        <PageLoadError
+          message="ไม่พบหลักสูตร หรือไม่มีสิทธิ์เข้าถึงข้อมูลคุณภาพของหลักสูตรนี้"
+          onRetry={() => qualityQuery.refetch()}
+        />
+      )}
+      {!outOfScope && (qualityQuery.isLoading || overviewQuery.isLoading) && (
+        <div className="space-y-4">
+          <Skeleton className="h-28 w-full" />
+          <StatCardsSkeleton count={4} />
+        </div>
+      )}
+
+      {entry && (
+        <Reveal index={0}>
+          <Card>
+            <CardContent className="space-y-3 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone="neutral">
+                  {entry.programCode} · ฉบับ {entry.version} (พ.ศ. {entry.effectiveYear})
+                </Badge>
+                {report && hasLittleData(report.gpaSampleSize) && report.studentCount > 0 && (
+                  <Badge tone="warning">{LITTLE_DATA_LABEL}</Badge>
+                )}
+              </div>
+              <h1 className="break-words text-2xl font-semibold leading-snug text-primary">
+                {entry.programName}
+              </h1>
+              {place && (
+                <p className="text-sm text-muted-foreground">
+                  {place.departmentName} · {place.facultyName}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Reveal>
+      )}
+
+      {entry && report && report.studentCount === 0 && (
+        <Reveal index={1}>
+          <Card>
+            <CardContent className="pt-6">
+              <EmptyState
+                icon={Users}
+                description={
+                  entry.dataState === 'EMPTY'
+                    ? 'หลักสูตรนี้ยังไม่มีรายวิชาและนักศึกษา จึงยังไม่มีข้อมูลคุณภาพให้แสดง'
+                    : 'หลักสูตรนี้ยังไม่มีนักศึกษา จึงยังไม่มีผลการเรียนให้วิเคราะห์ — รายวิชา PLO และ CLO ที่จัดไว้จะแสดงผลเมื่อมีนักศึกษาลงทะเบียน'
+                }
+              />
+            </CardContent>
+          </Card>
+        </Reveal>
+      )}
+
+      {entry && report && report.studentCount > 0 && (
+        <>
+          <Reveal index={1}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                icon={Users}
+                label="จำนวนนักศึกษา"
+                value={<AnimatedNumber value={report.studentCount} />}
+                suffix="คน"
+                footer={
+                  <p className="text-xs text-muted-foreground">
+                    นักศึกษาที่ใช้งานอยู่ในหลักสูตรนี้
+                  </p>
+                }
+              />
+              <StatCard
+                icon={Sigma}
+                label="GPA เฉลี่ยสะสม"
+                value={
+                  report.averageGpa === null ? (
+                    <span className="text-lg font-medium">ยังไม่มีข้อมูล</span>
+                  ) : (
+                    <AnimatedNumber value={report.averageGpa} decimals={2} />
+                  )
+                }
+                suffix={report.averageGpa === null ? undefined : `/ ${GPA_SCALE_MAX.toFixed(2)}`}
+                footer={
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    คำนวณจากนักศึกษาที่มีเกรด {report.gpaSampleSize} จาก {report.studentCount} คน
+                  </p>
+                }
+              />
+              <StatCard
+                icon={GraduationCap}
+                label="พร้อมจบการศึกษา"
+                value={<AnimatedNumber value={report.graduationReadyCount} />}
+                suffix="คน"
+                footer={
+                  report.graduationReadyPercent === null ? null : (
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      ร้อยละ {report.graduationReadyPercent.toFixed(1)} ของนักศึกษาทั้งหมด
+                    </p>
+                  )
+                }
+              />
+              <StatCard
+                icon={report.studentsAtRiskCount > 0 ? AlertTriangle : CheckCircle2}
+                label="ต้องติดตาม"
+                value={<AnimatedNumber value={report.studentsAtRiskCount} />}
+                suffix="คน"
+                footer={
+                  <p className="text-xs text-muted-foreground">
+                    {report.studentsAtRiskCount > 0
+                      ? 'เร่งด่วนและเฝ้าระวัง ตามเกณฑ์ด้านล่าง'
+                      : 'ไม่มีนักศึกษาที่ GPA ต่ำกว่าเกณฑ์'}
+                  </p>
+                }
+              />
+            </div>
+          </Reveal>
+
+          <Reveal index={2}>
+            <StatusCriteria />
+          </Reveal>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <div className="space-y-4 xl:col-span-2">
+              <RevealOnScroll>
+                {hasAnyPloData(report.radar) ? (
+                  <PloRadarCard radar={report.radar} />
+                ) : (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <EmptyState
+                        icon={Sigma}
+                        description="ยังไม่มีผลการประเมิน PLO ของนักศึกษาในหลักสูตรนี้ จึงยังไม่แสดงเรดาร์"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </RevealOnScroll>
+              <RevealOnScroll>
+                <LowestSection plos={lowestPlos(report.radar)} clos={report.lowestClos} />
+              </RevealOnScroll>
+            </div>
+            <RevealOnScroll>
+              <CohortComparison cohorts={report.cohortComparison} />
+            </RevealOnScroll>
+          </div>
+        </>
+      )}
+    </DashboardShell>
+  );
+}
