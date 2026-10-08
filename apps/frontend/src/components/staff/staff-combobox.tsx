@@ -73,10 +73,10 @@ export const StaffCombobox = React.forwardRef<HTMLButtonElement, StaffComboboxPr
             align="start"
             side="bottom"
             sideOffset={4}
-            avoidCollisions={false}
-            className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+            collisionPadding={8}
+            className="z-50 flex max-h-[var(--radix-popover-content-available-height)] w-[--radix-popover-trigger-width] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
           >
-            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-1">
+            <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-1">
               <Search aria-hidden="true" size={14} className="shrink-0 text-slate-400" />
               <input
                 autoFocus
@@ -86,7 +86,7 @@ export const StaffCombobox = React.forwardRef<HTMLButtonElement, StaffComboboxPr
                 className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
-            <div className="max-h-64 overflow-y-auto p-1">
+            <div className="min-h-0 max-h-64 flex-1 overflow-y-auto p-1">
               {filtered.length === 0 && (
                 <p className="py-4 text-center text-sm text-muted-foreground">{emptyText}</p>
               )}

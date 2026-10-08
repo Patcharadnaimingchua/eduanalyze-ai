@@ -77,10 +77,10 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
           align="start"
           side="bottom"
           sideOffset={4}
-          avoidCollisions={false}
-          className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+          collisionPadding={8}
+          className="z-50 flex max-h-[var(--radix-popover-content-available-height)] w-[--radix-popover-trigger-width] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
         >
-          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2">
+          <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 px-3 py-2">
             <Search size={14} className="shrink-0 text-slate-400" />
             <input
               autoFocus
@@ -90,7 +90,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
               className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <div className="max-h-64 overflow-y-auto p-1">
+          <div className="min-h-0 max-h-64 flex-1 overflow-y-auto p-1">
             {filtered.length === 0 && (
               <p className="py-4 text-center text-sm text-muted-foreground">{emptyText}</p>
             )}
@@ -104,13 +104,13 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
                   setOpen(false);
                   setQuery('');
                 }}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent focus:bg-accent"
+                className="flex min-h-11 w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent focus:bg-accent"
               >
                 <Check
                   size={14}
                   className={cn('shrink-0', option.value === value ? 'opacity-100' : 'opacity-0')}
                 />
-                <span className="truncate">{option.label}</span>
+                <span className="min-w-0 break-words">{option.label}</span>
               </button>
             ))}
           </div>

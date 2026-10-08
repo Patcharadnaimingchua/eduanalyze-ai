@@ -63,11 +63,12 @@ export function CategoryMenu({
         <PopoverPrimitive.Content
           align="end"
           sideOffset={4}
+          collisionPadding={8}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             items()[0]?.focus();
           }}
-          className="z-50 w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          className="z-50 max-h-[var(--radix-popover-content-available-height)] w-56 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
         >
           <div ref={listRef} role="menu" aria-label="จัดการหมวด" onKeyDown={onKeyDown}>
             {onEditRule && (

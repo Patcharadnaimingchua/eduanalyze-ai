@@ -26,6 +26,8 @@ const SelectTrigger = React.forwardRef<
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
+// Opens below the trigger and flips above when there is more room there; the list
+// scrolls inside itself, capped to the room left (so it never runs off the window).
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
@@ -37,7 +39,8 @@ const SelectContent = React.forwardRef<
       position = 'popper',
       side = 'bottom',
       sideOffset = 4,
-      avoidCollisions = false,
+      avoidCollisions = true,
+      collisionPadding = 8,
       ...props
     },
     ref,
@@ -46,7 +49,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
+        'relative z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
         position === 'popper' && 'translate-y-1',
         className,
       )}
@@ -54,6 +57,7 @@ const SelectContent = React.forwardRef<
       side={side}
       sideOffset={sideOffset}
       avoidCollisions={avoidCollisions}
+      collisionPadding={collisionPadding}
       {...props}
     >
       <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
