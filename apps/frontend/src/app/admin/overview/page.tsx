@@ -100,7 +100,7 @@ function AdminOverviewContent() {
         <Reveal index={1}>
           <EmptyState
             icon={ShieldCheck}
-            description="บัญชีนี้ยังไม่ได้รับมอบขอบเขต (คณะ/ภาควิชา/สาขา) ใดๆ — ติดต่อ SUPER_ADMIN เพื่อขอมอบขอบเขต"
+            description="บัญชีนี้ยังไม่ได้รับมอบขอบเขต (คณะ/ภาควิชา/สาขา) ใดๆ — ติดต่อผู้ดูแลระบบสูงสุดเพื่อขอมอบขอบเขต"
           />
         </Reveal>
       )}

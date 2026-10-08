@@ -5,7 +5,7 @@ import type { Role, UserScope } from '@eduanalyze-ai/shared-types';
 
 export const SELF_LOCK_REASON = 'ไม่สามารถระงับหรือแก้ไขบัญชีของตัวเองที่นี่';
 export const STAFF_ONLY_REASON =
-  'ผู้ดูแลระบบ (ADMIN) จัดการได้เฉพาะบัญชีเจ้าหน้าที่ (STAFF) เท่านั้น';
+  'ผู้ดูแลระบบจัดการได้เฉพาะบัญชีเจ้าหน้าที่เท่านั้น';
 export const OUTSIDE_SCOPE_REASON =
   'ผู้ใช้นี้มีขอบเขตนอกเหนือขอบเขตของคุณ จึงระงับทั้งบัญชีไม่ได้ ให้ถอดขอบเขตของคุณออกจากผู้ใช้นี้แทน';
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, ShieldOff, UserCog, Users, UsersRound } from 'lucide-react';
+import { Plus, ShieldOff, UserCog, UsersRound } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateUserResponse } from '@eduanalyze-ai/shared-types';
 import { summarizeUsers } from '@/lib/admin-users';
@@ -76,65 +76,50 @@ function AdminUsersContent() {
           title="การจัดการผู้ใช้งาน"
           description="ตรวจสอบสิทธิ์และสถานะบัญชีบุคลากรในขอบเขตที่รับผิดชอบ"
           actions={
-            !createdUser && (
+            !createdUser &&
+            !showCreateForm && (
               <Button
                 type="button"
-                variant={showCreateForm ? 'outline' : 'default'}
                 className="h-11 gap-1.5"
-                onClick={() => setShowCreateForm((open) => !open)}
+                onClick={() => setShowCreateForm(true)}
               >
-                {showCreateForm ? (
-                  'ยกเลิก'
-                ) : (
-                  <>
-                    <Plus size={16} />
-                    เพิ่มผู้ใช้งาน
-                  </>
-                )}
+                <Plus size={16} aria-hidden="true" />
+                {requesterIsSuperAdmin ? 'เพิ่มผู้ใช้งาน' : 'สร้างบัญชีเจ้าหน้าที่'}
               </Button>
             )
           }
         />
       </Reveal>
 
-      {usersQuery.isLoading && <StatCardsSkeleton count={4} />}
+      {usersQuery.isLoading && <StatCardsSkeleton count={3} />}
       {summary && (
         <Reveal index={1}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              icon={UsersRound}
-              label="บัญชีทั้งหมด"
-              value={<AnimatedNumber value={summary.total} />}
-              suffix="บัญชี"
-              footer={
-                <p className="text-xs text-muted-foreground">ใช้งานอยู่ {summary.active} บัญชี</p>
-              }
-            />
-            <StatCard
-              icon={Users}
-              label="อาจารย์"
-              value={<AnimatedNumber value={summary.byRole.INSTRUCTOR} />}
-              suffix="คน"
-            />
-            <StatCard
-              icon={UserCog}
-              label="เจ้าหน้าที่"
-              value={<AnimatedNumber value={summary.byRole.STAFF} />}
-              suffix="คน"
-            />
-            <StatCard
-              icon={ShieldOff}
-              label="ระงับการใช้งาน"
-              value={<AnimatedNumber value={summary.suspended} />}
-              suffix="บัญชี"
-              footer={
-                summary.withoutScope > 0 ? (
-                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                    ยังไม่กำหนดขอบเขต {summary.withoutScope} บัญชี
-                  </p>
-                ) : null
-              }
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatCard
+                icon={UsersRound}
+                label="บัญชีทั้งหมด"
+                value={<AnimatedNumber value={summary.total} />}
+                suffix="บัญชี"
+              />
+              <StatCard
+                icon={UserCog}
+                label="เจ้าหน้าที่"
+                value={<AnimatedNumber value={summary.byRole.STAFF} />}
+                suffix="คน"
+              />
+              <StatCard
+                icon={ShieldOff}
+                label="ระงับการใช้งาน"
+                value={<AnimatedNumber value={summary.suspended} />}
+                suffix="บัญชี"
+              />
+            </div>
+            {summary.withoutScope > 0 && (
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                มี {summary.withoutScope} บัญชีที่ยังไม่กำหนดขอบเขต
+              </p>
+            )}
           </div>
         </Reveal>
       )}
@@ -143,13 +128,13 @@ function AdminUsersContent() {
         <Card
           className={
             createdUser.passwordSetupEmailSent
-              ? 'border-emerald-200 bg-emerald-50'
-              : 'border-amber-200 bg-amber-50'
+              ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/40'
+              : 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/40'
           }
         >
           <CardContent className="space-y-4 pt-6">
             <p
-              className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}
+              className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900 dark:text-emerald-200' : 'text-amber-900 dark:text-amber-200'}`}
             >
               เพิ่มผู้ใช้งานสำเร็จ — {createdUser.fullName} ({createdUser.email})
             </p>
@@ -170,12 +155,12 @@ function AdminUsersContent() {
               </Alert>
             )}
             <div className="flex flex-wrap items-center gap-4">
-              <Button type="button" onClick={handleAcknowledge}>
+              <Button type="button" className="h-11" onClick={handleAcknowledge}>
                 รับทราบ ปิดหน้าต่างนี้
               </Button>
               <Link
                 href={`/admin/users/${createdUser.id}`}
-                className="text-sm font-medium text-brand hover:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
               >
                 ไปที่หน้าผู้ใช้เพื่อจัดการบทบาทและขอบเขต
               </Link>
@@ -186,7 +171,11 @@ function AdminUsersContent() {
 
       {showCreateForm && !createdUser && (
         <Reveal>
-          <CreateUserForm requesterIsSuperAdmin={requesterIsSuperAdmin} onCreated={handleCreated} />
+          <CreateUserForm
+            requesterIsSuperAdmin={requesterIsSuperAdmin}
+            onCreated={handleCreated}
+            onCancel={() => setShowCreateForm(false)}
+          />
         </Reveal>
       )}
 

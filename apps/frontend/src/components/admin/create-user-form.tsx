@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import type { CreateUserRequest, CreateUserResponse, Role } from '@eduanalyze-ai/shared-types';
-import { createUser } from '@/lib/api/user-management';
-import {
-  createUserSchema,
-  type CreateUserFormValues,
-} from '@/lib/validation/create-user.schema';
+import { allowedLevels, allowedScopeTargets } from '@/lib/admin-scope-options';
+import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organization';
+import { createUser, fetchUser } from '@/lib/api/user-management';
+import { useAuth } from '@/lib/auth-context';
+import { createUserSchema, type CreateUserFormValues } from '@/lib/validation/create-user.schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -22,7 +24,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScopeSelector } from './scope-selector';
 
 // SUPER_ADMIN deliberately excluded — never creatable via API, even by an
@@ -31,9 +39,9 @@ import { ScopeSelector } from './scope-selector';
 // rejects role:SUPER_ADMIN with 403 unconditionally, so it's never
 // offered here either.
 const CREATABLE_ROLES: { value: Role; label: string }[] = [
-  { value: 'INSTRUCTOR', label: 'อาจารย์ (INSTRUCTOR)' },
-  { value: 'STAFF', label: 'เจ้าหน้าที่ (STAFF)' },
-  { value: 'ADMIN', label: 'ผู้ดูแลระบบ (ADMIN)' },
+  { value: 'INSTRUCTOR', label: ROLE_LABEL_TH.INSTRUCTOR },
+  { value: 'STAFF', label: ROLE_LABEL_TH.STAFF },
+  { value: 'ADMIN', label: ROLE_LABEL_TH.ADMIN },
 ];
 
 // ADMIN can only ever create STAFF (backend-enforced) — the role field
@@ -43,11 +51,55 @@ const CREATABLE_ROLES: { value: Role; label: string }[] = [
 export function CreateUserForm({
   requesterIsSuperAdmin,
   onCreated,
+  onCancel,
 }: {
   requesterIsSuperAdmin: boolean;
   onCreated: (result: CreateUserResponse) => void;
+  onCancel: () => void;
 }) {
+  const { user: requester } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // An Admin may only name units inside their own scope. Same query keys as the
+  // user detail page and ScopeSelector, so all of it comes from the shared cache.
+  const needsScopeFilter = !requesterIsSuperAdmin;
+  const ownUserQuery = useQuery({
+    queryKey: ['admin-users', requester?.userId],
+    queryFn: () => fetchUser(requester!.userId),
+    enabled: needsScopeFilter && !!requester,
+  });
+  const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
+  const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
+  const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
+  const allowed = useMemo(() => {
+    if (!needsScopeFilter) return undefined;
+    if (
+      !ownUserQuery.data ||
+      !facultiesQuery.data ||
+      !departmentsQuery.data ||
+      !programsQuery.data
+    ) {
+      return null;
+    }
+    return allowedScopeTargets(ownUserQuery.data.scopes, {
+      faculties: facultiesQuery.data,
+      departments: departmentsQuery.data,
+      programs: programsQuery.data,
+    });
+  }, [
+    needsScopeFilter,
+    ownUserQuery.data,
+    facultiesQuery.data,
+    departmentsQuery.data,
+    programsQuery.data,
+  ]);
+  const scopeLoadFailed =
+    needsScopeFilter &&
+    (ownUserQuery.isError ||
+      facultiesQuery.isError ||
+      departmentsQuery.isError ||
+      programsQuery.isError);
+  const noScopeToGrant = allowed ? allowedLevels(allowed).length === 0 : false;
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
@@ -107,76 +159,132 @@ export function CreateUserForm({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             {serverError && (
-              <Alert variant="destructive">
+              <Alert
+                role="alert"
+                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+              >
                 <AlertDescription>{serverError}</AlertDescription>
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ชื่อ-นามสกุล</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>อีเมล</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {requesterIsSuperAdmin ? (
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem className="w-64">
-                    <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกบทบาท" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {CREATABLE_ROLES.map((r) => (
-                          <SelectItem key={r.value} value={r.value}>
-                            {r.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {scopeLoadFailed ? (
+              <Alert
+                role="alert"
+                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+              >
+                <AlertDescription>
+                  โหลดขอบเขตของคุณไม่สำเร็จ จึงยังเพิ่มผู้ใช้งานไม่ได้ กรุณาลองใหม่อีกครั้ง
+                </AlertDescription>
+              </Alert>
+            ) : noScopeToGrant ? (
+              <Alert
+                role="alert"
+                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+              >
+                <AlertDescription>
+                  บัญชีของคุณยังไม่มีหน่วยงานที่มอบขอบเขตให้ผู้อื่นได้ จึงเพิ่มผู้ใช้งานไม่ได้ —
+                  ติดต่อผู้ดูแลระบบสูงสุดเพื่อกำหนดขอบเขตให้คุณก่อน
+                </AlertDescription>
+              </Alert>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                เพิ่มผู้ใช้งานบทบาท: <span className="font-medium text-primary">เจ้าหน้าที่ (STAFF)</span>
-              </p>
+              <>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ชื่อ-นามสกุล</FormLabel>
+                        <FormControl>
+                          <Input className="h-11" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>อีเมล</FormLabel>
+                        <FormControl>
+                          <Input type="email" className="h-11" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {requesterIsSuperAdmin ? (
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem className="md:w-64">
+                        <FormLabel>บทบาท</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="เลือกบทบาท" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CREATABLE_ROLES.map((r) => (
+                              <SelectItem key={r.value} value={r.value} className="min-h-11">
+                                {r.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    เพิ่มผู้ใช้งานบทบาท:{' '}
+                    <span className="font-medium text-primary">{ROLE_LABEL_TH.STAFF}</span>
+                  </p>
+                )}
+
+                {scopeVisible &&
+                  (allowed === null ? (
+                    <p className="text-sm text-muted-foreground">กำลังโหลดขอบเขตของคุณ...</p>
+                  ) : (
+                    <ScopeSelector
+                      levelFieldName="scopeLevel"
+                      targetFieldName="scopeTargetId"
+                      allowed={allowed}
+                    />
+                  ))}
+              </>
             )}
 
-            {scopeVisible && <ScopeSelector levelFieldName="scopeLevel" targetFieldName="scopeTargetId" />}
-
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังเพิ่ม...' : 'เพิ่มผู้ใช้งาน'}
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="submit"
+                className="h-11"
+                disabled={
+                  form.formState.isSubmitting ||
+                  scopeLoadFailed ||
+                  noScopeToGrant ||
+                  allowed === null
+                }
+              >
+                {form.formState.isSubmitting ? 'กำลังเพิ่ม...' : 'เพิ่มผู้ใช้งาน'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11"
+                disabled={form.formState.isSubmitting}
+                onClick={onCancel}
+              >
+                ยกเลิก
+              </Button>
+            </div>
           </CardContent>
         </form>
       </Form>
