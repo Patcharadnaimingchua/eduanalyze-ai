@@ -25,7 +25,6 @@ Commit (7): `551c4eb` คำ+นับคน · `65ae3cb` helper · `e9a6ec5` GP
 - (ก) ตัวกรองภาคเรียนจริง (เกรดเฉลี่ย / F / W / ชั้นปีรายเทอม) ต้องแก้ backend: เพิ่ม `semesterId` ให้ `GET /dashboard/instructor` ตอนนี้ทำได้แค่ % B ขึ้นไปรายเทอมจาก `semesterTrend`
 - (ข) % ผ่านเป้าแยกรายข้อของเป้าการเรียนรู้ ต้องแก้ backend (ตอนนี้คิดค่าเดียวต่อวิชา)
 - (ค) เพิ่ม `credits` ใน `GET /dashboard/instructor` (หรือเปิด endpoint วิชาของอาจารย์) เพื่อเลิกดึง `GET /courses` ทั้งแคตตาล็อก (ตอนนี้ดึง ~100 วิชา เก็บเฉพาะ 3 วิชาของอาจารย์ แต่ยังโอนข้อมูลมาที่เบราว์เซอร์)
-- (ง) คอมโพเนนต์ที่ไม่มีหน้าไหนใช้แล้วหลัง Dashboard ใหม่ (ยังไม่ลบ): `at-risk-students-card`, `clo-attention-card`, `course-insight-card`, `plo-coverage-card`, `course-comparison-chart`, `instructor-course-grid`, `course-overview-tab`, `course-overview-list`, `dashboard-kpis`, `goals-card` (ฝั่ง instructor) ลบเมื่อยืนยันว่าไม่ย้อนกลับไปแนวเก่า
 - (จ) คำที่อยู่ในไฟล์ใช้ร่วมกับ Staff/Student ยังเป็นคำเดิม รอตัดสินใจ: เร่งด่วน/เฝ้าระวัง (`lib/risk-level.ts`), Sign Out / Academic Insights (`dashboard-shell`), "ตามหลังแผน" (Staff ชั้นปี + Student แดชบอร์ด), ตัวเลข PLO แบบ 0–5 (`PloRadarChart`, `PloProgressTable`)
 - (ฉ) ปุ่ม Back/Forward ของเบราว์เซอร์ดักเตือนค่าที่ยังไม่บันทึกไม่ได้ (ข้อจำกัดเบราว์เซอร์)
 - (ช) งานเก่าของแนวการ์ดงานอยู่ใน `git stash` "wip-commit2-task-style-2026-10-06" (ห้าม drop จนกว่าจะตัดสินใจ)
@@ -42,7 +41,7 @@ Commit (7): `551c4eb` คำ+นับคน · `65ae3cb` helper · `e9a6ec5` GP
 - บรรทัดสรุปใต้ชื่อวิชาตัดส่วน "เป้าการเรียนรู้ผ่าน/ยังไม่ผ่าน" และลูกศรเทอมล่าสุดออก (ส่วน "ต้องติดตาม N คน" ยังอยู่) การเทียบกับภาคก่อนย้ายไปอยู่ที่การ์ดรายภาค ("% B ขึ้นไป เทียบภาคก่อน +4 จุด") เฉพาะเมื่อทั้งสองภาคมีคนที่ได้เกรด ≥5 คน
 - `achievementStatus()` และ field ใน API (`achievementThreshold`, `isAchieved`, `threshold`) ไม่ถูกแตะ แค่เลิกใช้ในหน้า Instructor ส่วนใหญ่
 **ระดับ CLO (ตัดสินใจแล้ว 2026-10-07):** API ไม่มี % รายข้อ (ค่าเดียวต่อวิชา) จึงตัดคำตัดสินออก ไม่แสดง % ราย CLO การ์ด "เป้าการเรียนรู้" และแท็บ CLO แสดงรหัส (เรียงตามรหัส) คำอธิบาย และจำนวนคนที่มีคะแนนที่กรอก ตัดป้ายผ่าน/ไม่ผ่าน เกณฑ์ราย CLO และปุ่มดูรายชื่อที่ผูกกับสถานะ (ข้อมูลน้อย: <5 คน "ข้อมูลยังน้อย" ไม่แสดง % / 5–9 คน "ตัวอย่างน้อย") ฟีเจอร์ "ต่ำสุดในวิชานี้" และ "เทียบภาคก่อนราย CLO" ยังทำไม่ได้จนกว่า backend จะส่ง % ราย CLO และราย CLO ต่อภาค (ข้อ (ข) ด้านบน)
-**รอการล้าง (ไม่ได้ลบ):** คอมโพเนนต์ที่ไม่มีหน้าไหนใช้และยังอ้างเป้า: `dashboard-kpis`, `course-overview-tab`, `course-overview-list`, `instructor-course-card`, `course-comparison-chart`, `clo-attention-card`, `plo-coverage-card`, `goals-card`, `course-insight-card` กับ `buildInstructorSummary`, `interpret-instructor-courses`, `STATUS_META`/`statusOf`/`sortByGap` ใน `lib/instructor-overview.ts` และ `StatusBadge`/`GoalBar` ใน `overview-parts.tsx` คำว่าผ่านเป้า/ใกล้เป้า/ต่ำกว่าเป้า/ยังไม่ถึงเป้าเหลือเฉพาะในไฟล์เหล่านี้ ไม่แสดงในหน้า Instructor ใด ลบพร้อมข้อ (ง) ข้างบน
+**ยังไม่ลบ (มีเทสต์ใช้อยู่หรือไม่แน่ใจ):** `buildInstructorSummary` ใน `lib/instructor-summary.ts`, `STATUS_META`/`statusOf`/`sortByGap` ใน `lib/instructor-overview.ts`, `GoalBar` ใน `overview-parts.tsx`, `lib/headcount.ts` (มี `headcount.spec.ts` แต่ไม่มีโค้ดอื่นเรียกแล้ว), `components/ui/slider.tsx`, `lib/api/ai-analysis.ts` (endpoint ฝั่ง backend ยังมี), `lib/validation/course-instructor.schema.ts`, `lib/validation/prerequisite.schema.ts` (คอมโพเนนต์อื่นของ Instructor ที่ไม่มีหน้าไหนใช้ถูกลบแล้ว 2026-10-09)
 
 ### Staff redesign (รอทำ)
 - ตรวจความหมายของ "จาก N รายการ" ในคอมโพเนนต์ `Pagination` ที่ใช้ร่วมกัน: หน้า Instructor นับเป็น "คน" แต่ Staff อาจนับเป็น "คน × วิชา" (ยังไม่แก้ เพราะ Staff ใช้ร่วม) — ตรวจแล้วตาราง Staff นับเป็นแถวของตารางนั้น (นักศึกษา / วิชา / ผลการเรียน) ไม่ใช่ "คน × วิชา" ที่ยังค้างคือคำว่า "รายการ" ในคอมโพเนนต์กลาง (หน้า Staff แก้ด้วยการเลี่ยงคำว่า "แสดง ... จาก" ที่หน้าทำเนียบแล้ว)
@@ -102,7 +101,6 @@ Three commits delivered (2026-09-30):
 - ช่องกรอกคะแนนใน `student-score-entry-panel` ใช้ความกว้างคงที่ (`sm:w-80`, `5.25rem`) ยังไม่ได้ตรวจกับตัวเลขยาว
 - ฟอร์มสร้างหลักสูตร Admin (`sm:grid-cols-3 lg:grid-cols-5`) ไม่ได้ตรวจว่าจำนวนช่องหารลงตัวกับ 3 และ 5
 - ระยะห่างยังไม่เป็นสเกลเดียวทั้งระบบ (มี gap-2/3/4, px-4/5, py-3/3.5 ปนกัน) แก้โดยไม่เห็นภาพเสี่ยงทำหน้าที่ดีอยู่แล้วเพี้ยน
-- คอมโพเนนต์ที่ไม่มีหน้าไหนใช้แล้ว (`instructor-course-card` มี `truncate`, `course-overview-list`, `course-overview-tab` มีตาราง) ไม่ได้แก้ รอลบพร้อมข้อ (ง)
 **แก้แล้ว:** ตารางกว้างของ Staff 5 ตาราง + ตาราง Instructor 2 ตารางเลื่อนแนวนอนในกรอบแทนที่จะล้นหน้า · ตัวกรองหน้ารายชื่อนักศึกษา Staff, ตัวกรองวิชา Staff, ตัวกรองนักศึกษา Instructor เป็น grid ที่ช่องเท่ากัน (ไม่หล่นช่องเดียว) · คำนิยามสถานะ Staff เป็นรายการ ใช้ข้อความชุดเดียวกับหน้า Dashboard · ปุ่มในตารางลดความกว้าง สูงคงที่ 44px · เลิกตัดข้อความด้วย "…" ใน Admin 2 จุด
 
 ### ADMIN: งานค้างหลังอุดช่องโหว่สิทธิ์ (2026-10-08)
@@ -114,7 +112,6 @@ Three commits delivered (2026-09-30):
 
 ### ข้อความที่ยังถูกตัดด้วย "…" (ตรวจ 2026-10-08, ยังไม่แก้)
 - `components/credit-checker/prerequisite-flow-node.tsx:45` — ชื่อรายวิชาในกราฟวิชาบังคับก่อนใช้ `truncate` (มี `title` แสดงเต็มเมื่อชี้เมาส์ แต่ไม่มีบนมือถือ)
-- `components/instructor/instructor-course-card.tsx` — มี `truncate` แต่ไม่มีหน้าไหนใช้ (รอลบ)
 - ไม่พบ `text-ellipsis` / `line-clamp` ที่อื่น (ที่มี `truncate` ใน Combobox/Select แก้แล้ว)
 
 ### SUPER_ADMIN: งานค้างหลังรอบความปลอดภัย (2026-10-08)
