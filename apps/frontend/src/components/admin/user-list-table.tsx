@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
+import { UserStatusAction } from '@/components/admin/user-status-action';
 
 const ALL = 'ALL';
 const NO_SCOPE = 'NO_SCOPE';
@@ -96,19 +97,46 @@ function ScopeBadges({
   );
 }
 
-function DetailLink({ id, className }: Readonly<{ id: string; className?: string }>) {
+function DetailLink({
+  id,
+  className,
+  label = 'ดูรายละเอียด',
+}: Readonly<{ id: string; className?: string; label?: string }>) {
   return (
     <Link
       href={`/admin/users/${id}`}
       className={cn(buttonVariants({ variant: 'outline' }), 'h-11 gap-1.5', className)}
     >
-      ดูรายละเอียด
+      {label}
       <ArrowRight size={14} aria-hidden="true" />
     </Link>
   );
 }
 
-export function UserListTable({ users }: { users: AdminUserSummary[] }) {
+// A Super Admin edits and suspends from the row; an Admin only opens the detail page.
+function RowActions({
+  user,
+  superAdminId,
+  className,
+}: Readonly<{ user: AdminUserSummary; superAdminId?: string; className?: string }>) {
+  if (!superAdminId) return <DetailLink id={user.id} className={className} />;
+  const isPeer = user.roles.includes('SUPER_ADMIN') && user.id !== superAdminId;
+  return (
+    <div className={cn('flex flex-wrap items-start gap-2 md:justify-end', className)}>
+      {!isPeer && <DetailLink id={user.id} label="แก้ไข" />}
+      <UserStatusAction user={user} requesterId={superAdminId} />
+    </div>
+  );
+}
+
+export function UserListTable({
+  users,
+  superAdminId,
+}: {
+  users: AdminUserSummary[];
+  // Set only for a Super Admin: turns on editing and suspending from each row.
+  superAdminId?: string;
+}) {
   const resolveTargetName = useScopeTargetName();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | typeof ALL>(ALL);
@@ -235,7 +263,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
                   <p className="mt-3 text-xs text-muted-foreground">
                     สร้างเมื่อ {formatThaiDate(user.createdAt)}
                   </p>
-                  <DetailLink id={user.id} className="mt-3 w-full" />
+                  <RowActions user={user} superAdminId={superAdminId} className="mt-3" />
                 </li>
               ))}
             </ul>
@@ -295,7 +323,7 @@ export function UserListTable({ users }: { users: AdminUserSummary[] }) {
                         {formatThaiDate(user.createdAt)}
                       </td>
                       <td className="px-3 py-1.5 text-right">
-                        <DetailLink id={user.id} />
+                        <RowActions user={user} superAdminId={superAdminId} />
                       </td>
                     </tr>
                   ))}

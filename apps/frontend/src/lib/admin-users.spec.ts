@@ -1,5 +1,5 @@
 import type { AdminUserSummary, Role } from '@eduanalyze-ai/shared-types';
-import { formatThaiDate, summarizeUsers } from './admin-users';
+import { activeShare, formatThaiDate, summarizeUsers } from './admin-users';
 
 function user(roles: Role[], opts: { isActive?: boolean; scopes?: number } = {}): AdminUserSummary {
   return {
@@ -48,8 +48,26 @@ describe('summarizeUsers', () => {
     expect(summary.withoutScope).toBe(1);
   });
 
+  it('counts a person who is both ADMIN and STAFF once in adminOrStaff', () => {
+    const summary = summarizeUsers([
+      user(['ADMIN', 'STAFF'], { scopes: 1 }),
+      user(['STAFF'], { scopes: 1 }),
+      user(['INSTRUCTOR']),
+    ]);
+    expect(summary.adminOrStaff).toBe(2);
+  });
+
   it('handles an empty list', () => {
     expect(summarizeUsers([]).total).toBe(0);
+  });
+});
+
+describe('activeShare', () => {
+  it('rounds to one decimal', () => {
+    expect(activeShare({ total: 1420, active: 1388 })).toBe(97.7);
+  });
+  it('is null with no accounts', () => {
+    expect(activeShare({ total: 0, active: 0 })).toBeNull();
   });
 });
 

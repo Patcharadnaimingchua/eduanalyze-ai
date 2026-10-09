@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, ShieldOff, UserCog, UsersRound } from 'lucide-react';
+import { Plus, ShieldCheck, ShieldOff, UserCheck, UserCog, UsersRound } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateUserResponse } from '@eduanalyze-ai/shared-types';
-import { summarizeUsers } from '@/lib/admin-users';
+import { activeShare, summarizeUsers } from '@/lib/admin-users';
 import { fetchUsers } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -54,6 +54,7 @@ function AdminUsersContent() {
 
   const requesterIsSuperAdmin = user.roles.includes('SUPER_ADMIN');
   const summary = usersQuery.data ? summarizeUsers(usersQuery.data) : null;
+  const share = summary ? activeShare(summary) : null;
 
   function handleCreated(result: CreateUserResponse) {
     setCreatedUser(result);
@@ -74,7 +75,11 @@ function AdminUsersContent() {
       <Reveal index={0}>
         <PageHeader
           title="การจัดการผู้ใช้งาน"
-          description="ตรวจสอบสิทธิ์และสถานะบัญชีบุคลากรในขอบเขตที่รับผิดชอบ"
+          description={
+            requesterIsSuperAdmin
+              ? 'ตรวจสอบ กำหนดบทบาท และควบคุมขอบเขตความรับผิดชอบของบุคลากรภายในสถาบัน'
+              : 'ตรวจสอบสิทธิ์และสถานะบัญชีบุคลากรในขอบเขตที่รับผิดชอบ'
+          }
           actions={
             !createdUser &&
             !showCreateForm && (
@@ -95,19 +100,49 @@ function AdminUsersContent() {
       {summary && (
         <Reveal index={1}>
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div
+              className={
+                requesterIsSuperAdmin
+                  ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'
+                  : 'grid grid-cols-1 gap-4 sm:grid-cols-3'
+              }
+            >
               <StatCard
                 icon={UsersRound}
-                label="บัญชีทั้งหมด"
+                label={requesterIsSuperAdmin ? 'บัญชีบุคลากรทั้งหมด' : 'บัญชีทั้งหมด'}
                 value={<AnimatedNumber value={summary.total} />}
                 suffix="บัญชี"
               />
-              <StatCard
-                icon={UserCog}
-                label="เจ้าหน้าที่"
-                value={<AnimatedNumber value={summary.byRole.STAFF} />}
-                suffix="คน"
-              />
+              {requesterIsSuperAdmin ? (
+                <StatCard
+                  icon={ShieldCheck}
+                  label="ผู้ดูแลระบบและเจ้าหน้าที่"
+                  value={<AnimatedNumber value={summary.adminOrStaff} />}
+                  suffix="คน"
+                />
+              ) : (
+                <StatCard
+                  icon={UserCog}
+                  label="เจ้าหน้าที่"
+                  value={<AnimatedNumber value={summary.byRole.STAFF} />}
+                  suffix="คน"
+                />
+              )}
+              {requesterIsSuperAdmin && (
+                <StatCard
+                  icon={UserCheck}
+                  label="ใช้งานอยู่"
+                  value={<AnimatedNumber value={summary.active} />}
+                  suffix="บัญชี"
+                  footer={
+                    share === null ? undefined : (
+                      <p className="text-sm text-muted-foreground">
+                        คิดเป็น {share.toFixed(1)}% ของทั้งหมด
+                      </p>
+                    )
+                  }
+                />
+              )}
               <StatCard
                 icon={ShieldOff}
                 label="ระงับการใช้งาน"
@@ -191,7 +226,12 @@ function AdminUsersContent() {
           </Card>
         )}
         {usersQuery.isError && <PageLoadError onRetry={() => usersQuery.refetch()} />}
-        {usersQuery.data && <UserListTable users={usersQuery.data} />}
+        {usersQuery.data && (
+          <UserListTable
+            users={usersQuery.data}
+            superAdminId={requesterIsSuperAdmin ? user.userId : undefined}
+          />
+        )}
       </Reveal>
     </DashboardShell>
   );

@@ -3,6 +3,7 @@ import {
   OUTSIDE_SCOPE_REASON,
   SELF_LOCK_REASON,
   STAFF_ONLY_REASON,
+  SUPER_ADMIN_PEER_REASON,
   suspendBlockReason,
   manageLockReason,
   type OrgIndex,
@@ -52,6 +53,12 @@ describe('suspendBlockReason', () => {
     for (const roles of [['ADMIN'], ['STAFF', 'ADMIN'], ['SUPER_ADMIN'], ['INSTRUCTOR']] as const) {
       expect(suspendBlockReason({ ...base, targetRoles: [...roles] })).toBe(STAFF_ONLY_REASON);
     }
+  });
+
+  it('blocks a SUPER_ADMIN from suspending another SUPER_ADMIN', () => {
+    expect(
+      suspendBlockReason({ ...base, requesterIsSuperAdmin: true, targetRoles: ['SUPER_ADMIN'] }),
+    ).toBe(SUPER_ADMIN_PEER_REASON);
   });
 
   it('lets SUPER_ADMIN suspend an ADMIN with scopes anywhere', () => {

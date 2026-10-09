@@ -4,8 +4,9 @@ import type { Role, UserScope } from '@eduanalyze-ai/shared-types';
 // so the UI can explain a lock up front. The API stays the authority.
 
 export const SELF_LOCK_REASON = 'ไม่สามารถระงับหรือแก้ไขบัญชีของตัวเองที่นี่';
-export const STAFF_ONLY_REASON =
-  'ผู้ดูแลระบบจัดการได้เฉพาะบัญชีเจ้าหน้าที่เท่านั้น';
+export const STAFF_ONLY_REASON = 'ผู้ดูแลระบบจัดการได้เฉพาะบัญชีเจ้าหน้าที่เท่านั้น';
+export const SUPER_ADMIN_PEER_REASON =
+  'บัญชีผู้ดูแลระบบสูงสุดคนอื่นระงับหรือเปลี่ยนสถานะจากหน้านี้ไม่ได้';
 export const OUTSIDE_SCOPE_REASON =
   'ผู้ใช้นี้มีขอบเขตนอกเหนือขอบเขตของคุณ จึงระงับทั้งบัญชีไม่ได้ ให้ถอดขอบเขตของคุณออกจากผู้ใช้นี้แทน';
 
@@ -66,6 +67,9 @@ export function suspendBlockReason(input: {
 }): string | null {
   const lock = manageLockReason(input);
   if (lock) return input.isSelf ? SELF_LOCK_REASON : lock;
+  if (input.requesterIsSuperAdmin && input.targetRoles.includes('SUPER_ADMIN')) {
+    return SUPER_ADMIN_PEER_REASON;
+  }
   if (input.requesterIsSuperAdmin || !input.ownScopes || !input.org) return null;
   const org = input.org;
   const ownScopes = input.ownScopes;
