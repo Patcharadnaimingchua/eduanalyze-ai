@@ -16,6 +16,7 @@ import {
 import { summarizeGradeCenter } from '@/lib/grade-center';
 import { buildCourseOverviews } from '@/lib/instructor-overview';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { CARD, CARD_PAD, TEXT_LABEL, TEXT_PAGE, TEXT_SECTION } from './instructor-ui';
 
@@ -70,33 +71,53 @@ export function CourseHero({
     </Heading>
   );
 
+  const actions = (
+    <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
+      <Button asChild>
+        <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
+      </Button>
+      <Button asChild variant="outline">
+        <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({stats.seats})</Link>
+      </Button>
+    </div>
+  );
+  const sparseTag = sparse && (
+    <Badge tone="neutral" className="gap-1 px-2.5 py-1 text-[13px]">
+      <CircleDashed size={14} aria-hidden="true" />
+      {SPARSE_LABEL}
+    </Badge>
+  );
+
   return (
     <section aria-label="วิชาที่เลือก" className={`${CARD} ${CARD_PAD} space-y-4`}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-1">
-          <p className={TEXT_LABEL}>{course.code}</p>
-          {title}
-          {(meta || sparse) && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
-              {sparse && (
-                <Badge tone="neutral" className="gap-1 px-2.5 py-1 text-[13px]">
-                  <CircleDashed size={14} aria-hidden="true" />
-                  {SPARSE_LABEL}
-                </Badge>
-              )}
-            </div>
-          )}
+      {heading === 'h1' ? (
+        // The course page's title is the app's one page heading.
+        <PageHeader
+          title={course.name}
+          description={
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>{course.code}</span>
+              {meta && <span>{meta}</span>}
+              {sparseTag}
+            </span>
+          }
+          actions={actions}
+        />
+      ) : (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-1">
+            <p className={TEXT_LABEL}>{course.code}</p>
+            {title}
+            {(meta || sparse) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
+                {sparseTag}
+              </div>
+            )}
+          </div>
+          {actions}
         </div>
-        <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
-          <Button asChild>
-            <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({stats.seats})</Link>
-          </Button>
-        </div>
-      </div>
+      )}
       {switcher}
       {people > 0 && (
         <p className={`border-t border-slate-100 pt-3 ${TEXT_LABEL}`}>

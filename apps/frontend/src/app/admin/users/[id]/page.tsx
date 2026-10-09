@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, Mail, UserRound } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Mail } from 'lucide-react';
 import { formatThaiDate } from '@/lib/admin-users';
 import { fetchUser, updateUserActiveStatus } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +15,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH, RequireRole } from '@/components/auth/require-role';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageLoadError } from '@/components/layout/page-states';
+import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { UserRolesSection } from '@/components/admin/user-roles-section';
 import { UserScopesSection } from '@/components/admin/user-scopes-section';
@@ -159,42 +160,34 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
       {userQuery.data && (
         <>
           <Reveal index={0}>
+            <PageHeader
+              title={userQuery.data.fullName}
+              description={
+                <span className="flex flex-wrap items-center gap-2">
+                  <Badge tone={userQuery.data.isActive ? 'success' : 'neutral'} className="gap-1.5">
+                    <span
+                      aria-hidden="true"
+                      className={
+                        userQuery.data.isActive
+                          ? 'h-1.5 w-1.5 rounded-full bg-emerald-500'
+                          : 'h-1.5 w-1.5 rounded-full bg-slate-400'
+                      }
+                    />
+                    {userQuery.data.isActive ? 'สถานะ: ใช้งานอยู่' : 'สถานะ: ระงับการใช้งาน'}
+                  </Badge>
+                  {userQuery.data.roles.map((role) => (
+                    <Badge key={role} tone={ROLE_BADGE_TONE[role]}>
+                      {ROLE_LABEL_TH[role]}
+                    </Badge>
+                  ))}
+                </span>
+              }
+            />
+          </Reveal>
+
+          <Reveal index={1}>
             <Card>
-              <CardContent className="space-y-5 p-5 sm:p-6">
-                <div className="flex flex-wrap items-start gap-4">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground"
-                  >
-                    <UserRound size={28} />
-                  </span>
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge
-                        tone={userQuery.data.isActive ? 'success' : 'neutral'}
-                        className="gap-1.5"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={
-                            userQuery.data.isActive
-                              ? 'h-1.5 w-1.5 rounded-full bg-emerald-500'
-                              : 'h-1.5 w-1.5 rounded-full bg-slate-400'
-                          }
-                        />
-                        {userQuery.data.isActive ? 'สถานะ: ใช้งานอยู่' : 'สถานะ: ระงับการใช้งาน'}
-                      </Badge>
-                      {userQuery.data.roles.map((role) => (
-                        <Badge key={role} tone={ROLE_BADGE_TONE[role]}>
-                          {ROLE_LABEL_TH[role]}
-                        </Badge>
-                      ))}
-                    </div>
-                    <h1 className="break-words text-2xl font-semibold text-primary">
-                      {userQuery.data.fullName}
-                    </h1>
-                  </div>
-                </div>
+              <CardContent className="p-5 sm:p-6">
                 <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border p-4">
                     <dt className="flex items-center gap-2 text-xs font-medium text-muted-foreground">

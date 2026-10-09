@@ -27,6 +27,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PloRadarCard } from '@/components/dashboard/plo-radar-card';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { PageLoadError } from '@/components/layout/page-states';
+import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { AnimatedNumber } from '@/components/ui/animated-number';
@@ -104,26 +105,26 @@ function AdminCurriculumQualityContent({ curriculumId }: Readonly<{ curriculumId
 
       {entry && (
         <Reveal index={0}>
-          <Card>
-            <CardContent className="space-y-3 p-5 sm:p-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="neutral">
-                  {entry.programCode} · ฉบับ {entry.version} (พ.ศ. {entry.effectiveYear})
-                </Badge>
-                {report && hasLittleData(report.gpaSampleSize) && report.studentCount > 0 && (
-                  <Badge tone="warning">{LITTLE_DATA_LABEL}</Badge>
+          <PageHeader
+            title={entry.programName}
+            description={
+              <span className="flex flex-col gap-2">
+                <span className="flex flex-wrap items-center gap-2">
+                  <Badge tone="neutral">
+                    {entry.programCode} · ฉบับ {entry.version} (พ.ศ. {entry.effectiveYear})
+                  </Badge>
+                  {report && hasLittleData(report.gpaSampleSize) && report.studentCount > 0 && (
+                    <Badge tone="warning">{LITTLE_DATA_LABEL}</Badge>
+                  )}
+                </span>
+                {place && (
+                  <span>
+                    {place.departmentName} · {place.facultyName}
+                  </span>
                 )}
-              </div>
-              <h1 className="break-words text-2xl font-semibold leading-snug text-primary">
-                {entry.programName}
-              </h1>
-              {place && (
-                <p className="text-sm text-muted-foreground">
-                  {place.departmentName} · {place.facultyName}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </span>
+            }
+          />
         </Reveal>
       )}
 
