@@ -19,6 +19,7 @@ import {
 } from '@/lib/validation/invited-register.schema';
 import { DependentOrgSelect } from '@/components/auth/dependent-org-select';
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { AuthHeading } from '@/components/auth/auth-heading';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -153,12 +154,12 @@ function InvitedRegisterForm({
 
   return (
     <AuthSplitLayout {...BRAND_COPY}>
-      <h2 className="mb-1 text-center text-xl font-medium">สมัครสมาชิกด้วยคำเชิญ</h2>
-      <p className="mb-5 text-center text-sm text-muted-foreground">
-        ตั้งรหัสผ่านเพื่อเริ่มใช้งาน ข้อมูลหลักสูตรถูกกรอกไว้ล่วงหน้าโดยเจ้าหน้าที่
-      </p>
+      <AuthHeading
+        title="สมัครสมาชิกด้วยคำเชิญ"
+        description="ตั้งรหัสผ่านเพื่อเริ่มใช้งาน ข้อมูลหลักสูตรถูกกรอกไว้ล่วงหน้าโดยเจ้าหน้าที่"
+      />
 
-      <dl className="mb-5 space-y-1 rounded-md border border-slate-100 bg-slate-50 p-3 text-sm">
+      <dl className="mb-5 space-y-1 rounded-md border bg-muted p-3 text-sm">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">อีเมล</dt>
           <dd className="text-primary">{preview.email}</dd>
@@ -291,10 +292,7 @@ function ManualRegisterForm() {
   return (
     <AuthSplitLayout {...BRAND_COPY}>
       <Reveal index={0}>
-        <h2 className="mb-1 text-center text-xl font-medium">สมัครสมาชิก</h2>
-        <p className="mb-5 text-center text-sm text-muted-foreground">
-          สำหรับนิสิต/นักศึกษาเท่านั้น
-        </p>
+        <AuthHeading title="สมัครสมาชิก" description="สำหรับนิสิต/นักศึกษาเท่านั้น" />
 
         <AuthModeTabs active="register" />
       </Reveal>
@@ -308,9 +306,7 @@ function ManualRegisterForm() {
           )}
 
           <Reveal index={2} className="space-y-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              ข้อมูลบัญชี
-            </p>
+            <p className="text-xs font-medium tracking-wide text-muted-foreground">ข้อมูลบัญชี</p>
             <FormField
               control={form.control}
               name="fullName"
@@ -366,7 +362,7 @@ function ManualRegisterForm() {
           </Reveal>
 
           <Reveal index={4} className="space-y-4">
-            <p className="pt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            <p className="pt-2 text-xs font-medium tracking-wide text-muted-foreground">
               ข้อมูลการศึกษา
             </p>
             <FormField
@@ -414,9 +410,9 @@ function ManualRegisterForm() {
       {GOOGLE_LOGIN_ENABLED && (
         <Reveal index={6}>
           <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs text-slate-400">หรือสมัครด้วย</span>
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">หรือสมัครด้วย</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}>

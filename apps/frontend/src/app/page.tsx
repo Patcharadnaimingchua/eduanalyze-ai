@@ -57,7 +57,7 @@ export default function Home() {
             </Reveal>
 
             <Reveal index={2} className="w-full">
-              <Card className="border-slate-200 bg-gradient-to-br from-brand-light/70 via-card to-card shadow-sm">
+              <Card className="bg-gradient-to-br from-brand-light/70 via-card to-card shadow-sm">
                 <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:p-7">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-xl font-bold tracking-wide text-brand-foreground shadow-sm ring-4 ring-card">
                     {user.fullName.charAt(0).toUpperCase()}
@@ -67,7 +67,7 @@ export default function Home() {
                     <p className="text-xl font-semibold tracking-tight text-primary">
                       {user.fullName}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
                     <Badge tone={ROLE_BADGE_TONE[primaryRole]} className="mt-3">
                       {ROLE_LABEL_TH[primaryRole]}
                     </Badge>

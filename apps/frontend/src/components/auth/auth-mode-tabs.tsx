@@ -9,12 +9,12 @@ import { cn } from '@/lib/utils';
 // state on one shared component.
 export function AuthModeTabs({ active }: { active: 'login' | 'register' }) {
   return (
-    <div className="mb-6 flex rounded-lg bg-slate-100 p-1">
+    <div className="mb-6 flex rounded-lg bg-muted p-1">
       <Link
         href="/login"
         className={cn(
-          'flex-1 rounded-md py-2 text-center text-sm font-medium transition',
-          active === 'login' ? 'bg-background text-slate-900 shadow-sm' : 'text-slate-500',
+          'flex min-h-11 flex-1 items-center justify-center rounded-md text-center text-sm font-medium transition',
+          active === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
         )}
       >
         เข้าสู่ระบบ
@@ -22,8 +22,10 @@ export function AuthModeTabs({ active }: { active: 'login' | 'register' }) {
       <Link
         href="/register"
         className={cn(
-          'flex-1 rounded-md py-2 text-center text-sm font-medium transition',
-          active === 'register' ? 'bg-background text-slate-900 shadow-sm' : 'text-slate-500',
+          'flex min-h-11 flex-1 items-center justify-center rounded-md text-center text-sm font-medium transition',
+          active === 'register'
+            ? 'bg-background text-foreground shadow-sm'
+            : 'text-muted-foreground',
         )}
       >
         สมัครสมาชิก

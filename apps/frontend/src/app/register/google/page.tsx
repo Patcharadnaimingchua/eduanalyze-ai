@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,18 +15,12 @@ import {
   completeGoogleRegistrationSchema,
   type CompleteGoogleRegistrationFormValues,
 } from '@/lib/validation/complete-google-registration.schema';
+import { AuthHeading } from '@/components/auth/auth-heading';
+import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { DependentOrgSelect } from '@/components/auth/dependent-org-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -37,16 +30,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
+const BRAND_COPY = {
+  title: 'สมัครสมาชิกให้เสร็จสมบูรณ์',
+  description: 'กรอกข้อมูลการศึกษาที่เหลือ เพื่อเริ่มใช้งานระบบด้วยบัญชี Google ของคุณ',
+};
+
 export default function CompleteGoogleRegistrationPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
-      <ThemeToggle className="fixed right-4 top-4 z-30" />
-      <div className="w-full max-w-md">
-        <Suspense>
-          <CompleteGoogleRegistrationForm />
-        </Suspense>
-      </div>
-    </main>
+    <Suspense>
+      <CompleteGoogleRegistrationForm />
+    </Suspense>
   );
 }
 
@@ -96,74 +89,69 @@ function CompleteGoogleRegistrationForm() {
 
   if (!pendingToken) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <Alert variant="destructive">
-            <AlertDescription>
-              ไม่พบข้อมูลการสมัคร กรุณาเริ่มเข้าสู่ระบบด้วย Google ใหม่
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <AuthSplitLayout {...BRAND_COPY}>
+        <AuthHeading title="ข้อมูลนักศึกษา" />
+        <Alert variant="destructive">
+          <AlertDescription>
+            ไม่พบข้อมูลการสมัคร กรุณาเริ่มเข้าสู่ระบบด้วย Google ใหม่
+          </AlertDescription>
+        </Alert>
+      </AuthSplitLayout>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">ข้อมูลนิสิต/นักศึกษา</CardTitle>
-        <CardDescription>กรอกข้อมูลที่เหลือเพื่อสมัครสมาชิกให้เสร็จสมบูรณ์</CardDescription>
-      </CardHeader>
+    <AuthSplitLayout {...BRAND_COPY}>
+      <AuthHeading
+        title="ข้อมูลนักศึกษา"
+        description="กรอกข้อมูลที่เหลือเพื่อสมัครสมาชิกให้เสร็จสมบูรณ์"
+      />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                แบบฟอร์มนี้สำหรับนิสิต/นักศึกษาที่สมัครใช้งานครั้งแรกเท่านั้น หากคุณควรมีบัญชีเจ้าหน้าที่ อาจารย์
-                หรือผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอบัญชีแทนการกรอกแบบฟอร์มนี้
-              </AlertDescription>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              แบบฟอร์มนี้สำหรับนิสิต/นักศึกษาที่สมัครใช้งานครั้งแรกเท่านั้น หากคุณควรมีบัญชีเจ้าหน้าที่ อาจารย์
+              หรือผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอบัญชีแทนการกรอกแบบฟอร์มนี้
+            </AlertDescription>
+          </Alert>
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertDescription>{serverError}</AlertDescription>
             </Alert>
-            {serverError && (
-              <Alert variant="destructive">
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
+          )}
+          <FormField
+            control={form.control}
+            name="studentCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-            <FormField
-              control={form.control}
-              name="studentCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="admissionYear"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ปีที่เข้าศึกษา (พ.ศ.)</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          />
+          <FormField
+            control={form.control}
+            name="admissionYear"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ปีที่เข้าศึกษา (พ.ศ.)</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <DependentOrgSelect />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เสร็จสิ้นการสมัคร'}
-            </Button>
-          </CardFooter>
+          <DependentOrgSelect />
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เสร็จสิ้นการสมัคร'}
+          </Button>
         </form>
       </Form>
-    </Card>
+    </AuthSplitLayout>
   );
 }

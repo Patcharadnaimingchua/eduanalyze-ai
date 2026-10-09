@@ -15,14 +15,8 @@ import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { AuthHeading } from '@/components/auth/auth-heading';
+import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import {
   Form,
   FormControl,
@@ -31,6 +25,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+
+const BRAND_COPY = {
+  title: 'ตั้งรหัสผ่านใหม่',
+  description: 'ตั้งรหัสผ่านใหม่ที่ปลอดภัย เพื่อกลับเข้าสู่ระบบด้วยบัญชีเดิมของคุณ',
+};
 
 export default function ResetPasswordPage() {
   return (
@@ -70,72 +69,66 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card>
-        <CardContent className="space-y-3 pt-6">
+      <AuthSplitLayout {...BRAND_COPY}>
+        <AuthHeading title="ตั้งรหัสผ่านใหม่" />
+        <div className="space-y-3">
           <Alert variant="destructive">
             <AlertDescription>ลิงก์ไม่ถูกต้อง กรุณาขอลิงก์รีเซ็ตรหัสผ่านใหม่</AlertDescription>
           </Alert>
           <Button asChild className="w-full">
             <Link href="/forgot-password">ขอลิงก์ใหม่</Link>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </AuthSplitLayout>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">ตั้งรหัสผ่านใหม่</CardTitle>
-        <CardDescription>กรอกรหัสผ่านใหม่ของคุณ</CardDescription>
-      </CardHeader>
+    <AuthSplitLayout {...BRAND_COPY}>
+      <AuthHeading title="ตั้งรหัสผ่านใหม่" description="กรอกรหัสผ่านใหม่ของคุณ" />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {serverError && (
-              <Alert variant="destructive">
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
-            )}
-            {linkExpired && (
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/forgot-password">ขอลิงก์ใหม่</Link>
-              </Button>
-            )}
-            <FormField
-              control={form.control}
-              name="newPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>รหัสผ่านใหม่</FormLabel>
-                  <FormControl>
-                    <PasswordInput autoComplete="new-password" showStrength {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmNewPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ยืนยันรหัสผ่านใหม่อีกครั้ง</FormLabel>
-                  <FormControl>
-                    <PasswordInput autoComplete="new-password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'ตั้งรหัสผ่านใหม่'}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
+          {linkExpired && (
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/forgot-password">ขอลิงก์ใหม่</Link>
             </Button>
-          </CardFooter>
+          )}
+          <FormField
+            control={form.control}
+            name="newPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>รหัสผ่านใหม่</FormLabel>
+                <FormControl>
+                  <PasswordInput autoComplete="new-password" showStrength {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirmNewPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ยืนยันรหัสผ่านใหม่อีกครั้ง</FormLabel>
+                <FormControl>
+                  <PasswordInput autoComplete="new-password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'ตั้งรหัสผ่านใหม่'}
+          </Button>
         </form>
       </Form>
-    </Card>
+    </AuthSplitLayout>
   );
 }

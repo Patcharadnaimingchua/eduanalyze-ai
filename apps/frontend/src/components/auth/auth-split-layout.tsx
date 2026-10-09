@@ -2,12 +2,9 @@ import type { ReactNode } from 'react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { GraduationCap } from 'lucide-react';
 
-// Shared shell for /login, /register and /forgot-password — a wider
-// two-panel layout (brand panel + form), distinct from the (auth) route
-// group's narrow single-card layout used by reset-password. Pages using
-// this must live OUTSIDE app/(auth): that group's layout wraps children
-// in max-w-md, which squeezes this grid and pushes the brand text out of
-// the card.
+// Shared shell for every sign-in page (/login, /register, /forgot-password,
+// /reset-password, /register/google): a two-panel card (brand panel + form).
+// Pages using this must not sit under a layout that narrows their width.
 //
 // The brand panel's height is set by CSS Grid stretch to match its
 // sibling (the form column) — on /register that column is much taller
@@ -55,6 +52,21 @@ import { GraduationCap } from 'lucide-react';
 // is just under login's natural 550px, so login/register don't change.
 // title/description are required (no default copy here) so each page owns
 // its brand-panel message and a new page can't silently inherit another's.
+export const BRAND_NAME = 'EduAnalyze Academic Insights';
+
+function BrandMark({ className }: Readonly<{ className?: string }>) {
+  return (
+    <div className={className}>
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand">
+        <GraduationCap size={18} className="text-brand-light" aria-hidden="true" />
+      </div>
+      <span className="text-base font-medium text-primary">{BRAND_NAME}</span>
+    </div>
+  );
+}
+
+// The page's own h1 lives in the form column (see AuthHeading) so it exists on
+// phones too; the brand panel's message is a plain paragraph.
 export function AuthSplitLayout({
   title,
   description,
@@ -63,45 +75,38 @@ export function AuthSplitLayout({
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <ThemeToggle className="fixed right-4 top-4 z-30" />
-      <div className="grid w-full max-w-4xl grid-cols-1 rounded-2xl border border-slate-100 shadow-sm md:min-h-[34rem] md:grid-cols-2">
-        <div className="relative hidden md:block">
-          <div className="absolute inset-0 overflow-hidden rounded-l-2xl bg-brand-light">
-            <GraduationCap
-              size={280}
-              strokeWidth={1}
-              className="absolute -right-12 -top-12 text-brand/10"
-              aria-hidden="true"
-            />
-            <GraduationCap
-              size={160}
-              strokeWidth={1}
-              className="absolute -bottom-8 left-8 text-brand/10"
-              aria-hidden="true"
-            />
-          </div>
-
-          <div className="sticky top-[50vh] z-10 -translate-y-1/2 p-10">
-            <div className="mb-8 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand">
-                <GraduationCap size={18} className="text-brand-light" />
+      <div className="w-full max-w-4xl">
+        <BrandMark className="mb-4 flex items-center justify-center gap-2 md:hidden" />
+        <div className="grid grid-cols-1 rounded-lg border bg-card shadow-sm md:min-h-[34rem] md:grid-cols-2">
+          <div className="relative hidden md:block">
+            <div className="absolute inset-0 overflow-hidden rounded-l-lg bg-brand-light">
+              <GraduationCap
+                size={280}
+                strokeWidth={1}
+                className="absolute -right-12 -top-12 text-brand/10"
+                aria-hidden="true"
+              />
+              <GraduationCap
+                size={160}
+                strokeWidth={1}
+                className="absolute -bottom-8 left-8 text-brand/10"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="sticky top-[50vh] z-10 -translate-y-1/2 p-10">
+              <BrandMark className="mb-8 flex items-center gap-2" />
+              <p className="mb-3 text-2xl font-semibold leading-snug text-primary">{title}</p>
+              <p className="mb-8 max-w-xs text-sm leading-relaxed text-brand">{description}</p>
+              <div className="flex gap-2">
+                <span className="h-1 w-6 rounded-full bg-brand" />
+                <span className="h-1 w-2 rounded-full bg-brand/40" />
+                <span className="h-1 w-2 rounded-full bg-brand/40" />
               </div>
-              <span className="text-base font-medium text-primary">EduAnalyzeAI</span>
-            </div>
-
-            <h1 className="mb-3 text-2xl font-medium leading-snug text-primary">{title}</h1>
-
-            <p className="mb-8 max-w-xs text-sm leading-relaxed text-brand">{description}</p>
-
-            <div className="flex gap-2">
-              <span className="h-1 w-6 rounded-full bg-brand" />
-              <span className="h-1 w-2 rounded-full bg-brand/40" />
-              <span className="h-1 w-2 rounded-full bg-brand/40" />
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-col justify-center rounded-2xl p-10 md:rounded-l-none md:rounded-r-2xl">
-          {children}
+          <div className="flex flex-col justify-center rounded-lg p-6 sm:p-10 md:rounded-l-none md:rounded-r-lg">
+            {children}
+          </div>
         </div>
       </div>
     </div>

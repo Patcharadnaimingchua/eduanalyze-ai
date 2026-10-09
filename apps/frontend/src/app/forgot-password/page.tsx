@@ -12,6 +12,7 @@ import {
 import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { HOVER_LIFT } from '@/lib/motion';
+import { AuthHeading } from '@/components/auth/auth-heading';
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
 import { Reveal } from '@/components/layout/reveal';
 import { Button } from '@/components/ui/button';
@@ -56,10 +57,10 @@ export default function ForgotPasswordPage() {
   return (
     <AuthSplitLayout {...BRAND_COPY}>
       <Reveal index={0}>
-        <h2 className="mb-1 text-center text-xl font-medium">ลืมรหัสผ่าน</h2>
-        <p className="mb-5 text-center text-sm text-muted-foreground">
-          กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้คุณ
-        </p>
+        <AuthHeading
+          title="ลืมรหัสผ่าน"
+          description="กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้คุณ"
+        />
       </Reveal>
 
       {submitted ? (
@@ -70,7 +71,10 @@ export default function ForgotPasswordPage() {
             </AlertDescription>
           </Alert>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/login" className="font-medium text-brand hover:underline">
+            <Link
+              href="/login"
+              className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
+            >
               กลับไปเข้าสู่ระบบ
             </Link>
           </p>
@@ -103,7 +107,10 @@ export default function ForgotPasswordPage() {
                 {form.formState.isSubmitting ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
-                <Link href="/login" className="font-medium text-brand hover:underline">
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
+                >
                   กลับไปเข้าสู่ระบบ
                 </Link>
               </p>

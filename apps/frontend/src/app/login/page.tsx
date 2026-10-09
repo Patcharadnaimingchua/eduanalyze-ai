@@ -23,6 +23,7 @@ import {
   type TwoFactorVerifyTotpFormValues,
 } from '@/lib/validation/two-factor.schema';
 import { AuthSplitLayout } from '@/components/auth/auth-split-layout';
+import { AuthHeading } from '@/components/auth/auth-heading';
 import { AuthModeTabs } from '@/components/auth/auth-mode-tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -185,15 +186,15 @@ function LoginPageContent() {
   if (pendingToken) {
     return (
       <AuthSplitLayout {...BRAND_COPY}>
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 flex">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light">
             <ShieldCheck size={24} className="text-brand" aria-hidden="true" />
           </div>
         </div>
-        <h2 className="mb-1 text-center text-xl font-medium">ยืนยันตัวตนสองขั้นตอน</h2>
-        <p className="mb-5 text-center text-sm text-muted-foreground">
-          กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)
-        </p>
+        <AuthHeading
+          title="ยืนยันตัวตนสองขั้นตอน"
+          description="กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)"
+        />
 
         {isRecoveryMode ? (
           <Form {...recoveryForm}>
@@ -224,7 +225,7 @@ function LoginPageContent() {
               <div className="text-right text-sm">
                 <button
                   type="button"
-                  className="font-medium text-brand hover:underline"
+                  className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
                   onClick={toggleRecoveryMode}
                 >
                   กลับไปใช้รหัสจากแอป Authenticator
@@ -275,7 +276,7 @@ function LoginPageContent() {
               <div className="text-right text-sm">
                 <button
                   type="button"
-                  className="font-medium text-brand hover:underline"
+                  className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
                   onClick={toggleRecoveryMode}
                 >
                   ใช้รหัสสำรองแทน
@@ -305,7 +306,7 @@ function LoginPageContent() {
 
   return (
     <AuthSplitLayout {...BRAND_COPY}>
-      <h2 className="mb-5 text-center text-xl font-medium">เข้าสู่ระบบ</h2>
+      <AuthHeading title="เข้าสู่ระบบ" />
 
       <AuthModeTabs active="login" />
 
@@ -327,7 +328,7 @@ function LoginPageContent() {
                   <div className="relative">
                     <Mail
                       size={16}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     />
                     <Input
                       type="email"
@@ -362,7 +363,10 @@ function LoginPageContent() {
           />
 
           <div className="text-right text-sm">
-            <Link href="/forgot-password" className="font-medium text-brand hover:underline">
+            <Link
+              href="/forgot-password"
+              className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
+            >
               ลืมรหัสผ่าน?
             </Link>
           </div>
@@ -380,9 +384,9 @@ function LoginPageContent() {
       {GOOGLE_LOGIN_ENABLED && (
         <>
           <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs text-slate-400">หรือเข้าสู่ระบบด้วย</span>
-            <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">หรือเข้าสู่ระบบด้วย</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           <a href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`} onClick={rememberNextForGoogle}>
