@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { GRADE_LABELS } from '@/lib/grade-label';
 import { recordModeView } from './record-edit-mode';
 import { StaffGradeSelect } from './staff-grade-select';
-import { StaffPagination } from './staff-pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 export interface SemesterInfo {
   label: string;
@@ -218,7 +218,7 @@ export function StaffRecordList({
         ))}
       </ul>
 
-      <StaffPagination
+      <Pagination
         page={pagination.page}
         pageCount={pagination.pageCount}
         total={pagination.total}

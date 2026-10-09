@@ -442,7 +442,9 @@ export function StudentRosterTable({
               })}
             </ul>
           )}
-          <Pagination {...pagination} onPageChange={pagination.setPage} />
+          {pagination.total > 0 && (
+            <Pagination {...pagination} unit="คน" onPageChange={pagination.setPage} />
+          )}
         </div>
         {/* self-start stops the grid stretching this cell to the row
             height, which would leave sticky with nothing to scroll past. */}

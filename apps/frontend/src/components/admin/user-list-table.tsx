@@ -366,7 +366,9 @@ export function UserListTable({
             </div>
           </>
         )}
-        <Pagination {...pagination} onPageChange={pagination.setPage} />
+        {pagination.total > 0 && (
+          <Pagination {...pagination} unit="คน" onPageChange={pagination.setPage} />
+        )}
       </CardContent>
     </Card>
   );

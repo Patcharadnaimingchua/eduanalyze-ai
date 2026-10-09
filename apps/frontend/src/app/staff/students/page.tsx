@@ -15,7 +15,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLoadError } from '@/components/layout/page-states';
 import { Reveal } from '@/components/layout/reveal';
-import { StaffPagination } from '@/components/staff/staff-pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { StaffStudentList } from '@/components/staff/staff-student-list';
 import {
   SORT_LABELS,
@@ -402,19 +402,21 @@ function StaffStudentsContent() {
                   programName={(id) => programNames.get(id) ?? '—'}
                 />
               </div>
-              <div className="px-4 pb-4 md:px-5">
-                <StaffPagination
-                  page={pagination.page}
-                  pageCount={pagination.pageCount}
-                  total={pagination.total}
-                  rangeStart={pagination.rangeStart}
-                  rangeEnd={pagination.rangeEnd}
-                  unit="คน"
-                  pageSize={pageSize}
-                  onPageChange={pagination.setPage}
-                  onPageSizeChange={setPageSize}
-                />
-              </div>
+              {pagination.total > 0 && (
+                <div className="px-4 pb-4 md:px-5">
+                  <Pagination
+                    page={pagination.page}
+                    pageCount={pagination.pageCount}
+                    total={pagination.total}
+                    rangeStart={pagination.rangeStart}
+                    rangeEnd={pagination.rangeEnd}
+                    unit="คน"
+                    pageSize={pageSize}
+                    onPageChange={pagination.setPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

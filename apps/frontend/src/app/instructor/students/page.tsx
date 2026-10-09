@@ -178,7 +178,7 @@ function InstructorStudentsContent() {
               <Reveal index={2}>
                 <div className="space-y-3">
                   <StudentPersonList people={pagination.pageRows} />
-                  <Pagination {...pagination} onPageChange={pagination.setPage} />
+                  <Pagination {...pagination} unit="คน" onPageChange={pagination.setPage} />
                 </div>
               </Reveal>
             )}
