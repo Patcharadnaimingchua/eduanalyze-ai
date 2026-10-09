@@ -50,7 +50,7 @@ export function OrgEntityForm({
               <FormItem className="w-32">
                 <FormLabel>รหัส</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} className="h-11" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -63,7 +63,7 @@ export function OrgEntityForm({
               <FormItem className="min-w-[16rem] flex-1">
                 <FormLabel>ชื่อ</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} className="h-11" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
