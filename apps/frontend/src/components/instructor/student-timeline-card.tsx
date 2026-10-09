@@ -59,8 +59,8 @@ export function StudentTimelineCard({
             แสดงเฉพาะวิชาที่คุณสอนนักศึกษาคนนี้ ไม่ใช่ transcript ฉบับเต็ม
           </p>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
+        <Button type="button" variant="ghost" size="icon" aria-label="ปิดรายละเอียดนักศึกษา" onClick={onClose}>
+          <X className="h-4 w-4" aria-hidden="true" />
         </Button>
       </CardHeader>
       <CardContent>

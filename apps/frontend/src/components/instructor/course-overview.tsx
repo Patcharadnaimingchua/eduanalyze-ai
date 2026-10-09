@@ -49,19 +49,20 @@ import { CARD, CARD_PAD, TEXT_LABEL, TEXT_SECTION } from './instructor-ui';
 import { LowSampleTag } from './overview-parts';
 import { StatTile } from './stat-tile';
 
-// One hue, darkest for A and lightest for F, so the order reads without a
-// rainbow. Fixed colours rather than theme classes so the bars stay visible on
-// the track in both themes. Every row also carries the grade, the count and the
-// share in words, so colour is never the only signal.
+// One hue, strongest for A and faintest for F, so the order reads without a
+// rainbow. The theme-aware blue steps keep that order in both themes (the dark
+// theme mirrors the scale, so A stays the most prominent bar). Every row also
+// carries the grade, the count and the share in words, so colour is never the
+// only signal.
 const GRADE_FILL: Record<string, string> = {
-  A: '#1e3a8a',
-  B_PLUS: '#1e40af',
-  B: '#1d4ed8',
-  C_PLUS: '#2563eb',
-  C: '#3b82f6',
-  D_PLUS: '#60a5fa',
-  D: '#93c5fd',
-  F: '#bfdbfe',
+  A: 'bg-blue-900',
+  B_PLUS: 'bg-blue-800',
+  B: 'bg-blue-700',
+  C_PLUS: 'bg-blue-600',
+  C: 'bg-blue-500',
+  D_PLUS: 'bg-blue-400',
+  D: 'bg-blue-300',
+  F: 'bg-blue-200',
 };
 
 const oneDecimal = (n: number) => `${n.toFixed(1)}%`;
@@ -500,10 +501,9 @@ function GradesSection({ snapshot }: Readonly<{ snapshot: CourseSnapshot }>) {
                 className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100"
               >
                 <span
-                  className="block h-full rounded-full"
+                  className={cn('block h-full rounded-full', GRADE_FILL[s.grade])}
                   style={{
                     width: `${s.count === 0 ? 0 : Math.max(2, Math.min(100, s.percent))}%`,
-                    backgroundColor: GRADE_FILL[s.grade],
                   }}
                 />
               </div>
