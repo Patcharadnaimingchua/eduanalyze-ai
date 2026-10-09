@@ -44,19 +44,17 @@ Commit (7): `551c4eb` คำ+นับคน · `65ae3cb` helper · `e9a6ec5` GP
 **ยังไม่ลบ (มีเทสต์ใช้อยู่หรือไม่แน่ใจ):** `buildInstructorSummary` ใน `lib/instructor-summary.ts`, `STATUS_META`/`statusOf`/`sortByGap` ใน `lib/instructor-overview.ts`, `GoalBar` ใน `overview-parts.tsx`, `lib/headcount.ts` (มี `headcount.spec.ts` แต่ไม่มีโค้ดอื่นเรียกแล้ว), `components/ui/slider.tsx`, `lib/api/ai-analysis.ts` (endpoint ฝั่ง backend ยังมี), `lib/validation/course-instructor.schema.ts`, `lib/validation/prerequisite.schema.ts` (คอมโพเนนต์อื่นของ Instructor ที่ไม่มีหน้าไหนใช้ถูกลบแล้ว 2026-10-09)
 
 ### Staff redesign (รอทำ)
-- ตรวจความหมายของ "จาก N รายการ" ในคอมโพเนนต์ `Pagination` ที่ใช้ร่วมกัน: หน้า Instructor นับเป็น "คน" แต่ Staff อาจนับเป็น "คน × วิชา" (ยังไม่แก้ เพราะ Staff ใช้ร่วม) — ตรวจแล้วตาราง Staff นับเป็นแถวของตารางนั้น (นักศึกษา / วิชา / ผลการเรียน) ไม่ใช่ "คน × วิชา" ที่ยังค้างคือคำว่า "รายการ" ในคอมโพเนนต์กลาง (หน้า Staff แก้ด้วยการเลี่ยงคำว่า "แสดง ... จาก" ที่หน้าทำเนียบแล้ว)
 - (1) คนที่ไม่มีเกรดเลยต้องมีสถานะ "ยังไม่มีข้อมูล" ที่ backend: ตอนนี้ backend ตอบ `riskLevel: NORMAL` + `gpa: null` ฝั่งหน้าเว็บแยกให้ที่ชั้นแสดงผล (`components/staff/student-reading.ts`) จากเงื่อนไข NORMAL + ไม่มี GPA + ไม่มีวิชาเสี่ยง นักศึกษาที่มีแต่เกรด S ก็จะถูกอ่านเป็น "ยังไม่มีข้อมูล" ด้วย ต้องแก้ที่ backend ถึงจะแยกได้ถูกต้อง และ `GET /dashboard/staff` ยังไม่ส่งจำนวนคนที่มีเกรดต่อหลักสูตร หน้าเว็บนับเองจากรายชื่อ
 - (2) รายชื่ออาจารย์ทั้งระบบเป็นปัญหาขอบเขต: `GET /users/instructors` ไม่กรองตามขอบเขตของผู้ขอ (`listInstructors()` ไม่รับ user) ทั้งที่คำอธิบาย API ว่า "within the requester scope" Staff จึงมอบหมายอาจารย์ข้ามคณะได้
 - (3) หลักสูตรนอกขอบเขตรู้ตอนบันทึกถึงได้ 403: endpoint อ่านของ course-categories / courses / prerequisites / course-instructors ไม่กรองตามขอบเขต หน้าเว็บมีคำเตือนแค่กรณีเปิดผ่านลิงก์ (`outOfScope` ใน `curriculum-picker`)
 - (4) Staff แก้/ลบเกรดได้กว้างกว่า Instructor: `@Roles` ของ `student-course-record` เปิดให้ STAFF เพิ่ม/แก้/ลบเกรดของนักศึกษาทุกวิชาในสาขา รอการตัดสินใจเชิงนโยบายว่าควรให้ Staff แก้ได้หรืออ่านอย่างเดียว
 - (5) ปุ่ม 44px ทั้งระบบ: `ui/button` default 40px, `sm` 36px, ปุ่มแบ่งหน้า 32px, ตัวกรอง `h-9` แก้ที่ component กลางจะกระทบทุก role
-- (6) ข้อความแบ่งหน้าที่ component กลาง: "แสดง a–b จาก N รายการ" ใน `ui/pagination` ใช้ร่วมกับ Instructor และ Admin ยังไม่ได้แก้
 - (7) ซ่อน/ปิดอาจารย์และหลักสูตรนอกขอบเขตฝั่งหน้าเว็บ: ระหว่างรอ (2) และ (3) ที่ backend หน้าเว็บควรกรองรายชื่ออาจารย์และปิดปุ่มเขียนเมื่อหลักสูตรอยู่นอกขอบเขต
 - (8) `DELETE /courses/:id` เป็นการปิดใช้งาน ไม่ได้ลบจริง และไม่ถูกปฏิเสธแม้มีเกรดหรือการมอบหมายอาจารย์ผูกอยู่: `course.service.ts:92-118` ตั้ง `isActive=false` เท่านั้น ปฏิเสธ (409) เฉพาะเมื่อมีวิชาอื่นใช้วิชานี้เป็นวิชาบังคับก่อน และลบแถววิชาบังคับก่อนของวิชานี้เองในธุรกรรมเดียวกัน ไม่ตรวจ `StudentCourseRecord` หรือ `CourseInstructor` (FK `onDelete: Restrict` ไม่ถูกแตะเพราะไม่มีการลบแถวจริง) เกรดและการมอบหมายจึงค้างอยู่กับวิชาที่ปิดแล้ว และอาจารย์จะไม่เห็นวิชานั้นอีกเพราะ `findMyCourses` กรอง `isActive` หน้า Staff ยังไม่มีปุ่มปิดหรือลบวิชา (ตั้งใจ) ต้องตัดสินนโยบายก่อนว่าจะปิดวิชาที่มีเกรดได้หรือไม่
 - (9) `PATCH /courses/:id` ตั้ง `isActive` ไม่ได้: `UpdateCourseDto` คือ `CreateCourseDto` ลบ `curriculumId` (`dto/update-course.dto.ts:6-8`) และ `CreateCourseDto` ไม่มี `isActive` ส่วน `ValidationPipe` เปิด `whitelist` และ `forbidNonWhitelisted` (`main.ts:20-24`) การส่ง `isActive` จึงได้ 400 ผลคือวิชาที่ปิดไปแล้วเปิดกลับทาง API ไม่ได้ แก้ได้เฉพาะ code, name, nameEn, credits, description, isRequired, categoryId (รหัสวิชาซ้ำในหลักสูตร 409 และหมวดต้องอยู่ในหลักสูตรเดียวกัน)
 - (10) `GET /courses` ส่ง `description` จริง (`course.service.ts` `findAll()` คืนทั้งแถวจาก Prisma) แต่ชนิด `CourseListItem` ใน `packages/shared-types` ไม่มีฟิลด์นี้ หน้าแก้วิชาจึงยังแสดงช่องคำอธิบายว่างและส่ง `description` ก็ต่อเมื่อพิมพ์ใหม่ ส่วน `nameEn` ที่ล้างจะส่ง `''` ทางแก้คือเพิ่ม `description` ในชนิดนั้นแล้วให้ `courseToFormValues` ใช้ค่าจริง (ฝั่งหน้าเว็บอย่างเดียว ไม่ต้องแก้ backend)
 - (11) ตัวเลข "วิชาที่ยังไม่มีอาจารย์" และจำนวนอาจารย์นับฝั่งหน้าเว็บจาก `GET /courses` กับ `GET /course-instructors` อย่างละหนึ่งคำขอต่อหน้า (ไม่กรองตามขอบเขต กรองตามหลักสูตรฝั่ง client) การมอบหมายอาจารย์ไม่ผูกกับภาคเรียน ไม่มีตารางเปิดสอนต่อภาค
-- (12) สำเนาใน `components/staff` ที่อาจห่างจากต้นฉบับ: `staff-add-record-form` (จาก `add-record-form`), `staff-grade-select` (จาก `grade-select-confirm`), `staff-combobox` (จาก `ui/combobox`), `staff-pagination` (จาก `ui/pagination`) ถ้าแก้ที่ต้นฉบับ (ข้อ 5 และ 6) ควรยุบสำเนากลับ
+- (12) สำเนาใน `components/staff` ที่อาจห่างจากต้นฉบับ: `staff-add-record-form` (จาก `add-record-form`), `staff-grade-select` (จาก `grade-select-confirm`), `staff-combobox` (จาก `ui/combobox`) ยังไม่ยุบ (ใช้งานอยู่) ส่วน `staff-pagination` ยุบรวมกับ `ui/pagination` แล้ว
 - (13) เมนูทุก role ย้ายไป `components/dashboard/nav-config.ts` โดยไม่เปลี่ยนรายการของ role อื่น (มีเทสต์ล็อกไว้) เฉพาะเมนู Staff ใช้ `matchPrefixes`
 - (14) หลักสูตรนอกขอบเขต (เปิดผ่านลิงก์) หน้าหลักสูตรซ่อนข้อมูลและแสดงคำเตือน แต่รายชื่ออาจารย์ที่ให้เลือกยังเป็นของทั้งระบบ (ข้อ 2)
 
@@ -110,8 +108,7 @@ Three commits delivered (2026-09-30):
 - ADMIN เพิ่ม STAFF ให้บัญชีที่ยังไม่มีบทบาท STAFF (เช่น อาจารย์) ไม่ได้แล้ว เพราะ ADMIN จัดการได้เฉพาะบัญชี STAFF ต้องให้ SUPER_ADMIN เพิ่มให้
 - หน้า `/admin/users/[id]` ยังไม่เคยดูผลจริงบนหน้าจอ (dialog ยืนยัน, ปุ่มสูง 44px, dark mode)
 
-### ข้อความที่ยังถูกตัดด้วย "…" (ตรวจ 2026-10-08, ยังไม่แก้)
-- `components/credit-checker/prerequisite-flow-node.tsx:45` — ชื่อรายวิชาในกราฟวิชาบังคับก่อนใช้ `truncate` (มี `title` แสดงเต็มเมื่อชี้เมาส์ แต่ไม่มีบนมือถือ)
+### ข้อความที่ยังถูกตัดด้วย "…" (ตรวจ 2026-10-08, แก้แล้ว 2026-10-09)
 - ไม่พบ `text-ellipsis` / `line-clamp` ที่อื่น (ที่มี `truncate` ใน Combobox/Select แก้แล้ว)
 
 ### SUPER_ADMIN: งานค้างหลังรอบความปลอดภัย (2026-10-08)

@@ -13,10 +13,11 @@ import {
   type CourseNodeStatus,
 } from './prerequisite-flow-node';
 
+import { nextNodeTop } from '@/lib/prerequisite-layout';
+
 const NODE_TYPES = { course: PrerequisiteFlowNode };
 
 const COLUMN_WIDTH = 260;
-const ROW_HEIGHT = 100;
 
 const LEGEND: { status: CourseNodeStatus; label: string; swatch: string }[] = [
   { status: 'passed', label: 'ผ่านแล้ว', swatch: 'bg-emerald-300' },
@@ -44,7 +45,7 @@ export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheck
       })),
     );
 
-    const countPerDepth = new Map<number, number>();
+    const topPerDepth = new Map<number, number>();
     const flowNodes: Node<CourseNodeData>[] = allCourses.map((course) => {
       const status: CourseNodeStatus = passedIds.has(course.courseId)
         ? 'passed'
@@ -55,13 +56,13 @@ export function PrerequisiteFlowChart({ report }: Readonly<{ report: CreditCheck
             : 'locked';
 
       const depth = depths.get(course.courseId) ?? 0;
-      const row = countPerDepth.get(depth) ?? 0;
-      countPerDepth.set(depth, row + 1);
+      const top = topPerDepth.get(depth) ?? 0;
+      topPerDepth.set(depth, nextNodeTop(top, course.name));
 
       return {
         id: course.courseId,
         type: 'course',
-        position: { x: depth * COLUMN_WIDTH, y: row * ROW_HEIGHT },
+        position: { x: depth * COLUMN_WIDTH, y: top },
         data: {
           code: course.code,
           name: course.name,

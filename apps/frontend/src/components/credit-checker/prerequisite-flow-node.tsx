@@ -42,9 +42,7 @@ export function PrerequisiteFlowNode({ data }: NodeProps & { data: CourseNodeDat
           {data.isRequired ? 'บังคับ' : 'เลือก'}
         </span>
       </div>
-      <p className="mt-0.5 truncate text-xs text-slate-600" title={data.name}>
-        {data.name}
-      </p>
+      <p className="mt-0.5 break-words text-xs text-slate-600">{data.name}</p>
       <p className="mt-1 text-[10px] text-muted-foreground">{data.credits} หน่วยกิต</p>
       <Handle type="source" position={Position.Right} className="!bg-slate-400" />
     </div>
