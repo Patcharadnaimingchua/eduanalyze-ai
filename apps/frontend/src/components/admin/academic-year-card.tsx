@@ -47,7 +47,9 @@ const TERM_KIND: Record<Semester['term'], string> = {
   SUMMER: 'ภาคการศึกษาพิเศษ',
 };
 
-const SEMESTER_GRID = 'md:grid md:grid-cols-[1.6fr_1fr_1.4fr] md:items-center md:gap-3';
+// Columns keep a fixed width and stay left-aligned, so the status sits next to the
+// semester name and the buttons next to the status instead of floating far right.
+const SEMESTER_COLS = 'md:grid-cols-[minmax(0,14rem)_8rem_auto] md:justify-start md:gap-x-4';
 
 export function AcademicYearCard({
   academicYear,
@@ -211,7 +213,7 @@ export function AcademicYearCard({
     <Card>
       <CardHeader
         className={cn(
-          'flex-row flex-wrap items-center justify-between gap-3 space-y-0',
+          'flex-row flex-wrap items-center gap-3 space-y-0',
           !editingYear && 'cursor-pointer',
         )}
         onClick={(event) => {
@@ -253,39 +255,20 @@ export function AcademicYearCard({
             </form>
           </Form>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand"
-            >
-              <GraduationCap size={20} />
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
-              {isLatest && <Badge tone="neutral">ปีล่าสุด</Badge>}
-              <Badge tone="neutral">{semesters.length} ภาคเรียน</Badge>
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 md:flex md:flex-wrap md:gap-y-2">
+            <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-3 md:flex-none">
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand"
+              >
+                <GraduationCap size={20} />
+              </span>
+              <CardTitle className="min-w-0 break-words leading-snug">ปีการศึกษา {academicYear.year}</CardTitle>
             </div>
-          </div>
-        )}
-        {!editingYear && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={startEditingYear}>
-              แก้ไข
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              className="gap-1.5 font-normal"
-              onClick={() => setConfirmingYearDelete(true)}
-            >
-              <Ban size={16} aria-hidden="true" />
-              ปิดใช้งานปีการศึกษา
-            </Button>
             <Button
               type="button"
               variant="outline"
-              className="w-11 p-0"
+              className="col-start-2 row-start-1 w-11 p-0 md:order-last"
               aria-expanded={open}
               aria-controls={`academic-year-${academicYear.id}`}
               aria-label={`${open ? 'ซ่อน' : 'แสดง'}ภาคเรียนของปีการศึกษา ${academicYear.year}`}
@@ -300,6 +283,27 @@ export function AcademicYearCard({
                 )}
               />
             </Button>
+            <div className="col-span-2 row-start-2 flex flex-wrap items-center gap-2 md:contents">
+              <div className="flex flex-wrap items-center gap-2 md:flex-1">
+                {isLatest && <Badge tone="neutral">ปีล่าสุด</Badge>}
+                <Badge tone="neutral">{semesters.length} ภาคเรียน</Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={startEditingYear}>
+                  แก้ไข
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  className="gap-1.5 font-normal"
+                  onClick={() => setConfirmingYearDelete(true)}
+                >
+                  <Ban size={16} aria-hidden="true" />
+                  ปิดใช้งานปีการศึกษา
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </CardHeader>
@@ -317,12 +321,12 @@ export function AcademicYearCard({
                 aria-hidden="true"
                 className={cn(
                   'hidden rounded-t-md bg-slate-100 px-3 py-2 text-xs font-medium text-muted-foreground md:grid',
-                  SEMESTER_GRID,
+                  SEMESTER_COLS,
                 )}
               >
                 <span>ภาคการศึกษา</span>
                 <span>สถานะ</span>
-                <span className="text-right">การจัดการ</span>
+                <span>การจัดการ</span>
               </div>
               <ul className="space-y-2 md:space-y-0 md:divide-y">
                 {sortedSemesters.map((semester) => {
@@ -335,8 +339,13 @@ export function AcademicYearCard({
                     <li
                       key={semester.id}
                       className={cn(
-                        'rounded-md bg-slate-50 px-3 py-2 text-sm md:rounded-none md:bg-transparent',
-                        editingSemesterId === semester.id ? 'block' : SEMESTER_GRID,
+                        'rounded-md border border-slate-100 bg-slate-50 px-3 py-3 text-sm md:rounded-none md:border-0 md:bg-transparent md:py-2',
+                        editingSemesterId === semester.id
+                          ? 'block'
+                          : cn(
+                              'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 md:grid md:items-center',
+                              SEMESTER_COLS,
+                            ),
                       )}
                     >
                       {editingSemesterId === semester.id ? (
@@ -400,7 +409,7 @@ export function AcademicYearCard({
                               {TERM_KIND[semester.term]}
                             </p>
                           </div>
-                          <span>
+                          <span className="justify-self-end md:justify-self-start">
                             <Badge tone="success" className="gap-1.5">
                               <span
                                 aria-hidden="true"
@@ -409,7 +418,7 @@ export function AcademicYearCard({
                               ใช้งาน
                             </Badge>
                           </span>
-                          <div className="flex flex-wrap gap-2 md:justify-end">
+                          <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1">
                             <Button
                               type="button"
                               variant="outline"
