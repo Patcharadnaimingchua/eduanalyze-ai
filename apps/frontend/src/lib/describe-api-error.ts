@@ -23,10 +23,17 @@ export const INVALID_INPUT_ERROR = 'ข้อมูลที่กรอกไ�
 // status it knows (e.g. 409 on this form). Otherwise a 400/422 reads as invalid
 // input and anything else, including 5xx, a network failure or a non-HTTP
 // error, gets the generic sentence. An explicit `fallback` replaces both.
+export interface DescribeApiErrorOptions {
+  // false: never show the server's own sentence, only byStatus or the fallback
+  // (callers whose API replies are not written for the user).
+  serverMessage?: boolean;
+}
+
 export function describeApiError(
   error: unknown,
   byStatus: Partial<Record<number, string>> = {},
   fallback?: string,
+  { serverMessage: showServerMessage = true }: DescribeApiErrorOptions = {},
 ): string {
   const generic = fallback ?? GENERIC_ERROR;
   if (!isAxiosError(error) || !error.response) return generic;
@@ -34,6 +41,6 @@ export function describeApiError(
   if (status < 400 || status >= 500) return generic;
   const message = serverMessage(data);
   if (byStatus[status]) return byStatus[status];
-  if (message && THAI.test(message)) return message;
+  if (showServerMessage && message && THAI.test(message)) return message;
   return fallback ?? (status === 400 || status === 422 ? INVALID_INPUT_ERROR : GENERIC_ERROR);
 }

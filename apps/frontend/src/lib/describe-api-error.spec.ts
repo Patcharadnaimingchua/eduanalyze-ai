@@ -68,4 +68,15 @@ describe('describeApiError', () => {
       'สร้างไม่สำเร็จ',
     );
   });
+
+  it("with serverMessage off, a Thai server sentence never replaces the caller's own", () => {
+    const error = httpError(404, { message: 'ไม่พบข้อมูลนี้' });
+    expect(describeApiError(error, {}, 'บันทึกไม่สำเร็จ', { serverMessage: false })).toBe(
+      'บันทึกไม่สำเร็จ',
+    );
+    expect(
+      describeApiError(error, { 404: 'หายไปแล้ว' }, 'บันทึกไม่สำเร็จ', { serverMessage: false }),
+    ).toBe('หายไปแล้ว');
+    expect(describeApiError(error, {}, undefined, { serverMessage: false })).toBe(GENERIC_ERROR);
+  });
 });

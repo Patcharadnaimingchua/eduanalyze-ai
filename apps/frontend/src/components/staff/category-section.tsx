@@ -15,7 +15,8 @@ import {
   curriculumRequirementSchema,
   type CurriculumRequirementFormValues,
 } from '@/lib/validation/curriculum-requirement.schema';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { creditShare } from '@/lib/progress-ring-geometry';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -97,7 +98,7 @@ export function CategorySection({
       setServerError(
         isAxiosError(error) && error.response?.status === 409
           ? 'ลบไม่ได้ เพราะยังมีวิชาอยู่ในหมวดนี้'
-          : describeStaffWriteError(error),
+          : describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY),
       );
     } finally {
       setBusy(false);
@@ -114,7 +115,7 @@ export function CategorySection({
       toast.success('ลบเกณฑ์หน่วยกิตแล้ว');
       onChanged();
     } catch (error) {
-      setServerError(describeStaffWriteError(error));
+      setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
     } finally {
       setConfirmingRequirementDelete(false);
       setBusy(false);
@@ -138,7 +139,7 @@ export function CategorySection({
       toast.success('บันทึกเกณฑ์หน่วยกิตแล้ว');
       onChanged();
     } catch (error) {
-      setServerError(describeStaffWriteError(error));
+      setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
     }
   }
 

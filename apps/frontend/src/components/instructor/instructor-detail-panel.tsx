@@ -7,7 +7,8 @@ import { fetchCourseCloAchievement, fetchCourseRoster } from '@/lib/api/instruct
 import { fetchCourseEvidenceCoverage } from '@/lib/evidence-coverage';
 import { cn } from '@/lib/utils';
 import { buildCourseOverviews } from '@/lib/instructor-overview';
-import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
+import { UNSAVED_SCORES_CONFIRM } from '@/lib/score-form-guard';
+import { useConfirm } from '@/lib/use-confirm';
 import { useUnsavedNavigationGuard } from '@/lib/use-unsaved-navigation-guard';
 import { Reveal } from '@/components/layout/reveal';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,10 +73,11 @@ export function InstructorDetailPanel({
 
   // Set by the score form while it holds edits that are not saved yet.
   const [hasUnsavedScores, setHasUnsavedScores] = useState(false);
-  useUnsavedNavigationGuard(hasUnsavedScores);
-  function handleTabChange(tab: InstructorTab) {
+  const { confirm, dialog } = useConfirm();
+  useUnsavedNavigationGuard(hasUnsavedScores, () => confirm(UNSAVED_SCORES_CONFIRM));
+  async function handleTabChange(tab: InstructorTab) {
     if (tab === activeTab) return;
-    if (hasUnsavedScores && !window.confirm(UNSAVED_SCORES_CONFIRM_MESSAGE)) return;
+    if (hasUnsavedScores && !(await confirm(UNSAVED_SCORES_CONFIRM))) return;
     onTabChange(tab);
   }
 
@@ -202,6 +204,7 @@ export function InstructorDetailPanel({
           </CardContent>
         </Card>
       </Reveal>
+      {dialog}
     </>
   );
 }

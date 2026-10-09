@@ -4,11 +4,19 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { orgEntitySchema, type OrgEntityFormValues } from '@/lib/validation/organization.schema';
-import { describeOrgWriteError } from './org-errors';
+import { describeApiError } from '@/lib/describe-api-error';
+import { orgWriteErrors } from '@/lib/api-error-presets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 export function OrgEntityForm({
   defaultValues,
@@ -32,16 +40,19 @@ export function OrgEntityForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      setServerError(describeOrgWriteError(error, 'รหัสหรือชื่อนี้ถูกใช้แล้วในระดับเดียวกัน'));
+      setServerError(
+        describeApiError(error, orgWriteErrors('รหัสหรือชื่อนี้ถูกใช้แล้วในระดับเดียวกัน')),
+      );
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-        {serverError && (
-          <ApiErrorAlert message={serverError} />
-        )}
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3"
+      >
+        {serverError && <ApiErrorAlert message={serverError} />}
         <div className="flex flex-wrap items-start gap-3">
           <FormField
             control={form.control}

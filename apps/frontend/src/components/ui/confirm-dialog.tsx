@@ -47,17 +47,11 @@ export function ConfirmDialog({
           </div>
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <DialogPrimitive.Close asChild>
-              <Button type="button" variant="outline" className="min-h-11" disabled={busy}>
+              <Button type="button" variant="ghost" disabled={busy}>
                 {cancelLabel}
               </Button>
             </DialogPrimitive.Close>
-            <Button
-              type="button"
-              variant="destructive"
-              className="min-h-11"
-              disabled={busy}
-              onClick={onConfirm}
-            >
+            <Button type="button" variant="destructive" disabled={busy} onClick={onConfirm}>
               {confirmLabel}
             </Button>
           </div>

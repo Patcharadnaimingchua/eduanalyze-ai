@@ -5,7 +5,8 @@ import { ChevronDown, ChevronRight, FolderOpen, type LucideIcon } from 'lucide-r
 import type { OrgEntityFormValues } from '@/lib/validation/organization.schema';
 import { OrgEntityForm } from './org-entity-form';
 import { OrgNodeMenu } from './org-node-menu';
-import { describeOrgWriteError } from './org-errors';
+import { describeApiError } from '@/lib/describe-api-error';
+import { orgWriteErrors } from '@/lib/api-error-presets';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { DeactivateConfirm } from '@/components/admin/deactivate-confirm';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +62,12 @@ export function OrgNodeRow({
     try {
       await onDeactivate();
     } catch (err) {
-      setError(describeOrgWriteError(err, `ปิดใช้งานไม่ได้ เพราะยังมี${childLabel}ที่ใช้งานอยู่`));
+      setError(
+        describeApiError(
+          err,
+          orgWriteErrors(`ปิดใช้งานไม่ได้ เพราะยังมี${childLabel}ที่ใช้งานอยู่`),
+        ),
+      );
     } finally {
       setBusy(false);
       setConfirming(false);

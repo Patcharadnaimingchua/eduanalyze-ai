@@ -7,13 +7,22 @@ import type { CurriculumListItem } from '@eduanalyze-ai/shared-types';
 import { createCurriculum, deleteCurriculum, updateCurriculum } from '@/lib/api/organization';
 import { curriculumSchema, type CurriculumFormValues } from '@/lib/validation/organization.schema';
 import { useToast } from '@/lib/toast-context';
-import { describeOrgWriteError } from './org-errors';
+import { useConfirm } from '@/lib/use-confirm';
+import { describeApiError } from '@/lib/describe-api-error';
+import { orgWriteErrors } from '@/lib/api-error-presets';
 import { DeactivateButton } from './deactivate-button';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 const VERSION_CONFLICT = 'เวอร์ชันหลักสูตรนี้มีอยู่แล้วในสาขานี้';
 const TOGGLE_CONFLICT =
@@ -45,7 +54,9 @@ export function CurriculumPanel({
 
   return (
     <div className="space-y-2">
-      {sorted.length === 0 && <p className="text-sm text-muted-foreground">ยังไม่มีหลักสูตรในสาขานี้</p>}
+      {sorted.length === 0 && (
+        <p className="text-sm text-muted-foreground">ยังไม่มีหลักสูตรในสาขานี้</p>
+      )}
       {sorted.map((curriculum) => (
         <CurriculumCard key={curriculum.id} curriculum={curriculum} onChanged={onChanged} />
       ))}
@@ -88,12 +99,20 @@ function CurriculumCard({
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const toast = useToast();
+  const { confirm, dialog } = useConfirm();
 
   async function toggleRegistration() {
     // Opening this curriculum silently closes any other one in the same
     // program (backend auto-unset) — closing has no such side effect, so
     // only the open direction needs a confirm.
-    if (!curriculum.isOpenForRegistration && !window.confirm(OPEN_REGISTRATION_CONFIRM)) {
+    if (
+      !curriculum.isOpenForRegistration &&
+      !(await confirm({
+        title: 'เปิดรับลงทะเบียนฉบับนี้?',
+        description: OPEN_REGISTRATION_CONFIRM,
+        confirmLabel: 'เปิดรับลงทะเบียน',
+      }))
+    ) {
       return;
     }
     setToggling(true);
@@ -102,14 +121,16 @@ function CurriculumCard({
       await updateCurriculum(curriculum.id, {
         isOpenForRegistration: !curriculum.isOpenForRegistration,
       });
-      toast.success(curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียนแล้ว' : 'เปิดรับลงทะเบียนแล้ว');
+      toast.success(
+        curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียนแล้ว' : 'เปิดรับลงทะเบียนแล้ว',
+      );
       onChanged();
     } catch (error) {
       // This PATCH never sends `version`, so it can't actually hit the
       // version-conflict path (assertVersionAvailable only runs when
       // dto.version is set) — a distinct message so a future 409 here
       // doesn't show the wrong reason.
-      setToggleError(describeOrgWriteError(error, TOGGLE_CONFLICT));
+      setToggleError(describeApiError(error, orgWriteErrors(TOGGLE_CONFLICT)));
     } finally {
       setToggling(false);
     }
@@ -129,12 +150,19 @@ function CurriculumCard({
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            {curriculum.totalCredits} หน่วยกิตรวม · {curriculum.durationYears} ปี · สูงสุด {curriculum.maxCreditsPerSemester} หน่วยกิต/ภาค ·
-            เกณฑ์ผ่าน CLO {curriculum.defaultAchievementThreshold}%
+            {curriculum.totalCredits} หน่วยกิตรวม · {curriculum.durationYears} ปี · สูงสุด{' '}
+            {curriculum.maxCreditsPerSemester} หน่วยกิต/ภาค · เกณฑ์ผ่าน CLO{' '}
+            {curriculum.defaultAchievementThreshold}%
           </p>
         </div>
         <div className="flex items-start gap-1">
-          <Button type="button" variant="outline" size="sm" disabled={toggling} onClick={toggleRegistration}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={toggling}
+            onClick={toggleRegistration}
+          >
             {curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียน' : 'ตั้งเป็นฉบับที่เปิดรับ'}
           </Button>
           {!editing && (
@@ -182,6 +210,7 @@ function CurriculumCard({
           />
         </div>
       )}
+      {dialog}
     </div>
   );
 }
@@ -208,7 +237,7 @@ function CurriculumForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      setServerError(describeOrgWriteError(error, VERSION_CONFLICT));
+      setServerError(describeApiError(error, orgWriteErrors(VERSION_CONFLICT)));
     }
   }
 
@@ -218,9 +247,7 @@ function CurriculumForm({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3"
       >
-        {serverError && (
-          <ApiErrorAlert message={serverError} />
-        )}
+        {serverError && <ApiErrorAlert message={serverError} />}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {FIELDS.map((f) => (
             <FormField

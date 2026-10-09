@@ -6,6 +6,7 @@ import { assignUserRole, revokeUserRole } from '@/lib/api/user-management';
 import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { useToast } from '@/lib/toast-context';
 import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
+import { useConfirm } from '@/lib/use-confirm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -13,7 +14,13 @@ import { RevokeButton } from './revoke-button';
 import { describeApiError } from '@/lib/describe-api-error';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // SUPER_ADMIN deliberately excluded — never grantable via API (advisor
 // feedback, see plan file "เรื่องที่ 2"), backend rejects it with 403
@@ -44,19 +51,31 @@ export function UserRolesSection({
   // ADMIN may only assign/revoke STAFF (backend-enforced) — narrowing the
   // dropdown here means an ADMIN never even attempts (and gets 403'd by)
   // any other role.
-  const availableRoles = (requesterIsSuperAdmin ? ALL_ASSIGNABLE_ROLES : (['STAFF'] as Role[])).filter(
-    (role) => !roles.includes(role),
-  );
+  const availableRoles = (
+    requesterIsSuperAdmin ? ALL_ASSIGNABLE_ROLES : (['STAFF'] as Role[])
+  ).filter((role) => !roles.includes(role));
 
   // Warn only — assigning stays allowed (backend keeps role and scope
   // independent, and a scope can be added right after).
   const warnMissingScope = !!selectedRole && !hasScopes && roleNeedsScope([selectedRole as Role]);
 
+  const { confirm, dialog } = useConfirm();
+
   async function handleAssign() {
     if (!selectedRole) return;
     if (
       warnMissingScope &&
-      !window.confirm(`ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ\n${MISSING_SCOPE_WARNING}\n\nต้องการเพิ่มบทบาทต่อหรือไม่?`)
+      !(await confirm({
+        title: 'เพิ่มบทบาทโดยยังไม่มีขอบเขต?',
+        description: (
+          <>
+            <p>ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ</p>
+            <p className="mt-2">{MISSING_SCOPE_WARNING}</p>
+            <p className="mt-2">ต้องการเพิ่มบทบาทต่อหรือไม่?</p>
+          </>
+        ),
+        confirmLabel: 'เพิ่มบทบาท',
+      }))
     ) {
       return;
     }
@@ -95,9 +114,7 @@ export function UserRolesSection({
         <CardTitle>บทบาท</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {serverError && (
-          <ApiErrorAlert message={serverError} />
-        )}
+        {serverError && <ApiErrorAlert message={serverError} />}
 
         {roles.length === 0 ? (
           <p className="text-sm text-muted-foreground">ยังไม่มีบทบาท</p>
@@ -135,14 +152,20 @@ export function UserRolesSection({
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button" variant="outline" disabled={!selectedRole || busy} onClick={handleAssign}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!selectedRole || busy}
+              onClick={handleAssign}
+            >
               เพิ่มบทบาท
             </Button>
           </div>
         )}
         {warnMissingScope && (
           <p className="text-xs text-amber-700" role="status">
-            ผู้ใช้นี้ยังไม่มีขอบเขต — {MISSING_SCOPE_WARNING} (เพิ่มได้ที่การ์ด &ldquo;ขอบเขต&rdquo; ด้านล่าง)
+            ผู้ใช้นี้ยังไม่มีขอบเขต — {MISSING_SCOPE_WARNING} (เพิ่มได้ที่การ์ด &ldquo;ขอบเขต&rdquo;
+            ด้านล่าง)
           </p>
         )}
       </CardContent>
@@ -159,6 +182,7 @@ export function UserRolesSection({
         busy={busy}
         onConfirm={() => confirmingRole && handleRevoke(confirmingRole)}
       />
+      {dialog}
     </Card>
   );
 }

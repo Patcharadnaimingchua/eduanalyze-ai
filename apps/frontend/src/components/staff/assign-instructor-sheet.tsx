@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { isAxiosError } from 'axios';
 import type { CourseListItem, InstructorListItem } from '@eduanalyze-ai/shared-types';
 import { createCourseInstructor } from '@/lib/api/staff';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -60,7 +61,7 @@ export function AssignInstructorSheet({
           ? 'อาจารย์ท่านนี้ได้รับมอบหมายให้วิชานี้แล้ว'
           : isAxiosError(e) && e.response?.status === 400
             ? 'มอบหมายไม่ได้ เพราะผู้ใช้นี้ไม่ได้มีบทบาทอาจารย์'
-            : describeStaffWriteError(e),
+            : describeApiError(e, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY),
       );
     } finally {
       setBusy(false);

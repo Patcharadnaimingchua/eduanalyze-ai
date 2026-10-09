@@ -8,7 +8,8 @@ import {
   fetchAssessmentCloMappings,
   fetchAssessmentDefinitions,
 } from '@/lib/api/assessment-evidence';
-import { UNSAVED_SCORES_CONFIRM_MESSAGE } from '@/lib/score-form-guard';
+import { UNSAVED_SCORES_CONFIRM } from '@/lib/score-form-guard';
+import { useConfirm } from '@/lib/use-confirm';
 import { AssessmentDefinitionPanel } from './assessment-definition-panel';
 import { AssessmentCloMappingPanel } from './assessment-clo-mapping-panel';
 import { StudentScoreEntryPanel } from './student-score-entry-panel';
@@ -119,20 +120,21 @@ export function AssessmentEvidenceSection({
 
   // Unsaved score edits live only in the score panel's form; leaving it for
   // another assessment/CLO discards them, so ask first.
-  function confirmDiscardUnsaved(): boolean {
-    return !hasUnsavedScores || window.confirm(UNSAVED_SCORES_CONFIRM_MESSAGE);
+  const { confirm, dialog } = useConfirm();
+  async function confirmDiscardUnsaved(): Promise<boolean> {
+    return !hasUnsavedScores || (await confirm(UNSAVED_SCORES_CONFIRM));
   }
 
-  function selectDefinition(definitionId: string) {
+  async function selectDefinition(definitionId: string) {
     if (definitionId === selectedDefinitionId) return;
-    if (!confirmDiscardUnsaved()) return;
+    if (!(await confirmDiscardUnsaved())) return;
     setHasUnsavedScores(false);
     updateParams({ def: definitionId, clo: null });
   }
 
-  function selectMapping(mappingId: string) {
+  async function selectMapping(mappingId: string) {
     if (mappingId === selectedMappingId) return;
-    if (!confirmDiscardUnsaved()) return;
+    if (!(await confirmDiscardUnsaved())) return;
     updateParams({ clo: mappingId });
   }
 
@@ -187,6 +189,7 @@ export function AssessmentEvidenceSection({
           />
         )}
       </EvidenceStep>
+      {dialog}
     </div>
   );
 }

@@ -15,11 +15,9 @@ import { fetchCourseRoster } from '@/lib/api/instructor';
 import { SCORE_CSV_HEADERS } from '@/lib/assessment-score-import';
 import { toCsv, downloadCsv } from '@/lib/csv';
 import { shouldReseedScoreForm } from '@/lib/score-form-guard';
+import { useConfirm } from '@/lib/use-confirm';
 import { effectiveMaxOf, findScoreRowProblems, isCompatibleMax } from '@/lib/score-multi-clo';
-import {
-  ASSESSMENT_SCORE_STATUS_LABELS,
-  ASSESSMENT_SCORE_STATUS_OPTIONS,
-} from '@/lib/grade-label';
+import { ASSESSMENT_SCORE_STATUS_LABELS, ASSESSMENT_SCORE_STATUS_OPTIONS } from '@/lib/grade-label';
 import { useToast } from '@/lib/toast-context';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -153,7 +151,8 @@ export function StudentScoreEntryPanel({
   useEffect(() => {
     if (!rosterQuery.data || !scoresQuery.data) return;
     const mappingChanged = seededMappingIdRef.current !== assessmentCloMappingId;
-    if (!shouldReseedScoreForm(isDirtyRef.current, forceReseedRef.current || mappingChanged)) return;
+    if (!shouldReseedScoreForm(isDirtyRef.current, forceReseedRef.current || mappingChanged))
+      return;
     seededMappingIdRef.current = assessmentCloMappingId;
     const scoreByRecordId = new Map(scoresQuery.data.map((s) => [s.studentCourseRecordId, s]));
     // reset (not replace) so the seeded rows become the clean baseline that
@@ -174,10 +173,7 @@ export function StudentScoreEntryPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rosterQuery.data, scoresQuery.data]);
 
-  const gradedCount = useMemo(
-    () => fields.filter((f) => f.status === 'GRADED').length,
-    [fields],
-  );
+  const gradedCount = useMemo(() => fields.filter((f) => f.status === 'GRADED').length, [fields]);
 
   // Display only: how many rows differ from what is saved. onSave reads the
   // same dirtyFields to decide what to send.
@@ -250,6 +246,8 @@ export function StudentScoreEntryPanel({
 
   // Writing to other CLOs replaces whatever is already recorded there for
   // these students, so say how many existing values will change first.
+  const { confirm, dialog } = useConfirm();
+
   async function confirmOverwrite(dirtyRows: ScoreRow[], mappingIds: string[]): Promise<boolean> {
     const existing = await Promise.all(
       mappingIds.map((id) => fetchStudentAssessmentScores(id, courseId)),
@@ -261,7 +259,9 @@ export function StudentScoreEntryPanel({
         const prior = byRecord.get(row.studentCourseRecordId);
         if (!prior || prior.status === 'PENDING') continue;
         const sameScore =
-          row.status === 'GRADED' ? prior.score !== null && Number(prior.score) === Number(row.score) : prior.score === null;
+          row.status === 'GRADED'
+            ? prior.score !== null && Number(prior.score) === Number(row.score)
+            : prior.score === null;
         if (prior.status !== row.status || !sameScore) changed.add(row.studentCourseRecordId);
       }
     });
@@ -273,9 +273,11 @@ export function StudentScoreEntryPanel({
       changed.size > 0
         ? ` คะแนนเดิมของนักศึกษา ${changed.size} คนในเป้าเหล่านั้นจะถูกเขียนทับ`
         : ' ไม่มีคะแนนเดิมที่ต่างกันถูกเขียนทับ';
-    return window.confirm(
-      `จะบันทึกคะแนน ${dirtyRows.length} คน ลงในเป้าที่เลือกอยู่ และ ${labels} พร้อมกัน (ทั้งหมดหรือไม่มีเลย).${overwriteNote} ต้องการดำเนินการต่อหรือไม่?`,
-    );
+    return confirm({
+      title: 'บันทึกคะแนนลงหลายเป้าพร้อมกัน?',
+      description: `จะบันทึกคะแนน ${dirtyRows.length} คน ลงในเป้าที่เลือกอยู่ และ ${labels} พร้อมกัน (ทั้งหมดหรือไม่มีเลย).${overwriteNote} ต้องการดำเนินการต่อหรือไม่?`,
+      confirmLabel: 'บันทึกคะแนน',
+    });
   }
 
   // Exports what's on screen now, so the file round-trips straight back
@@ -284,12 +286,14 @@ export function StudentScoreEntryPanel({
     try {
       const csv = toCsv(
         SCORE_CSV_HEADERS,
-        form.getValues('rows').map((row) => [
-          row.studentCode,
-          row.fullName,
-          row.status === 'GRADED' ? row.score : '',
-          ASSESSMENT_SCORE_STATUS_LABELS[row.status],
-        ]),
+        form
+          .getValues('rows')
+          .map((row) => [
+            row.studentCode,
+            row.fullName,
+            row.status === 'GRADED' ? row.score : '',
+            ASSESSMENT_SCORE_STATUS_LABELS[row.status],
+          ]),
       );
       downloadCsv(`assessment-scores-${new Date().toISOString().slice(0, 10)}.csv`, csv);
       toast.success('ดาวน์โหลดเทมเพลตแล้ว');
@@ -317,7 +321,9 @@ export function StudentScoreEntryPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-medium text-primary">คะแนนของนักศึกษาแต่ละคน</h3>
         {fields.length > 0 && (
-          <EvidenceCoverageBadge coverage={{ validCount: gradedCount, totalCount: fields.length }} />
+          <EvidenceCoverageBadge
+            coverage={{ validCount: gradedCount, totalCount: fields.length }}
+          />
         )}
       </div>
       <div className="space-y-4">
@@ -370,7 +376,9 @@ export function StudentScoreEntryPanel({
                     checked={extraMappingIds.includes(option.id)}
                     onChange={(e) =>
                       setExtraMappingIds((prev) =>
-                        e.target.checked ? [...prev, option.id] : prev.filter((id) => id !== option.id),
+                        e.target.checked
+                          ? [...prev, option.id]
+                          : prev.filter((id) => id !== option.id),
                       )
                     }
                   />
@@ -473,6 +481,7 @@ export function StudentScoreEntryPanel({
           </div>
         )}
       </div>
+      {dialog}
     </div>
   );
 }

@@ -7,6 +7,12 @@ export function shouldReseedScoreForm(isDirty: boolean, forceReseed: boolean): b
 export const UNSAVED_SCORES_CONFIRM_MESSAGE =
   'มีคะแนนที่ยังไม่ได้บันทึก หากเปลี่ยนไปที่อื่นคะแนนที่แก้ไว้จะหายไป ต้องการดำเนินการต่อหรือไม่?';
 
+export const UNSAVED_SCORES_CONFIRM = {
+  title: 'มีคะแนนที่ยังไม่ได้บันทึก',
+  description: UNSAVED_SCORES_CONFIRM_MESSAGE,
+  confirmLabel: 'ทิ้งคะแนนและไปต่อ',
+};
+
 export interface GuardClick {
   button: number;
   metaKey: boolean;

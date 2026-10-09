@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import type { CourseListItem, Prerequisite } from '@eduanalyze-ai/shared-types';
 import { createPrerequisite, deletePrerequisite } from '@/lib/api/staff';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,7 @@ export function PrerequisiteEditor({
       setServerError(
         isAxiosError(error) && error.response?.status === 409
           ? 'วิชานี้เป็นวิชาบังคับก่อนของรายวิชานี้อยู่แล้ว'
-          : describeStaffWriteError(error),
+          : describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY),
       );
     } finally {
       setBusy(false);
@@ -76,7 +77,7 @@ export function PrerequisiteEditor({
       setConfirmingId(null);
       onChanged();
     } catch (error) {
-      setServerError(describeStaffWriteError(error));
+      setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
     } finally {
       setBusy(false);
     }

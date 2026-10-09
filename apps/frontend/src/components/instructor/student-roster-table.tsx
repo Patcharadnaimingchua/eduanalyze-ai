@@ -2,10 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { isAxiosError } from 'axios';
 import { ArrowUpDown, ChevronUp, Download, Pencil, Search } from 'lucide-react';
 import type { CloAchievementEntry, Grade, StudentRosterEntry } from '@eduanalyze-ai/shared-types';
 import { deleteCourseRecord, updateCourseRecordGrade } from '@/lib/api/academic-record';
+import {
+  GRADE_WRITE_ERRORS,
+  GRADE_WRITE_FALLBACK,
+  OWN_SENTENCE_ONLY,
+} from '@/lib/api-error-presets';
+import { describeApiError } from '@/lib/describe-api-error';
 import { gradeBadgeTone } from '@/lib/grade-badge-color';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { LOW_GRADE_LABEL, isLowGrade } from '@/lib/low-grade';
@@ -58,14 +63,6 @@ function exportRosterCsvWithToast(
   } catch {
     toast.error('ส่งออก CSV ไม่สำเร็จ');
   }
-}
-
-function describeWriteError(error: unknown) {
-  if (isAxiosError(error)) {
-    if (error.response?.status === 403) return 'คุณไม่มีสิทธิ์แก้ไขผลการเรียนของรายวิชานี้';
-    if (error.response?.status === 404) return 'ไม่พบรายการนี้แล้ว อาจถูกลบไปก่อนหน้า';
-  }
-  return 'บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
 }
 
 // The list opens in view mode. Grade editing and deleting appear only after
@@ -206,7 +203,9 @@ export function StudentRosterTable({
       onChanged?.();
       toast.success(successMessage);
     } catch (error) {
-      toast.error(describeWriteError(error));
+      toast.error(
+        describeApiError(error, GRADE_WRITE_ERRORS, GRADE_WRITE_FALLBACK, OWN_SENTENCE_ONLY),
+      );
     } finally {
       setBusyId(null);
     }

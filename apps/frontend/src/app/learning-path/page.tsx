@@ -12,6 +12,7 @@ import {
   fetchMyLearningPathPlan,
 } from '@/lib/api/learning-path';
 import { UNSAVED_PLAN_RESET_CONFIRM_MESSAGE } from '@/lib/learning-path-plan';
+import { useConfirm } from '@/lib/use-confirm';
 import { useToast } from '@/lib/toast-context';
 import { fetchMyCreditLimitRequest } from '@/lib/api/credit-limit-request';
 import { CREDIT_LIMIT_PRESETS, MIN_CREDITS_WARNING } from '@/lib/credit-limit-presets';
@@ -85,8 +86,19 @@ function LearningPathContent() {
   const [plannerDirty, setPlannerDirty] = useState(false);
   const [resetting, setResetting] = useState(false);
 
+  const { confirm, dialog } = useConfirm();
+
   async function resetPlan() {
-    if (plannerDirty && !window.confirm(UNSAVED_PLAN_RESET_CONFIRM_MESSAGE)) return;
+    if (
+      plannerDirty &&
+      !(await confirm({
+        title: 'รีเซ็ตแผนที่ยังไม่ได้บันทึก?',
+        description: UNSAVED_PLAN_RESET_CONFIRM_MESSAGE,
+        confirmLabel: 'รีเซ็ตแผน',
+      }))
+    ) {
+      return;
+    }
     setResetting(true);
     try {
       await deleteMyLearningPathPlan();
@@ -212,7 +224,9 @@ function LearningPathContent() {
               </Button>
               <CreditLimitRequestControl
                 request={creditLimitRequest}
-                onChanged={() => queryClient.invalidateQueries({ queryKey: ['credit-limit-request-me'] })}
+                onChanged={() =>
+                  queryClient.invalidateQueries({ queryKey: ['credit-limit-request-me'] })
+                }
               />
             </div>
           }
@@ -252,6 +266,7 @@ function LearningPathContent() {
           </div>
         </PageSection>
       </Reveal>
+      {dialog}
     </DashboardShell>
   );
 }

@@ -22,7 +22,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 
 export function CourseCategoryForm({
   curriculumId,
@@ -56,7 +57,7 @@ export function CourseCategoryForm({
       if (isAxiosError(error) && error.response?.status === 409) {
         setServerError('มีหมวดวิชาชื่อนี้อยู่ในหลักสูตรนี้แล้ว');
       } else {
-        setServerError(describeStaffWriteError(error));
+        setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
       }
     }
   }

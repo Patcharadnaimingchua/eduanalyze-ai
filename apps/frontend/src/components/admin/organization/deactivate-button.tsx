@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { describeOrgWriteError } from './org-errors';
+import { describeApiError } from '@/lib/describe-api-error';
+import { orgWriteErrors } from '@/lib/api-error-presets';
 import { DeactivateConfirm } from '@/components/admin/deactivate-confirm';
 import { Button } from '@/components/ui/button';
 
@@ -28,7 +29,7 @@ export function DeactivateButton({
     try {
       await onConfirm();
     } catch (err) {
-      setError(describeOrgWriteError(err, conflictMessage));
+      setError(describeApiError(err, orgWriteErrors(conflictMessage)));
     } finally {
       setBusy(false);
       setConfirming(false);

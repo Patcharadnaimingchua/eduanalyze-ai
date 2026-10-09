@@ -15,7 +15,8 @@ import {
   fetchStaffOverview,
 } from '@/lib/api/staff';
 import { useAuth } from '@/lib/auth-context';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -234,7 +235,14 @@ function StaffCurriculumContent() {
       toast.success('ถอนอาจารย์แล้ว');
       refetchAll();
     } catch (error) {
-      toast.error(describeStaffWriteError(error, 'ถอนอาจารย์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
+      toast.error(
+        describeApiError(
+          error,
+          STAFF_WRITE_ERRORS,
+          'ถอนอาจารย์ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+          OWN_SENTENCE_ONLY,
+        ),
+      );
       throw error;
     }
   }

@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import type { CourseCategory, CourseListItem, Prerequisite } from '@eduanalyze-ai/shared-types';
 import { createCourse, updateCourse } from '@/lib/api/staff';
-import { describeStaffWriteError } from '@/lib/describe-staff-write-error';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -111,7 +112,7 @@ export function CourseEditSheet({
       } else if (isAxiosError(error) && error.response?.status === 400) {
         setServerError('ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบหมวดวิชาและข้อมูลที่กรอก');
       } else {
-        setServerError(describeStaffWriteError(error));
+        setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
       }
     }
   }
@@ -178,12 +179,7 @@ export function CourseEditSheet({
                 <FormItem>
                   <FormLabel>หน่วยกิต</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
+                    <Input type="number" inputMode="numeric" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
