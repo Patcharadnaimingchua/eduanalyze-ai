@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { describeApiError } from '@/lib/describe-api-error';
-import { ApiErrorAlert } from '@/components/admin/api-error-alert';
+import { ApiErrorAlert, WARNING_ALERT_CLASS } from '@/components/admin/api-error-alert';
 import { ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -160,7 +160,7 @@ export function CreateUserForm({
             {scopeLoadFailed ? (
               <Alert
                 role="alert"
-                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+                className={WARNING_ALERT_CLASS}
               >
                 <AlertDescription>
                   โหลดขอบเขตของคุณไม่สำเร็จ จึงยังเพิ่มผู้ใช้งานไม่ได้ กรุณาลองใหม่อีกครั้ง
@@ -169,7 +169,7 @@ export function CreateUserForm({
             ) : noScopeToGrant ? (
               <Alert
                 role="alert"
-                className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+                className={WARNING_ALERT_CLASS}
               >
                 <AlertDescription>
                   บัญชีของคุณยังไม่มีหน่วยงานที่มอบขอบเขตให้ผู้อื่นได้ จึงเพิ่มผู้ใช้งานไม่ได้ —

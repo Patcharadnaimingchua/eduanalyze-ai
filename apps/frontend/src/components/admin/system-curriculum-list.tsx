@@ -34,7 +34,7 @@ function CurriculumRow({ curriculum }: { curriculum: SystemCurriculumEntry }) {
     <li>
       <Link
         href={`/admin/curriculum/${curriculum.curriculumId}`}
-        className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm transition hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-800"
+        className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm transition hover:bg-slate-100"
       >
         <span className="min-w-0">
           <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
@@ -91,7 +91,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <CardContent>
           {active.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users size={16} className="shrink-0 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+              <Users size={16} className="shrink-0 text-slate-300" aria-hidden="true" />
               ยังไม่มีหลักสูตรใดที่มีนักศึกษาลงทะเบียน
             </p>
           ) : (
@@ -108,7 +108,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users size={18} className="shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+              <Users size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               จัดทำหลักสูตรแล้ว แต่ยังไม่มีนักศึกษา ({structureOnly.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -129,7 +129,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FolderOpen size={18} className="shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+              <FolderOpen size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
               ยังไม่ได้จัดทำหลักสูตร ({empty.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -142,7 +142,7 @@ export function SystemCurriculumList({ curricula }: { curricula: SystemCurriculu
                 <li key={curriculum.curriculumId}>
                   <Link
                     href={ORG_STRUCTURE_HREF}
-                    className="block rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-800"
+                    className="block rounded-md bg-slate-50 px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100"
                   >
                     <span className="font-medium text-primary">{curriculum.programCode}</span>{' '}
                     ฉบับ {curriculum.version}

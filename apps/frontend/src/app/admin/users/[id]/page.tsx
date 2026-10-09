@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { describeApiError } from '@/lib/describe-api-error';
-import { ApiErrorAlert } from '@/components/admin/api-error-alert';
+import { ApiErrorAlert, WARNING_ALERT_CLASS } from '@/components/admin/api-error-alert';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
@@ -220,7 +220,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
           )}
 
           {roleNeedsScope(userQuery.data.roles) && userQuery.data.scopes.length === 0 && (
-            <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <Alert className={WARNING_ALERT_CLASS}>
               <AlertDescription>
                 ผู้ใช้นี้ยังไม่มีขอบเขตความรับผิดชอบ — {MISSING_SCOPE_WARNING}{' '}
                 <a href="#user-scopes" className="font-medium underline">

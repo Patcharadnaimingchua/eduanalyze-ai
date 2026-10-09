@@ -110,7 +110,7 @@ export function LowestSection({
                   {plos.map((plo, index) => (
                     <li
                       key={plo.ploId}
-                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3 dark:bg-slate-900/40"
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3"
                     >
                       <span className="min-w-0 break-words text-sm">
                         {index + 1}. <span className="font-semibold text-primary">{plo.code}</span>{' '}
@@ -133,7 +133,7 @@ export function LowestSection({
                   {shown.map((clo) => (
                     <li
                       key={clo.cloId}
-                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3 dark:bg-slate-900/40"
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-md bg-slate-50 px-3 py-3"
                     >
                       <span className="min-w-0 break-words text-sm">
                         <span className="font-semibold text-primary">{clo.code}</span> ·{' '}
@@ -163,7 +163,7 @@ export function LowestSection({
 function CohortRow({ cohort }: Readonly<{ cohort: CohortPloAchievementReport }>) {
   const little = hasLittleData(cohort.gpaSampleSize);
   return (
-    <li className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-900/40">
+    <li className="space-y-2 rounded-lg bg-slate-50 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold text-primary">รุ่นปี {cohort.admissionYear}</p>
         <Badge tone="neutral" className="tabular-nums">
