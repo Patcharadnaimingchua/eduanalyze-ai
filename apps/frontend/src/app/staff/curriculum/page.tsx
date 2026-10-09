@@ -275,11 +275,12 @@ function StaffCurriculumContent() {
     <DashboardShell role="STAFF" identityLabel={user.email} fullName={user.fullName}>
       <Reveal index={0}>
         <PageHeader
+          className="sm:flex-col sm:items-stretch lg:flex-row lg:items-end"
           title="การจัดการหลักสูตรและรายวิชา"
           description="จัดการหมวดวิชา รายวิชา วิชาบังคับก่อน และอาจารย์ผู้รับผิดชอบวิชา ภายในขอบเขตของคุณ"
           actions={
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="block space-y-1.5 sm:w-96">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <label className="block max-w-full space-y-1.5 sm:w-96">
                 <span className="text-xs font-medium text-muted-foreground">
                   หลักสูตรและสาขาวิชา
                 </span>

@@ -147,7 +147,7 @@ export function CategorySection({
     <Card className="overflow-hidden">
       <div className="space-y-3 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h3 className="min-w-0 flex-1 text-lg font-semibold text-primary">
+          <h3 className="w-full min-w-0 text-lg font-semibold text-primary md:w-auto md:flex-1">
             <button
               type="button"
               aria-expanded={expanded}

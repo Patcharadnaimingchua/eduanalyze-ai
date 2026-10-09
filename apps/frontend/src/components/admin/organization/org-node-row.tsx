@@ -86,7 +86,7 @@ export function OrgNodeRow({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="flex min-h-11 min-w-0 flex-1 items-start gap-3 text-left"
+          className="flex min-h-11 w-full min-w-0 items-start gap-3 text-left sm:w-auto sm:flex-1"
         >
           <Chevron size={18} aria-hidden="true" className="mt-2.5 shrink-0 text-slate-500" />
           <span
@@ -106,16 +106,18 @@ export function OrgNodeRow({
             <span className="block text-xs tabular-nums text-muted-foreground">{summary}</span>
           </span>
         </button>
-        <OrgNodeMenu
-          nodeLabel={nodeLabel}
-          onEdit={() => setEditing(true)}
-          addLabel={addChild ? `เพิ่ม${addChild.childLabel}` : undefined}
-          onAdd={addChild ? startAdding : undefined}
-          onDeactivate={() => setConfirming(true)}
-          deactivateBlockedReason={
-            childCount > 0 ? `ยังมี ${childCount} ${childLabel}ที่ใช้งานอยู่` : undefined
-          }
-        />
+        <div className="ml-auto">
+          <OrgNodeMenu
+            nodeLabel={nodeLabel}
+            onEdit={() => setEditing(true)}
+            addLabel={addChild ? `เพิ่ม${addChild.childLabel}` : undefined}
+            onAdd={addChild ? startAdding : undefined}
+            onDeactivate={() => setConfirming(true)}
+            deactivateBlockedReason={
+              childCount > 0 ? `ยังมี ${childCount} ${childLabel}ที่ใช้งานอยู่` : undefined
+            }
+          />
+        </div>
       </div>
 
       {error && (

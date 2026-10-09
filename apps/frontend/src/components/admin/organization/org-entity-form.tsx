@@ -71,7 +71,7 @@ export function OrgEntityForm({
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem className="min-w-[16rem] flex-1">
+              <FormItem className="min-w-[min(16rem,100%)] flex-1">
                 <FormLabel>ชื่อ</FormLabel>
                 <FormControl>
                   <Input {...field} />
