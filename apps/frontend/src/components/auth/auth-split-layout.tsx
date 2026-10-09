@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { GraduationCap } from 'lucide-react';
+import { BRAND_NAME } from '@/lib/brand';
 
 // Shared shell for every sign-in page (/login, /register, /forgot-password,
 // /reset-password, /register/google): a two-panel card (brand panel + form).
@@ -52,8 +53,6 @@ import { GraduationCap } from 'lucide-react';
 // is just under login's natural 550px, so login/register don't change.
 // title/description are required (no default copy here) so each page owns
 // its brand-panel message and a new page can't silently inherit another's.
-export const BRAND_NAME = 'EduAnalyze Academic Insights';
-
 function BrandMark({ className }: Readonly<{ className?: string }>) {
   return (
     <div className={className}>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '../styles/theme-palette.css';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
+import { BRAND_NAME } from '@/lib/brand';
 import { QueryProvider } from '@/lib/query-client';
 import { ThemeProvider } from '@/lib/theme-context';
 import { THEME_INIT_SCRIPT } from '@/lib/theme-script';
@@ -9,7 +10,7 @@ import { ToastProvider } from '@/lib/toast-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
-  title: 'EduAnalyzeAI',
+  title: BRAND_NAME,
   description: 'Academic progress tracking and learning outcome analytics system',
 };
 

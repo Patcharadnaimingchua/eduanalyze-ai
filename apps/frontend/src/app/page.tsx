@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { resolveHomeRoute } from '@/lib/dashboard-routes';
 import { primaryRoleFor } from '@/lib/role-priority';
 import { cn } from '@/lib/utils';
+import { BRAND_NAME } from '@/lib/brand';
 import { HOVER_LIFT } from '@/lib/motion';
 import { ROLE_LABEL_TH, ROLE_BADGE_TONE } from '@/components/auth/require-role';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ export default function Home() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand shadow-sm">
                 <GraduationCap size={26} className="text-brand-light" />
               </div>
-              <span className="text-base font-medium text-primary">EduAnalyzeAI</span>
+              <span className="text-base font-medium text-primary">{BRAND_NAME}</span>
             </Reveal>
 
             <Reveal index={2} className="w-full">
@@ -101,7 +102,7 @@ export default function Home() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand shadow-sm">
                 <GraduationCap size={26} className="text-brand-light" />
               </div>
-              <span className="text-base font-medium text-primary">EduAnalyzeAI</span>
+              <span className="text-base font-medium text-primary">{BRAND_NAME}</span>
             </Reveal>
 
             <Reveal index={2}>
