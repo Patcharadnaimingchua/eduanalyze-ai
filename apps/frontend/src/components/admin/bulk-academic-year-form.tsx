@@ -121,12 +121,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   <FormItem className="w-28">
                     <FormLabel>จำนวนปี</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={MAX_BULK_YEARS}
-                        {...field}
-                      />
+                      <Input type="number" min={1} max={MAX_BULK_YEARS} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

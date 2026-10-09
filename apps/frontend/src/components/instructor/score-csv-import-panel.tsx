@@ -128,7 +128,9 @@ export function ScoreCsvImportPanel({
       if (failedCount === 0) {
         toast.success(`นำเข้าคะแนน ${imported.length} รายการสำเร็จ`);
       } else {
-        toast.error(`นำเข้าสำเร็จ ${imported.length - failedCount} รายการ ผิดพลาด ${failedCount} รายการ`);
+        toast.error(
+          `นำเข้าสำเร็จ ${imported.length - failedCount} รายการ ผิดพลาด ${failedCount} รายการ`,
+        );
       }
     } catch {
       // Previously silent — importing just reset to false with no results
@@ -152,8 +154,9 @@ export function ScoreCsvImportPanel({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        คะแนนจะถูกบันทึกเข้ากับการประเมินและเป้าการเรียนรู้ที่เลือกไว้ด้านบน โดยอ้างอิงการลงทะเบียนครั้งล่าสุดของนักศึกษา
-        หากนำเข้าไฟล์เดิมซ้ำ ระบบจะเขียนทับค่าเดิม ไม่สร้างรายการซ้ำ
+        คะแนนจะถูกบันทึกเข้ากับการประเมินและเป้าการเรียนรู้ที่เลือกไว้ด้านบน
+        โดยอ้างอิงการลงทะเบียนครั้งล่าสุดของนักศึกษา หากนำเข้าไฟล์เดิมซ้ำ ระบบจะเขียนทับค่าเดิม
+        ไม่สร้างรายการซ้ำ
       </p>
 
       <div className="flex items-center gap-2">

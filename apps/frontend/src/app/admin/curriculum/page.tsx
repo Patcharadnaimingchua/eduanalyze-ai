@@ -52,7 +52,11 @@ function AdminCurriculumListContent() {
   }
 
   return (
-    <DashboardShell role={isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'} identityLabel={user.email} fullName={user.fullName}>
+    <DashboardShell
+      role={isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN'}
+      identityLabel={user.email}
+      fullName={user.fullName}
+    >
       <Reveal index={0}>
         <PageHeader
           title="คุณภาพหลักสูตร"

@@ -187,49 +187,49 @@ export function CourseRows({
     <>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-y-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
-            <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
-            <th className="px-3 py-3 font-semibold">ชื่อรายวิชา (ภาษาไทยและภาษาอังกฤษ)</th>
-            <th className="px-3 py-3 text-right font-semibold">หน่วยกิต</th>
-            <th className="px-3 py-3 font-semibold">วิชาบังคับก่อน</th>
-            <th className="px-3 py-3 font-semibold">อาจารย์ผู้รับผิดชอบวิชา (ระดับหลักสูตร)</th>
-            {actions.onEdit && <th className="px-3 py-3 font-semibold">การดำเนินการ</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.course.id}
-              {...mark(row.course.id)}
-              className={cn(
-                'border-b border-slate-100 align-middle hover:bg-slate-50',
-                highlight(row.course.id),
-              )}
-            >
-              <td className="px-3 py-3 font-semibold tabular-nums">{row.course.code}</td>
-              <td className="px-3 py-3">
-                <p className="break-words font-semibold">{row.course.name}</p>
-                {row.course.nameEn && (
-                  <p className="break-words text-xs text-muted-foreground">{row.course.nameEn}</p>
-                )}
-              </td>
-              <td className="px-3 py-3 text-right tabular-nums">{row.course.credits}</td>
-              <td className="px-3 py-3">
-                <Prerequisites codes={row.prerequisiteCodes} />
-              </td>
-              <td className="px-3 py-3">
-                <Instructors row={row} actions={actions} />
-              </td>
-              {actions.onEdit && (
-                <td className="px-3 py-3">
-                  <EditButton row={row} actions={actions} />
-                </td>
-              )}
+          <thead>
+            <tr className="border-y-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
+              <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
+              <th className="px-3 py-3 font-semibold">ชื่อรายวิชา (ภาษาไทยและภาษาอังกฤษ)</th>
+              <th className="px-3 py-3 text-right font-semibold">หน่วยกิต</th>
+              <th className="px-3 py-3 font-semibold">วิชาบังคับก่อน</th>
+              <th className="px-3 py-3 font-semibold">อาจารย์ผู้รับผิดชอบวิชา (ระดับหลักสูตร)</th>
+              {actions.onEdit && <th className="px-3 py-3 font-semibold">การดำเนินการ</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={row.course.id}
+                {...mark(row.course.id)}
+                className={cn(
+                  'border-b border-slate-100 align-middle hover:bg-slate-50',
+                  highlight(row.course.id),
+                )}
+              >
+                <td className="px-3 py-3 font-semibold tabular-nums">{row.course.code}</td>
+                <td className="px-3 py-3">
+                  <p className="break-words font-semibold">{row.course.name}</p>
+                  {row.course.nameEn && (
+                    <p className="break-words text-xs text-muted-foreground">{row.course.nameEn}</p>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-right tabular-nums">{row.course.credits}</td>
+                <td className="px-3 py-3">
+                  <Prerequisites codes={row.prerequisiteCodes} />
+                </td>
+                <td className="px-3 py-3">
+                  <Instructors row={row} actions={actions} />
+                </td>
+                {actions.onEdit && (
+                  <td className="px-3 py-3">
+                    <EditButton row={row} actions={actions} />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <ul className="space-y-3 p-4 md:hidden">

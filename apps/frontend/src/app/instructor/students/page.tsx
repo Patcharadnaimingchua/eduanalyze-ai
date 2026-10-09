@@ -166,11 +166,7 @@ function InstructorStudentsContent() {
                       illustration="no-results"
                       description="ไม่พบนักศึกษาที่ตรงกับตัวกรองที่เลือก"
                       action={
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={clearFilters}
-                        >
+                        <Button type="button" variant="outline" onClick={clearFilters}>
                           ล้างตัวกรอง
                         </Button>
                       }

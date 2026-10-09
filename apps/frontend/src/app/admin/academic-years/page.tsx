@@ -103,12 +103,7 @@ function AcademicYearsAdminContent() {
       {openForm === 'bulk' && (
         <Reveal className="space-y-2">
           <BulkAcademicYearForm onCreated={refetchAll} />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpenForm(null)}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => setOpenForm(null)}>
             ปิดฟอร์ม
           </Button>
         </Reveal>

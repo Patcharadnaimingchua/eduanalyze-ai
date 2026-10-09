@@ -153,24 +153,16 @@ export function CreateUserForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            {serverError && (
-              <ApiErrorAlert message={serverError} />
-            )}
+            {serverError && <ApiErrorAlert message={serverError} />}
 
             {scopeLoadFailed ? (
-              <Alert
-                role="alert"
-                className={WARNING_ALERT_CLASS}
-              >
+              <Alert role="alert" className={WARNING_ALERT_CLASS}>
                 <AlertDescription>
                   โหลดขอบเขตของคุณไม่สำเร็จ จึงยังเพิ่มผู้ใช้งานไม่ได้ กรุณาลองใหม่อีกครั้ง
                 </AlertDescription>
               </Alert>
             ) : noScopeToGrant ? (
-              <Alert
-                role="alert"
-                className={WARNING_ALERT_CLASS}
-              >
+              <Alert role="alert" className={WARNING_ALERT_CLASS}>
                 <AlertDescription>
                   บัญชีของคุณยังไม่มีหน่วยงานที่มอบขอบเขตให้ผู้อื่นได้ จึงเพิ่มผู้ใช้งานไม่ได้ —
                   ติดต่อผู้ดูแลระบบสูงสุดเพื่อกำหนดขอบเขตให้คุณก่อน
@@ -247,7 +239,7 @@ export function CreateUserForm({
                       levelFieldName="scopeLevel"
                       targetFieldName="scopeTargetId"
                       allowed={allowed}
-                  limitedToOwnScope={needsScopeFilter}
+                      limitedToOwnScope={needsScopeFilter}
                     />
                   ))}
               </>

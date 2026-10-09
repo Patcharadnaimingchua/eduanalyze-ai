@@ -85,29 +85,29 @@ export function StudentInvitationList({
     <>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
-            <th className="px-3 py-3 font-semibold">รหัสนักศึกษา</th>
-            <th className="px-3 py-3 font-semibold">ชื่อ-นามสกุล</th>
-            <th className="px-3 py-3 font-semibold">อีเมล</th>
-            <th className="px-3 py-3 font-semibold">สาขา</th>
-            <th className="px-3 py-3 font-semibold">หมดอายุ</th>
-            <th className="px-3 py-3 font-semibold">การดำเนินการ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invitations.map((inv) => (
-            <tr key={inv.id} className="border-b border-slate-100 align-middle hover:bg-slate-50">
-              <td className="px-3 py-3 font-semibold tabular-nums">{inv.studentCode}</td>
-              <td className="break-words px-3 py-3">{inv.fullName}</td>
-              <td className="break-all px-3 py-3 text-muted-foreground">{inv.email}</td>
-              <td className="px-3 py-3">{inv.program.code}</td>
-              <td className="px-3 py-3 tabular-nums">{formatExpiry(inv.expiresAt)}</td>
-              <td className="px-3 py-3">{resendButton(inv)}</td>
+          <thead>
+            <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
+              <th className="px-3 py-3 font-semibold">รหัสนักศึกษา</th>
+              <th className="px-3 py-3 font-semibold">ชื่อ-นามสกุล</th>
+              <th className="px-3 py-3 font-semibold">อีเมล</th>
+              <th className="px-3 py-3 font-semibold">สาขา</th>
+              <th className="px-3 py-3 font-semibold">หมดอายุ</th>
+              <th className="px-3 py-3 font-semibold">การดำเนินการ</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {invitations.map((inv) => (
+              <tr key={inv.id} className="border-b border-slate-100 align-middle hover:bg-slate-50">
+                <td className="px-3 py-3 font-semibold tabular-nums">{inv.studentCode}</td>
+                <td className="break-words px-3 py-3">{inv.fullName}</td>
+                <td className="break-all px-3 py-3 text-muted-foreground">{inv.email}</td>
+                <td className="px-3 py-3">{inv.program.code}</td>
+                <td className="px-3 py-3 tabular-nums">{formatExpiry(inv.expiresAt)}</td>
+                <td className="px-3 py-3">{resendButton(inv)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <ul className="space-y-3 md:hidden">

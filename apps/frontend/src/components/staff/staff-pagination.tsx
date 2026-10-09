@@ -99,7 +99,7 @@ export function StaffPagination({
             variant="outline"
             className={nav}
             aria-label="หน้าถัดไป"
-            disabled={page>= pageCount}
+            disabled={page >= pageCount}
             onClick={() => onPageChange(page + 1)}
           >
             <ChevronRight aria-hidden="true" className="h-4 w-4" />

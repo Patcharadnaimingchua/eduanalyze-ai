@@ -46,7 +46,7 @@ export function Pagination({
           variant="outline"
           size="icon"
           aria-label="หน้าถัดไป"
-          disabled={page>= pageCount}
+          disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}
         >
           <ChevronRight className="h-4 w-4" />

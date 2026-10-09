@@ -83,11 +83,7 @@ function AdminUsersContent() {
           actions={
             !createdUser &&
             !showCreateForm && (
-              <Button
-                type="button"
-                className="gap-1.5"
-                onClick={() => setShowCreateForm(true)}
-              >
+              <Button type="button" className="gap-1.5" onClick={() => setShowCreateForm(true)}>
                 <Plus size={16} aria-hidden="true" />
                 {requesterIsSuperAdmin ? 'เพิ่มผู้ใช้งาน' : 'สร้างบัญชีเจ้าหน้าที่'}
               </Button>

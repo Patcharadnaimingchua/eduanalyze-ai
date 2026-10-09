@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react';
 import type { Grade } from '@eduanalyze-ai/shared-types';
 import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // A grade edit saves straight to the record, and the backend stamps the
 // editor as the last writer — so a mis-click can't be cleanly undone.

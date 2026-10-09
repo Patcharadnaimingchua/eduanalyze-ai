@@ -234,7 +234,8 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
             />
             {risk && risk.lowGradeCount > 0 && (
               <p className="mt-1 text-sm text-muted-foreground">
-                มีรายวิชา D+/D/F/U อยู่ <span className="tabular-nums">{risk.lowGradeCount}</span> วิชา
+                มีรายวิชา D+/D/F/U อยู่ <span className="tabular-nums">{risk.lowGradeCount}</span>{' '}
+                วิชา
               </p>
             )}
           </Reveal>

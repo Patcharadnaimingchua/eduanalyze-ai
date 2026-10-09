@@ -213,12 +213,7 @@ export function OrgTree() {
         <Button type="button" variant="outline" size="sm" onClick={expandAll}>
           ขยายทั้งหมด
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setExpanded(new Set())}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(new Set())}>
           ยุบทั้งหมด
         </Button>
         {!addingFaculty && (

@@ -113,9 +113,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
 
         {dashboardQuery.isError && (
           <Alert variant="destructive">
-            <AlertDescription>
-              ไม่สามารถโหลดข้อมูลรายวิชาได้ กรุณาลองใหม่อีกครั้ง
-            </AlertDescription>
+            <AlertDescription>ไม่สามารถโหลดข้อมูลรายวิชาได้ กรุณาลองใหม่อีกครั้ง</AlertDescription>
           </Alert>
         )}
 

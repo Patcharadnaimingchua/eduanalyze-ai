@@ -158,36 +158,36 @@ export function StaffRecordList({
     <div>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
-            <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
-            <th className="px-3 py-3 font-semibold">ชื่อวิชา</th>
-            <th className="px-3 py-3 text-right font-semibold">หน่วยกิต</th>
-            <th className="px-3 py-3 font-semibold">ภาคเรียน</th>
-            <th className="px-3 py-3 font-semibold">เกรด</th>
-            {mode.showDelete && <th className="px-3 py-3 font-semibold">การจัดการ</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {pagination.pageRows.map((record) => (
-            <tr
-              key={record.id}
-              className="border-b border-slate-100 align-middle hover:bg-slate-50"
-            >
-              <td className="px-3 py-3 font-semibold tabular-nums">
-                {courseMap.get(record.courseId)?.code ?? '—'}
-              </td>
-              <td className="break-words px-3 py-3">
-                {courseMap.get(record.courseId)?.name ?? '—'}
-              </td>
-              <td className="px-3 py-3 text-right tabular-nums">{record.credits}</td>
-              <td className="px-3 py-3">{semesterMap.get(record.semesterId)?.label ?? '—'}</td>
-              <td className="px-3 py-3">{gradeControl(record)}</td>
-              {mode.showDelete && <td className="px-3 py-3">{deleteControl(record)}</td>}
+          <thead>
+            <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
+              <th className="px-3 py-3 font-semibold">รหัสวิชา</th>
+              <th className="px-3 py-3 font-semibold">ชื่อวิชา</th>
+              <th className="px-3 py-3 text-right font-semibold">หน่วยกิต</th>
+              <th className="px-3 py-3 font-semibold">ภาคเรียน</th>
+              <th className="px-3 py-3 font-semibold">เกรด</th>
+              {mode.showDelete && <th className="px-3 py-3 font-semibold">การจัดการ</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pagination.pageRows.map((record) => (
+              <tr
+                key={record.id}
+                className="border-b border-slate-100 align-middle hover:bg-slate-50"
+              >
+                <td className="px-3 py-3 font-semibold tabular-nums">
+                  {courseMap.get(record.courseId)?.code ?? '—'}
+                </td>
+                <td className="break-words px-3 py-3">
+                  {courseMap.get(record.courseId)?.name ?? '—'}
+                </td>
+                <td className="px-3 py-3 text-right tabular-nums">{record.credits}</td>
+                <td className="px-3 py-3">{semesterMap.get(record.semesterId)?.label ?? '—'}</td>
+                <td className="px-3 py-3">{gradeControl(record)}</td>
+                {mode.showDelete && <td className="px-3 py-3">{deleteControl(record)}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <ul className="space-y-3 md:hidden">

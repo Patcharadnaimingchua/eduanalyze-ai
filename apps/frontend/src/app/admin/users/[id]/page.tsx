@@ -111,7 +111,9 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
     setServerError(null);
     try {
       await updateUserActiveStatus(userId, { isActive: !userQuery.data.isActive });
-      toast.success(userQuery.data.isActive ? 'ระงับการใช้งานบัญชีแล้ว' : 'เปิดใช้งานบัญชีอีกครั้งแล้ว');
+      toast.success(
+        userQuery.data.isActive ? 'ระงับการใช้งานบัญชีแล้ว' : 'เปิดใช้งานบัญชีอีกครั้งแล้ว',
+      );
       setConfirmingSuspend(false);
       refetch();
     } catch (err) {
@@ -215,9 +217,7 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
             </Card>
           </Reveal>
 
-          {serverError && (
-            <ApiErrorAlert message={serverError} />
-          )}
+          {serverError && <ApiErrorAlert message={serverError} />}
 
           {roleNeedsScope(userQuery.data.roles) && userQuery.data.scopes.length === 0 && (
             <Alert className={WARNING_ALERT_CLASS}>
@@ -276,14 +276,14 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
 
           <Reveal index={3}>
             <div id="user-scopes" className="scroll-mt-6">
-            <UserScopesSection
-              userId={userId}
-              scopes={userQuery.data.scopes}
-              lockedReason={roleScopeLockReason}
-              requesterIsSuperAdmin={requesterIsSuperAdmin}
-              requesterScopes={ownUserQuery.data?.scopes ?? null}
-              onChanged={refetch}
-            />
+              <UserScopesSection
+                userId={userId}
+                scopes={userQuery.data.scopes}
+                lockedReason={roleScopeLockReason}
+                requesterIsSuperAdmin={requesterIsSuperAdmin}
+                requesterScopes={ownUserQuery.data?.scopes ?? null}
+                onChanged={refetch}
+              />
             </div>
           </Reveal>
         </>

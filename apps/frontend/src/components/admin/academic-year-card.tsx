@@ -239,11 +239,7 @@ export function AcademicYearCard({
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={yearEditForm.formState.isSubmitting}
-              >
+              <Button type="submit" size="sm" disabled={yearEditForm.formState.isSubmitting}>
                 บันทึก
               </Button>
               <Button
@@ -273,12 +269,7 @@ export function AcademicYearCard({
         )}
         {!editingYear && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={startEditingYear}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={startEditingYear}>
               แก้ไข
             </Button>
             <Button

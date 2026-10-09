@@ -25,7 +25,9 @@ export function CategoryMenu({
   const [open, setOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const items = () => [...(listRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+  const items = () => [
+    ...(listRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+  ];
 
   function onKeyDown(event: React.KeyboardEvent) {
     const all = items();
