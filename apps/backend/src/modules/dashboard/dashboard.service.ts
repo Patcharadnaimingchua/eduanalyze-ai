@@ -77,7 +77,15 @@ const YEAR_LEVEL_LABELS: Record<number, string> = {
 };
 
 type CurriculumWithProgram = Prisma.CurriculumGetPayload<{
-  include: { program: { select: { code: true; name: true } } };
+  include: {
+    program: {
+      select: {
+        code: true;
+        name: true;
+        department: { select: { name: true; faculty: { select: { name: true } } } };
+      };
+    };
+  };
 }>;
 
 function average(values: number[]): number {
@@ -667,7 +675,17 @@ export class DashboardService {
   async getSystemCurriculumOverview(): Promise<SystemCurriculumOverviewReport> {
     const curricula = await this.prisma.curriculum.findMany({
       where: { isActive: true },
-      include: { program: { select: { code: true, name: true } } },
+      include: {
+        program: {
+          select: {
+            code: true,
+            name: true,
+            department: {
+              select: { name: true, faculty: { select: { name: true } } },
+            },
+          },
+        },
+      },
       orderBy: [{ program: { code: 'asc' } }, { version: 'asc' }],
     });
     if (curricula.length === 0) {
@@ -866,7 +884,17 @@ export class DashboardService {
       }),
       this.prisma.curriculum.findMany({
         where: { programId: { in: programIds }, isActive: true },
-        include: { program: { select: { code: true, name: true } } },
+        include: {
+        program: {
+          select: {
+            code: true,
+            name: true,
+            department: {
+              select: { name: true, faculty: { select: { name: true } } },
+            },
+          },
+        },
+      },
         orderBy: [{ program: { code: 'asc' } }, { version: 'asc' }],
       }),
     ]);
@@ -1116,6 +1144,8 @@ export class DashboardService {
       effectiveYear: curriculum.effectiveYear,
       programCode: curriculum.program.code,
       programName: curriculum.program.name,
+      departmentName: curriculum.program.department.name,
+      facultyName: curriculum.program.department.faculty.name,
       dataState: resolveDataState(students.length, courses.length, plos.length),
       studentCount: students.length,
       courseCount: courses.length,

@@ -305,6 +305,8 @@ export interface SystemCurriculumEntry {
   effectiveYear: number;
   programCode: string;
   programName: string;
+  departmentName: string;
+  facultyName: string;
   dataState: CurriculumDataState;
   studentCount: number;
   courseCount: number;
