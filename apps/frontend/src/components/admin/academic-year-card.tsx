@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ban, ChevronDown, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,7 +47,7 @@ const TERM_KIND: Record<Semester['term'], string> = {
   SUMMER: 'ภาคการศึกษาพิเศษ',
 };
 
-const SEMESTER_GRID = 'md:grid md:grid-cols-[1.4fr_1fr_1fr_1.4fr] md:items-center md:gap-3';
+const SEMESTER_GRID = 'md:grid md:grid-cols-[1.6fr_1fr_1.4fr] md:items-center md:gap-3';
 
 export function AcademicYearCard({
   academicYear,
@@ -70,6 +70,16 @@ export function AcademicYearCard({
   const [editingSemesterId, setEditingSemesterId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // An error belongs to this card, so show the card it came from.
+  useEffect(() => {
+    if (serverError) setOpen(true);
+  }, [serverError]);
+
+  function toggleOpen() {
+    if (open) setServerError(null);
+    setOpen(!open);
+  }
 
   const sortedSemesters = [...semesters].sort((a, b) => TERM_ORDER[a.term] - TERM_ORDER[b.term]);
   const confirmingSemester = semesters.find((s) => s.id === confirmingSemesterId);
@@ -199,7 +209,18 @@ export function AcademicYearCard({
 
   return (
     <Card>
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+      <CardHeader
+        className={cn(
+          'flex-row flex-wrap items-center justify-between gap-3 space-y-0',
+          !editingYear && 'cursor-pointer',
+        )}
+        onClick={(event) => {
+          // The whole row folds the card; its own buttons and the edit form keep their clicks.
+          if (editingYear || (event.target as HTMLElement).closest('button, a, input, form'))
+            return;
+          toggleOpen();
+        }}
+      >
         {editingYear ? (
           <Form {...yearEditForm}>
             <form
@@ -256,7 +277,7 @@ export function AcademicYearCard({
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="min-h-11"
               onClick={startEditingYear}
@@ -267,7 +288,7 @@ export function AcademicYearCard({
               type="button"
               variant="ghost"
               size="sm"
-              className="min-h-11 gap-1.5"
+              className="min-h-11 gap-1.5 font-normal text-destructive hover:text-destructive"
               onClick={() => setConfirmingYearDelete(true)}
             >
               <Ban size={16} aria-hidden="true" />
@@ -280,7 +301,7 @@ export function AcademicYearCard({
               aria-expanded={open}
               aria-controls={`academic-year-${academicYear.id}`}
               aria-label={`${open ? 'ซ่อน' : 'แสดง'}ภาคเรียนของปีการศึกษา ${academicYear.year}`}
-              onClick={() => setOpen((current) => !current)}
+              onClick={toggleOpen}
             >
               <ChevronDown
                 size={18}
@@ -296,7 +317,9 @@ export function AcademicYearCard({
       </CardHeader>
       {open && (
         <CardContent id={`academic-year-${academicYear.id}`} className="space-y-4">
-          {serverError && <ApiErrorAlert message={serverError} />}
+          {serverError && (
+            <ApiErrorAlert message={serverError} onDismiss={() => setServerError(null)} />
+          )}
 
           {sortedSemesters.length === 0 ? (
             <p className="text-sm text-muted-foreground">ยังไม่มีภาคเรียนในปีนี้</p>
@@ -310,7 +333,6 @@ export function AcademicYearCard({
                 )}
               >
                 <span>ภาคการศึกษา</span>
-                <span>ปีที่สังกัด</span>
                 <span>สถานะ</span>
                 <span className="text-right">การจัดการ</span>
               </div>
@@ -388,11 +410,10 @@ export function AcademicYearCard({
                             <p className="font-semibold text-primary">
                               {SEMESTER_TERM_LABELS[semester.term]}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {TERM_KIND[semester.term]}
                             </p>
                           </div>
-                          <span className="tabular-nums">ปีการศึกษา {academicYear.year}</span>
                           <span>
                             <Badge tone="success" className="gap-1.5">
                               <span
@@ -405,7 +426,7 @@ export function AcademicYearCard({
                           <div className="flex flex-wrap gap-2 md:justify-end">
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               className="min-h-11"
                               onClick={() => startEditingSemester(semester)}
@@ -416,7 +437,7 @@ export function AcademicYearCard({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="min-h-11 gap-1.5"
+                              className="min-h-11 gap-1.5 font-normal text-destructive hover:text-destructive"
                               onClick={() => setConfirmingSemesterId(semester.id)}
                             >
                               <Ban size={16} aria-hidden="true" />
