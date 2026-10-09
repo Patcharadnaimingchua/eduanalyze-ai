@@ -43,6 +43,7 @@ import { PageSection } from '@/components/layout/page-section';
 import { RevealOnScroll } from '@/components/layout/reveal-on-scroll';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { AnimatedRing } from '@/components/ui/animated-ring';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CARD, CARD_PAD, TEXT_LABEL, TEXT_SECTION } from './instructor-ui';
@@ -144,6 +145,7 @@ export function CourseOverview({ course }: Readonly<{ course: InstructorCourseSu
     [timelineQuery.data, course.courseId],
   );
   const yearsLoading = studentsQuery.isLoading || yearLevelsQuery.isLoading;
+  const yearsFailed = studentsQuery.isError || yearLevelsQuery.isError;
 
   return (
     <div className="space-y-6">
@@ -154,6 +156,15 @@ export function CourseOverview({ course }: Readonly<{ course: InstructorCourseSu
       ) : (
         <>
           <SummarySection snapshot={snapshot} termLabel={termInfo?.termLabel} />
+          {yearsFailed && (
+            <ApiErrorAlert
+              message="โหลดข้อมูลแยกตามชั้นปีไม่สำเร็จ ตัวเลขส่วนอื่นของวิชานี้ยังแสดงได้ตามปกติ"
+              onRetry={() => {
+                void studentsQuery.refetch();
+                void yearLevelsQuery.refetch();
+              }}
+            />
+          )}
           <YearSection snapshot={snapshot} loading={yearsLoading} />
           <RevealOnScroll>
             <GoalsSection snapshot={snapshot} />

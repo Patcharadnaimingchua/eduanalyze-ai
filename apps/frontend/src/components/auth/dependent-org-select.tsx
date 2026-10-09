@@ -16,6 +16,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Expects to be rendered inside a <Form> whose schema has facultyId/
 // departmentId/programId/curriculumId fields (register.schema.ts and
@@ -48,6 +50,29 @@ export function DependentOrgSelect() {
   const curricula = (curriculaQuery.data ?? []).filter(
     (c) => c.programId === programId,
   );
+
+  const orgQueries = [facultiesQuery, departmentsQuery, programsQuery, curriculaQuery];
+  if (orgQueries.some((q) => q.isError)) {
+    return (
+      <ApiErrorAlert
+        message="โหลดรายชื่อคณะ ภาควิชา สาขา และหลักสูตรไม่สำเร็จ จึงยังเลือกหลักสูตรไม่ได้"
+        onRetry={() => orgQueries.forEach((q) => void q.refetch())}
+      />
+    );
+  }
+  if (orgQueries.some((q) => q.isLoading)) {
+    return (
+      <div role="status" className="space-y-4">
+        <span className="sr-only">กำลังโหลดรายชื่อคณะ ภาควิชา สาขา และหลักสูตร</span>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-11 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

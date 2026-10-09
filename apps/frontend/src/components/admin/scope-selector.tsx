@@ -8,7 +8,9 @@ import { fetchDepartments, fetchFaculties, fetchPrograms } from '@/lib/api/organ
 import { allowedLevels, type AllowedScopeTargets } from '@/lib/admin-scope-options';
 import { SCOPE_LEVEL_LABELS } from '@/lib/scope-labels';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -118,6 +120,25 @@ export function ScopeSelector({
   useEffect(() => {
     if (onlyTargetId && currentTarget !== onlyTargetId) setValue(targetFieldName, onlyTargetId);
   }, [onlyTargetId, currentTarget, targetFieldName, setValue]);
+
+  const orgQueries = [facultiesQuery, departmentsQuery, programsQuery];
+  if (orgQueries.some((q) => q.isError)) {
+    return (
+      <ApiErrorAlert
+        message="โหลดรายชื่อหน่วยงานไม่สำเร็จ จึงยังเลือกขอบเขตไม่ได้"
+        onRetry={() => orgQueries.forEach((q) => void q.refetch())}
+      />
+    );
+  }
+  if (orgQueries.some((q) => q.isLoading)) {
+    return (
+      <div role="status" className="flex flex-col gap-3 md:flex-row">
+        <span className="sr-only">กำลังโหลดรายชื่อหน่วยงาน</span>
+        <Skeleton className="h-11 md:w-48" />
+        <Skeleton className="h-11 flex-1 md:min-w-[22rem]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

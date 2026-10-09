@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // The box every /admin/** page shows for an error the API returned. A warning
@@ -9,11 +10,19 @@ export const WARNING_ALERT_CLASS = 'border-amber-300 bg-amber-50 text-amber-900'
 export function ApiErrorAlert({
   message,
   onDismiss,
-}: Readonly<{ message: string; onDismiss?: () => void }>) {
+  onRetry,
+}: Readonly<{ message: string; onDismiss?: () => void; onRetry?: () => void }>) {
   return (
     <Alert role="alert" className={WARNING_ALERT_CLASS}>
       <div className="flex items-start justify-between gap-2">
-        <AlertDescription>{message}</AlertDescription>
+        <div className="space-y-2">
+          <AlertDescription>{message}</AlertDescription>
+          {onRetry && (
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              ลองอีกครั้ง
+            </Button>
+          )}
+        </div>
         {onDismiss && (
           <button
             type="button"

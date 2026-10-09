@@ -21,6 +21,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RevokeButton } from './revoke-button';
 import { describeApiError } from '@/lib/describe-api-error';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/lib/toast-context';
 import { Form } from '@/components/ui/form';
@@ -51,6 +52,7 @@ export function UserScopesSection({
   const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
   const departmentsQuery = useQuery({ queryKey: ['departments'], queryFn: fetchDepartments });
   const programsQuery = useQuery({ queryKey: ['programs'], queryFn: fetchPrograms });
+  const orgQueries = [facultiesQuery, departmentsQuery, programsQuery];
   // What may be added: units inside the requester's own scope (any, for a
   // SUPER_ADMIN), minus those this user already holds. null while loading.
   const allowed = useMemo(() => {
@@ -162,9 +164,19 @@ export function UserScopesSection({
 
         {!lockedReason &&
           (allowed === null ? (
-            <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-              กำลังโหลดหน่วยงานที่เพิ่มได้...
-            </p>
+            orgQueries.some((q) => q.isError) ? (
+              <div className="border-t border-border pt-3">
+                <ApiErrorAlert
+                  message="โหลดรายชื่อหน่วยงานไม่สำเร็จ จึงยังเพิ่มขอบเขตไม่ได้"
+                  onRetry={() => orgQueries.forEach((q) => void q.refetch())}
+                />
+              </div>
+            ) : (
+              <div role="status" className="border-t border-border pt-3">
+                <span className="sr-only">กำลังโหลดหน่วยงานที่เพิ่มได้</span>
+                <Skeleton className="h-11 w-full" />
+              </div>
+            )
           ) : nothingToAdd ? (
             <p className="border-t border-border pt-3 text-sm text-muted-foreground">
               ไม่มีหน่วยงานที่เพิ่มเป็นขอบเขตให้ผู้ใช้นี้ได้แล้ว —

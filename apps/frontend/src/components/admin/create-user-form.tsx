@@ -11,6 +11,7 @@ import { createUser, fetchUser } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { createUserSchema, type CreateUserFormValues } from '@/lib/validation/create-user.schema';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { describeApiError } from '@/lib/describe-api-error';
@@ -233,7 +234,10 @@ export function CreateUserForm({
 
                 {scopeVisible &&
                   (allowed === null ? (
-                    <p className="text-sm text-muted-foreground">กำลังโหลดขอบเขตของคุณ...</p>
+                    <div role="status">
+                      <span className="sr-only">กำลังโหลดขอบเขตของคุณ</span>
+                      <Skeleton className="h-11 w-full" />
+                    </div>
                   ) : (
                     <ScopeSelector
                       levelFieldName="scopeLevel"

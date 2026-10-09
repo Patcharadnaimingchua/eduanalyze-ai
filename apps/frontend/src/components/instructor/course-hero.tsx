@@ -16,6 +16,7 @@ import {
 import { summarizeGradeCenter } from '@/lib/grade-center';
 import { buildCourseOverviews } from '@/lib/instructor-overview';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { CARD, CARD_PAD, TEXT_LABEL, TEXT_PAGE, TEXT_SECTION } from './instructor-ui';
@@ -81,6 +82,13 @@ export function CourseHero({
       </Button>
     </div>
   );
+  const metaLoading = timelineQuery.isLoading;
+  const metaPlaceholder = (
+    <span role="status" className="inline-flex">
+      <span className="sr-only">กำลังโหลดภาคเรียนและหลักสูตร</span>
+      <Skeleton className="h-4 w-40" />
+    </span>
+  );
   const sparseTag = sparse && (
     <Badge tone="neutral" className="gap-1 px-2.5 py-1 text-[13px]">
       <CircleDashed size={14} aria-hidden="true" />
@@ -97,7 +105,7 @@ export function CourseHero({
           description={
             <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span>{course.code}</span>
-              {meta && <span>{meta}</span>}
+              {metaLoading ? metaPlaceholder : meta && <span>{meta}</span>}
               {sparseTag}
             </span>
           }
@@ -108,9 +116,11 @@ export function CourseHero({
           <div className="min-w-0 space-y-1">
             <p className={TEXT_LABEL}>{course.code}</p>
             {title}
-            {(meta || sparse) && (
+            {(meta || sparse || metaLoading) && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
+                {metaLoading
+                  ? metaPlaceholder
+                  : meta && <p className="text-sm text-muted-foreground">{meta}</p>}
                 {sparseTag}
               </div>
             )}

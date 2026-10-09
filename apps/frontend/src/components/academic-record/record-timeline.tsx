@@ -10,9 +10,11 @@ import { GRADE_LABELS, GRADE_OPTIONS } from '@/lib/grade-label';
 import { gradeBadgeClassName } from '@/lib/grade-badge-color';
 import { useToast } from '@/lib/toast-context';
 import { cn } from '@/lib/utils';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { GradeSelectConfirm } from './grade-select-confirm';
 import { SemesterGroupHeader } from './semester-group-header';
 
@@ -83,6 +85,8 @@ export function RecordTimeline({
     assessableCourseIds.filter((id) => submittedCourseIds.has(id)),
   );
   const assessmentStatusReady = closLoaded && myAssessmentsQuery.isSuccess;
+  const assessmentStatusLoading = closQuery.isLoading || myAssessmentsQuery.isLoading;
+  const assessmentStatusFailed = closQuery.isError || myAssessmentsQuery.isError;
 
   const gpaBySemesterId = new Map(gpaBySemester.map((s) => [s.semesterId, s]));
   const recordsBySemesterId = new Map<string, StudentCourseRecord[]>();
@@ -206,13 +210,32 @@ export function RecordTimeline({
           <p className="py-6 text-center text-muted-foreground">ยังไม่มีรายวิชาที่บันทึกไว้</p>
         )}
 
+        {semestersWithRecords.length > 0 && assessmentStatusFailed && (
+          <div className="mb-4">
+            <ApiErrorAlert
+              message="โหลดสถานะการประเมินตนเองไม่สำเร็จ ปุ่มประเมินวิชายังใช้งานได้ แต่ยอดสรุปอาจไม่ครบ"
+              onRetry={() => {
+                void closQuery.refetch();
+                void myAssessmentsQuery.refetch();
+              }}
+            />
+          </div>
+        )}
+
         {semestersWithRecords.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              {assessmentStatusReady && assessableCourseIds.length > 0
-                ? `ประเมินตนเองตาม CLO แล้ว ${assessedCourseIds.size} จาก ${assessableCourseIds.length} วิชา`
-                : ' '}
-            </p>
+            {assessmentStatusLoading ? (
+              <div role="status">
+                <span className="sr-only">กำลังโหลดสถานะการประเมินตนเอง</span>
+                <Skeleton className="h-4 w-56" />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {assessmentStatusReady && assessableCourseIds.length > 0
+                  ? `ประเมินตนเองตาม CLO แล้ว ${assessedCourseIds.size} จาก ${assessableCourseIds.length} วิชา`
+                  : ' '}
+              </p>
+            )}
             <div className="flex gap-2">
               <Button
                 type="button"

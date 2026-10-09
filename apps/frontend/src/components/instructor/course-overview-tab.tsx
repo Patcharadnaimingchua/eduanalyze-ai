@@ -15,6 +15,7 @@ import {
 } from '@/lib/instructor-overview';
 import { PageSection } from '@/components/layout/page-section';
 import { Card, CardContent } from '@/components/ui/card';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GradeBand } from './grade-band';
 import { GoalBar, LowSampleTag, StatusBadge } from './overview-parts';
@@ -119,6 +120,16 @@ export function CourseOverviewTab({ course }: Readonly<{ course: InstructorCours
           </CardContent>
         </Card>
       </div>
+
+      {(studentsQuery.isError || yearLevelsQuery.isError) && (
+        <ApiErrorAlert
+          message="โหลดข้อมูลแยกตามชั้นปีไม่สำเร็จ ตัวเลขส่วนอื่นของวิชานี้ยังแสดงได้ตามปกติ"
+          onRetry={() => {
+            void studentsQuery.refetch();
+            void yearLevelsQuery.refetch();
+          }}
+        />
+      )}
 
       <YearLevelTable
         cells={yearCells}
