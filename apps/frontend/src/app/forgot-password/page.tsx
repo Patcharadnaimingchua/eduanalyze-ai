@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from '@/lib/api-client';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, RATE_LIMITED_ERROR } from '@/lib/api-error-presets';
 import {
   forgotPasswordSchema,
   type ForgotPasswordFormValues,
@@ -28,9 +30,9 @@ import {
 } from '@/components/ui/form';
 
 const BRAND_COPY = {
-  title: 'ลืมรหัสผ่าน ไม่ใช่ปัญหา',
+  title: 'การตั้งรหัสผ่านใหม่',
   description:
-    'เราจะช่วยคุณกลับเข้าสู่ระบบอย่างปลอดภัย เพียงกรอกอีเมลที่ใช้สมัครสมาชิก แล้วทำตามขั้นตอนในอีเมลที่เราส่งให้',
+    'ระบบจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมลที่ใช้สมัครสมาชิก กรุณาทำตามขั้นตอนในอีเมล',
 };
 
 export default function ForgotPasswordPage() {
@@ -49,8 +51,15 @@ export default function ForgotPasswordPage() {
       await apiClient.post('/auth/forgot-password', values);
       setSubmitted(true);
       toast.success('ส่งคำขอสำเร็จ');
-    } catch {
-      toast.error('ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+    } catch (error) {
+      toast.error(
+        describeApiError(
+          error,
+          RATE_LIMITED_ERROR,
+          'ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
@@ -59,7 +68,7 @@ export default function ForgotPasswordPage() {
       <Reveal index={0}>
         <AuthHeading
           title="ลืมรหัสผ่าน"
-          description="กรอกอีเมลที่ใช้สมัครสมาชิก เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้คุณ"
+          description="กรอกอีเมลที่ใช้สมัครสมาชิก ระบบจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้"
         />
       </Reveal>
 
@@ -67,7 +76,7 @@ export default function ForgotPasswordPage() {
         <Reveal index={1}>
           <Alert>
             <AlertDescription>
-              หากมีบัญชีที่ใช้อีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้แล้ว
+              หากมีบัญชีที่ใช้อีเมลนี้อยู่ในระบบ ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้แล้ว
             </AlertDescription>
           </Alert>
           <p className="mt-4 text-center text-sm text-muted-foreground">

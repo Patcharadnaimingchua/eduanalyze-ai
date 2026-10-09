@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
 import type { AccessTokenResponse, RegisterRequest } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, RATE_LIMITED_ERROR } from '@/lib/api-error-presets';
 import { fetchInvitationPreview } from '@/lib/api/auth';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
@@ -38,9 +39,8 @@ import {
 } from '@/components/ui/form';
 
 const BRAND_COPY = {
-  title: 'เริ่มต้นเส้นทางแห่งความสำเร็จ',
-  description:
-    'สมัครสมาชิกวันนี้ เพื่อเข้าถึงระบบติดตามผลการเรียนที่ครอบคลุม พร้อมการวิเคราะห์ศักยภาพที่จะช่วยให้คุณเติบโตในแบบที่ใช่สำหรับตัวเอง',
+  title: 'สมัครสมาชิกนักศึกษา',
+  description: 'สร้างบัญชีเพื่อติดตามผลการเรียน และวิเคราะห์ผลลัพธ์การเรียนรู้และความถนัดของตนเอง',
 };
 
 export default function RegisterPage() {
@@ -97,7 +97,7 @@ function RegisterPageContent() {
     return <InvitedRegisterForm token={invitationToken} preview={invitationQuery.data} />;
   }
 
-  return <ManualRegisterForm />;
+  return <ManualRegisterForm invitationProblem={!!invitationToken && invitationQuery.isError} />;
 }
 
 function InvitedRegisterForm({
@@ -142,13 +142,18 @@ function InvitedRegisterForm({
       await login(data.accessToken);
       router.push('/dashboard');
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('อีเมลนี้ถูกใช้งานแล้ว');
-      } else if (isAxiosError(error) && error.response?.status === 401) {
-        setServerError('คำเชิญนี้หมดอายุหรือถูกใช้ไปแล้ว ติดต่อเจ้าหน้าที่เพื่อขอคำเชิญใหม่');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(
+        describeApiError(
+          error,
+          {
+            ...RATE_LIMITED_ERROR,
+            409: 'อีเมลนี้ถูกใช้งานแล้ว',
+            401: 'คำเชิญนี้หมดอายุหรือถูกใช้ไปแล้ว ติดต่อเจ้าหน้าที่เพื่อขอคำเชิญใหม่',
+          },
+          undefined,
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
@@ -240,7 +245,7 @@ function InvitedRegisterForm({
   );
 }
 
-function ManualRegisterForm() {
+function ManualRegisterForm({ invitationProblem }: Readonly<{ invitationProblem: boolean }>) {
   const router = useRouter();
   const { login } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -279,20 +284,43 @@ function ManualRegisterForm() {
       await login(data.accessToken);
       router.push('/dashboard');
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('อีเมลหรือรหัสนิสิต/นักศึกษานี้ถูกใช้งานแล้ว');
-      } else if (isAxiosError(error) && error.response?.status === 400) {
-        setServerError('ข้อมูลหลักสูตรไม่ถูกต้อง กรุณาเลือกใหม่');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(
+        describeApiError(
+          error,
+          {
+            ...RATE_LIMITED_ERROR,
+            409: 'อีเมลหรือรหัสนักศึกษานี้ถูกใช้งานแล้ว',
+            400: 'ข้อมูลหลักสูตรไม่ถูกต้อง กรุณาเลือกใหม่',
+          },
+          undefined,
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
   return (
     <AuthSplitLayout {...BRAND_COPY}>
       <Reveal index={0}>
-        <AuthHeading title="สมัครสมาชิก" description="สำหรับนิสิต/นักศึกษาเท่านั้น" />
+        <AuthHeading
+          title="สมัครสมาชิก"
+          description={
+            <>
+              <span className="block">สำหรับนักศึกษาเท่านั้น</span>
+              <span className="block">บุคลากรและอาจารย์ให้ติดต่อผู้ดูแลระบบของหน่วยงาน</span>
+            </>
+          }
+        />
+        {invitationProblem && (
+          <Alert role="alert" className="mb-4">
+            <AlertDescription>
+              <span className="block font-semibold">ลิงก์คำเชิญไม่ถูกต้องหรือหมดอายุ</span>
+              <span className="block">
+                ติดต่อเจ้าหน้าที่เพื่อขอคำเชิญใหม่ หรือสมัครด้วยตนเองตามแบบฟอร์มด้านล่าง
+              </span>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <AuthModeTabs active="register" />
       </Reveal>
@@ -370,7 +398,7 @@ function ManualRegisterForm() {
               name="studentCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
+                  <FormLabel>รหัสนักศึกษา</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>

@@ -56,7 +56,7 @@ export function TwoFactorSection() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <CardTitle>ยืนยันตัวตนสองขั้นตอน (2FA)</CardTitle>
-            <CardDescription>ใช้แอป Authenticator (เช่น Google Authenticator, Authy) เพิ่มความปลอดภัยตอนเข้าสู่ระบบ</CardDescription>
+            <CardDescription>ใช้แอปยืนยันตัวตน (เช่น Google Authenticator, Authy) เพิ่มความปลอดภัยตอนเข้าสู่ระบบ</CardDescription>
           </div>
           {mode === 'view' && (
             <Badge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'เปิดอยู่' : 'ปิดอยู่'}</Badge>
@@ -203,7 +203,7 @@ function TwoFactorSetupFlow({
     <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          เปิดแอป Authenticator แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
+          เปิดแอปยืนยันตัวตน แล้วสแกน QR ด้านล่าง (หรือกรอกรหัสด้วยตัวเองถ้าสแกนไม่ได้)
         </p>
         <div className="flex flex-col items-center gap-2">
           <div className="rounded-2xl border border-slate-200 bg-card p-4 shadow-sm">
@@ -223,7 +223,7 @@ function TwoFactorSetupFlow({
               )}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">สแกนด้วยแอป Authenticator</p>
+          <p className="text-xs text-muted-foreground">สแกนด้วยแอปยืนยันตัวตน</p>
         </div>
         <div className="flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2">
           <p className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground">
@@ -333,7 +333,7 @@ function TwoFactorRecoveryCodesReveal({
           </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          ใช้รหัสเหล่านี้แทนแอป Authenticator ได้ครั้งละ 1 รหัส ถ้าทำมือถือหายหรือเข้าแอปไม่ได้
+          ใช้รหัสเหล่านี้แทนแอปยืนยันตัวตน ได้ครั้งละ 1 รหัส ถ้าทำมือถือหายหรือเข้าแอปไม่ได้
         </p>
       </div>
       <Button type="button" onClick={onDone}>

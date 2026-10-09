@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/api-client';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, RATE_LIMITED_ERROR } from '@/lib/api-error-presets';
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
@@ -62,7 +64,7 @@ function ResetPasswordForm() {
         setServerError('ลิงก์นี้หมดอายุหรือถูกใช้ไปแล้ว กรุณาขอลิงก์ใหม่');
         setLinkExpired(true);
       } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+        setServerError(describeApiError(error, RATE_LIMITED_ERROR, undefined, OWN_SENTENCE_ONLY));
       }
     }
   }

@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
 import { Mail, ShieldCheck } from 'lucide-react';
 import type { LoginResponse } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, RATE_LIMITED_ERROR } from '@/lib/api-error-presets';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { resolvePostLoginRoute } from '@/lib/dashboard-routes';
@@ -140,11 +141,14 @@ function LoginPageContent() {
       }
       await login(data.accessToken);
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 401) {
-        setServerError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(
+        describeApiError(
+          error,
+          { ...RATE_LIMITED_ERROR, 401: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' },
+          undefined,
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
@@ -162,11 +166,14 @@ function LoginPageContent() {
       }
       await login(data.accessToken);
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 401) {
-        setServerError('รหัสยืนยันไม่ถูกต้องหรือหมดอายุ — ลองเข้าสู่ระบบใหม่อีกครั้ง');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(
+        describeApiError(
+          error,
+          { ...RATE_LIMITED_ERROR, 401: 'รหัสยืนยันไม่ถูกต้องหรือหมดอายุ — ลองเข้าสู่ระบบใหม่อีกครั้ง' },
+          undefined,
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
@@ -193,7 +200,7 @@ function LoginPageContent() {
         </div>
         <AuthHeading
           title="ยืนยันตัวตนสองขั้นตอน"
-          description="กรอกรหัส 6 หลักจากแอป Authenticator หรือรหัสสำรอง (recovery code)"
+          description="กรอกรหัส 6 หลักจากแอปยืนยันตัวตน หรือรหัสสำรอง"
         />
 
         {isRecoveryMode ? (
@@ -209,7 +216,7 @@ function LoginPageContent() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>กรอกรหัสสำรอง (recovery code)</FormLabel>
+                    <FormLabel>กรอกรหัสสำรอง</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="XXXX-XXXX"
@@ -228,7 +235,7 @@ function LoginPageContent() {
                   className="inline-flex min-h-11 items-center font-medium text-brand hover:underline"
                   onClick={toggleRecoveryMode}
                 >
-                  กลับไปใช้รหัสจากแอป Authenticator
+                  กลับไปใช้รหัสจากแอปยืนยันตัวตน
                 </button>
               </div>
               <Button type="submit" className="w-full" disabled={recoveryForm.formState.isSubmitting}>
@@ -261,7 +268,7 @@ function LoginPageContent() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>กรอกรหัส 6 หลักจากแอป Authenticator</FormLabel>
+                    <FormLabel>กรอกรหัส 6 หลักจากแอปยืนยันตัวตน</FormLabel>
                     <FormControl>
                       <OtpInput
                         value={field.value}

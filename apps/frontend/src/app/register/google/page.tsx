@@ -4,12 +4,13 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
 import type {
   AccessTokenResponse,
   CompleteGoogleRegistrationRequest,
 } from '@eduanalyze-ai/shared-types';
 import { apiClient } from '@/lib/api-client';
+import { describeApiError } from '@/lib/describe-api-error';
+import { OWN_SENTENCE_ONLY, RATE_LIMITED_ERROR } from '@/lib/api-error-presets';
 import { useAuth } from '@/lib/auth-context';
 import {
   completeGoogleRegistrationSchema,
@@ -77,13 +78,18 @@ function CompleteGoogleRegistrationForm() {
       await login(data.accessToken);
       router.push('/dashboard');
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 401) {
-        setServerError('เซสชันหมดอายุ กรุณาเริ่มเข้าสู่ระบบด้วย Google ใหม่');
-      } else if (isAxiosError(error) && error.response?.status === 409) {
-        setServerError('รหัสนิสิต/นักศึกษานี้ถูกใช้งานแล้ว');
-      } else {
-        setServerError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
-      }
+      setServerError(
+        describeApiError(
+          error,
+          {
+            ...RATE_LIMITED_ERROR,
+            401: 'เซสชันหมดอายุ กรุณาเริ่มเข้าสู่ระบบด้วย Google ใหม่',
+            409: 'รหัสนักศึกษานี้ถูกใช้งานแล้ว',
+          },
+          undefined,
+          OWN_SENTENCE_ONLY,
+        ),
+      );
     }
   }
 
@@ -110,7 +116,7 @@ function CompleteGoogleRegistrationForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Alert>
             <AlertDescription>
-              แบบฟอร์มนี้สำหรับนิสิต/นักศึกษาที่สมัครใช้งานครั้งแรกเท่านั้น หากคุณควรมีบัญชีเจ้าหน้าที่ อาจารย์
+              แบบฟอร์มนี้สำหรับนักศึกษาที่สมัครใช้งานครั้งแรกเท่านั้น หากคุณควรมีบัญชีเจ้าหน้าที่ อาจารย์
               หรือผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อขอบัญชีแทนการกรอกแบบฟอร์มนี้
             </AlertDescription>
           </Alert>
@@ -124,7 +130,7 @@ function CompleteGoogleRegistrationForm() {
             name="studentCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>รหัสนิสิต/นักศึกษา</FormLabel>
+                <FormLabel>รหัสนักศึกษา</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>

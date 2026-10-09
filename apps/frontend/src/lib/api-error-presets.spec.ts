@@ -3,6 +3,7 @@ import {
   GRADE_WRITE_ERRORS,
   GRADE_WRITE_FALLBACK,
   OWN_SENTENCE_ONLY,
+  RATE_LIMITED_ERROR,
   STAFF_WRITE_ERRORS,
   orgWriteErrors,
 } from './api-error-presets';
@@ -42,5 +43,13 @@ describe('write error presets', () => {
     expect(describeApiError(httpError(422, { message: 'ชื่อสั้นเกินไป' }), errors)).toBe(
       'ชื่อสั้นเกินไป',
     );
+  });
+
+  it('sign-in forms: a throttled request tells the user to wait, other failures keep their own sentence', () => {
+    const errors = { ...RATE_LIMITED_ERROR, 401: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+    const say = (e: unknown) => describeApiError(e, errors, undefined, OWN_SENTENCE_ONLY);
+    expect(say(httpError(429))).toBe('ลองบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่');
+    expect(say(httpError(401))).toBe('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+    expect(say(httpError(500))).toBe('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
   });
 });

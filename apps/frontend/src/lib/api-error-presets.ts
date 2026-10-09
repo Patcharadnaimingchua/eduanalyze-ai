@@ -29,3 +29,8 @@ export function orgWriteErrors(conflictMessage: string): Partial<Record<number, 
     404: 'ไม่พบรายการนี้แล้ว อาจถูกปิดใช้งานไปก่อนหน้า',
   };
 }
+
+// The API throttles sign-in, registration and password endpoints per minute.
+export const RATE_LIMITED_ERROR: Partial<Record<number, string>> = {
+  429: 'ลองบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่',
+};

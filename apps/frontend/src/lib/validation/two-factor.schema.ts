@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const twoFactorEnableSchema = z.object({
   code: z
     .string()
-    .length(6, 'กรุณากรอกรหัส 6 หลักจากแอป Authenticator')
+    .length(6, 'กรุณากรอกรหัส 6 หลักจากแอปยืนยันตัวตน')
     .regex(/^\d{6}$/, 'กรอกได้เฉพาะตัวเลข'),
 });
 export type TwoFactorEnableFormValues = z.infer<typeof twoFactorEnableSchema>;
