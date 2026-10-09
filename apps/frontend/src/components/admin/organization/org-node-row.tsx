@@ -74,7 +74,7 @@ export function OrgNodeRow({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-background dark:border-slate-700">
+    <div className="rounded-lg border border-slate-200 bg-background">
       <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-2">
         <button
           type="button"
@@ -133,7 +133,7 @@ export function OrgNodeRow({
       )}
 
       {expanded && (
-        <div className="space-y-2 border-t border-slate-100 py-3 pl-4 pr-3 dark:border-slate-800 sm:pl-8">
+        <div className="space-y-2 border-t border-slate-100 py-3 pl-4 pr-3 sm:pl-8">
           {adding && addChild && (
             <OrgEntityForm
               submitLabel={`เพิ่ม${addChild.childLabel}`}

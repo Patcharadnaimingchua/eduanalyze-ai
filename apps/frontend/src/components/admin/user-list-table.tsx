@@ -14,6 +14,7 @@ import { ROLE_BADGE_TONE, ROLE_LABEL_TH } from '@/components/auth/require-role';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { BAR_TONE_CLASSES } from '@/lib/tone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
@@ -43,7 +44,10 @@ function StatusChip({ isActive }: Readonly<{ isActive: boolean }>) {
     <Badge tone={isActive ? 'success' : 'neutral'} className="gap-1.5 whitespace-nowrap">
       <span
         aria-hidden="true"
-        className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500' : 'bg-slate-400')}
+        className={cn(
+          'h-1.5 w-1.5 rounded-full',
+          BAR_TONE_CLASSES[isActive ? 'success' : 'neutral'],
+        )}
       />
       {isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
     </Badge>
@@ -62,6 +66,7 @@ function UserAvatar() {
 }
 
 function RoleBadges({ roles }: Readonly<{ roles: Role[] }>) {
+  if (roles.length === 0) return <span className="text-muted-foreground">ไม่ระบุบทบาท</span>;
   return (
     <>
       {roles.map((role) => (
@@ -90,12 +95,13 @@ function ScopeBadges({
     );
   }
   return (
-    <ul className="flex flex-col items-start gap-1.5">
+    <ul className="space-y-1.5">
       {user.scopes.map((scope) => (
-        <li key={scope.id} className="max-w-full">
-          <Badge tone="neutral" className="whitespace-normal break-words text-left">
-            {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
-          </Badge>
+        <li key={scope.id} className="text-sm leading-snug">
+          <span className="block text-xs text-muted-foreground">
+            {SCOPE_LEVEL_LABELS[scope.level]}
+          </span>
+          <span className="block break-words font-medium">{resolveTargetName(scope)}</span>
         </li>
       ))}
     </ul>
@@ -139,7 +145,7 @@ function RowActions({
     <div
       className={cn('flex flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end', className)}
     >
-      {!locked && <DetailLink id={user.id} label="แก้ไข" variant="default" />}
+      {!locked && <DetailLink id={user.id} label="แก้ไข" />}
       <UserStatusAction
         user={user}
         requesterId={superAdminId}
@@ -268,7 +274,13 @@ export function UserListTable({
             {/* Narrow screens: one card per person, so the page never scrolls sideways. */}
             <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
               {pagination.pageRows.map((user) => (
-                <li key={user.id} className="space-y-3 rounded-lg border p-4">
+                <li
+                  key={user.id}
+                  className={cn(
+                    'space-y-3 rounded-lg border p-4',
+                    !user.isActive && 'bg-slate-50/60',
+                  )}
+                >
                   <div className="flex items-start gap-3">
                     <UserAvatar />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -299,7 +311,7 @@ export function UserListTable({
                   <col />
                 </colgroup>
                 <thead>
-                  <tr className="border-b bg-slate-50 text-muted-foreground dark:bg-slate-900/40">
+                  <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
                     <SortHeader {...sort.sortProps('fullName')} className="px-3 py-3">
                       ชื่อและอีเมล
                     </SortHeader>
@@ -315,9 +327,12 @@ export function UserListTable({
                   {pagination.pageRows.map((user) => (
                     <tr
                       key={user.id}
-                      className="border-b align-middle hover:bg-slate-50 dark:hover:bg-slate-900/40"
+                      className={cn(
+                        'border-b border-slate-100 align-middle hover:bg-slate-50',
+                        !user.isActive && 'bg-slate-50/60',
+                      )}
                     >
-                      <td className="px-3 py-3">
+                      <td className={cn('px-3 py-3', !user.isActive && 'opacity-70')}>
                         <span className="flex items-start gap-3">
                           <UserAvatar />
                           <span className="min-w-0 space-y-0.5">
@@ -330,12 +345,12 @@ export function UserListTable({
                           </span>
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className={cn('px-3 py-3', !user.isActive && 'opacity-70')}>
                         <div className="flex flex-wrap gap-1.5">
                           <RoleBadges roles={user.roles} />
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className={cn('px-3 py-3', !user.isActive && 'opacity-70')}>
                         <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
                       </td>
                       <td className="px-3 py-3">

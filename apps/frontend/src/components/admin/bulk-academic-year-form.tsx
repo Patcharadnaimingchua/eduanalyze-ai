@@ -92,7 +92,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
           ปีหรือภาคเรียนที่มีอยู่แล้วจะไม่ถูกสร้างซ้ำ (แสดงเป็น &quot;มีอยู่แล้ว&quot;)
           ระบบสร้างทั้งชุดในครั้งเดียว หากขัดข้องจะไม่มีรายการใดถูกบันทึก และกดสร้างซ้ำได้
         </p>
-        <p className="text-sm text-amber-700 dark:text-amber-400">
+        <p className="text-sm text-amber-700">
           ระบบถือปีการศึกษาล่าสุดเป็นปีปัจจุบัน —
           การสร้างปีที่ใหม่กว่าปัจจุบันจะทำให้ชั้นปีของนักศึกษาในแดชบอร์ดเลื่อนตามทันที
         </p>
@@ -148,7 +148,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                     type="checkbox"
                     checked={terms.includes(term)}
                     onChange={() => toggleTerm(term)}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-600"
+                    className="h-4 w-4 rounded border-slate-300"
                   />
                   {SEMESTER_TERM_LABELS[term]}
                 </label>
@@ -156,7 +156,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
             </fieldset>
 
             {results && (
-              <div className="space-y-2 rounded-md border border-slate-200 p-3 dark:border-slate-700">
+              <div className="space-y-2 rounded-md border border-slate-200 p-3">
                 <p className="text-sm font-medium text-primary">
                   สร้างใหม่ {createdCount} รายการ · มีอยู่แล้ว {skippedCount} รายการ
                 </p>

@@ -20,6 +20,7 @@ import {
 import { semesterSchema, type SemesterFormValues } from '@/lib/validation/semester.schema';
 import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
 import { cn } from '@/lib/utils';
+import { BAR_TONE_CLASSES } from '@/lib/tone';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/lib/toast-context';
@@ -304,7 +305,7 @@ export function AcademicYearCard({
               <div
                 aria-hidden="true"
                 className={cn(
-                  'hidden rounded-t-md bg-slate-100 px-3 py-2 text-xs font-medium text-muted-foreground dark:bg-slate-800 md:grid',
+                  'hidden rounded-t-md bg-slate-100 px-3 py-2 text-xs font-medium text-muted-foreground md:grid',
                   SEMESTER_GRID,
                 )}
               >
@@ -324,7 +325,7 @@ export function AcademicYearCard({
                     <li
                       key={semester.id}
                       className={cn(
-                        'rounded-md bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900/40 md:rounded-none md:bg-transparent md:dark:bg-transparent',
+                        'rounded-md bg-slate-50 px-3 py-2 text-sm md:rounded-none md:bg-transparent',
                         editingSemesterId === semester.id ? 'block' : SEMESTER_GRID,
                       )}
                     >
@@ -396,7 +397,7 @@ export function AcademicYearCard({
                             <Badge tone="success" className="gap-1.5">
                               <span
                                 aria-hidden="true"
-                                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                                className={cn('h-1.5 w-1.5 rounded-full', BAR_TONE_CLASSES.success)}
                               />
                               ใช้งาน
                             </Badge>
@@ -448,7 +449,7 @@ export function AcademicYearCard({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmitSemester)}
-                className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3 dark:border-slate-800"
+                className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3"
               >
                 <FormField
                   control={form.control}

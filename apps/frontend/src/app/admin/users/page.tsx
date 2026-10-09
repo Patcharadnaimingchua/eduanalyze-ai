@@ -108,6 +108,7 @@ function AdminUsersContent() {
               }
             >
               <StatCard
+                compact
                 icon={UsersRound}
                 label={requesterIsSuperAdmin ? 'บัญชีบุคลากรทั้งหมด' : 'บัญชีทั้งหมด'}
                 value={<AnimatedNumber value={summary.total} />}
@@ -115,6 +116,7 @@ function AdminUsersContent() {
               />
               {requesterIsSuperAdmin ? (
                 <StatCard
+                  compact
                   icon={ShieldCheck}
                   label="ผู้ดูแลระบบและเจ้าหน้าที่"
                   value={<AnimatedNumber value={summary.adminOrStaff} />}
@@ -122,6 +124,7 @@ function AdminUsersContent() {
                 />
               ) : (
                 <StatCard
+                  compact
                   icon={UserCog}
                   label="เจ้าหน้าที่"
                   value={<AnimatedNumber value={summary.byRole.STAFF} />}
@@ -130,6 +133,7 @@ function AdminUsersContent() {
               )}
               {requesterIsSuperAdmin && (
                 <StatCard
+                  compact
                   icon={UserCheck}
                   label="ใช้งานอยู่"
                   value={<AnimatedNumber value={summary.active} />}
@@ -144,6 +148,7 @@ function AdminUsersContent() {
                 />
               )}
               <StatCard
+                compact
                 icon={ShieldOff}
                 label="ระงับการใช้งาน"
                 value={<AnimatedNumber value={summary.suspended} />}
@@ -151,7 +156,7 @@ function AdminUsersContent() {
               />
             </div>
             {summary.withoutScope > 0 && (
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              <p className="text-sm font-medium text-amber-700">
                 มี {summary.withoutScope} บัญชีที่ยังไม่กำหนดขอบเขต
               </p>
             )}
@@ -163,13 +168,13 @@ function AdminUsersContent() {
         <Card
           className={
             createdUser.passwordSetupEmailSent
-              ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/40'
-              : 'border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/40'
+              ? 'border-emerald-200 bg-emerald-50'
+              : 'border-amber-200 bg-amber-50'
           }
         >
           <CardContent className="space-y-4 pt-6">
             <p
-              className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900 dark:text-emerald-200' : 'text-amber-900 dark:text-amber-200'}`}
+              className={`text-sm font-medium ${createdUser.passwordSetupEmailSent ? 'text-emerald-900' : 'text-amber-900'}`}
             >
               เพิ่มผู้ใช้งานสำเร็จ — {createdUser.fullName} ({createdUser.email})
             </p>

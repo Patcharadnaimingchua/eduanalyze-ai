@@ -58,7 +58,7 @@ export function CurriculumTabs({
             'min-h-11 rounded-md px-3.5 text-sm font-semibold transition motion-reduce:transition-none',
             value === tab
               ? 'bg-brand text-brand-foreground'
-              : 'text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800',
+              : 'text-muted-foreground hover:bg-slate-50',
           )}
         >
           {CURRICULUM_TAB_LABELS[tab]} ({counts[tab]})

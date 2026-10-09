@@ -16,6 +16,8 @@ interface StatCardProps {
   // squeezing the label into the ring.
   visual?: React.ReactNode;
   href?: string;
+  // Shorter card for dense pages: less padding, smaller figure.
+  compact?: boolean;
 }
 
 // Deliberately no percentile/trend badges — the Figma mockup had "Top
@@ -32,10 +34,11 @@ export function StatCard({
   footer,
   visual,
   href,
+  compact = false,
 }: Readonly<StatCardProps>) {
   const heading = (
     <>
-      <div className="mb-3 flex items-start justify-between">
+      <div className={cn(compact ? 'mb-2' : 'mb-3', 'flex items-start justify-between')}>
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-light">
           <Icon size={18} className="text-brand" />
         </div>
@@ -58,7 +61,7 @@ export function StatCard({
 
   const card = (
     <Card className="h-full transition-[transform,box-shadow] duration-200 ease-out md:hover:-translate-y-0.5 md:hover:shadow-md">
-      <CardContent className="pt-6">
+      <CardContent className={compact ? 'p-4' : 'pt-6'}>
         {visual ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-[4rem] flex-1">{heading}</div>
@@ -67,7 +70,7 @@ export function StatCard({
         ) : (
           <>
             {heading}
-            <p className="text-3xl font-semibold text-primary">
+            <p className={cn(compact ? 'text-2xl' : 'text-3xl', 'font-semibold text-primary')}>
               {value}
               {suffix && (
                 <span className="ml-1 text-base font-normal text-muted-foreground">{suffix}</span>
