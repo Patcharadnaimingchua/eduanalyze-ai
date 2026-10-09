@@ -103,7 +103,7 @@ function InstructorMyCoursesContent() {
               title={`เทอมล่าสุด — ${termLabel(latest)} · ${latest.semester.courses.length} วิชา`}
               titleClassName={TEXT_SECTION}
               actions={
-                <Button asChild variant="outline" className="h-11">
+                <Button asChild variant="outline">
                   <Link href="/instructor/dashboard">
                     ดูผลการเรียนของแต่ละวิชา
                     <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />

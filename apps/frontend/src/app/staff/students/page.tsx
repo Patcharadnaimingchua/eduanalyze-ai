@@ -214,7 +214,7 @@ function StaffStudentsContent() {
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                   />
                   <Input
-                    className="h-11 pl-9"
+                    className="pl-9"
                     placeholder="ค้นหาด้วยรหัสนักศึกษา หรือชื่อ-นามสกุล"
                     defaultValue={search}
                     onChange={(e) => updateParams({ q: e.target.value })}
@@ -255,7 +255,7 @@ function StaffStudentsContent() {
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">ชั้นปี</span>
                   <Select value={levelFilter} onValueChange={(v) => updateParams({ level: v })}>
-                    <SelectTrigger className="min-h-11" aria-label="ชั้นปี">
+                    <SelectTrigger aria-label="ชั้นปี">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -274,7 +274,7 @@ function StaffStudentsContent() {
                     value={sortKey}
                     onValueChange={(v) => updateParams({ sort: v === 'severity' ? null : v })}
                   >
-                    <SelectTrigger className="min-h-11" aria-label="เรียงตาม">
+                    <SelectTrigger aria-label="เรียงตาม">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +293,7 @@ function StaffStudentsContent() {
                       value={programFilter}
                       onValueChange={(v) => updateParams({ program: v })}
                     >
-                      <SelectTrigger className="min-h-11" aria-label="สาขา">
+                      <SelectTrigger aria-label="สาขา">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -310,7 +310,7 @@ function StaffStudentsContent() {
                 <label className="block space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">ปีที่เข้าศึกษา</span>
                   <Select value={admissionFilter} onValueChange={(v) => updateParams({ year: v })}>
-                    <SelectTrigger className="min-h-11" aria-label="ปีที่เข้าศึกษา">
+                    <SelectTrigger aria-label="ปีที่เข้าศึกษา">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

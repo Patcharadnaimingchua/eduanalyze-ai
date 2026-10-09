@@ -76,7 +76,7 @@ function StaffStudentInvitationsContent() {
             <Button
               type="button"
               variant={showCsvPanel ? 'outline' : 'default'}
-              className="h-11 gap-1.5 px-4"
+              className="gap-1.5 px-4"
               onClick={() => setShowCsvPanel((open) => !open)}
             >
               {showCsvPanel ? (

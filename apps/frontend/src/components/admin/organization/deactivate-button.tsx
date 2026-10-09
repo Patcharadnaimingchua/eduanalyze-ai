@@ -39,9 +39,8 @@ export function DeactivateButton({
     <div className="flex flex-col items-end gap-1">
       <Button
         type="button"
-        variant="ghost"
+        variant="danger"
         size="sm"
-        className="min-h-11"
         disabled={!!blockedReason}
         title={blockedReason}
         onClick={() => setConfirming(true)}

@@ -126,7 +126,7 @@ function InstructorCourseContent({ courseId }: { courseId: string }) {
                 illustration="no-results"
                 description="ไม่พบรายวิชานี้ในรายวิชาที่คุณสอน กลับไปเลือกวิชาจากรายการ"
                 action={
-                  <Button asChild variant="outline" className="h-11">
+                  <Button asChild variant="outline">
                     <Link href="/instructor/my-courses">ดูรายวิชาที่สอน</Link>
                   </Button>
                 }

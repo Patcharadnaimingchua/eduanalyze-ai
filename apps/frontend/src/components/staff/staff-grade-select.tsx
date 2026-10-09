@@ -41,7 +41,7 @@ export function StaffGradeSelect({
         onValueChange={(next) => setPending(next === value ? null : (next as Grade))}
         disabled={disabled}
       >
-        <SelectTrigger className="min-h-11 w-28 shrink-0" aria-label={`เกรดของ ${subject}`}>
+        <SelectTrigger className="w-28 shrink-0" aria-label={`เกรดของ ${subject}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -59,7 +59,7 @@ export function StaffGradeSelect({
           </span>
           <Button
             type="button"
-            className="h-11 px-4"
+            className="px-4"
             disabled={disabled}
             aria-label={`บันทึกเกรด ${GRADE_LABELS[pending]} ให้ ${subject}`}
             onClick={() => {
@@ -73,7 +73,7 @@ export function StaffGradeSelect({
           <Button
             type="button"
             variant="outline"
-            className="h-11 px-4"
+            className="px-4"
             disabled={disabled}
             onClick={() => setPending(null)}
           >

@@ -146,7 +146,7 @@ export function ScoreCsvImportPanel({
     <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50/50 p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-primary">นำเข้าคะแนนจากไฟล์ CSV</p>
-        <Button type="button" variant="ghost" size="sm" className="h-11" onClick={onClose}>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
           ปิด
         </Button>
       </div>
@@ -164,7 +164,7 @@ export function ScoreCsvImportPanel({
           className="hidden"
           onChange={onFileChange}
         />
-        <Button type="button" variant="outline" size="sm" className="h-11" onClick={() => inputRef.current?.click()}>
+        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
           เลือกไฟล์ CSV
         </Button>
         {fileName && <span className="text-xs text-muted-foreground">{fileName}</span>}
@@ -189,10 +189,10 @@ export function ScoreCsvImportPanel({
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="button" className="h-11" onClick={onConfirm} disabled={importing || readyCount === 0}>
+            <Button type="button" onClick={onConfirm} disabled={importing || readyCount === 0}>
               {importing ? 'กำลังนำเข้า...' : `ยืนยันนำเข้า ${readyCount} แถว`}
             </Button>
-            <Button type="button" variant="outline" className="h-11" onClick={onClose} disabled={importing}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={importing}>
               ยกเลิก
             </Button>
           </div>

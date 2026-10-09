@@ -329,14 +329,13 @@ export function StudentScoreEntryPanel({
 
         {fields.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" className="h-11" onClick={onDownloadTemplate}>
+            <Button type="button" variant="outline" size="sm" onClick={onDownloadTemplate}>
               ดาวน์โหลดเทมเพลต
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-11"
               onClick={() => setImportOpen((open) => !open)}
               disabled={effectiveMax === null}
             >
@@ -465,7 +464,7 @@ export function StudentScoreEntryPanel({
 
         {fields.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" className="h-11" onClick={onSave} disabled={saving}>
+            <Button type="button" onClick={onSave} disabled={saving}>
               {saving ? 'กำลังบันทึก...' : 'บันทึกคะแนนทั้งหมด'}
             </Button>
             <span className="text-sm text-muted-foreground" aria-live="polite">

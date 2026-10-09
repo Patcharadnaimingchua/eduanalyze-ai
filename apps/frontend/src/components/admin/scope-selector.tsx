@@ -141,7 +141,7 @@ export function ScopeSelector({
                   value={field.value || undefined}
                 >
                   <FormControl>
-                    <SelectTrigger className="min-h-11">
+                    <SelectTrigger>
                       <SelectValue placeholder="เลือกระดับ" />
                     </SelectTrigger>
                   </FormControl>

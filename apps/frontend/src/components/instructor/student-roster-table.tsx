@@ -251,7 +251,6 @@ export function StudentRosterTable({
               variant={editMode ? 'default' : 'outline'}
               size="sm"
               aria-pressed={editMode}
-              className="h-11"
               onClick={() => setEditMode((on) => !on)}
             >
               <Pencil className="mr-1.5 h-3.5 w-3.5" />
@@ -262,7 +261,6 @@ export function StudentRosterTable({
             type="button"
             variant="outline"
             size="sm"
-            className="h-11"
             disabled={visibleRoster.length === 0}
             onClick={() => exportRosterCsvWithToast(courseCode, sort.sorted, isFiltered, toast)}
           >
@@ -291,11 +289,11 @@ export function StudentRosterTable({
             }}
             placeholder="ค้นหารหัสนักศึกษา หรือ ชื่อ"
             aria-label="ค้นหารหัสนักศึกษา หรือ ชื่อ"
-            className="h-11 pl-9"
+            className="pl-9"
           />
         </div>
         {isFiltered && (
-          <Button type="button" variant="ghost" size="sm" className="h-11" onClick={clearFilters}>
+          <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
             ล้างตัวกรอง
           </Button>
         )}
@@ -329,7 +327,7 @@ export function StudentRosterTable({
               illustration="no-results"
               description="ไม่พบนักศึกษาที่ตรงกับเงื่อนไขที่เลือก"
               action={
-                <Button type="button" variant="outline" className="h-11" onClick={clearFilters}>
+                <Button type="button" variant="outline" onClick={clearFilters}>
                   ล้างตัวกรอง
                 </Button>
               }
@@ -404,7 +402,6 @@ export function StudentRosterTable({
                               type="button"
                               variant="destructive"
                               size="sm"
-                              className="min-h-11"
                               disabled={isBusy}
                               aria-label={`ยืนยันลบผลการเรียนของ ${student.fullName}`}
                               onClick={() =>
@@ -421,7 +418,6 @@ export function StudentRosterTable({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="min-h-11"
                               disabled={isBusy}
                               onClick={() => setConfirmingId(null)}
                             >
@@ -433,7 +429,6 @@ export function StudentRosterTable({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="min-h-11"
                             disabled={isBusy}
                             aria-label={`ลบผลการเรียนของ ${student.fullName}`}
                             onClick={() => setConfirmingId(recordId)}
@@ -448,10 +443,7 @@ export function StudentRosterTable({
               })}
             </ul>
           )}
-          {/* The shared Pagination buttons are 32px; 44px here for touch. */}
-          <div className="[&_button]:h-11 [&_button]:w-11">
-            <Pagination {...pagination} onPageChange={pagination.setPage} />
-          </div>
+          <Pagination {...pagination} onPageChange={pagination.setPage} />
         </div>
         {/* self-start stops the grid stretching this cell to the row
             height, which would leave sticky with nothing to scroll past. */}

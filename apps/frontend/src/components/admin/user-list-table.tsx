@@ -117,7 +117,7 @@ function DetailLink({
   return (
     <Link
       href={`/admin/users/${id}`}
-      className={cn(buttonVariants({ variant }), 'h-11 gap-1.5', className)}
+      className={cn(buttonVariants({ variant }), 'gap-1.5', className)}
     >
       {label}
       <ArrowRight size={14} aria-hidden="true" />
@@ -208,13 +208,13 @@ export function UserListTable({
             placeholder="ค้นหาชื่อหรืออีเมล..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-11 sm:max-w-xs"
+            className="sm:max-w-xs"
           />
           <Select
             value={roleFilter}
             onValueChange={(value) => setRoleFilter(value as Role | typeof ALL)}
           >
-            <SelectTrigger className="min-h-11 w-full sm:w-44" aria-label="กรองตามบทบาท">
+            <SelectTrigger className="w-full sm:w-44" aria-label="กรองตามบทบาท">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -229,7 +229,7 @@ export function UserListTable({
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="min-h-11 w-full sm:w-40" aria-label="กรองตามสถานะ">
+            <SelectTrigger className="w-full sm:w-40" aria-label="กรองตามสถานะ">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -245,7 +245,7 @@ export function UserListTable({
             </SelectContent>
           </Select>
           <Select value={scopeFilter} onValueChange={setScopeFilter}>
-            <SelectTrigger className="min-h-11 w-full sm:w-52" aria-label="กรองตามขอบเขต">
+            <SelectTrigger className="w-full sm:w-52" aria-label="กรองตามขอบเขต">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -366,7 +366,7 @@ export function UserListTable({
             </div>
           </>
         )}
-        <Pagination {...pagination} touch onPageChange={pagination.setPage} />
+        <Pagination {...pagination} onPageChange={pagination.setPage} />
       </CardContent>
     </Card>
   );

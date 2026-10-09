@@ -16,12 +16,17 @@ const buttonVariants = cva(
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
+        // Quiet in-row "deactivate / remove": red text, a faint red wash on hover. The
+        // solid destructive variant is for the confirm button inside a dialog.
+        danger: 'text-destructive hover:bg-destructive/10 hover:text-destructive',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
+        // Every size is 44px or more; min-h keeps a wrapping label from shrinking it.
+        default: 'h-11 min-h-11 px-4 py-2',
+        sm: 'h-11 min-h-11 px-3 text-[0.8125rem]',
+        lg: 'h-12 min-h-12 px-8',
+        icon: 'h-11 min-h-11 w-11 p-0',
       },
     },
     defaultVariants: {

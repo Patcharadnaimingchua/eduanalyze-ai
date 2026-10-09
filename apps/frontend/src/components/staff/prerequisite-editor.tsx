@@ -116,7 +116,7 @@ export function PrerequisiteEditor({
                     <Button
                       type="button"
                       variant="destructive"
-                      className="h-11 px-3"
+                      className="px-3"
                       disabled={busy}
                       onClick={() => remove(p.id)}
                     >
@@ -125,7 +125,7 @@ export function PrerequisiteEditor({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 px-3"
+                      className="px-3"
                       onClick={() => setConfirmingId(null)}
                     >
                       ยกเลิก
@@ -134,8 +134,8 @@ export function PrerequisiteEditor({
                 ) : (
                   <Button
                     type="button"
-                    variant="outline"
-                    className="h-11 min-w-11 px-3 text-destructive"
+                    variant="danger"
+                    className="min-w-11 px-3"
                     aria-label={`ลบวิชาบังคับก่อน ${c?.code ?? ''}`}
                     onClick={() => setConfirmingId(p.id)}
                   >
@@ -159,7 +159,7 @@ export function PrerequisiteEditor({
           emptyText="ไม่พบวิชาที่ตรงกับคำค้นหา"
           aria-label="เลือกวิชาที่เป็นตัวก่อน"
         />
-        <Button type="button" variant="outline" className="h-11 px-4" disabled={busy} onClick={add}>
+        <Button type="button" variant="outline" className="px-4" disabled={busy} onClick={add}>
           เพิ่มวิชาบังคับก่อน
         </Button>
       </div>

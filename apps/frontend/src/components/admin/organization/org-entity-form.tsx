@@ -50,7 +50,7 @@ export function OrgEntityForm({
               <FormItem className="w-32">
                 <FormLabel>รหัส</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-11" />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -63,7 +63,7 @@ export function OrgEntityForm({
               <FormItem className="min-w-[16rem] flex-1">
                 <FormLabel>ชื่อ</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-11" />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -71,10 +71,10 @@ export function OrgEntityForm({
           />
         </div>
         <div className="flex gap-2">
-          <Button type="submit" size="sm" className="min-h-11" disabled={form.formState.isSubmitting}>
+          <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? 'กำลังบันทึก...' : submitLabel}
           </Button>
-          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onCancel}>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
             ยกเลิก
           </Button>
         </div>

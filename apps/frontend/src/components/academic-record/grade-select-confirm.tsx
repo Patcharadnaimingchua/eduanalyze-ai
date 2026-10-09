@@ -34,7 +34,7 @@ export function GradeSelectConfirm({
         onValueChange={(next) => setPending(next === value ? null : (next as Grade))}
         disabled={disabled}
       >
-        <SelectTrigger className="h-8 w-24 shrink-0" aria-label={`เกรดของ ${subject}`}>
+        <SelectTrigger className="w-24 shrink-0" aria-label={`เกรดของ ${subject}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

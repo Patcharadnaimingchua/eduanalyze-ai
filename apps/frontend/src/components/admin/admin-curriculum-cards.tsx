@@ -97,7 +97,7 @@ function CurriculumCard({
         </div>
         <Link
           href={`/admin/curriculum/${entry.curriculumId}`}
-          className={cn(buttonVariants({ variant: 'default' }), 'mt-2 h-11 w-full')}
+          className={cn(buttonVariants({ variant: 'default' }), 'mt-2 w-full')}
         >
           ดูคุณภาพหลักสูตร
         </Link>

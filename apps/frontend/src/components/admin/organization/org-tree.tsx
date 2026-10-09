@@ -208,22 +208,21 @@ export function OrgTree() {
           placeholder="ค้นหาชื่อ/รหัส คณะ ภาควิชา สาขา หรือฉบับหลักสูตร..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-11 max-w-sm"
+          className="max-w-sm"
         />
-        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={expandAll}>
+        <Button type="button" variant="outline" size="sm" onClick={expandAll}>
           ขยายทั้งหมด
         </Button>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          className="min-h-11"
           onClick={() => setExpanded(new Set())}
         >
           ยุบทั้งหมด
         </Button>
         {!addingFaculty && (
-          <Button type="button" className="min-h-11" onClick={() => setAddingFaculty(true)}>
+          <Button type="button" onClick={() => setAddingFaculty(true)}>
             + เพิ่มคณะใหม่
           </Button>
         )}
@@ -247,7 +246,7 @@ export function OrgTree() {
           icon={Landmark}
           description="ยังไม่มีคณะในระบบ โครงสร้างองค์กรเริ่มจากคณะ แล้วจึงเพิ่มภาควิชา สาขา และหลักสูตรต่อ"
           action={
-            <Button type="button" className="min-h-11" onClick={() => setAddingFaculty(true)}>
+            <Button type="button" onClick={() => setAddingFaculty(true)}>
               เพิ่มคณะแรก
             </Button>
           }

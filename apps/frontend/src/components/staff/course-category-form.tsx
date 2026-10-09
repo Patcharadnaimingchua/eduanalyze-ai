@@ -83,7 +83,7 @@ export function CourseCategoryForm({
                   <FormItem>
                     <FormLabel>ชื่อหมวดวิชา</FormLabel>
                     <FormControl>
-                      <Input className="h-11" placeholder="หมวดวิชาศึกษาทั่วไป" {...field} />
+                      <Input placeholder="หมวดวิชาศึกษาทั่วไป" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -97,7 +97,7 @@ export function CourseCategoryForm({
                   <FormItem>
                     <FormLabel>รหัสหมวดวิชา (ถ้ามี)</FormLabel>
                     <FormControl>
-                      <Input className="h-11" placeholder="GENED" {...field} />
+                      <Input placeholder="GENED" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,10 +106,10 @@ export function CourseCategoryForm({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="h-11 px-5" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="px-5" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มหมวดวิชา'}
               </Button>
-              <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel}>
+              <Button type="button" variant="outline" className="px-5" onClick={onCancel}>
                 ยกเลิก
               </Button>
             </div>

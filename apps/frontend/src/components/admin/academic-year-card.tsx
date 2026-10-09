@@ -233,7 +233,7 @@ export function AcademicYearCard({
                 render={({ field }) => (
                   <FormItem className="w-32">
                     <FormControl>
-                      <Input type="number" className="h-11" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -242,7 +242,6 @@ export function AcademicYearCard({
               <Button
                 type="submit"
                 size="sm"
-                className="min-h-11"
                 disabled={yearEditForm.formState.isSubmitting}
               >
                 บันทึก
@@ -251,7 +250,6 @@ export function AcademicYearCard({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-11"
                 onClick={() => setEditingYear(false)}
               >
                 ยกเลิก
@@ -279,16 +277,15 @@ export function AcademicYearCard({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-11"
               onClick={startEditingYear}
             >
               แก้ไข
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="danger"
               size="sm"
-              className="min-h-11 gap-1.5 font-normal text-destructive hover:text-destructive"
+              className="gap-1.5 font-normal"
               onClick={() => setConfirmingYearDelete(true)}
             >
               <Ban size={16} aria-hidden="true" />
@@ -297,7 +294,7 @@ export function AcademicYearCard({
             <Button
               type="button"
               variant="outline"
-              className="h-11 w-11 p-0"
+              className="w-11 p-0"
               aria-expanded={open}
               aria-controls={`academic-year-${academicYear.id}`}
               aria-label={`${open ? 'ซ่อน' : 'แสดง'}ภาคเรียนของปีการศึกษา ${academicYear.year}`}
@@ -369,7 +366,7 @@ export function AcademicYearCard({
                                     value={field.value || undefined}
                                   >
                                     <FormControl>
-                                      <SelectTrigger className="min-h-11">
+                                      <SelectTrigger>
                                         <SelectValue />
                                       </SelectTrigger>
                                     </FormControl>
@@ -388,7 +385,6 @@ export function AcademicYearCard({
                             <Button
                               type="submit"
                               size="sm"
-                              className="min-h-11"
                               disabled={semesterEditForm.formState.isSubmitting}
                             >
                               บันทึก
@@ -397,7 +393,6 @@ export function AcademicYearCard({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="min-h-11"
                               onClick={() => setEditingSemesterId(null)}
                             >
                               ยกเลิก
@@ -428,16 +423,15 @@ export function AcademicYearCard({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="min-h-11"
                               onClick={() => startEditingSemester(semester)}
                             >
                               แก้ไข
                             </Button>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="danger"
                               size="sm"
-                              className="min-h-11 gap-1.5 font-normal text-destructive hover:text-destructive"
+                              className="gap-1.5 font-normal"
                               onClick={() => setConfirmingSemesterId(semester.id)}
                             >
                               <Ban size={16} aria-hidden="true" />
@@ -458,7 +452,6 @@ export function AcademicYearCard({
               type="button"
               variant="outline"
               size="sm"
-              className="min-h-11"
               disabled={busyId === academicYear.id}
               onClick={fillMissingSemesters}
             >
@@ -479,7 +472,7 @@ export function AcademicYearCard({
                     <FormItem className="w-40">
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
-                          <SelectTrigger className="min-h-11">
+                          <SelectTrigger>
                             <SelectValue placeholder="เพิ่มภาคเรียน" />
                           </SelectTrigger>
                         </FormControl>
@@ -499,7 +492,6 @@ export function AcademicYearCard({
                   type="submit"
                   variant="outline"
                   size="sm"
-                  className="min-h-11"
                   disabled={form.formState.isSubmitting}
                 >
                   เพิ่มภาคเรียน

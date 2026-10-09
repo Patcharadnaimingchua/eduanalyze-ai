@@ -290,7 +290,7 @@ function StaffCurriculumContent() {
                   }
                   disabled={curricula.length === 0}
                 >
-                  <SelectTrigger className="min-h-11 text-left" aria-label="เลือกหลักสูตร">
+                  <SelectTrigger className="text-left" aria-label="เลือกหลักสูตร">
                     <SelectValue placeholder="เลือกหลักสูตร" />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,7 +306,7 @@ function StaffCurriculumContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 gap-1.5 px-4"
+                  className="gap-1.5 px-4"
                   disabled={!loaded || curriculumCategories.length === 0}
                   onClick={() => setSheet({ kind: 'create', defaultCategoryId: categoryParam })}
                 >
@@ -318,7 +318,7 @@ function StaffCurriculumContent() {
                 <Button
                   type="button"
                   variant={showCategoryForm ? 'outline' : 'default'}
-                  className="h-11 gap-1.5 px-4"
+                  className="gap-1.5 px-4"
                   onClick={() => setShowCategoryForm((open) => !open)}
                 >
                   {showCategoryForm ? (
@@ -473,7 +473,7 @@ function StaffCurriculumContent() {
                           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                         />
                         <Input
-                          className="h-11 pl-9"
+                          className="pl-9"
                           value={search}
                           onChange={(e) => setSearch(e.target.value)}
                           placeholder="ค้นหารหัสวิชา หรือชื่อรายวิชา"
@@ -486,7 +486,7 @@ function StaffCurriculumContent() {
                         value={categoryParam ?? ALL}
                         onValueChange={(v) => setParams({ categoryId: v, courseId: null })}
                       >
-                        <SelectTrigger className="min-h-11" aria-label="หมวดวิชา">
+                        <SelectTrigger aria-label="หมวดวิชา">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -509,7 +509,7 @@ function StaffCurriculumContent() {
                         value={instructorFilter === 'all' ? ALL : instructorFilter}
                         onValueChange={(v) => setParams({ instructor: v, courseId: null })}
                       >
-                        <SelectTrigger className="min-h-11" aria-label="สถานะอาจารย์">
+                        <SelectTrigger aria-label="สถานะอาจารย์">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -525,7 +525,7 @@ function StaffCurriculumContent() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-11 px-4"
+                        className="px-4"
                         onClick={() => {
                           setSearch('');
                           setParams({

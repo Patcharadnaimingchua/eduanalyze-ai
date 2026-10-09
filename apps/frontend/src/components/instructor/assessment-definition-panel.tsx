@@ -137,7 +137,7 @@ export function AssessmentDefinitionPanel({
             onClick={() => setFormOpenOverride(!formOpen)}
             aria-expanded={formOpen}
             aria-controls={formId}
-            className="min-h-11 gap-1.5"
+            className="gap-1.5"
           >
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
@@ -161,7 +161,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>ชื่อการประเมิน</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น สอบกลางภาค" className="h-11" {...field} />
+                        <Input placeholder="เช่น สอบกลางภาค" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,7 +174,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>ประเภท (พิมพ์เอง)</FormLabel>
                       <FormControl>
-                        <Input placeholder="เช่น ข้อสอบ ควิซ งาน" className="h-11" {...field} />
+                        <Input placeholder="เช่น ข้อสอบ ควิซ งาน" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -187,7 +187,7 @@ export function AssessmentDefinitionPanel({
                     <FormItem>
                       <FormLabel>คะแนนเต็ม</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" inputMode="decimal" className="h-11" {...field} />
+                        <Input type="number" step="0.01" inputMode="decimal" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -201,7 +201,7 @@ export function AssessmentDefinitionPanel({
                       <FormLabel>ภาคเรียน</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
-                          <SelectTrigger className="min-h-11">
+                          <SelectTrigger>
                             <SelectValue placeholder="เลือกภาคเรียน" />
                           </SelectTrigger>
                         </FormControl>
@@ -219,7 +219,7 @@ export function AssessmentDefinitionPanel({
                 />
               </div>
 
-              <Button type="submit" className="h-11" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มการประเมิน'}
               </Button>
             </CardContent>

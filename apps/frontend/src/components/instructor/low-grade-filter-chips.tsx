@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 // Two buttons that double as the numbers: each shows how many people it would
-// leave. 44px tall at every width (touch), the design system's Button "lg" height.
+// leave. 44px tall at every width (touch), the design system's default Button height.
 export function LowGradeFilterChips({
   counts,
   value,
@@ -34,7 +34,7 @@ export function LowGradeFilterChips({
             variant={selected ? 'default' : 'outline'}
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
-            className={cn('h-11 gap-2', selected && 'font-semibold')}
+            className={cn('gap-2', selected && 'font-semibold')}
           >
             {option.label}
             {option.warn && option.count > 0 ? (

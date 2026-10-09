@@ -57,7 +57,7 @@ export function OrgNodeMenu({
         <Button
           type="button"
           variant="outline"
-          className="h-11 gap-1.5 px-3"
+          className="gap-1.5 px-3"
           aria-haspopup="menu"
           aria-label={`จัดการ ${nodeLabel}`}
         >

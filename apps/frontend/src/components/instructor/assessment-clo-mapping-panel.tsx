@@ -134,7 +134,7 @@ export function AssessmentCloMappingPanel({
             onClick={() => setFormOpenOverride(!formOpen)}
             aria-expanded={formOpen}
             aria-controls={formId}
-            className="min-h-11 gap-1.5"
+            className="gap-1.5"
           >
             {formOpen ? 'ซ่อนฟอร์ม' : 'แสดงฟอร์ม'}
             <ChevronDown size={14} className={cn('transition-transform', formOpen && 'rotate-180')} />
@@ -180,7 +180,7 @@ export function AssessmentCloMappingPanel({
                     <FormItem>
                       <FormLabel>สัดส่วนคะแนน</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" inputMode="decimal" className="h-11" {...field} />
+                        <Input type="number" step="0.01" inputMode="decimal" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,7 +197,6 @@ export function AssessmentCloMappingPanel({
                           type="number"
                           step="0.01"
                           inputMode="decimal"
-                          className="h-11"
                           placeholder="ค่าเริ่มต้น = คะแนนเต็มของการประเมิน"
                           {...field}
                           value={field.value ?? ''}
@@ -209,7 +208,7 @@ export function AssessmentCloMappingPanel({
                 />
               </div>
 
-              <Button type="submit" className="h-11" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เชื่อมกับเป้านี้'}
               </Button>
             </CardContent>

@@ -7,7 +7,6 @@ import { suspendBlockReason } from '@/lib/admin-user-guard';
 import { updateUserActiveStatus } from '@/lib/api/user-management';
 import { describeApiError } from '@/lib/describe-api-error';
 import { useToast } from '@/lib/toast-context';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -82,8 +81,8 @@ export function UserStatusAction({
     <>
       <Button
         type="button"
-        variant="outline"
-        className={cn('h-11 px-3', user.isActive && 'text-destructive hover:text-destructive')}
+        variant={user.isActive ? 'danger' : 'outline'}
+        className="px-3"
         disabled={busy}
         aria-label={`${user.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งาน'}บัญชีของ ${user.fullName}`}
         onClick={() => (user.isActive ? setConfirming(true) : void toggle())}

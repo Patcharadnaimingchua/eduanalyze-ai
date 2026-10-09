@@ -9,8 +9,7 @@ export function RevokeButton({
   return (
     <Button
       type="button"
-      variant="outline"
-      className="min-h-11 border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+      variant="danger"
       onClick={onClick}
     >
       {label}

@@ -170,7 +170,6 @@ function InstructorStudentsContent() {
                           type="button"
                           variant="outline"
                           onClick={clearFilters}
-                          className="h-11"
                         >
                           ล้างตัวกรอง
                         </Button>
@@ -183,10 +182,7 @@ function InstructorStudentsContent() {
               <Reveal index={2}>
                 <div className="space-y-3">
                   <StudentPersonList people={pagination.pageRows} />
-                  {/* The shared Pagination buttons are 32px; 44px here for touch. */}
-                  <div className="[&_button]:h-11 [&_button]:w-11">
-                    <Pagination {...pagination} onPageChange={pagination.setPage} />
-                  </div>
+                  <Pagination {...pagination} onPageChange={pagination.setPage} />
                 </div>
               </Reveal>
             )}

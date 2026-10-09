@@ -186,7 +186,7 @@ export function CreateUserForm({
                       <FormItem>
                         <FormLabel>ชื่อ-นามสกุล</FormLabel>
                         <FormControl>
-                          <Input className="h-11" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -199,7 +199,7 @@ export function CreateUserForm({
                       <FormItem>
                         <FormLabel>อีเมล</FormLabel>
                         <FormControl>
-                          <Input type="email" className="h-11" {...field} />
+                          <Input type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -216,7 +216,7 @@ export function CreateUserForm({
                         <FormLabel>บทบาท</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                           <FormControl>
-                            <SelectTrigger className="min-h-11">
+                            <SelectTrigger>
                               <SelectValue placeholder="เลือกบทบาท" />
                             </SelectTrigger>
                           </FormControl>
@@ -256,7 +256,6 @@ export function CreateUserForm({
             <div className="flex flex-wrap gap-3">
               <Button
                 type="submit"
-                className="h-11"
                 disabled={
                   form.formState.isSubmitting ||
                   scopeLoadFailed ||
@@ -269,7 +268,6 @@ export function CreateUserForm({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11"
                 disabled={form.formState.isSubmitting}
                 onClick={onCancel}
               >

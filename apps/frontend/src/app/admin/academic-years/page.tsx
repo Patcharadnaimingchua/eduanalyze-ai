@@ -78,7 +78,7 @@ function AcademicYearsAdminContent() {
               <Button
                 type="button"
                 variant={openForm === 'bulk' ? 'default' : 'outline'}
-                className="min-h-11 gap-1.5"
+                className="gap-1.5"
                 onClick={() => toggleForm('bulk')}
               >
                 <Plus size={16} />
@@ -87,7 +87,7 @@ function AcademicYearsAdminContent() {
               <Button
                 type="button"
                 variant={openForm === 'single' ? 'default' : 'outline'}
-                className="min-h-11 gap-1.5"
+                className="gap-1.5"
                 onClick={() => toggleForm('single')}
               >
                 <Plus size={16} />
@@ -107,7 +107,6 @@ function AcademicYearsAdminContent() {
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-11"
             onClick={() => setOpenForm(null)}
           >
             ปิดฟอร์ม
@@ -166,7 +165,7 @@ function AcademicYearsAdminContent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="min-h-11 gap-1.5"
+                      className="gap-1.5"
                       onClick={() => setOpenForm('single')}
                     >
                       <Plus size={16} />

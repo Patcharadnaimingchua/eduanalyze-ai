@@ -69,7 +69,7 @@ export function CurriculumPanel({
           onCancel={() => setAdding(false)}
         />
       ) : (
-        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setAdding(true)}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)}>
           + เพิ่มหลักสูตร
         </Button>
       )}
@@ -134,11 +134,11 @@ function CurriculumCard({
           </p>
         </div>
         <div className="flex items-start gap-1">
-          <Button type="button" variant="outline" size="sm" className="min-h-11" disabled={toggling} onClick={toggleRegistration}>
+          <Button type="button" variant="outline" size="sm" disabled={toggling} onClick={toggleRegistration}>
             {curriculum.isOpenForRegistration ? 'ปิดรับลงทะเบียน' : 'ตั้งเป็นฉบับที่เปิดรับ'}
           </Button>
           {!editing && (
-            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setEditing(true)}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
               แก้ไข
             </Button>
           )}
@@ -240,10 +240,10 @@ function CurriculumForm({
           ))}
         </div>
         <div className="flex gap-2">
-          <Button type="submit" size="sm" className="min-h-11" disabled={form.formState.isSubmitting}>
+          <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? 'กำลังบันทึก...' : submitLabel}
           </Button>
-          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onCancel}>
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
             ยกเลิก
           </Button>
         </div>

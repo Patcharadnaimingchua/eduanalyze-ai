@@ -14,7 +14,7 @@ import {
 import { LowGradeFilterChips } from './low-grade-filter-chips';
 
 // 44px at every width: tablets are touch screens too. Same height as the
-// design system's Button size "lg".
+// design system's default Button.
 const CONTROL_HEIGHT = 'h-11';
 
 export function StudentFilterBar({

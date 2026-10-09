@@ -182,7 +182,6 @@ export function UserScopesSection({
                 <Button
                   type="submit"
                   variant="outline"
-                  className="min-h-11"
                   disabled={form.formState.isSubmitting || !pickedLevel || !pickedTarget}
                 >
                   เพิ่มขอบเขต

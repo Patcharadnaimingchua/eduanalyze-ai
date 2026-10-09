@@ -99,14 +99,14 @@ export function AssignInstructorSheet({
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          className="h-11 px-5"
+          className="px-5"
           disabled={busy || !userId}
           aria-describedby={userId ? undefined : 'assign-hint'}
           onClick={assign}
         >
           {busy ? 'กำลังบันทึก...' : 'มอบหมาย'}
         </Button>
-        <Button type="button" variant="outline" className="h-11 px-5" onClick={onClose}>
+        <Button type="button" variant="outline" className="px-5" onClick={onClose}>
           ยกเลิก
         </Button>
       </div>

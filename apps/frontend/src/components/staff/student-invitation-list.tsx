@@ -55,7 +55,7 @@ export function StudentInvitationList({
             <Button
               type="button"
               variant="outline"
-              className="h-11 gap-1.5 px-4"
+              className="gap-1.5 px-4"
               onClick={onInviteClick}
             >
               <Plus size={16} />
@@ -71,7 +71,7 @@ export function StudentInvitationList({
     <Button
       type="button"
       variant="outline"
-      className="h-11 gap-1.5 px-3"
+      className="gap-1.5 px-3"
       disabled={resendingId === inv.id}
       onClick={() => handleResend(inv.id, inv.email)}
     >

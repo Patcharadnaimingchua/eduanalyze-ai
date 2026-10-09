@@ -85,7 +85,7 @@ function AdminUsersContent() {
             !showCreateForm && (
               <Button
                 type="button"
-                className="h-11 gap-1.5"
+                className="gap-1.5"
                 onClick={() => setShowCreateForm(true)}
               >
                 <Plus size={16} aria-hidden="true" />
@@ -195,7 +195,7 @@ function AdminUsersContent() {
               </Alert>
             )}
             <div className="flex flex-wrap items-center gap-4">
-              <Button type="button" className="h-11" onClick={handleAcknowledge}>
+              <Button type="button" onClick={handleAcknowledge}>
                 รับทราบ ปิดหน้าต่างนี้
               </Button>
               <Link

@@ -138,7 +138,7 @@ export function CourseEditSheet({
               <FormItem>
                 <FormLabel>รหัสวิชา</FormLabel>
                 <FormControl>
-                  <Input className="h-11" placeholder="CPE101" {...field} />
+                  <Input placeholder="CPE101" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -151,7 +151,7 @@ export function CourseEditSheet({
               <FormItem>
                 <FormLabel>ชื่อวิชา (ภาษาไทย)</FormLabel>
                 <FormControl>
-                  <Input className="h-11" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -164,7 +164,7 @@ export function CourseEditSheet({
               <FormItem>
                 <FormLabel>ชื่อวิชา (ภาษาอังกฤษ) ถ้ามี</FormLabel>
                 <FormControl>
-                  <Input className="h-11" {...field} value={field.value ?? ''} />
+                  <Input {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -181,7 +181,6 @@ export function CourseEditSheet({
                     <Input
                       type="number"
                       inputMode="numeric"
-                      className="h-11"
                       {...field}
                       value={field.value ?? ''}
                     />
@@ -201,7 +200,7 @@ export function CourseEditSheet({
                     onValueChange={(v) => field.onChange(v === 'true')}
                   >
                     <FormControl>
-                      <SelectTrigger className="min-h-11">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
@@ -227,7 +226,7 @@ export function CourseEditSheet({
                 <FormLabel>หมวดวิชา</FormLabel>
                 <Select value={field.value || undefined} onValueChange={field.onChange}>
                   <FormControl>
-                    <SelectTrigger className="h-auto min-h-11 text-left">
+                    <SelectTrigger className="h-auto text-left">
                       <SelectValue placeholder="เลือกหมวดวิชา" />
                     </SelectTrigger>
                   </FormControl>
@@ -263,14 +262,14 @@ export function CourseEditSheet({
           />
 
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button type="submit" className="h-11 px-5" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="px-5" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
                 ? 'กำลังบันทึก...'
                 : editing
                   ? 'บันทึกการแก้ไข'
                   : 'เพิ่มรายวิชา'}
             </Button>
-            <Button type="button" variant="outline" className="h-11 px-5" onClick={onClose}>
+            <Button type="button" variant="outline" className="px-5" onClick={onClose}>
               ยกเลิก
             </Button>
           </div>

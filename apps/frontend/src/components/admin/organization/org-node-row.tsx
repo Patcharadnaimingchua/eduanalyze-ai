@@ -149,7 +149,7 @@ export function OrgNodeRow({
               icon={FolderOpen}
               description={`ยังไม่มี${addChild.childLabel}ใน${levelLabel}นี้`}
               action={
-                <Button type="button" className="min-h-11" onClick={() => setAdding(true)}>
+                <Button type="button" onClick={() => setAdding(true)}>
                   เพิ่ม{addChild.childLabel}แรก
                 </Button>
               }

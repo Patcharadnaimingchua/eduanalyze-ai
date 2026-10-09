@@ -106,7 +106,7 @@ export function StaffAddRecordForm({
                     <FormLabel>ภาคเรียน</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
-                        <SelectTrigger className="min-h-11">
+                        <SelectTrigger>
                           <SelectValue placeholder="เลือกภาคเรียน" />
                         </SelectTrigger>
                       </FormControl>
@@ -152,7 +152,7 @@ export function StaffAddRecordForm({
                     <FormLabel>เกรด</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
-                        <SelectTrigger className="min-h-11">
+                        <SelectTrigger>
                           <SelectValue placeholder="เลือกเกรด" />
                         </SelectTrigger>
                       </FormControl>
@@ -171,13 +171,13 @@ export function StaffAddRecordForm({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="h-11 px-5" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="px-5" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'กำลังบันทึก...' : 'เพิ่มรายวิชา'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 px-5"
+                className="px-5"
                 onClick={onCancel}
                 disabled={form.formState.isSubmitting}
               >

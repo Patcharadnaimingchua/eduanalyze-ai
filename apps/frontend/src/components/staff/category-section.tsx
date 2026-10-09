@@ -297,7 +297,7 @@ export function CategorySection({
                     <FormItem>
                       <FormLabel>หน่วยกิตขั้นต่ำ</FormLabel>
                       <FormControl>
-                        <Input type="number" className="h-11" {...field} />
+                        <Input type="number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -310,7 +310,7 @@ export function CategorySection({
                     <FormItem>
                       <FormLabel>จำนวนวิชาขั้นต่ำ (ถ้ามี)</FormLabel>
                       <FormControl>
-                        <Input type="number" className="h-11" {...field} />
+                        <Input type="number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

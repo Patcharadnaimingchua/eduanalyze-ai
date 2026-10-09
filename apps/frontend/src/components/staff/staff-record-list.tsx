@@ -122,7 +122,7 @@ export function StaffRecordList({
           <Button
             type="button"
             variant="destructive"
-            className="h-11 px-3"
+            className="px-3"
             disabled={isBusy}
             aria-label={`ยืนยันลบผลการเรียน ${code}`}
             onClick={() => handleDelete(record.id)}
@@ -132,7 +132,7 @@ export function StaffRecordList({
           <Button
             type="button"
             variant="outline"
-            className="h-11 px-3"
+            className="px-3"
             disabled={isBusy}
             onClick={() => setConfirmingId(null)}
           >
@@ -145,7 +145,7 @@ export function StaffRecordList({
       <Button
         type="button"
         variant="outline"
-        className="h-11 px-3"
+        className="px-3"
         aria-label={`ลบผลการเรียน ${code}`}
         onClick={() => setConfirmingId(record.id)}
       >

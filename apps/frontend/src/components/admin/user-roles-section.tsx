@@ -123,7 +123,7 @@ export function UserRolesSection({
           <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
             <div className="w-full sm:w-56">
               <Select value={selectedRole || undefined} onValueChange={setSelectedRole}>
-                <SelectTrigger className="min-h-11">
+                <SelectTrigger>
                   <SelectValue placeholder="เพิ่มบทบาท" />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,7 +135,7 @@ export function UserRolesSection({
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button" variant="outline" className="min-h-11" disabled={!selectedRole || busy} onClick={handleAssign}>
+            <Button type="button" variant="outline" disabled={!selectedRole || busy} onClick={handleAssign}>
               เพิ่มบทบาท
             </Button>
           </div>

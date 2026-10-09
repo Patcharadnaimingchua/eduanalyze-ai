@@ -133,7 +133,7 @@ function InstructorYearLevelsContent() {
                   illustration="no-students"
                   description="ยังไม่มีนักศึกษาที่เกี่ยวข้องกับวิชาที่คุณสอน ชั้นปีจะขึ้นที่นี่เมื่อมีนักศึกษาลงเรียน"
                   action={
-                    <Button asChild variant="outline" className="h-11">
+                    <Button asChild variant="outline">
                       <Link href="/instructor/my-courses">ดูรายวิชาที่สอน</Link>
                     </Button>
                   }

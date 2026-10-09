@@ -89,10 +89,10 @@ export function CourseHero({
           )}
         </div>
         <div className="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
-          <Button asChild className="h-11">
+          <Button asChild>
             <Link href={`${base}?tab=evidence`}>กรอกคะแนน</Link>
           </Button>
-          <Button asChild variant="outline" className="h-11">
+          <Button asChild variant="outline">
             <Link href={`${base}?tab=students`}>รายชื่อนักศึกษา ({stats.seats})</Link>
           </Button>
         </div>

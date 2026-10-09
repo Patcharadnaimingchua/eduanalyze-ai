@@ -162,7 +162,7 @@ export function StudentInvitationCsvPanel({
     <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50/50 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold text-primary">นำเข้าคำเชิญจากไฟล์ CSV</p>
-        <Button type="button" variant="outline" className="h-11 px-4" onClick={onClose}>
+        <Button type="button" variant="outline" className="px-4" onClick={onClose}>
           ปิด
         </Button>
       </div>
@@ -200,12 +200,12 @@ export function StudentInvitationCsvPanel({
         <Button
           type="button"
           variant="outline"
-          className="h-11 px-4"
+          className="px-4"
           onClick={() => inputRef.current?.click()}
         >
           เลือกไฟล์ CSV
         </Button>
-        <Button type="button" variant="outline" className="h-11 px-4" onClick={onDownloadTemplate}>
+        <Button type="button" variant="outline" className="px-4" onClick={onDownloadTemplate}>
           ดาวน์โหลดเทมเพลต
         </Button>
         {fileName && (
@@ -234,7 +234,7 @@ export function StudentInvitationCsvPanel({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              className="h-11 px-4"
+              className="px-4"
               onClick={onConfirm}
               disabled={importing || readyCount === 0}
             >
@@ -243,7 +243,7 @@ export function StudentInvitationCsvPanel({
             <Button
               type="button"
               variant="outline"
-              className="h-11 px-4"
+              className="px-4"
               onClick={onClose}
               disabled={importing}
             >

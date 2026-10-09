@@ -199,7 +199,7 @@ function StaffDashboardContent() {
                 หลักสูตรและสาขาวิชาที่ดูแล
               </span>
               <Select value={scope} onValueChange={setScope} disabled={curricula.length === 0}>
-                <SelectTrigger className="min-h-11" aria-label="เลือกหลักสูตรที่ต้องการดู">
+                <SelectTrigger aria-label="เลือกหลักสูตรที่ต้องการดู">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -294,7 +294,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
                     <Button
                       type="button"
                       variant={showAddForm ? 'outline' : 'default'}
-                      className="h-11 gap-1.5 px-4"
+                      className="gap-1.5 px-4"
                       onClick={() => setShowAddForm((open) => !open)}
                     >
                       {showAddForm ? (
@@ -309,7 +309,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 gap-1.5 px-4"
+                      className="gap-1.5 px-4"
                       onClick={() => {
                         setEditing(false);
                         setShowAddForm(false);
@@ -323,7 +323,7 @@ function StaffStudentDetailContent({ studentProfileId }: { studentProfileId: str
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-11 gap-1.5 px-4"
+                    className="gap-1.5 px-4"
                     onClick={() => setEditing(true)}
                   >
                     <Pencil aria-hidden="true" size={16} />

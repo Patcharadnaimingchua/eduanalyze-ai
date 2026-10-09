@@ -80,7 +80,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   <FormItem className="w-40">
                     <FormLabel>ปีการศึกษา (พ.ศ.)</FormLabel>
                     <FormControl>
-                      <Input type="number" className="h-11" placeholder="2569" {...field} />
+                      <Input type="number" placeholder="2569" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -49,7 +49,7 @@ function Instructors({
       <Button
         type="button"
         variant="outline"
-        className="h-11 gap-1.5 px-3"
+        className="gap-1.5 px-3"
         aria-label={`มอบหมายอาจารย์ให้ ${row.course.code}`}
         onClick={() => actions.onAssign?.(row)}
       >
@@ -60,7 +60,7 @@ function Instructors({
       <Button
         type="button"
         variant="ghost"
-        className="h-11 px-3 text-brand"
+        className="px-3 text-brand"
         aria-label={`เปลี่ยนอาจารย์ของ ${row.course.code}`}
         onClick={() => actions.onAssign?.(row)}
       >
@@ -94,7 +94,7 @@ function Instructors({
                     <Button
                       type="button"
                       variant="destructive"
-                      className="h-11 px-3"
+                      className="px-3"
                       disabled={busyId === instructor.assignmentId}
                       aria-label={`ยืนยันถอน ${instructor.name} ออกจาก ${row.course.code}`}
                       onClick={() => withdraw(instructor.assignmentId)}
@@ -104,7 +104,7 @@ function Instructors({
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 px-3"
+                      className="px-3"
                       onClick={() => setConfirmingId(null)}
                     >
                       ยกเลิก
@@ -113,8 +113,8 @@ function Instructors({
                 ) : (
                   <Button
                     type="button"
-                    variant="outline"
-                    className="h-11 px-3 text-destructive"
+                    variant="danger"
+                    className="px-3"
                     aria-label={`ถอน ${instructor.name} ออกจาก ${row.course.code}`}
                     onClick={() => setConfirmingId(instructor.assignmentId)}
                   >
@@ -141,7 +141,7 @@ function EditButton({ row, actions }: { row: CourseRowData; actions: CourseRowAc
     <Button
       type="button"
       variant="ghost"
-      className="h-11 gap-1.5 px-3 text-brand"
+      className="gap-1.5 px-3 text-brand"
       aria-label={`แก้ไขรายวิชา ${row.course.code}`}
       onClick={() => actions.onEdit?.(row)}
     >

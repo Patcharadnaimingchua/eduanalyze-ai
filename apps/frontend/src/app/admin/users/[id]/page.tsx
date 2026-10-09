@@ -250,7 +250,6 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="min-h-11"
                       disabled={busy}
                       onClick={() =>
                         userQuery.data.isActive ? setConfirmingSuspend(true) : handleToggleActive()
