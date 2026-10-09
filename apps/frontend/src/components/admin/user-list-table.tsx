@@ -80,20 +80,25 @@ function ScopeBadges({
   user: AdminUserSummary;
   resolveTargetName: ReturnType<typeof useScopeTargetName>;
 }>) {
+  if (user.scopes.length === 0) {
+    return roleNeedsScope(user.roles) ? (
+      <Badge tone="warning" className="whitespace-normal text-left">
+        ยังไม่กำหนดขอบเขต
+      </Badge>
+    ) : (
+      <span className="text-muted-foreground">—</span>
+    );
+  }
   return (
-    <>
+    <ul className="flex flex-col items-start gap-1.5">
       {user.scopes.map((scope) => (
-        <Badge key={scope.id} tone="neutral" className="whitespace-normal text-left">
-          {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
-        </Badge>
+        <li key={scope.id} className="max-w-full">
+          <Badge tone="neutral" className="whitespace-normal break-words text-left">
+            {SCOPE_LEVEL_LABELS[scope.level]}: {resolveTargetName(scope)}
+          </Badge>
+        </li>
       ))}
-      {user.scopes.length === 0 &&
-        (roleNeedsScope(user.roles) ? (
-          <Badge tone="warning">ยังไม่กำหนดขอบเขต</Badge>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ))}
-    </>
+    </ul>
   );
 }
 
@@ -101,11 +106,12 @@ function DetailLink({
   id,
   className,
   label = 'ดูรายละเอียด',
-}: Readonly<{ id: string; className?: string; label?: string }>) {
+  variant = 'outline',
+}: Readonly<{ id: string; className?: string; label?: string; variant?: 'outline' | 'default' }>) {
   return (
     <Link
       href={`/admin/users/${id}`}
-      className={cn(buttonVariants({ variant: 'outline' }), 'h-11 gap-1.5', className)}
+      className={cn(buttonVariants({ variant }), 'h-11 gap-1.5', className)}
     >
       {label}
       <ArrowRight size={14} aria-hidden="true" />
@@ -114,17 +120,32 @@ function DetailLink({
 }
 
 // A Super Admin edits and suspends from the row; an Admin only opens the detail page.
+// One line, right-aligned: edit is the main button, suspend the quieter one. Your own
+// account and other Super Admins cannot be managed here, so they get a small note.
 function RowActions({
   user,
   superAdminId,
+  showReason = false,
   className,
-}: Readonly<{ user: AdminUserSummary; superAdminId?: string; className?: string }>) {
+}: Readonly<{
+  user: AdminUserSummary;
+  superAdminId?: string;
+  showReason?: boolean;
+  className?: string;
+}>) {
   if (!superAdminId) return <DetailLink id={user.id} className={className} />;
-  const isPeer = user.roles.includes('SUPER_ADMIN') && user.id !== superAdminId;
+  const locked = user.roles.includes('SUPER_ADMIN');
   return (
-    <div className={cn('flex flex-wrap items-start gap-2 md:justify-end', className)}>
-      {!isPeer && <DetailLink id={user.id} label="แก้ไข" />}
-      <UserStatusAction user={user} requesterId={superAdminId} />
+    <div
+      className={cn('flex flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end', className)}
+    >
+      {!locked && <DetailLink id={user.id} label="แก้ไข" variant="default" />}
+      <UserStatusAction
+        user={user}
+        requesterId={superAdminId}
+        compact={!showReason}
+        showReason={showReason}
+      />
     </div>
   );
 }
@@ -244,10 +265,10 @@ export function UserListTable({
           </p>
         ) : (
           <>
-            {/* Phone: one card per person, so the page never scrolls sideways. */}
-            <ul className="space-y-3 md:hidden">
+            {/* Narrow screens: one card per person, so the page never scrolls sideways. */}
+            <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
               {pagination.pageRows.map((user) => (
-                <li key={user.id} className="rounded-lg border p-4">
+                <li key={user.id} className="space-y-3 rounded-lg border p-4">
                   <div className="flex items-start gap-3">
                     <UserAvatar />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -256,73 +277,71 @@ export function UserListTable({
                     </div>
                     <StatusChip isActive={user.isActive} />
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     <RoleBadges roles={user.roles} />
-                    <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
+                  <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
+                  <p className="text-xs text-muted-foreground">
                     สร้างเมื่อ {formatThaiDate(user.createdAt)}
                   </p>
-                  <RowActions user={user} superAdminId={superAdminId} className="mt-3" />
+                  <RowActions user={user} superAdminId={superAdminId} showReason />
                 </li>
               ))}
             </ul>
 
-            <div className="hidden md:block">
-              <table className="w-full text-left text-sm">
+            <div className="hidden xl:block">
+              <table className="w-full table-fixed text-left text-sm">
+                <colgroup>
+                  <col className="w-[28%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[14%]" />
+                  <col />
+                </colgroup>
                 <thead>
                   <tr className="border-b bg-slate-50 text-muted-foreground dark:bg-slate-900/40">
                     <SortHeader {...sort.sortProps('fullName')} className="px-3 py-3">
-                      ชื่อ-นามสกุล
-                    </SortHeader>
-                    <SortHeader {...sort.sortProps('email')} className="px-3 py-3">
-                      อีเมล
+                      ชื่อและอีเมล
                     </SortHeader>
                     <th className="px-3 py-3 font-medium">บทบาท</th>
                     <th className="px-3 py-3 font-medium">ขอบเขต</th>
                     <SortHeader {...sort.sortProps('status')} className="px-3 py-3">
                       สถานะ
                     </SortHeader>
-                    <SortHeader {...sort.sortProps('createdAt')} className="px-3 py-3">
-                      วันที่สร้าง
-                    </SortHeader>
-                    <th className="px-3 py-3">
-                      <span className="sr-only">การดำเนินการ</span>
-                    </th>
+                    <th className="px-3 py-3 text-right font-medium">การดำเนินการ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagination.pageRows.map((user) => (
                     <tr
                       key={user.id}
-                      className="min-h-[52px] border-b align-top hover:bg-slate-50 dark:hover:bg-slate-900/40"
+                      className="border-b align-middle hover:bg-slate-50 dark:hover:bg-slate-900/40"
                     >
                       <td className="px-3 py-3">
                         <span className="flex items-start gap-3">
                           <UserAvatar />
-                          <span className="break-words font-medium text-primary">
-                            {user.fullName}
+                          <span className="min-w-0 space-y-0.5">
+                            <span className="block break-words font-medium text-primary">
+                              {user.fullName}
+                            </span>
+                            <span className="block break-all text-xs text-muted-foreground">
+                              {user.email}
+                            </span>
                           </span>
                         </span>
                       </td>
-                      <td className="break-all px-3 py-3 text-muted-foreground">{user.email}</td>
                       <td className="px-3 py-3">
                         <div className="flex flex-wrap gap-1.5">
                           <RoleBadges roles={user.roles} />
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
-                        </div>
+                        <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
                       </td>
                       <td className="px-3 py-3">
                         <StatusChip isActive={user.isActive} />
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 tabular-nums text-muted-foreground">
-                        {formatThaiDate(user.createdAt)}
-                      </td>
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-2">
                         <RowActions user={user} superAdminId={superAdminId} />
                       </td>
                     </tr>

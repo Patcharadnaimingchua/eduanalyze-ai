@@ -10,13 +10,23 @@ import { useToast } from '@/lib/toast-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Suspend or reactivate straight from the Super Admin's list. When the rules
 // forbid it the button is replaced by the reason, never left clickable.
 export function UserStatusAction({
   user,
   requesterId,
-}: Readonly<{ user: AdminUserSummary; requesterId: string }>) {
+  compact = false,
+  showReason = false,
+}: Readonly<{
+  user: AdminUserSummary;
+  requesterId: string;
+  // Table rows: shorter button label so the actions stay on one line.
+  compact?: boolean;
+  // Cards have room to write the reason out; table rows keep it in a tooltip.
+  showReason?: boolean;
+}>) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -33,12 +43,23 @@ export function UserStatusAction({
 
   if (blockReason) {
     return (
-      <div className="space-y-1" role="note">
-        <Badge tone="neutral" className="whitespace-normal">
-          จัดการไม่ได้จากหน้านี้
-        </Badge>
-        <p className="text-xs text-muted-foreground">{blockReason}</p>
-      </div>
+      <span className="inline-flex flex-col items-start gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              tabIndex={0}
+              className="inline-flex min-h-11 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Badge tone="neutral" className="whitespace-nowrap">
+                จัดการไม่ได้
+              </Badge>
+              {!showReason && <span className="sr-only">{blockReason}</span>}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">{blockReason}</TooltipContent>
+        </Tooltip>
+        {showReason && <span className="text-xs text-muted-foreground">{blockReason}</span>}
+      </span>
     );
   }
 
@@ -61,11 +82,12 @@ export function UserStatusAction({
       <Button
         type="button"
         variant="outline"
-        className="min-h-11"
+        className="h-11 px-3"
         disabled={busy}
+        aria-label={`${user.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งาน'}บัญชีของ ${user.fullName}`}
         onClick={() => (user.isActive ? setConfirming(true) : void toggle())}
       >
-        {user.isActive ? 'ระงับการใช้งาน' : 'เปิดใช้งาน'}
+        {user.isActive ? (compact ? 'ระงับ' : 'ระงับการใช้งาน') : 'เปิดใช้งาน'}
       </Button>
       <ConfirmDialog
         open={confirming}
