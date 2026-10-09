@@ -134,3 +134,126 @@ Three commits delivered (2026-09-30):
 - ยังไม่มี checkbox ยอมรับเงื่อนไข/PDPA ในฟอร์มสมัคร
 - ยังไม่เคยดูหน้า auth จริงบนหน้าจอ (โลโก้บนมือถือ, การ์ดเดียวกันทั้ง 5 หน้า, Light/Dark)
 
+
+---
+
+## แผนรอบ backend/ความปลอดภัย
+
+จัดทำ 2026-10-09 จากการอ่านโค้ด (ยังไม่ได้ลงมือแก้) ใช้เป็นจุดเริ่มของรอบหน้า พาธทั้งหมดสัมพัทธ์กับ `apps/` ตัวอย่างโมเดล: **Plan** = ออกแบบ/ตัดสินใจเชิงนโยบาย (Opus High) · **Impl** = ลงมือตามแผน (Sonnet Medium)
+
+### ชุด 1 — JWT บทบาทมีผลทันที + เปิดคืนรายการที่ปิดไป
+**เป้าหมาย:** (ก) ถอด/ให้บทบาทแล้วมีผลทันที ไม่รอโทเค็นหมดอายุ (access 15 นาที, refresh 7 วัน) (ข) เปิดคืนคณะ/ภาควิชา/สาขา/หลักสูตร/ปีการศึกษา/ภาคเรียน/ผู้ใช้ที่ปิดไปแล้วจากหน้าจอ
+
+**สิ่งที่พบ:** `backend/src/modules/auth/strategies/jwt.strategy.ts` `validate()` **ถามฐานข้อมูลทุกคำขออยู่แล้ว** (`userService.findById` ตรวจ `isActive` และ `mustChangePassword`) แต่ใช้ `roles: payload.roles` จากโทเค็น ดังนั้น "ตรวจให้เบา" ไม่ต้องเพิ่ม query: แค่ดึง `userRoles` มาใน query เดิม ขอบเขต (scope) ถูก resolve สดอยู่แล้วที่ `common/scope/scope-resolver.service.ts` (CONVENTIONS §8)
+
+**ไฟล์/โมดูล:**
+- `backend/src/modules/users/user/user.service.ts` `findById` — เพิ่มตัวเลือก `include: { userRoles: true }` (หรือเมธอดใหม่ `findAuthContext(id)` เลือกเฉพาะ `isActive, mustChangePassword, userRoles.role`)
+- `backend/src/modules/auth/strategies/jwt.strategy.ts` — `roles` มาจากฐานข้อมูล; ตรวจ `isActive`
+- `backend/src/modules/auth/auth.service.ts` `refreshAccessToken` (~บรรทัด 479) และ `issueTokenPair` (~463) — ยืนยันว่าออกโทเค็นใหม่จากบทบาทใน DB (เดิมเป็นอย่างนั้น); คง `roles` ใน payload เพื่อความเข้ากันได้แต่ไม่ใช้ตัดสินสิทธิ์
+- เปิดคืน (endpoint ใหม่ SUPER_ADMIN): `POST /faculties|departments|programs|curricula|academic-years|semesters/:id/reactivate` ที่ `organization/{faculty,department,program,curriculum}/*.controller.ts|service.ts` และ `academic-record/{academic-year,semester}/*.controller.ts|service.ts`; รายการที่ปิด: `GET …?includeInactive=true` (เฉพาะ SUPER_ADMIN เพราะ GET ปัจจุบันสาธารณะและกรอง `isActive: true`)
+- ผู้ใช้: `PATCH /users/:id/active-status` มีอยู่แล้ว ไม่ต้องทำเพิ่ม
+
+**ขั้นตอน:** 1) JWT อ่านบทบาทจาก DB + เทสต์ → 2) (ถ้าวัดแล้วช้า) cache `Map<userId, {roles,isActive,exp 5s}>` ล้างเมื่อ `UserRoleService.assign/revoke`, `updateActiveStatus` → 3) service `reactivate()` ต่อเอนทิตี: ต้องมีพาเรนต์ที่ `isActive` (ภาควิชา→คณะ, สาขา→ภาควิชา, หลักสูตร→สาขา, ภาคเรียน→ปีการศึกษา), ตรวจรหัส/คีย์ซ้ำกับรายการที่ยัง active (partial unique index เช่น `faculties_active_code_key`, `departments_active_facultyId_code_key`, `semesters_active_academicYearId_term_key` ใน `prisma/migrations/20260827083737_add_soft_delete_partial_unique_indexes`) ตอบ 409 ข้อความไทยชัดเจน และจับ Prisma `P2002` เป็น 409 → 4) endpoint + `@Roles('SUPER_ADMIN')` → 5) frontend
+
+**เทสต์ที่ต้องเพิ่ม:** `jwt.strategy.spec.ts` (ใหม่): บทบาทจาก DB ทับ payload, ถูกระงับ→401, ไม่มีผู้ใช้→401, ถอด ADMIN แล้วคำขอถัดไปไม่ผ่าน `RolesGuard`; (ถ้ามี cache) หมดอายุและถูกล้างเมื่อเปลี่ยนบทบาท; `*.service.spec.ts` ของ reactivate แต่ละตัว (พาเรนต์ปิดอยู่→409, รหัสซ้ำ→409, สำเร็จ→`isActive: true`, ปีที่ปิดไม่เปิดภาคเรียนลูกให้เอง)
+
+**ผลต่อ frontend:** `frontend/src/lib/api/organization.ts` และ `lib/api/admin.ts` เพิ่ม fetch รายการที่ปิด + reactivate; `components/admin/organization/org-tree.tsx`, `org-node-row.tsx` สวิตช์ "แสดงที่ปิดใช้งาน" + ปุ่ม "เปิดใช้งานอีกครั้ง" ผ่าน `ConfirmDialog`/`useConfirm`; `components/admin/academic-year-card.tsx` และ `app/admin/academic-years/page.tsx` แสดงปี/ภาคที่ปิด (ตอนนี้ดีไซน์ Stitch ที่ตัดไปต้องการ "ปิดใช้งาน/ประวัติแก้ไข"); `packages/shared-types/src/index.ts` เพิ่มชนิดข้อมูล; error ใช้ `describeApiError`; ถอดบทบาทแล้วหน้าจอผู้ใช้นั้นจะได้ 403 ในคำขอถัดไป ควรให้ `lib/api-client.ts` พาไป `/login` หรือแสดงข้อความ (ตรวจพฤติกรรม 403 เดิมก่อน)
+
+**ความเสี่ยง/ย้อนกลับ:** การเปิดคืน **ไม่คืนข้อมูลลูกที่ถูกปิดตามกัน** (เช่น วิชาที่ปิดจะลบ prerequisite ที่ผูกไว้ถาวร ดู `course.service.ts` `remove`) ต้องบอกผู้ใช้ในกล่องยืนยัน; cache ทำให้สิทธิ์ล่าช้าสูงสุด TTL; ย้อนกลับ: ไม่มี migration แค่ revert โค้ด
+**ขนาด:** JWT = เล็ก · reactivate = กลาง–ใหญ่ (6 เอนทิตี + UI) · **โมเดล:** JWT = Impl (Sonnet Medium) · reactivate ออกแบบกฎ = Plan (Opus High) แล้ว Impl · **db:backup:** ไม่ต้องมี migration แต่ต้องสำรองก่อนทดสอบกับ Docker ตามกฎ CLAUDE.md
+
+### ชุด 2 — ลดสิทธิ์ (least privilege)
+**เป้าหมาย:** ให้แต่ละบทบาทเรียกได้เฉพาะ API ที่มีหน้าจอ/หน้าที่จริง และอ่านข้อมูลได้เฉพาะขอบเขตของตน
+
+**สถานะปัจจุบัน → ที่ควรเป็น** (guard ดึงจากคอนโทรลเลอร์จริง `backend/src/modules/**.controller.ts`; "ไม่มี UI" ตรวจจาก frontend ปัจจุบัน)
+
+| Endpoint | Guard ปัจจุบัน | ที่ควรเป็น | หมายเหตุ |
+|---|---|---|---|
+| `POST/PATCH/DELETE /courses` (`curriculum-content/course`) | SA, ADMIN, STAFF + ScopeGuard | **STAFF + ScopeGuard** | UI อยู่ที่ `/staff/curriculum` เท่านั้น |
+| `POST/PATCH/DELETE /course-categories`, `/curriculum-requirements`, `/prerequisites` | SA, ADMIN, STAFF + ScopeGuard | **STAFF + ScopeGuard** | เหตุผลเดียวกัน |
+| `GET/POST/DELETE /course-instructors` | SA, ADMIN, STAFF (GET และ DELETE ไม่มี ScopeGuard; DELETE ตรวจใน service) | **STAFF**; GET กรองตามขอบเขต | UI: sheet มอบอาจารย์ใน `/staff/curriculum` |
+| `POST/PATCH/DELETE /clos`, `/plos`, `/clo-plo-mappings` | SA, ADMIN + ScopeGuard | **ไม่เปิดให้ใครผ่าน API จนกว่าจะมีหน้าแก้ไข** (หรือ SA อย่างเดียวถ้า seed/นำเข้าต้องใช้) | ไม่มีหน้าแก้ CLO/PLO ใน frontend; ตรวจ `prisma/seed*.ts` ว่าใช้ Prisma ตรงไม่พึ่ง API ก่อนตัด |
+| `POST/PATCH/DELETE /departments`, `/programs`, `/curricula` | SA, ADMIN + ScopeGuard | **SA อย่างเดียว** (ให้เหมือน `/faculties` ที่เป็น SA อยู่แล้ว) | หน้าองค์กรเป็น SA-only; ADMIN ไม่มีเมนูนี้ |
+| `POST /student-invitations/:id/resend` | STAFF, ADMIN, SA + Scope | **STAFF + Scope** | UI อยู่ฝั่ง Staff |
+| `POST/PATCH/DELETE /student-course-records` (เกรด) | STUDENT, SA, ADMIN, STAFF (+INSTRUCTOR สำหรับ PATCH/DELETE) | ตัด **SA, ADMIN** ออกจากการเขียน (คงอ่าน); STAFF คงไว้แต่ต้องมี audit (ชุด 3) | `student-course-record.service.ts` ~780–800: STAFF/ADMIN สร้าง/แก้/ลบเกรดของนักศึกษาทุกคนในขอบเขต ส่วน INSTRUCTOR แก้/ลบได้เฉพาะระเบียนที่มีอยู่ในวิชาที่ตนสอน — ต้องให้ผู้ใช้ตัดสินใจ (ดูท้ายชุด) |
+| `GET /users/instructors` | SA, ADMIN, STAFF — **ไม่กรองขอบเขต** (`user-management.service.ts` `listInstructors`; อาจารย์ไม่มี `UserScope`) | ลดข้อมูลเหลือ `id`+`fullName` (ตอนนี้ส่ง `email` ด้วย) + เฉพาะ `isActive`; ทางเลือกกรองจริงต้องผูกอาจารย์กับหน่วยงาน | ตัดสินใจ: ยอมรับ "ทุกอาจารย์ของระบบ" แบบข้อมูลน้อยที่สุด หรือเพิ่มขอบเขตให้อาจารย์ |
+| `GET /courses`, `/course-categories`, `/prerequisites`, `/curriculum-requirements` | ผู้ล็อกอินทุกคน ไม่กรอง | STUDENT: เฉพาะหลักสูตรของตน · INSTRUCTOR: วิชาที่สอน+หลักสูตรนั้น · STAFF/ADMIN: กรองด้วย `ScopeResolverService` · SA: ทั้งหมด | `course.service.ts` `findAll()` ปัจจุบัน `findMany({ where: { isActive: true } })` ทุกวิชา; frontend `/staff/curriculum` แสดงหลักสูตรนอกขอบเขตแล้วโดน 403 ตอนเขียน (ข้อ (3)/(7) ใน Staff redesign) |
+| `GET /curricula`, `/programs`, `/departments`, `/faculties` | สาธารณะ | คงไว้ (หน้าสมัครต้องใช้) | ตั้งใจ: ข้อมูลโครงสร้างหน่วยงานเป็นสาธารณะ |
+| `DELETE /courses/:id` | SA, ADMIN, STAFF + Scope; service ตรวจแค่ **prerequisite ที่อ้างวิชานี้** แล้วลบ prerequisite ของวิชานี้ทิ้ง | เพิ่ม 409 เมื่อมี `StudentCourseRecord` ที่ active อ้างอิง, `CourseInstructor`, CLO หรือ assessment ที่ active | `course.service.ts` `remove()` (~บรรทัด 92) |
+
+**ไฟล์/โมดูลหลัก:** `@Roles(...)`/`@ScopeTarget` ในคอนโทรลเลอร์ตามตาราง; `curriculum-content/course/course.service.ts` (`findAll`, `remove`), `course-category`, `prerequisite`, `curriculum-requirement` (เพิ่ม `findAllForUser(requester)`), `users/user-management/user-management.service.ts` (`listInstructors`), `academic-record/student-course-record/*`, `common/scope/scope-resolver.service.ts` (ใช้ `buildUserScopeOrFilter`/คู่กันของหลักสูตรซ้ำ)
+
+**ขั้นตอน:** 1) เขียนเทสต์ "ตารางสิทธิ์" ก่อน (ข้อ 2) → 2) ตัด `@Roles` ตามตาราง (เปลี่ยนเล็ก ทำก่อน) → 3) `DELETE /courses` กันเมื่อมีข้อมูลอ้างอิง → 4) ลดข้อมูล `GET /users/instructors` → 5) กรองการอ่านตามบทบาท + ปรับ frontend → 6) ตัดสินเรื่องเกรด
+
+**เทสต์ที่ต้องเพิ่ม:** `*.controller.spec.ts` หรือ e2e แบบอ่าน metadata `ROLES_KEY` ของทุก handler เทียบตารางข้างบน (กันสิทธิ์งอกใหม่); `course.service.spec.ts` ใหม่ (409 เมื่อมีเกรด/อาจารย์/CLO); `user-management.service.spec.ts` (`listInstructors` ไม่ส่ง email, เฉพาะ active); เทสต์การกรองอ่านต่อบทบาท (นักศึกษาเห็นเฉพาะหลักสูตรตน)
+
+**ผลต่อ frontend:** ถ้าตัด ADMIN/SA จากการเขียน ไม่มีหน้าใดเรียกอยู่ (ตรวจแล้ว) แต่ต้อง grep `apps/frontend/src/lib/api/*.ts` อีกรอบก่อนลงมือ; การกรองการอ่านกระทบ `app/staff/curriculum/page.tsx` (`inScope`/ตัวเลือกหลักสูตร), `components/auth/dependent-org-select.tsx` (ใช้ `/curricula` สาธารณะ ไม่กระทบ), หน้านักศึกษาที่เรียก `/courses` `/clos` `/plos`
+**ความเสี่ยง/ย้อนกลับ:** เสี่ยงที่สุดคือการกรองอ่าน (หน้านักศึกษา/อาจารย์ที่พึ่ง `/courses` ทั้งแคตตาล็อกจะว่าง) ทำเป็น PR แยกตาม endpoint ย้อนกลับด้วย revert; การตัดสิทธิ์เขียนย้อนกลับง่าย
+**ขนาด:** ใหญ่ (ตัด @Roles = เล็ก, กรองอ่าน = ใหญ่) · **โมเดล:** Plan (Opus High) สำหรับกฎการกรองอ่านและเรื่องเกรด, Impl (Sonnet Medium) ส่วนที่เหลือ · **db:backup:** ไม่มี migration; สำรองก่อนทดสอบ Docker
+
+### ชุด 3 — audit log + lastLogin
+**เป้าหมาย:** บันทึกการกระทำสำคัญ ตรวจย้อนหลังได้ และแสดง "เข้าสู่ระบบล่าสุด" ในหน้าผู้ใช้
+
+**ปัจจุบัน:** ไม่มีตาราง audit; ระเบียนเกรดมีฟิลด์ผู้บันทึกเอง (`StudentCourseRecord.enteredByUserId`, `enteredByRole` — `prisma/schema.prisma` ~729); `User` ไม่มี `lastLoginAt`
+
+**Schema (Prisma) ที่เสนอ:**
+- `User.lastLoginAt DateTime?`
+- `model AuditLog { id uuid; createdAt DateTime @default(now()); actorUserId String? (FK User, onDelete SetNull หรือ Restrict ตามกฎโปรเจกต์ = Restrict); actorRole Role?; action String (เช่น `USER_SUSPEND`, `USER_ROLE_ASSIGN`, `SCOPE_REVOKE`, `ORG_DEACTIVATE`, `ORG_REACTIVATE`, `GRADE_UPDATE`, `INVITATION_RESEND`, `PASSWORD_CHANGE`, `TWO_FACTOR_DISABLE`); entityType String; entityId String?; summary Json? (ค่าก่อน/หลังเท่าที่จำเป็น ห้ามเก็บรหัสผ่าน/โทเค็น/อีเมลเต็ม); @@index([createdAt]) @@index([entityType, entityId]) @@index([actorUserId, createdAt]); @@map("audit_logs") }`
+- Migration: `npx prisma migrate dev --create-only` แล้วตรวจก่อน apply (ตามคำเตือนใน `schema.prisma` เรื่อง partial index) ห้ามรับค่าอัตโนมัติ
+
+**ไฟล์/จุดเขียนข้อมูล:**
+- ใหม่: `backend/src/common/audit/audit.module.ts` (Global) + `audit.service.ts` `record(actor: RequestUser, action, entity, summary?, tx?)`
+- `lastLoginAt`: อัปเดตที่ `auth.service.ts` ใน `login()` (~254) เมื่อออกโทเค็นจริง, ขั้น 2FA verify สำเร็จ, Google callback ที่ login สำเร็จ, และหลังสมัครที่ login อัตโนมัติ (อย่าอัปเดตตอน `refresh`)
+- เรียก `audit.record` ใน: `users/user-management/user-management.service.ts` (สร้างผู้ใช้, `updateActiveStatus`, `assignRole`/`revokeRole`, `resendInvitation`), `users/user-scope` (assign/revoke), ทุก `remove()`/`reactivate()` ของ organization/academic-record, `student-course-record.service.ts` (create/update/remove ที่ STAFF/ADMIN ทำ), `auth/student-invitation.service.ts`, การเปลี่ยนรหัสผ่าน/2FA ใน `auth.service.ts`/`two-factor.service.ts` ควรเขียนใน transaction เดียวกับการเปลี่ยนจริงเมื่อทำได้
+- อ่านข้อมูล: `GET /audit-logs?entityType&entityId&actorUserId&from&to&cursor` (SUPER_ADMIN เท่านั้น, แบ่งหน้าแบบ cursor); `GET /users` เพิ่ม `lastLoginAt` ใน `toSummary` (`user-management.service.ts`)
+
+**เทสต์ที่ต้องเพิ่ม:** `audit.service.spec.ts` (บันทึก actor/action/entity, ไม่เก็บฟิลด์ต้องห้าม, ทำงานใน tx เดียวกัน, ล้มเหลวแล้วไม่ทำให้การเขียนหลักล้ม *หรือ* ทำให้ล้มตามนโยบายที่เลือก); `auth.service` login/2FA/Google อัปเดต `lastLoginAt` และ refresh ไม่อัปเดต; `audit-log.controller.spec.ts` (SA เท่านั้น); `user-management.service.spec.ts` ส่ง `lastLoginAt`
+
+**ผลต่อ frontend:** `packages/shared-types/src/index.ts` (`AdminUserSummary.lastLoginAt`, `AuditLogEntry`), `components/admin/user-list-table.tsx` (คอลัมน์/บรรทัดการ์ด "เข้าสู่ระบบล่าสุด" ใช้ `formatThaiDate` จาก `lib/admin-users.ts`; "ยังไม่เคยเข้าสู่ระบบ" เมื่อ null), `app/admin/users/[id]/page.tsx` (แสดงค่า + ส่วน "ประวัติการเปลี่ยนแปลงของบัญชีนี้" ใช้ endpoint audit กรอง `entityId`), หน้าใหม่ `/admin/audit-log` (**เมนู SA ล็อกไว้ 4 รายการ** ใน `components/dashboard/nav-config.ts` + เทสต์ `nav-config.spec.ts` ต้องตัดสินใจว่าจะเพิ่มเมนูที่ 5 หรือซ่อนไว้ใต้หน้าผู้ใช้); สถานะ loading/empty/error ใช้ของกลาง
+**นโยบายข้อมูลส่วนบุคคล (ต้องตัดสินก่อน):** เก็บเฉพาะรหัสผู้ใช้/บทบาท/การกระทำ/เอนทิตี ไม่เก็บ IP/User-Agent ในรอบแรก (หรือเก็บแบบแฮชถ้าจำเป็น); อายุการเก็บ (แนะนำ 12 เดือน) + สคริปต์ล้างตามรอบ (ยังไม่มี `@nestjs/schedule` ในโปรเจกต์ จึงเริ่มจากสคริปต์ `scripts/` ที่รันมือ); สิทธิ์ดู = SA เท่านั้น; แจ้งในหน้านโยบายความเป็นส่วนตัว (เชื่อมกับ PDPA ชุด 4)
+**ความเสี่ยง/ย้อนกลับ:** ตารางโตเร็ว (index + ล้างตามรอบ); เขียน log ใน transaction เดียวกันทำให้ธุรกรรมช้าลงเล็กน้อย; ย้อนกลับ migration: เพิ่มคอลัมน์/ตารางใหม่ล้วน (ไม่ลบข้อมูลเดิม) จึงปลอดภัย แต่ต้องมี migration down เป็นสคริปต์มือ
+**ขนาด:** ใหญ่ · **โมเดล:** Plan (Opus High) ออกแบบ schema + นโยบาย แล้ว Impl (Sonnet Medium) · **db:backup:** **ต้องทำก่อน** `migrate` ทุกครั้ง (`npm run db:backup -- before-audit-log`) และก่อนทดสอบ Docker
+
+### ชุด 4 — อีเมล/การสมัคร: ส่งคำเชิญซ้ำ, ยืนยันอีเมล, Google, PDPA
+**4.1 ปุ่ม "ส่งอีเมลตั้งรหัสผ่านอีกครั้ง" (เปิดใช้ปุ่มที่ซ่อนไว้)**
+- **พบ:** `POST /users/:id/resend-invitation` (`user-management.service.ts` `resendInvitation`, ~249) สร้าง `PendingInvitation` ใหม่ผ่าน `pending-invitation.service.ts` `resend()` แล้ว **ไม่ได้ส่งอีเมลเลย** (แค่ log) และ `resend()` โยน 409 "already accepted" เมื่อ `user.passwordHash` มีค่า — แต่ผู้ใช้ที่ SA/Admin สร้างมี `passwordHash` เป็นรหัสสุ่มที่ใช้ไม่ได้ตั้งแต่ตอนสร้าง (`createStaffOrAdmin` ~บรรทัด 98) ดังนั้น endpoint นี้ **ล้มเหลว 409 เสมอสำหรับผู้ใช้ที่สร้างผ่านระบบ** วิธีส่งจริงในปัจจุบันคือ `passwordResetService.create(userId)` + `emailService.sendPasswordSetupEmail(email, token, 'new-account')` (`common/email/email.service.ts` ~88) ซึ่งเป็นสิ่งที่ตอนสร้างผู้ใช้ทำอยู่
+- **แก้:** เปลี่ยน `resendInvitation` ให้ใช้ทางเดียวกับตอนสร้าง (คืน `passwordSetupEmailSent`), เงื่อนไขอนุญาต = ผู้ใช้ยังไม่เคยเข้าสู่ระบบ (`lastLoginAt == null` ต้องมีชุด 3 หรือใช้ `mustChangePassword`), ตรวจสิทธิ์/ขอบเขตด้วย `findOne` เดิม, throttle (เช่น 3/นาที/ผู้ขอ) กันยิงอีเมลรัว; ถ้าไม่ใช้แล้วให้เก็บ/ลบ `POST /auth/accept-invitation` + `PendingInvitation` ตามที่ตัดสิน (ตอนนี้ไม่มีหน้าจอ)
+- **frontend:** ปุ่ม "ส่งอีเมลตั้งรหัสผ่านอีกครั้ง" ใน `app/admin/users/[id]/page.tsx` + `lib/api/user-management.ts` (`resendInvitation`) แสดงผลสำเร็จ/ล้มเหลว (ข้อความเดียวกับ `createdUser.passwordSetupEmailSent` ใน `app/admin/users/page.tsx`); ผู้ใช้เห็น "ยังไม่รองรับการส่งอีเมล" เดิมที่ถูกซ่อนจะไม่ต้องใช้แล้ว
+- **เทสต์:** `user-management.service.spec.ts` (ส่งอีเมลผ่าน mock `EmailService`, ผู้ใช้ที่เข้าสู่ระบบแล้ว→409, นอกขอบเขต→404/403), `email.service.spec.ts` (มีอยู่ ตรวจเนื้อหาลิงก์ `/reset-password?token=`)
+- **ขนาด:** เล็ก–กลาง · **Impl** · ไม่มี migration (ถ้าไม่พึ่ง `lastLoginAt`)
+
+**4.2 ยืนยันอีเมลตอนสมัคร (ถ้าเอา)**
+- Schema: `User.emailVerifiedAt DateTime?` + `model EmailVerificationToken` (รูปแบบเดียวกับ `PasswordResetToken`: `tokenHash @unique`, `userId @unique`, `expiresAt`); migration ต้อง backfill `emailVerifiedAt = createdAt` ให้ผู้ใช้เดิมทั้งหมด
+- Backend: `AuthService.register` ส่งอีเมลยืนยัน (`email.service.ts` เพิ่ม `sendVerificationEmail`), `POST /auth/verify-email` (token), `POST /auth/resend-verification` (throttle เข้ม); บัญชีผ่านคำเชิญ (ตรวจอีเมลแล้วจากตัว token), Google (Google ยืนยันแล้ว), ผู้ใช้ที่แอดมินสร้างและตั้งรหัสผ่านเอง ให้ตั้ง `emailVerifiedAt` ทันที
+- นโยบาย: ห้าม login จนกว่ายืนยัน หรือ login ได้แต่มีแถบเตือน (ต้องตัดสินใจ); frontend `app/register/page.tsx` (ข้อความ "ตรวจอีเมลเพื่อยืนยัน" แทนการ login อัตโนมัติ), หน้าใหม่ `/verify-email`, `app/login/page.tsx` จัดการ 403 "ยังไม่ยืนยันอีเมล" + ปุ่มส่งซ้ำ; เทสต์ service + controller
+- **ขนาด:** ใหญ่ · **Plan (Opus High)** · **ต้อง db:backup ก่อน migration**
+
+**4.3 เปิด Google login**
+- Backend พร้อม (`auth/strategies/google.strategy.ts`, `/auth/google`, `/auth/google/callback`, `/auth/google/complete-registration`) ต้องตั้ง `GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL` ใน `apps/backend/.env` และเพิ่ม redirect URI ใน Google Cloud Console
+- **จุดที่จะพลาด:** `frontend/Dockerfile` ประกาศ build arg แค่ `NEXT_PUBLIC_API_URL` ดังนั้น `NEXT_PUBLIC_ENABLE_GOOGLE_LOGIN` **ใส่เข้า image ผ่าน Docker ไม่ได้** ต้องเพิ่ม `ARG`/`ENV` ใน Dockerfile และ `build.args` ใน `docker-compose.yml` (ค่าถูก inline ตอน build จึงต้อง `docker:rebuild`)
+- ตัดสินใจ: จำกัดโดเมนอีเมลสถาบัน (`hd`) หรือไม่ (ปัจจุบันบัญชี Google ใดก็สมัครเป็นนักศึกษาได้ถ้ากรอกรหัสนักศึกษา); เทสต์: `google.strategy`/`auth.controller.google-callback.spec.ts` มีอยู่แล้ว เพิ่มกรณีโดเมน
+- **ขนาด:** เล็ก (ค่าตั้ง) + กลางถ้าจำกัดโดเมน · **Impl**
+
+**4.4 PDPA checkbox + หน้านโยบาย**
+- Frontend: `lib/validation/register.schema.ts`, `invited-register.schema.ts`, `complete-google-registration.schema.ts` เพิ่ม `acceptedPolicy: z.literal(true, { errorMap: … 'กรุณายอมรับนโยบายความเป็นส่วนตัว' })`; `app/register/page.tsx` (ทั้งสองโหมด) และ `app/register/google/page.tsx` เพิ่ม checkbox + ลิงก์ไปหน้าใหม่ `app/privacy/page.tsx` (เนื้อหาต้องได้จากฝ่ายกฎหมาย/มหาวิทยาลัย ห้ามแต่งเอง)
+- Backend: เก็บหลักฐานการยินยอม — `RegisterDto`/`CompleteGoogleRegistrationDto` รับ `policyVersion`, `User.policyAcceptedAt`/`policyVersion` (migration) บันทึกใน `auth.service.ts` `createStudentAccount`; เทสต์ DTO + service
+- **ขนาด:** กลาง · **Impl** (เนื้อหานโยบายรอผู้ใช้) · **ต้อง db:backup ก่อน migration**
+
+### ลำดับที่แนะนำ
+1. **ชุด 1 ส่วน JWT** (เล็ก ปิดช่องโหว่สิทธิ์ล่าช้า ไม่มี migration)
+2. **ชุด 2** (เริ่มจากตัด `@Roles` + `DELETE /courses` + ลดข้อมูล `/users/instructors` ก่อน แล้วค่อยกรองการอ่าน)
+3. **ชุด 1 ส่วนเปิดคืน** (เกี่ยวกับ UI SA ที่เพิ่งทำเสร็จ)
+4. **ชุด 3** (migration แรก; `lastLoginAt` จำเป็นต่อชุด 4.1)
+5. **ชุด 4:** 4.1 → 4.3 → 4.4 → 4.2 (ยืนยันอีเมลทำท้ายสุดเพราะกระทบการสมัครทั้งหมด)
+
+### ต้องให้ผู้ใช้ตัดสินใจก่อนเริ่มแต่ละชุด
+- **ชุด 1:** (ก) จะใช้ cache สั้นหรือไม่ (แนะนำไม่ใช้ก่อน เพราะมี query ต่อคำขออยู่แล้ว วัดก่อน) (ข) เปิดคืนวิชา/CLO/PLO ด้วยหรือไม่ (ตอนนี้ครอบคลุมเฉพาะหน่วยงาน/หลักสูตร/ปี/ภาค/ผู้ใช้) (ค) เปิดคืนแล้วต้องการให้เปิดลูกที่ถูกปิดตามให้ด้วยหรือไม่ (แนะนำไม่)
+- **ชุด 2:** (ก) ADMIN และ SA ควรเขียน CLO/PLO/mapping ได้อยู่หรือไม่ (ถ้าไม่มีหน้าแก้ไข แนะนำปิดทั้งคู่ หรือเหลือ SA) (ข) STAFF แก้/ลบเกรดนักศึกษาในขอบเขตได้เต็มที่ต่อไปหรือไม่ — แนะนำคงไว้แต่ต้องมี audit และถอด ADMIN/SA ออก (ค) `GET /users/instructors`: ยอมรับรายชื่ออาจารย์ทั้งระบบแบบข้อมูลน้อยที่สุด หรือจะผูกอาจารย์กับหน่วยงาน (ง) ยอมให้นักศึกษา/อาจารย์เห็นเฉพาะหลักสูตรของตนใช่หรือไม่
+- **ชุด 3:** อายุการเก็บ log, เก็บ IP/User-Agent หรือไม่, ใครดู log ได้ (แนะนำ SA เท่านั้น), เมนู SA ที่ 5 หรือซ่อนใต้หน้าผู้ใช้, ถ้าเขียน log ล้มเหลวให้ธุรกรรมหลักล้มด้วยหรือไม่
+- **ชุด 4:** ยืนยันอีเมลแบบบังคับ/เตือน/ไม่ทำ; จะเปิด Google หรือไม่และจำกัดโดเมนไหม; ข้อความนโยบายความเป็นส่วนตัวจริงจากมหาวิทยาลัย; ยังต้องการ `POST /auth/accept-invitation` หรือยกเลิก
+
+### ข้อกำหนดทั่วไปทุกชุด
+- รัน `npm run db:backup -- <label>` **ก่อน** ชุดที่แตะฐานข้อมูล (ชุด 3, 4.2, 4.4) และก่อนรอบทดสอบ/`docker:rebuild` ทุกครั้งตามกฎ `apps/CLAUDE.md`; migration สร้างด้วย `--create-only` แล้วตรวจก่อนเสมอ ห้าม `docker compose down -v`/`volume rm`/`system prune`
+- เทสต์ backend (`npx jest` ใน `apps/backend`, ปัจจุบัน 159 ข้อ) และ `npx tsc --noEmit` ต้องผ่านก่อนคอมมิตทุกครั้ง; ฝั่ง frontend `tsc`/`lint`/`jest`/`next build` ผ่านด้วยเมื่อแก้ UI
+- เปลี่ยน endpoint/ชนิดข้อมูลที่ frontend ใช้ ให้แก้ `packages/shared-types/src/index.ts` ในคอมมิตเดียวกัน และอัปเดต TODO.md ลบรายการที่ทำเสร็จ
+- ห้าม push และห้ามรัน `cleanup-demo` จนกว่าผู้ใช้สั่ง; แยกคอมมิตเป็นชุดย่อยที่ย้อนกลับได้
