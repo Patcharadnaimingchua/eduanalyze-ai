@@ -47,10 +47,6 @@ const TERM_KIND: Record<Semester['term'], string> = {
   SUMMER: 'ภาคการศึกษาพิเศษ',
 };
 
-// Columns keep a fixed width and stay left-aligned, so the status sits next to the
-// semester name and the buttons next to the status instead of floating far right.
-const SEMESTER_COLS = 'md:grid-cols-[minmax(0,14rem)_8rem_auto] md:justify-start md:gap-x-4';
-
 export function AcademicYearCard({
   academicYear,
   semesters,
@@ -317,18 +313,7 @@ export function AcademicYearCard({
             <p className="text-sm text-muted-foreground">ยังไม่มีภาคเรียนในปีนี้</p>
           ) : (
             <div>
-              <div
-                aria-hidden="true"
-                className={cn(
-                  'hidden rounded-t-md bg-slate-100 px-3 py-2 text-xs font-medium text-muted-foreground md:grid',
-                  SEMESTER_COLS,
-                )}
-              >
-                <span>ภาคการศึกษา</span>
-                <span>สถานะ</span>
-                <span>การจัดการ</span>
-              </div>
-              <ul className="space-y-2 md:space-y-0 md:divide-y">
+              <ul className="space-y-2 md:space-y-0 md:divide-y md:divide-slate-100">
                 {sortedSemesters.map((semester) => {
                   const editableTerms = [
                     semester.term,
@@ -339,13 +324,10 @@ export function AcademicYearCard({
                     <li
                       key={semester.id}
                       className={cn(
-                        'rounded-md border border-slate-100 bg-slate-50 px-3 py-3 text-sm md:rounded-none md:border-0 md:bg-transparent md:py-2',
+                        'rounded-md border border-slate-100 bg-slate-50 px-3 py-3 text-sm md:rounded-none md:border-0 md:bg-transparent md:py-2 md:hover:bg-slate-50',
                         editingSemesterId === semester.id
                           ? 'block'
-                          : cn(
-                              'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 md:grid md:items-center',
-                              SEMESTER_COLS,
-                            ),
+                          : 'grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 md:flex md:items-center md:gap-4 md:pl-[3.25rem] md:pr-14',
                       )}
                     >
                       {editingSemesterId === semester.id ? (
@@ -401,7 +383,7 @@ export function AcademicYearCard({
                         </Form>
                       ) : (
                         <>
-                          <div>
+                          <div className="md:min-w-0 md:flex-1">
                             <p className="font-semibold text-primary">
                               {SEMESTER_TERM_LABELS[semester.term]}
                             </p>
@@ -409,7 +391,7 @@ export function AcademicYearCard({
                               {TERM_KIND[semester.term]}
                             </p>
                           </div>
-                          <span className="justify-self-end md:justify-self-start">
+                          <span className="justify-self-end md:w-32 md:shrink-0 md:justify-self-auto">
                             <Badge tone="success" className="gap-1.5">
                               <span
                                 aria-hidden="true"
@@ -418,7 +400,7 @@ export function AcademicYearCard({
                               ใช้งาน
                             </Badge>
                           </span>
-                          <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1">
+                          <div className="col-span-2 flex flex-wrap gap-2 md:col-span-1 md:shrink-0 md:justify-end">
                             <Button
                               type="button"
                               variant="outline"
