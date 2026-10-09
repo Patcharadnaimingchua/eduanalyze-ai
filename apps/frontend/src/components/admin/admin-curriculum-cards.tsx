@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { FolderOpen, Search } from 'lucide-react';
-import type { AdminScopeCurriculumEntry, AdminScopeProgram } from '@eduanalyze-ai/shared-types';
+import type { AdminScopeCurriculumEntry } from '@eduanalyze-ai/shared-types';
 import {
   CURRICULUM_TAB_LABELS,
   CURRICULUM_TAB_ORDER,
   placeOf,
   type CurriculumTab,
+  type ProgramPlace,
 } from '@/lib/admin-curricula';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +71,7 @@ export function CurriculumTabs({
 function CurriculumCard({
   entry,
   programs,
-}: Readonly<{ entry: AdminScopeCurriculumEntry; programs: readonly AdminScopeProgram[] }>) {
+}: Readonly<{ entry: AdminScopeCurriculumEntry; programs: readonly ProgramPlace[] }>) {
   const place = placeOf(entry, programs);
   const badge = STATE_BADGE[entry.dataState];
   return (
@@ -111,7 +112,7 @@ export function AdminCurriculumCards({
   filtered,
 }: Readonly<{
   entries: readonly AdminScopeCurriculumEntry[];
-  programs: readonly AdminScopeProgram[];
+  programs: readonly ProgramPlace[];
   // True when a search or tab has narrowed the list, so "nothing" reads as
   // "no match" rather than "no curricula at all".
   filtered: boolean;

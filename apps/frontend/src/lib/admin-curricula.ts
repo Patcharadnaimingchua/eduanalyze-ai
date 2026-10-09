@@ -40,6 +40,8 @@ export function countByTab(
 
 // An entry carries only its programCode; the department and faculty live on
 // the scope's program list, so the two are joined here.
+export type ProgramPlace = Pick<AdminScopeProgram, 'code' | 'departmentName' | 'facultyName'>;
+
 export interface CurriculumPlace {
   departmentName: string;
   facultyName: string;
@@ -47,7 +49,7 @@ export interface CurriculumPlace {
 
 export function placeOf(
   entry: Pick<AdminScopeCurriculumEntry, 'programCode'>,
-  programs: readonly AdminScopeProgram[],
+  programs: readonly ProgramPlace[],
 ): CurriculumPlace | null {
   const program = programs.find((p) => p.code === entry.programCode);
   return program
@@ -82,9 +84,7 @@ export function findCurriculum(
 // scope overview or the Super Admin's system-wide one.
 export interface CurriculumDirectory {
   entries: AdminScopeCurriculumEntry[];
-  // Empty for the Super Admin: the system report carries no department or
-  // faculty names, so the pages show no place line for them.
-  programs: AdminScopeProgram[];
+  programs: ProgramPlace[];
   // Admin: 0 means no scope was granted. Super Admin: unscoped, so this is
   // the number of curricula (0 means the system has none).
   isEmpty: boolean;
@@ -101,6 +101,14 @@ export function directoryFromScopeOverview(report: AdminScopeOverviewReport): Cu
 export function directoryFromSystemOverview(
   report: SystemCurriculumOverviewReport,
 ): CurriculumDirectory {
+  const places = new Map<string, ProgramPlace>();
+  for (const c of report.curricula) {
+    places.set(c.programCode, {
+      code: c.programCode,
+      departmentName: c.departmentName,
+      facultyName: c.facultyName,
+    });
+  }
   return {
     entries: report.curricula.map((c) => ({
       curriculumId: c.curriculumId,
@@ -113,7 +121,7 @@ export function directoryFromSystemOverview(
       courseCount: c.courseCount,
       ploCount: c.ploCount,
     })),
-    programs: [],
+    programs: [...places.values()],
     isEmpty: report.curricula.length === 0,
   };
 }

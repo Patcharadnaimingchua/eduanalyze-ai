@@ -19,7 +19,7 @@ const PINNED: Record<string, [string, string][]> = {
     ['ภาพรวมชั้นปี', '/instructor/year-levels'],
   ],
   SUPER_ADMIN: [
-    ['ภาพรวมหลักสูตร', '/admin/curriculum-dashboard'],
+    ['ภาพรวมระบบ', '/admin/system-overview'],
     ['ผู้ใช้งาน', '/admin/users'],
     ['โครงสร้างองค์กร', '/admin/organization'],
     ['ปีการศึกษา', '/admin/academic-years'],

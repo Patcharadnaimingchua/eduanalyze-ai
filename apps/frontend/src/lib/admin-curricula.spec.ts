@@ -1,5 +1,8 @@
 import type { AdminScopeCurriculumEntry, AdminScopeProgram } from '@eduanalyze-ai/shared-types';
-import type { AdminScopeOverviewReport, SystemCurriculumOverviewReport } from '@eduanalyze-ai/shared-types';
+import type {
+  AdminScopeOverviewReport,
+  SystemCurriculumOverviewReport,
+} from '@eduanalyze-ai/shared-types';
 import {
   countByTab,
   directoryFromScopeOverview,
@@ -99,9 +102,11 @@ describe('curriculum directory', () => {
     graduationReadyCount: 2,
     averagePloValue: 70,
     radar: [],
+    departmentName: 'ภาควิชา',
+    facultyName: 'คณะ',
   };
 
-  it('lists every curriculum of the system report for a Super Admin, with no place data', () => {
+  it('lists every curriculum of the system report for a Super Admin, once per program place', () => {
     const report = {
       totals: {},
       curricula: [systemEntry, { ...systemEntry, curriculumId: 's2' }],
@@ -111,7 +116,9 @@ describe('curriculum directory', () => {
     const directory = directoryFromSystemOverview(report);
     expect(directory.entries.map((e) => e.curriculumId)).toEqual(['s1', 's2']);
     expect(directory.entries[0]).not.toHaveProperty('radar');
-    expect(directory.programs).toEqual([]);
+    expect(directory.programs).toEqual([
+      { code: 'CPE', departmentName: 'ภาควิชา', facultyName: 'คณะ' },
+    ]);
     expect(directory.isEmpty).toBe(false);
     expect(findCurriculum(directory.entries, 's2')).not.toBeNull();
   });
