@@ -52,13 +52,13 @@ const SEMESTER_GRID = 'md:grid md:grid-cols-[1.4fr_1fr_1fr_1.4fr] md:items-cente
 export function AcademicYearCard({
   academicYear,
   semesters,
-  isCurrent = false,
+  isLatest = false,
   defaultOpen = true,
   onChanged,
 }: {
   academicYear: AcademicYear;
   semesters: Semester[];
-  isCurrent?: boolean;
+  isLatest?: boolean;
   defaultOpen?: boolean;
   onChanged: () => void;
 }) {
@@ -247,7 +247,7 @@ export function AcademicYearCard({
             </span>
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
-              {isCurrent && <Badge tone="success">ปีปัจจุบัน</Badge>}
+              {isLatest && <Badge tone="neutral">ปีล่าสุด</Badge>}
               <Badge tone="neutral">{semesters.length} ภาคเรียน</Badge>
             </div>
           </div>
