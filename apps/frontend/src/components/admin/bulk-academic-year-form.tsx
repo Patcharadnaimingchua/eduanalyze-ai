@@ -23,7 +23,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { SemanticTone } from '@/lib/tone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 const STATUS_LABEL: Record<ResultStatus, string> = {
   created: 'สร้างใหม่',
@@ -57,7 +64,9 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
       setResults(rows);
       const created = rows.filter((r) => r.status === 'created').length;
       toast.success(
-        created > 0 ? `สร้างปีการศึกษาแล้ว ${created} รายการ` : 'ทุกรายการมีอยู่แล้ว ไม่มีอะไรถูกสร้างเพิ่ม',
+        created > 0
+          ? `สร้างปีการศึกษาแล้ว ${created} รายการ`
+          : 'ทุกรายการมีอยู่แล้ว ไม่มีอะไรถูกสร้างเพิ่ม',
       );
       onCreated();
     } catch (error) {
@@ -84,7 +93,8 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
           ระบบสร้างทั้งชุดในครั้งเดียว หากขัดข้องจะไม่มีรายการใดถูกบันทึก และกดสร้างซ้ำได้
         </p>
         <p className="text-sm text-amber-700 dark:text-amber-400">
-          ระบบถือปีการศึกษาล่าสุดเป็นปีปัจจุบัน — การสร้างปีที่ใหม่กว่าปัจจุบันจะทำให้ชั้นปีของนักศึกษาในแดชบอร์ดเลื่อนตามทันที
+          ระบบถือปีการศึกษาล่าสุดเป็นปีปัจจุบัน —
+          การสร้างปีที่ใหม่กว่าปัจจุบันจะทำให้ชั้นปีของนักศึกษาในแดชบอร์ดเลื่อนตามทันที
         </p>
       </CardHeader>
       <Form {...form}>
@@ -98,7 +108,7 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   <FormItem className="w-40">
                     <FormLabel>ปีเริ่มต้น (พ.ศ.)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="2566" {...field} />
+                      <Input type="number" className="h-11" placeholder="2566" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -111,7 +121,13 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   <FormItem className="w-28">
                     <FormLabel>จำนวนปี</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} max={MAX_BULK_YEARS} {...field} />
+                      <Input
+                        type="number"
+                        className="h-11"
+                        min={1}
+                        max={MAX_BULK_YEARS}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,7 +139,9 @@ export function BulkAcademicYearForm({ onCreated }: { onCreated: () => void }) {
             </div>
 
             <fieldset className="flex flex-wrap items-center gap-4">
-              <legend className="mb-1 text-sm font-medium text-primary">ภาคเรียนที่จะสร้างในแต่ละปี</legend>
+              <legend className="mb-1 text-sm font-medium text-primary">
+                ภาคเรียนที่จะสร้างในแต่ละปี
+              </legend>
               {ALL_TERMS.map((term) => (
                 <label key={term} className="flex min-h-11 items-center gap-2 text-sm">
                   <input

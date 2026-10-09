@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Ban, ChevronDown, GraduationCap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
@@ -18,6 +19,7 @@ import {
 } from '@/lib/validation/academic-year.schema';
 import { semesterSchema, type SemesterFormValues } from '@/lib/validation/semester.schema';
 import { SEMESTER_TERM_LABELS } from '@/lib/grade-label';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/lib/toast-context';
@@ -27,21 +29,39 @@ import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { DeactivateConfirm } from '@/components/admin/deactivate-confirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const TERM_ORDER: Record<Semester['term'], number> = { FIRST: 0, SECOND: 1, SUMMER: 2 };
+
+// Derived from the term itself: the two main terms are regular, the summer one is special.
+const TERM_KIND: Record<Semester['term'], string> = {
+  FIRST: 'ภาคการศึกษาปกติ',
+  SECOND: 'ภาคการศึกษาปกติ',
+  SUMMER: 'ภาคการศึกษาพิเศษ',
+};
+
+const SEMESTER_GRID = 'md:grid md:grid-cols-[1.4fr_1fr_1fr_1.4fr] md:items-center md:gap-3';
 
 export function AcademicYearCard({
   academicYear,
   semesters,
   isCurrent = false,
+  defaultOpen = true,
   onChanged,
 }: {
   academicYear: AcademicYear;
   semesters: Semester[];
   isCurrent?: boolean;
+  defaultOpen?: boolean;
   onChanged: () => void;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [confirmingYearDelete, setConfirmingYearDelete] = useState(false);
   const toast = useToast();
   const [confirmingSemesterId, setConfirmingSemesterId] = useState<string | null>(null);
@@ -80,7 +100,11 @@ export function AcademicYearCard({
       toast.success('ปิดใช้งานปีการศึกษาแล้ว');
       onChanged();
     } catch (error) {
-      setServerError(describeApiError(error, { 409: 'ปิดใช้งานไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้' }));
+      setServerError(
+        describeApiError(error, {
+          409: 'ปิดใช้งานไม่ได้ เพราะยังมีภาคเรียนที่ใช้งานอยู่ในปีการศึกษานี้',
+        }),
+      );
     } finally {
       setBusyId(null);
       setConfirmingYearDelete(false);
@@ -95,7 +119,11 @@ export function AcademicYearCard({
       toast.success('ปิดใช้งานภาคเรียนแล้ว');
       onChanged();
     } catch (error) {
-      setServerError(describeApiError(error, { 409: 'ปิดใช้งานไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่' }));
+      setServerError(
+        describeApiError(error, {
+          409: 'ปิดใช้งานไม่ได้ เพราะยังมีการบันทึกผลการเรียนอ้างอิงภาคเรียนนี้อยู่',
+        }),
+      );
     } finally {
       setBusyId(null);
       setConfirmingSemesterId(null);
@@ -170,12 +198,12 @@ export function AcademicYearCard({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0">
         {editingYear ? (
           <Form {...yearEditForm}>
             <form
               onSubmit={yearEditForm.handleSubmit(onSubmitYearEdit)}
-              className="flex items-end gap-2"
+              className="flex flex-wrap items-end gap-2"
             >
               <FormField
                 control={yearEditForm.control}
@@ -183,187 +211,282 @@ export function AcademicYearCard({
                 render={({ field }) => (
                   <FormItem className="w-32">
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" className="h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" size="sm" className="min-h-11" disabled={yearEditForm.formState.isSubmitting}>
+              <Button
+                type="submit"
+                size="sm"
+                className="min-h-11"
+                disabled={yearEditForm.formState.isSubmitting}
+              >
                 บันทึก
               </Button>
-              <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setEditingYear(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={() => setEditingYear(false)}
+              >
                 ยกเลิก
               </Button>
             </form>
           </Form>
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
-            {isCurrent && <Badge tone="success">ปีปัจจุบัน</Badge>}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand"
+            >
+              <GraduationCap size={20} />
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle>ปีการศึกษา {academicYear.year}</CardTitle>
+              {isCurrent && <Badge tone="success">ปีปัจจุบัน</Badge>}
+              <Badge tone="neutral">{semesters.length} ภาคเรียน</Badge>
+            </div>
           </div>
         )}
         {!editingYear && (
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={startEditingYear}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11"
+              onClick={startEditingYear}
+            >
               แก้ไข
             </Button>
             <Button
               type="button"
               variant="ghost"
-              size="sm" className="min-h-11"
+              size="sm"
+              className="min-h-11 gap-1.5"
               onClick={() => setConfirmingYearDelete(true)}
             >
+              <Ban size={16} aria-hidden="true" />
               ปิดใช้งานปีการศึกษา
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-11 p-0"
+              aria-expanded={open}
+              aria-controls={`academic-year-${academicYear.id}`}
+              aria-label={`${open ? 'ซ่อน' : 'แสดง'}ภาคเรียนของปีการศึกษา ${academicYear.year}`}
+              onClick={() => setOpen((current) => !current)}
+            >
+              <ChevronDown
+                size={18}
+                aria-hidden="true"
+                className={cn(
+                  'transition-transform motion-reduce:transition-none',
+                  open && 'rotate-180',
+                )}
+              />
             </Button>
           </div>
         )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        {serverError && (
-          <ApiErrorAlert message={serverError} />
-        )}
+      {open && (
+        <CardContent id={`academic-year-${academicYear.id}`} className="space-y-4">
+          {serverError && <ApiErrorAlert message={serverError} />}
 
-        {sortedSemesters.length === 0 ? (
-          <p className="text-sm text-muted-foreground">ยังไม่มีภาคเรียนในปีนี้</p>
-        ) : (
-          <ul className="space-y-2">
-            {sortedSemesters.map((semester) => {
-              const editableTerms = [
-                semester.term,
-                ...availableTerms.filter((term) => term !== semester.term),
-              ].sort((a, b) => TERM_ORDER[a] - TERM_ORDER[b]);
-
-              return (
-                <li
-                  key={semester.id}
-                  className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm"
-                >
-                  {editingSemesterId === semester.id ? (
-                    <Form {...semesterEditForm}>
-                      <form
-                        onSubmit={semesterEditForm.handleSubmit((values) =>
-                          onSubmitSemesterEdit(semester.id, values),
-                        )}
-                        className="flex w-full items-end gap-2"
-                      >
-                        <FormField
-                          control={semesterEditForm.control}
-                          name="term"
-                          render={({ field }) => (
-                            <FormItem className="w-40">
-                              <Select onValueChange={field.onChange} value={field.value || undefined}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {editableTerms.map((term) => (
-                                    <SelectItem key={term} value={term}>
-                                      {SEMESTER_TERM_LABELS[term]}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button
-                          type="submit"
-                          size="sm" className="min-h-11"
-                          disabled={semesterEditForm.formState.isSubmitting}
-                        >
-                          บันทึก
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm" className="min-h-11"
-                          onClick={() => setEditingSemesterId(null)}
-                        >
-                          ยกเลิก
-                        </Button>
-                      </form>
-                    </Form>
-                  ) : (
-                    <>
-                      <span>{SEMESTER_TERM_LABELS[semester.term]}</span>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm" className="min-h-11"
-                          onClick={() => startEditingSemester(semester)}
-                        >
-                          แก้ไข
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm" className="min-h-11"
-                          onClick={() => setConfirmingSemesterId(semester.id)}
-                        >
-                          ปิดใช้งาน
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        {availableTerms.length > 1 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm" className="min-h-11"
-            disabled={busyId === academicYear.id}
-            onClick={fillMissingSemesters}
-          >
-            เพิ่มภาคเรียนที่ขาดทั้งหมด ({availableTerms.length} ภาค)
-          </Button>
-        )}
-
-        {availableTerms.length > 0 && (
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmitSemester)}
-              className="flex items-end gap-3 border-t border-slate-100 pt-3"
-            >
-              <FormField
-                control={form.control}
-                name="term"
-                render={({ field }) => (
-                  <FormItem className="w-40">
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เพิ่มภาคเรียน" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableTerms.map((term) => (
-                          <SelectItem key={term} value={term}>
-                            {SEMESTER_TERM_LABELS[term]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+          {sortedSemesters.length === 0 ? (
+            <p className="text-sm text-muted-foreground">ยังไม่มีภาคเรียนในปีนี้</p>
+          ) : (
+            <div>
+              <div
+                aria-hidden="true"
+                className={cn(
+                  'hidden rounded-t-md bg-slate-100 px-3 py-2 text-xs font-medium text-muted-foreground dark:bg-slate-800 md:grid',
+                  SEMESTER_GRID,
                 )}
-              />
-              <Button type="submit" variant="outline" size="sm" className="min-h-11" disabled={form.formState.isSubmitting}>
-                เพิ่มภาคเรียน
-              </Button>
-            </form>
-          </Form>
-        )}
-      </CardContent>
+              >
+                <span>ภาคการศึกษา</span>
+                <span>ปีที่สังกัด</span>
+                <span>สถานะ</span>
+                <span className="text-right">การจัดการ</span>
+              </div>
+              <ul className="space-y-2 md:space-y-0 md:divide-y">
+                {sortedSemesters.map((semester) => {
+                  const editableTerms = [
+                    semester.term,
+                    ...availableTerms.filter((term) => term !== semester.term),
+                  ].sort((a, b) => TERM_ORDER[a] - TERM_ORDER[b]);
+
+                  return (
+                    <li
+                      key={semester.id}
+                      className={cn(
+                        'rounded-md bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900/40 md:rounded-none md:bg-transparent md:dark:bg-transparent',
+                        editingSemesterId === semester.id ? 'block' : SEMESTER_GRID,
+                      )}
+                    >
+                      {editingSemesterId === semester.id ? (
+                        <Form {...semesterEditForm}>
+                          <form
+                            onSubmit={semesterEditForm.handleSubmit((values) =>
+                              onSubmitSemesterEdit(semester.id, values),
+                            )}
+                            className="flex w-full flex-wrap items-end gap-2"
+                          >
+                            <FormField
+                              control={semesterEditForm.control}
+                              name="term"
+                              render={({ field }) => (
+                                <FormItem className="w-40">
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value || undefined}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="min-h-11">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {editableTerms.map((term) => (
+                                        <SelectItem key={term} value={term} className="min-h-11">
+                                          {SEMESTER_TERM_LABELS[term]}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="min-h-11"
+                              disabled={semesterEditForm.formState.isSubmitting}
+                            >
+                              บันทึก
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="min-h-11"
+                              onClick={() => setEditingSemesterId(null)}
+                            >
+                              ยกเลิก
+                            </Button>
+                          </form>
+                        </Form>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="font-semibold text-primary">
+                              {SEMESTER_TERM_LABELS[semester.term]}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {TERM_KIND[semester.term]}
+                            </p>
+                          </div>
+                          <span className="tabular-nums">ปีการศึกษา {academicYear.year}</span>
+                          <span>
+                            <Badge tone="success" className="gap-1.5">
+                              <span
+                                aria-hidden="true"
+                                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                              />
+                              ใช้งาน
+                            </Badge>
+                          </span>
+                          <div className="flex flex-wrap gap-2 md:justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-11"
+                              onClick={() => startEditingSemester(semester)}
+                            >
+                              แก้ไข
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-11 gap-1.5"
+                              onClick={() => setConfirmingSemesterId(semester.id)}
+                            >
+                              <Ban size={16} aria-hidden="true" />
+                              ปิดใช้งาน
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {availableTerms.length > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              disabled={busyId === academicYear.id}
+              onClick={fillMissingSemesters}
+            >
+              เพิ่มภาคเรียนที่ขาดทั้งหมด ({availableTerms.length} ภาค)
+            </Button>
+          )}
+
+          {availableTerms.length > 0 && (
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmitSemester)}
+                className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3 dark:border-slate-800"
+              >
+                <FormField
+                  control={form.control}
+                  name="term"
+                  render={({ field }) => (
+                    <FormItem className="w-40">
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="min-h-11">
+                            <SelectValue placeholder="เพิ่มภาคเรียน" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableTerms.map((term) => (
+                            <SelectItem key={term} value={term} className="min-h-11">
+                              {SEMESTER_TERM_LABELS[term]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11"
+                  disabled={form.formState.isSubmitting}
+                >
+                  เพิ่มภาคเรียน
+                </Button>
+              </form>
+            </Form>
+          )}
+        </CardContent>
+      )}
       <DeactivateConfirm
         open={confirmingYearDelete}
         onOpenChange={setConfirmingYearDelete}

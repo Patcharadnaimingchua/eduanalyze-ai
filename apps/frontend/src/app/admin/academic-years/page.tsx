@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Info, Plus } from 'lucide-react';
 import { fetchAcademicYears, fetchSemesters } from '@/lib/api/academic-record';
 import { useAuth } from '@/lib/auth-context';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -17,7 +17,7 @@ import { BulkAcademicYearForm } from '@/components/admin/bulk-academic-year-form
 import { AcademicYearCard } from '@/components/admin/academic-year-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyState, InlineNotice } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AcademicYearsAdminPage() {
@@ -78,7 +78,7 @@ function AcademicYearsAdminContent() {
               <Button
                 type="button"
                 variant={openForm === 'bulk' ? 'default' : 'outline'}
-                className="gap-1.5"
+                className="min-h-11 gap-1.5"
                 onClick={() => toggleForm('bulk')}
               >
                 <Plus size={16} />
@@ -87,7 +87,7 @@ function AcademicYearsAdminContent() {
               <Button
                 type="button"
                 variant={openForm === 'single' ? 'default' : 'outline'}
-                className="gap-1.5"
+                className="min-h-11 gap-1.5"
                 onClick={() => toggleForm('single')}
               >
                 <Plus size={16} />
@@ -103,7 +103,13 @@ function AcademicYearsAdminContent() {
       {openForm === 'bulk' && (
         <Reveal className="space-y-2">
           <BulkAcademicYearForm onCreated={refetchAll} />
-          <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setOpenForm(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-11"
+            onClick={() => setOpenForm(null)}
+          >
             ปิดฟอร์ม
           </Button>
         </Reveal>
@@ -115,6 +121,14 @@ function AcademicYearsAdminContent() {
       )}
 
       <Reveal index={1}>
+        <InlineNotice icon={Info}>
+          ปีการศึกษาหนึ่งมีได้สูงสุด 3 ภาคเรียน (ภาคต้น ภาคปลาย ภาคฤดูร้อน)
+          ปิดใช้งานปีการศึกษาได้เมื่อไม่มีภาคเรียนที่ใช้งานอยู่
+          และปิดใช้งานภาคเรียนได้เมื่อไม่มีผลการเรียนอ้างอิง ทั้งสองอย่างเปิดคืนจากหน้าจอไม่ได้
+        </InlineNotice>
+      </Reveal>
+
+      <Reveal index={2}>
         <PageSection title="ปีการศึกษาทั้งหมด">
           {(yearsQuery.isLoading || semestersQuery.isLoading) && (
             <div className="space-y-4">
@@ -163,9 +177,10 @@ function AcademicYearsAdminContent() {
               ) : (
                 [...yearsQuery.data]
                   .sort((a, b) => b.year - a.year)
-                  .map((year) => (
+                  .map((year, index) => (
                     <AcademicYearCard
                       key={year.id}
+                      defaultOpen={index === 0}
                       academicYear={year}
                       semesters={semestersQuery.data.filter((s) => s.academicYearId === year.id)}
                       isCurrent={year.year === currentYear}

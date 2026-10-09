@@ -16,7 +16,14 @@ import { Input } from '@/components/ui/input';
 import { describeApiError } from '@/lib/describe-api-error';
 import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -63,9 +70,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            {serverError && (
-              <ApiErrorAlert message={serverError} />
-            )}
+            {serverError && <ApiErrorAlert message={serverError} />}
 
             <div className="flex items-end gap-3">
               <FormField
@@ -75,7 +80,7 @@ export function AcademicYearForm({ onCreated }: { onCreated: () => void }) {
                   <FormItem className="w-40">
                     <FormLabel>ปีการศึกษา (พ.ศ.)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="2569" {...field} />
+                      <Input type="number" className="h-11" placeholder="2569" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
