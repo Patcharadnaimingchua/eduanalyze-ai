@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -149,12 +150,20 @@ export class StudentCourseRecordService {
   ) {}
 
   async create(dto: CreateStudentCourseRecordDto, user: RequestUser) {
-    const studentProfileId = await this.resolveOwnStudentProfileIdOrValidate(
+    const profile = await this.resolveOwnStudentProfileOrValidate(
       dto.studentProfileId,
       user,
     );
+    const studentProfileId = profile.id;
 
     const course = await this.courseService.findActiveByIdOrThrow(dto.courseId);
+    // The staff scope check above only covers the student; without this a
+    // STAFF could file a course from any other curriculum under them.
+    if (course.curriculumId !== profile.curriculumId) {
+      throw new BadRequestException(
+        'วิชานี้ไม่อยู่ในหลักสูตรของนักศึกษา จึงเพิ่มผลการเรียนไม่ได้',
+      );
+    }
     await this.semesterService.findActiveByIdOrThrow(dto.semesterId);
 
     try {
@@ -847,13 +856,12 @@ export class StudentCourseRecordService {
   // SUPER_ADMIN: uses the client-supplied studentProfileId, validated.
   // ADMIN/STAFF: uses the client-supplied studentProfileId, validated and
   // scope-checked.
-  private async resolveOwnStudentProfileIdOrValidate(
+  private async resolveOwnStudentProfileOrValidate(
     suppliedStudentProfileId: string,
     user: RequestUser,
   ) {
     if (this.isSelfServiceOnly(user)) {
-      const own = await this.studentProfileService.findByUserId(user.userId);
-      return own.id;
+      return this.studentProfileService.findByUserId(user.userId);
     }
     const profile = await this.studentProfileService.findActiveByIdOrThrow(
       suppliedStudentProfileId,
@@ -861,6 +869,6 @@ export class StudentCourseRecordService {
     if (this.isStaffTier(user)) {
       await this.assertStaffScopeCovers(profile.id, user);
     }
-    return profile.id;
+    return profile;
   }
 }
