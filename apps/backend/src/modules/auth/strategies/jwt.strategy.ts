@@ -26,12 +26,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // Queries the DB on every request rather than trusting the token's
   // claims statelessly — per CONVENTIONS.md §8's "always resolve live"
   // principle, so a deactivated account is rejected on its very next
-  // request instead of staying valid until the access token naturally
-  // expires (up to 15 minutes later).
+  // request, and a revoked or granted role applies on the next request,
+  // instead of staying as it was until the access token expires (up to 15
+  // minutes later). The token is only proof of who the caller is.
   async validate(payload: JwtPayload): Promise<RequestUser> {
     let user;
     try {
-      user = await this.userService.findById(payload.sub);
+      user = await this.userService.findAuthContext(payload.sub);
     } catch (error) {
       // A token for a user that no longer exists is an auth failure, not
       // a 404 — don't leak UserService's NotFoundException as-is.
@@ -47,7 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       userId: payload.sub,
       email: payload.email,
-      roles: payload.roles,
+      roles: user.roles,
       mustChangePassword: user.mustChangePassword,
     };
   }

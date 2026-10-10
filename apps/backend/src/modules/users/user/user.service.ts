@@ -39,6 +39,22 @@ export class UserService {
     return user;
   }
 
+  // What the JWT strategies need on every request: the account and its roles as
+  // they are in the database right now, in one call. The token's own `roles`
+  // claim is never trusted for authorisation, so a role that was revoked (or
+  // granted) takes effect on the very next request.
+  async findAuthContext(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { userRoles: { select: { role: true } } },
+    });
+    if (!user) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+    const { userRoles, ...account } = user;
+    return { ...account, roles: userRoles.map((userRole) => userRole.role) };
+  }
+
   // Generic passthrough — the caller (UserManagementService) builds the
   // `where` clause, including any scope-containment filter, so this stays
   // a thin single-entity service per CONVENTIONS.md §6. `omit`/`include`

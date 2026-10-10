@@ -31,7 +31,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   async validate(payload: JwtPayload): Promise<RequestUser> {
     let user;
     try {
-      user = await this.userService.findById(payload.sub);
+      user = await this.userService.findAuthContext(payload.sub);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new UnauthorizedException('Account no longer exists');
@@ -45,7 +45,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     return {
       userId: payload.sub,
       email: payload.email,
-      roles: payload.roles,
+      roles: user.roles,
       mustChangePassword: user.mustChangePassword,
     };
   }
