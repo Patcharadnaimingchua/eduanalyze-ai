@@ -253,3 +253,31 @@ describe('UserManagementService.resendInvitation logging', () => {
     jest.restoreAllMocks();
   });
 });
+
+describe('UserManagementService.listInstructors', () => {
+  it('asks only for active INSTRUCTOR users and returns id, fullName and email', async () => {
+    const userService = {
+      findAll: jest.fn().mockResolvedValue([
+        { id: 'i1', fullName: 'อาจารย์ หนึ่ง', email: 'i1@x.test', userRoles: [], scopes: [] },
+      ]),
+    };
+    const service = new UserManagementService(
+      {} as never,
+      userService as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    const result = await service.listInstructors();
+
+    expect(userService.findAll).toHaveBeenCalledWith({
+      isActive: true,
+      userRoles: { some: { role: 'INSTRUCTOR' } },
+    });
+    expect(result).toEqual([{ id: 'i1', fullName: 'อาจารย์ หนึ่ง', email: 'i1@x.test' }]);
+  });
+});

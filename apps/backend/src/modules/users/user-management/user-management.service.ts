@@ -170,6 +170,7 @@ export class UserManagementService {
   // POST /course-instructors's `courseId`.
   async listInstructors() {
     const users = await this.userService.findAll({
+      isActive: true,
       userRoles: { some: { role: 'INSTRUCTOR' } },
     });
     return users.map((user) => this.toInstructorListItem(user));

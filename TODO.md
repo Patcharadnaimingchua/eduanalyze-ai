@@ -190,6 +190,11 @@ Three commits delivered (2026-09-30):
 **ผลต่อ frontend:** ถ้าตัด ADMIN/SA จากการเขียน ไม่มีหน้าใดเรียกอยู่ (ตรวจแล้ว) แต่ต้อง grep `apps/frontend/src/lib/api/*.ts` อีกรอบก่อนลงมือ; การกรองการอ่านกระทบ `app/staff/curriculum/page.tsx` (`inScope`/ตัวเลือกหลักสูตร), `components/auth/dependent-org-select.tsx` (ใช้ `/curricula` สาธารณะ ไม่กระทบ), หน้านักศึกษาที่เรียก `/courses` `/clos` `/plos`
 **ความเสี่ยง/ย้อนกลับ:** เสี่ยงที่สุดคือการกรองอ่าน (หน้านักศึกษา/อาจารย์ที่พึ่ง `/courses` ทั้งแคตตาล็อกจะว่าง) ทำเป็น PR แยกตาม endpoint ย้อนกลับด้วย revert; การตัดสิทธิ์เขียนย้อนกลับง่าย
 **ขนาด:** ใหญ่ (ตัด @Roles = เล็ก, กรองอ่าน = ใหญ่) · **โมเดล:** Plan (Opus High) สำหรับกฎการกรองอ่านและเรื่องเกรด, Impl (Sonnet Medium) ส่วนที่เหลือ · **db:backup:** ไม่มี migration; สำรองก่อนทดสอบ Docker
+**ผลที่ทำแล้ว (2026-10-10):** ตัด `@Roles` ตามตาราง (เขียน courses/categories/requirements/prerequisites/course-instructors/invitation resend = STAFF; CLO/PLO/mapping และ departments/programs/curricula = SUPER_ADMIN; เกรดเขียนถอด SA/ADMIN) มีเทสต์ตารางสิทธิ์ `src/common/roles-table.spec.ts` · `DELETE /courses/:id` ตอบ 409 ภาษาไทยเมื่อมีผลการเรียน/อาจารย์/CLO/รายการประเมิน/การประเมินรายวิชา/แผนการเรียนผูกอยู่ (ตรวจก่อนลบ prerequisite) — หมายเหตุ: frontend ยังไม่มีปุ่มลบวิชา (`deleteCourse` ใน `lib/api/staff.ts` ไม่มีผู้เรียก) จึงยังไม่มีที่แสดงข้อความนี้ · `POST /student-course-records` ปฏิเสธ (400 ไทย) เมื่อวิชาไม่อยู่ในหลักสูตรของนักศึกษา · `GET /users/instructors` เฉพาะ `isActive` (ยังส่ง email)
+**ยังไม่ได้ทำในชุด 2 (รอบถัดไป):**
+- กรองอ่านรายบทบาททีละ endpoint (PR แยก) เริ่มที่ STUDENT `/clos` `/plos` `/clo-plo-mappings` (ตอนนี้เห็นทั้งระบบ) แล้วค่อย `/courses` `/prerequisites` `/course-categories` `/curriculum-requirements` และ `GET /course-instructors` (กรองด้วย `getCoveredProgramIds`); `fetchCourses` ถูกใช้ทั้งนักศึกษา/staff/อาจารย์ ต้องดูผลต่อหน้าก่อนกรอง
+- ผูกอาจารย์กับหน่วยงาน (ให้ `GET /users/instructors` กรองตามขอบเขตจริง) — ต้องแก้ schema/migration จึงรอ
+- audit การแก้เกรดของ STAFF/INSTRUCTOR — รอชุด 3
 
 ### ชุด 3 — audit log + lastLogin
 **เป้าหมาย:** บันทึกการกระทำสำคัญ ตรวจย้อนหลังได้ และแสดง "เข้าสู่ระบบล่าสุด" ในหน้าผู้ใช้
