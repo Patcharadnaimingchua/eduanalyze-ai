@@ -42,3 +42,7 @@ export async function createUserScope(userId: string, dto: CreateUserScopeReques
 export async function deleteUserScope(userId: string, scopeId: string) {
   await apiClient.delete(`/users/${userId}/scopes/${scopeId}`);
 }
+
+export async function resendInvitation(id: string) {
+  await apiClient.post(`/users/${id}/resend-invitation`);
+}

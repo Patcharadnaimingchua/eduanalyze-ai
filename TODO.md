@@ -219,12 +219,11 @@ Three commits delivered (2026-09-30):
 **ขนาด:** ใหญ่ · **โมเดล:** Plan (Opus High) ออกแบบ schema + นโยบาย แล้ว Impl (Sonnet Medium) · **db:backup:** **ต้องทำก่อน** `migrate` ทุกครั้ง (`npm run db:backup -- before-audit-log`) และก่อนทดสอบ Docker
 
 ### ชุด 4 — อีเมล/การสมัคร: ส่งคำเชิญซ้ำ, ยืนยันอีเมล, Google, PDPA
-**4.1 ปุ่ม "ส่งอีเมลตั้งรหัสผ่านอีกครั้ง" (เปิดใช้ปุ่มที่ซ่อนไว้)**
-- **พบ:** `POST /users/:id/resend-invitation` (`user-management.service.ts` `resendInvitation`, ~249) สร้าง `PendingInvitation` ใหม่ผ่าน `pending-invitation.service.ts` `resend()` แล้ว **ไม่ได้ส่งอีเมลเลย** (แค่ log) และ `resend()` โยน 409 "already accepted" เมื่อ `user.passwordHash` มีค่า — แต่ผู้ใช้ที่ SA/Admin สร้างมี `passwordHash` เป็นรหัสสุ่มที่ใช้ไม่ได้ตั้งแต่ตอนสร้าง (`createStaffOrAdmin` ~บรรทัด 98) ดังนั้น endpoint นี้ **ล้มเหลว 409 เสมอสำหรับผู้ใช้ที่สร้างผ่านระบบ** วิธีส่งจริงในปัจจุบันคือ `passwordResetService.create(userId)` + `emailService.sendPasswordSetupEmail(email, token, 'new-account')` (`common/email/email.service.ts` ~88) ซึ่งเป็นสิ่งที่ตอนสร้างผู้ใช้ทำอยู่
-- **แก้:** เปลี่ยน `resendInvitation` ให้ใช้ทางเดียวกับตอนสร้าง (คืน `passwordSetupEmailSent`), เงื่อนไขอนุญาต = ผู้ใช้ยังไม่เคยเข้าสู่ระบบ (`lastLoginAt == null` ต้องมีชุด 3 หรือใช้ `mustChangePassword`), ตรวจสิทธิ์/ขอบเขตด้วย `findOne` เดิม, throttle (เช่น 3/นาที/ผู้ขอ) กันยิงอีเมลรัว; ถ้าไม่ใช้แล้วให้เก็บ/ลบ `POST /auth/accept-invitation` + `PendingInvitation` ตามที่ตัดสิน (ตอนนี้ไม่มีหน้าจอ)
-- **frontend:** ปุ่ม "ส่งอีเมลตั้งรหัสผ่านอีกครั้ง" ใน `app/admin/users/[id]/page.tsx` + `lib/api/user-management.ts` (`resendInvitation`) แสดงผลสำเร็จ/ล้มเหลว (ข้อความเดียวกับ `createdUser.passwordSetupEmailSent` ใน `app/admin/users/page.tsx`); ผู้ใช้เห็น "ยังไม่รองรับการส่งอีเมล" เดิมที่ถูกซ่อนจะไม่ต้องใช้แล้ว
-- **เทสต์:** `user-management.service.spec.ts` (ส่งอีเมลผ่าน mock `EmailService`, ผู้ใช้ที่เข้าสู่ระบบแล้ว→409, นอกขอบเขต→404/403), `email.service.spec.ts` (มีอยู่ ตรวจเนื้อหาลิงก์ `/reset-password?token=`)
-- **ขนาด:** เล็ก–กลาง · **Impl** · ไม่มี migration (ถ้าไม่พึ่ง `lastLoginAt`)
+**4.1 ส่งคำเชิญ/ลิงก์ตั้งรหัสผ่านซ้ำ — ทำแล้ว (2026-10-10)**
+- `POST /users/:id/resend-invitation` ใช้ทางเดียวกับตอนสร้างผู้ใช้ (`passwordResetService.create` ซึ่งลบโทเค็นเก่าที่ยังไม่ใช้ + `sendPasswordSetupEmail(..., 'new-account')`) · เงื่อนไข "ยังไม่ตั้งรหัสผ่าน" = `mustChangePassword` (ไม่เพิ่มฟิลด์/ไม่มี migration) → ตั้งแล้วได้ 409 ไทย · ห้ามส่งให้ตัวเอง (403) · SA ส่งให้ใครก็ได้ยกเว้นตัวเอง, ADMIN เฉพาะ STAFF-only ในขอบเขต (นอกขอบเขต = 404 ตามแบบเดียวกับ endpoint อื่น) · throttle 3/นาที (ตามไอพี ตามค่ากลางของ `ThrottlerGuard`) · ส่งอีเมลไม่ได้ = 503 ข้อความไทย · ไม่ log โทเค็น/ลิงก์
+- หน้า `/admin/users` (ตาราง/การ์ด, เฉพาะ SA) และ `/admin/users/[id]` มีปุ่ม "ส่งคำเชิญซ้ำ" แสดงเฉพาะเมื่อ API จะรับ (`lib/resend-invitation.ts` `canResendInvitation`)
+- **ยังค้างจากชุด 4.1:** `POST /auth/accept-invitation` + `PendingInvitation` ไม่มีผู้ใช้แล้ว (ไม่มีหน้าจอ และ `resend-invitation` เลิกใช้) ต้องตัดสินว่าจะลบหรือเก็บ · ยังไม่ได้ลองส่งอีเมลจริง end-to-end (เทสต์ใช้ mock ทั้งหมด) · throttle ตามไอพี ไม่ใช่ตามผู้ขอ
+- **ยังไม่ทำ (ชุด 4 ที่เหลือ):** 4.2 ยืนยันอีเมลตอนสมัคร · 4.3 ธง Google login ใน Docker (`NEXT_PUBLIC_ENABLE_GOOGLE_LOGIN` ใส่ผ่าน build arg ไม่ได้) · 4.4 PDPA
 
 **4.2 ยืนยันอีเมลตอนสมัคร (ถ้าเอา)**
 - Schema: `User.emailVerifiedAt DateTime?` + `model EmailVerificationToken` (รูปแบบเดียวกับ `PasswordResetToken`: `tokenHash @unique`, `userId @unique`, `expiresAt`); migration ต้อง backfill `emailVerifiedAt = createdAt` ให้ผู้ใช้เดิมทั้งหมด

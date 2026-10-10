@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
+import { ResendInvitationButton } from '@/components/admin/resend-invitation-button';
 import { UserStatusAction } from '@/components/admin/user-status-action';
 
 const ALL = 'ALL';
@@ -151,6 +152,12 @@ function RowActions({
         requesterId={superAdminId}
         compact={!showReason}
         showReason={showReason}
+      />
+      <ResendInvitationButton
+        user={user}
+        requesterId={superAdminId}
+        requesterIsSuperAdmin
+        errorPlacement={showReason ? 'inline' : 'toast'}
       />
     </div>
   );

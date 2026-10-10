@@ -9,6 +9,7 @@ import { fetchUser, updateUserActiveStatus } from '@/lib/api/user-management';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { fetchDepartments, fetchPrograms } from '@/lib/api/organization';
+import { canResendInvitation } from '@/lib/resend-invitation';
 import { manageLockReason, suspendBlockReason } from '@/lib/admin-user-guard';
 import { MISSING_SCOPE_WARNING, roleNeedsScope } from '@/lib/user-scope-requirement';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -17,6 +18,7 @@ import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { PageLoadError } from '@/components/layout/page-states';
 import { PageHeader } from '@/components/layout/page-header';
 import { Reveal } from '@/components/layout/reveal';
+import { ResendInvitationButton } from '@/components/admin/resend-invitation-button';
 import { UserRolesSection } from '@/components/admin/user-roles-section';
 import { UserScopesSection } from '@/components/admin/user-scopes-section';
 import { Badge } from '@/components/ui/badge';
@@ -255,6 +257,31 @@ function AdminUserDetailContent({ userId }: { userId: string }) {
               </CardContent>
             </Card>
           </Reveal>
+
+          {canResendInvitation({
+            isSelf,
+            requesterIsSuperAdmin,
+            user: userQuery.data,
+          }) && (
+            <Reveal index={2}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>คำเชิญตั้งรหัสผ่าน</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    ผู้ใช้นี้ยังไม่ได้ตั้งรหัสผ่าน หากยังไม่ได้รับอีเมลหรือลิงก์หมดอายุ
+                    ส่งลิงก์ตั้งรหัสผ่านใหม่ได้ที่นี่
+                  </p>
+                  <ResendInvitationButton
+                    user={userQuery.data}
+                    requesterId={requester.userId}
+                    requesterIsSuperAdmin={requesterIsSuperAdmin}
+                  />
+                </CardContent>
+              </Card>
+            </Reveal>
+          )}
 
           <Reveal index={2}>
             <UserRolesSection
