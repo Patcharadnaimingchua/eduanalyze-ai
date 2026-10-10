@@ -15,6 +15,7 @@ import { Reveal } from '@/components/layout/reveal';
 import { AcademicYearForm } from '@/components/admin/academic-year-form';
 import { BulkAcademicYearForm } from '@/components/admin/bulk-academic-year-form';
 import { AcademicYearCard } from '@/components/admin/academic-year-card';
+import { AcademicYearInactiveSection } from '@/components/admin/academic-year-inactive-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState, InlineNotice } from '@/components/ui/empty-state';
@@ -34,6 +35,7 @@ function AcademicYearsAdminContent() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [openForm, setOpenForm] = useState<'bulk' | 'single' | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const yearsQuery = useQuery({ queryKey: ['academic-years'], queryFn: fetchAcademicYears });
   const semestersQuery = useQuery({ queryKey: ['semesters'], queryFn: fetchSemesters });
@@ -123,7 +125,20 @@ function AcademicYearsAdminContent() {
       </Reveal>
 
       <Reveal index={2}>
-        <PageSection title="ปีการศึกษาทั้งหมด">
+        <PageSection
+          title="ปีการศึกษาทั้งหมด"
+          actions={
+            <Button
+              type="button"
+              variant={showInactive ? 'default' : 'outline'}
+              size="sm"
+              aria-pressed={showInactive}
+              onClick={() => setShowInactive((open) => !open)}
+            >
+              {showInactive ? 'ซ่อนที่ปิดใช้งาน' : 'แสดงที่ปิดใช้งาน'}
+            </Button>
+          }
+        >
           {(yearsQuery.isLoading || semestersQuery.isLoading) && (
             <div className="space-y-4">
               {Array.from({ length: 2 }).map((_, i) => (
@@ -185,6 +200,15 @@ function AcademicYearsAdminContent() {
             </div>
           )}
         </PageSection>
+        {showInactive && (
+          <PageSection
+            className="pt-6"
+            title="ที่ปิดใช้งาน"
+            description="ปีการศึกษาและภาคเรียนที่ปิดใช้งานไปแล้ว เปิดกลับมาใช้งานได้ที่นี่"
+          >
+            <AcademicYearInactiveSection />
+          </PageSection>
+        )}
       </Reveal>
     </DashboardShell>
   );

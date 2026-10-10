@@ -66,3 +66,23 @@ export async function fetchCurriculumQuality(curriculumId: string) {
 export async function deleteSemester(id: string) {
   await apiClient.delete(`/semesters/${id}`);
 }
+
+// ---- Deactivated years and semesters (SUPER_ADMIN) ----
+
+export async function fetchInactiveAcademicYears() {
+  const { data } = await apiClient.get<AcademicYear[]>('/academic-years/inactive');
+  return data;
+}
+
+export async function fetchInactiveSemesters() {
+  const { data } = await apiClient.get<Semester[]>('/semesters/inactive');
+  return data;
+}
+
+export async function reactivateAcademicYear(id: string) {
+  await apiClient.post(`/academic-years/${id}/reactivate`);
+}
+
+export async function reactivateSemester(id: string) {
+  await apiClient.post(`/semesters/${id}/reactivate`);
+}

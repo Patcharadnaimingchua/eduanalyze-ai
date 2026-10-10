@@ -14,6 +14,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   cancelLabel = 'ยกเลิก',
+  confirmVariant = 'destructive',
   busy = false,
   onConfirm,
 }: {
@@ -23,6 +24,8 @@ export function ConfirmDialog({
   description: React.ReactNode;
   confirmLabel: string;
   cancelLabel?: string;
+  // 'default' for a confirmation that is not destructive, such as restoring something.
+  confirmVariant?: 'destructive' | 'default';
   busy?: boolean;
   onConfirm: () => void;
 }) {
@@ -51,7 +54,7 @@ export function ConfirmDialog({
                 {cancelLabel}
               </Button>
             </DialogPrimitive.Close>
-            <Button type="button" variant="destructive" disabled={busy} onClick={onConfirm}>
+            <Button type="button" variant={confirmVariant} disabled={busy} onClick={onConfirm}>
               {confirmLabel}
             </Button>
           </div>

@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/lib/toast-context';
 import { OrgNodeRow } from './org-node-row';
+import { InactiveOrgSection } from './inactive-org-section';
 import { OrgEntityForm } from './org-entity-form';
 import { buildOrgCounts, describeCounts } from '@/lib/org-tree-counts';
 import { StatCard } from '@/components/dashboard/stat-card';
@@ -48,6 +49,7 @@ export function OrgTree() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [addingFaculty, setAddingFaculty] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const toast = useToast();
 
   const facultiesQuery = useQuery({ queryKey: ['faculties'], queryFn: fetchFaculties });
@@ -216,6 +218,15 @@ export function OrgTree() {
         <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(new Set())}>
           ยุบทั้งหมด
         </Button>
+        <Button
+          type="button"
+          variant={showInactive ? 'default' : 'outline'}
+          size="sm"
+          aria-pressed={showInactive}
+          onClick={() => setShowInactive((open) => !open)}
+        >
+          {showInactive ? 'ซ่อนที่ปิดใช้งาน' : 'แสดงที่ปิดใช้งาน'}
+        </Button>
         {!addingFaculty && (
           <Button type="button" onClick={() => setAddingFaculty(true)}>
             + เพิ่มคณะใหม่
@@ -370,6 +381,20 @@ export function OrgTree() {
           );
         })}
       </div>
+
+      {showInactive && (
+        <section aria-labelledby="inactive-org-heading" className="space-y-3 pt-2">
+          <div>
+            <h2 id="inactive-org-heading" className="text-lg font-semibold text-primary">
+              ที่ปิดใช้งาน
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              หน่วยงานและหลักสูตรที่ปิดใช้งานไปแล้ว เปิดกลับมาใช้งานได้ที่นี่
+            </p>
+          </div>
+          <InactiveOrgSection />
+        </section>
+      )}
     </div>
   );
 }

@@ -97,3 +97,31 @@ export async function updateCurriculum(id: string, body: UpdateCurriculumRequest
 export async function deleteCurriculum(id: string) {
   await apiClient.delete(`/curricula/${id}`);
 }
+
+// ---- Deactivated records (SUPER_ADMIN): list them and restore one ----
+
+export async function fetchInactiveFaculties() {
+  const { data } = await apiClient.get<FacultyListItem[]>('/faculties/inactive');
+  return data;
+}
+
+export async function fetchInactiveDepartments() {
+  const { data } = await apiClient.get<DepartmentListItem[]>('/departments/inactive');
+  return data;
+}
+
+export async function fetchInactivePrograms() {
+  const { data } = await apiClient.get<ProgramListItem[]>('/programs/inactive');
+  return data;
+}
+
+export async function fetchInactiveCurricula() {
+  const { data } = await apiClient.get<CurriculumListItem[]>('/curricula/inactive');
+  return data;
+}
+
+export type ReactivatableOrgResource = 'faculties' | 'departments' | 'programs' | 'curricula';
+
+export async function reactivateOrgRecord(resource: ReactivatableOrgResource, id: string) {
+  await apiClient.post(`/${resource}/${id}/reactivate`);
+}
