@@ -99,9 +99,14 @@ export class CourseService {
     });
     if (dependentCount > 0) {
       throw new ConflictException(
-        `Cannot deactivate course ${id}: ${dependentCount} other course(s) still require it as a prerequisite`,
+        `ปิดวิชานี้ไม่ได้ เพราะยังมีอีก ${dependentCount} วิชาที่กำหนดให้เป็นวิชาบังคับก่อน`,
       );
     }
+
+    // Soft-delete never trips the Restrict FKs, so anything still attached is
+    // checked here — and before the prerequisite cleanup below, which is a
+    // hard delete that must not run when the course is kept.
+    await this.assertNoAttachedData(id);
 
     // Direction 2: this course itself has prerequisite requirements
     // (courseId = id) — those rows become meaningless once this course is
@@ -115,6 +120,42 @@ export class CourseService {
         data: { isActive: false },
       });
     });
+  }
+
+  // Only rows that can still be seen count: models with isActive are counted
+  // active-only; CourseInstructor, CourseAssessment and StudentPlannedCourse
+  // have no isActive, so every row counts.
+  private async assertNoAttachedData(id: string) {
+    const [records, instructors, clos, definitions, assessments, plans] =
+      await Promise.all([
+        this.prisma.studentCourseRecord.count({
+          where: { courseId: id, isActive: true },
+        }),
+        this.prisma.courseInstructor.count({ where: { courseId: id } }),
+        this.prisma.clo.count({ where: { courseId: id, isActive: true } }),
+        this.prisma.assessmentDefinition.count({
+          where: { courseId: id, isActive: true },
+        }),
+        this.prisma.courseAssessment.count({ where: { courseId: id } }),
+        this.prisma.studentPlannedCourse.count({ where: { courseId: id } }),
+      ]);
+
+    const attached = [
+      [records, 'ผลการเรียนของนักศึกษา'],
+      [instructors, 'อาจารย์ผู้สอน'],
+      [clos, 'CLO'],
+      [definitions, 'รายการประเมินผล'],
+      [assessments, 'การประเมินรายวิชา'],
+      [plans, 'แผนการเรียนของนักศึกษา'],
+    ]
+      .filter(([count]) => (count as number) > 0)
+      .map(([count, label]) => `${label} ${count} รายการ`);
+
+    if (attached.length > 0) {
+      throw new ConflictException(
+        `ปิดวิชานี้ไม่ได้ เพราะยังมีข้อมูลผูกอยู่: ${attached.join(', ')}`,
+      );
+    }
   }
 
   private async assertCodeAvailable(
