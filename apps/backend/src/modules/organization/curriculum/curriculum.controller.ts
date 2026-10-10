@@ -72,7 +72,7 @@ export class CurriculumController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('program', { from: 'body', key: 'programId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a curriculum' })
@@ -89,7 +89,7 @@ export class CurriculumController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('curriculum', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a curriculum' })
@@ -106,7 +106,7 @@ export class CurriculumController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('curriculum', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a curriculum' })

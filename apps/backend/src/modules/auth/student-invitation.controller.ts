@@ -66,7 +66,7 @@ export class StudentInvitationController {
 
   @Post(':id/resend')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('STAFF', 'ADMIN', 'SUPER_ADMIN')
+  @Roles('STAFF')
   @ScopeTarget('studentInvitation', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Reissue a fresh token+expiry and resend the invitation email' })

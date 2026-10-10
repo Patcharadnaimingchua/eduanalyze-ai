@@ -54,7 +54,7 @@ export class CloController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('course', { from: 'body', key: 'courseId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a CLO' })
@@ -71,7 +71,7 @@ export class CloController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('clo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a CLO' })
@@ -88,7 +88,7 @@ export class CloController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('clo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a CLO' })

@@ -72,7 +72,7 @@ export class StudentCourseRecordController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('STUDENT', 'SUPER_ADMIN', 'ADMIN', 'STAFF')
+  @Roles('STUDENT', 'STAFF')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a student course record' })
   @ApiResponse({ status: 201, description: 'Student course record created' })
@@ -87,7 +87,7 @@ export class StudentCourseRecordController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('STUDENT', 'SUPER_ADMIN', 'ADMIN', 'STAFF', 'INSTRUCTOR')
+  @Roles('STUDENT', 'STAFF', 'INSTRUCTOR')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a student course record (grade only)' })
   @ApiResponse({ status: 200, description: 'Student course record updated' })
@@ -102,7 +102,7 @@ export class StudentCourseRecordController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('STUDENT', 'SUPER_ADMIN', 'ADMIN', 'STAFF', 'INSTRUCTOR')
+  @Roles('STUDENT', 'STAFF', 'INSTRUCTOR')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Delete a student course record' })
   @ApiResponse({ status: 200, description: 'Student course record deleted' })

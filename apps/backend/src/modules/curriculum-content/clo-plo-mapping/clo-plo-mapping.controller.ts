@@ -54,7 +54,7 @@ export class CloPloMappingController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('plo', { from: 'body', key: 'ploId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a CLO-PLO mapping' })
@@ -69,7 +69,7 @@ export class CloPloMappingController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('cloPloMapping', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a CLO-PLO mapping (weight only)' })
@@ -82,7 +82,7 @@ export class CloPloMappingController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('cloPloMapping', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a CLO-PLO mapping' })

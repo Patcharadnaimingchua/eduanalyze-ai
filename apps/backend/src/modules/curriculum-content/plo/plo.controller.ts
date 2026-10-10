@@ -54,7 +54,7 @@ export class PloController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('curriculum', { from: 'body', key: 'curriculumId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a PLO' })
@@ -71,7 +71,7 @@ export class PloController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('plo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Update a PLO' })
@@ -88,7 +88,7 @@ export class PloController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN')
+  @Roles('SUPER_ADMIN')
   @ScopeTarget('plo', { from: 'param', key: 'id' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Soft-delete a PLO' })

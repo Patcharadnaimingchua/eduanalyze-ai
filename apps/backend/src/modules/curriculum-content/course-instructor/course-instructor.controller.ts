@@ -33,7 +33,7 @@ export class CourseInstructorController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
+  @Roles('STAFF')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List course-instructor assignments, optionally filtered by course' })
   @ApiResponse({ status: 200, description: 'List of assignments' })
@@ -43,7 +43,7 @@ export class CourseInstructorController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, ScopeGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
+  @Roles('STAFF')
   @ScopeTarget('course', { from: 'body', key: 'courseId' })
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Assign an instructor to a course' })
@@ -58,7 +58,7 @@ export class CourseInstructorController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN', 'STAFF')
+  @Roles('STAFF')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Remove an instructor from a course' })
   @ApiResponse({ status: 200, description: 'Assignment removed' })
