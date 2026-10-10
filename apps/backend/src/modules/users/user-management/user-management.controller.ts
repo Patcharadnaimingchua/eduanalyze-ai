@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -103,15 +104,20 @@ export class UserManagementController {
   }
 
   @Post(':id/resend-invitation')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN')
   @ApiBearerAuth('access-token')
   @ApiOperation({
-    summary: "Resend a user's invitation token (regenerates it, replacing any expired one)",
+    summary:
+      'Email a fresh password-setup link to a user who has not set a password yet (replaces any unused link; ADMIN: STAFF in own scope only)',
   })
-  @ApiResponse({ status: 201, description: 'Invitation resent' })
+  @ApiResponse({ status: 201, description: 'Password setup email sent' })
+  @ApiResponse({ status: 403, description: 'Own account, or a target this role may not manage' })
   @ApiResponse({ status: 404, description: 'User not found or outside your scope' })
-  @ApiResponse({ status: 409, description: 'Invitation already accepted' })
+  @ApiResponse({ status: 409, description: 'User has already set a password' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  @ApiResponse({ status: 503, description: 'The email could not be sent' })
   resendInvitation(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.userManagementService.resendInvitation(id, user);
   }

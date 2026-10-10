@@ -2,7 +2,9 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  ConflictException,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -12,7 +14,6 @@ import {
   hashPassword,
 } from '../../../common/util/password.util';
 import { RequestUser } from '../../auth/request-user.interface';
-import { PendingInvitationService } from '../../auth/pending-invitation.service';
 import { PasswordResetService } from '../../auth/password-reset.service';
 import { EmailService } from '../../../common/email/email.service';
 import { UserService } from '../user/user.service';
@@ -22,6 +23,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { assertMayManageTarget } from './admin-manage-target.util';
 
 const SUPER_ADMIN_PEER_MESSAGE = 'ไม่สามารถระงับหรือเปลี่ยนสถานะบัญชีผู้ดูแลระบบสูงสุดคนอื่นได้';
+const SELF_RESEND_MESSAGE = 'ไม่สามารถส่งคำเชิญให้บัญชีของตัวเองได้';
+const PASSWORD_ALREADY_SET_MESSAGE =
+  'ผู้ใช้นี้ตั้งรหัสผ่านแล้ว จึงส่งคำเชิญซ้ำไม่ได้ หากลืมรหัสผ่านให้ใช้ "ลืมรหัสผ่าน" ที่หน้าเข้าสู่ระบบ';
+const RESEND_EMAIL_FAILED_MESSAGE =
+  'ส่งอีเมลไม่สำเร็จ กรุณาลองใหม่อีกครั้งภายหลัง หากยังไม่สำเร็จให้ตรวจสอบการตั้งค่าอีเมลของระบบ';
 const SELF_ROLE_MESSAGE = 'ไม่สามารถถอดบทบาทของตัวเองได้';
 
 @Injectable()
@@ -34,7 +40,6 @@ export class UserManagementService {
     private readonly userRoleService: UserRoleService,
     private readonly userScopeService: UserScopeService,
     private readonly scopeResolverService: ScopeResolverService,
-    private readonly pendingInvitationService: PendingInvitationService,
     private readonly passwordResetService: PasswordResetService,
     private readonly emailService: EmailService,
   ) {}
@@ -247,12 +252,33 @@ export class UserManagementService {
     return this.userService.setActiveStatus(id, isActive);
   }
 
+  // Same mechanism createStaffOrAdmin uses: a fresh password-setup token
+  // (PasswordResetService.create drops any earlier unused one) mailed as a
+  // link to /reset-password. "Has not set a password yet" is
+  // mustChangePassword — true from creation (with an unusable hash) until
+  // resetPassword/changePassword clears it — so no schema field is needed.
   async resendInvitation(id: string, requester: RequestUser) {
-    await this.findOne(id, requester);
-    await this.pendingInvitationService.resend(id);
-    // Event only: the token is a secret and must never reach the logs.
-    this.logger.log(`Invitation reissued for user ${id}`);
-    return { message: 'Invitation resent' };
+    if (id === requester.userId) {
+      throw new ForbiddenException(SELF_RESEND_MESSAGE);
+    }
+    // Natural 404 if the target is outside the ADMIN's scope; an ADMIN may
+    // then only act on STAFF-only accounts, SUPER_ADMIN on anyone but self.
+    const target = await this.findOne(id, requester);
+    assertMayManageTarget(target.roles, requester);
+
+    if (!target.mustChangePassword) {
+      throw new ConflictException(PASSWORD_ALREADY_SET_MESSAGE);
+    }
+
+    // The token and the link are secrets: neither is ever logged, only the event.
+    try {
+      const token = await this.passwordResetService.create(id);
+      await this.emailService.sendPasswordSetupEmail(target.email, token, 'new-account');
+    } catch {
+      throw new ServiceUnavailableException(RESEND_EMAIL_FAILED_MESSAGE);
+    }
+    this.logger.log(`Password setup email resent for user ${id}`);
+    return { passwordSetupEmailSent: true };
   }
 
   async assignRole(id: string, role: Role, requester: RequestUser) {

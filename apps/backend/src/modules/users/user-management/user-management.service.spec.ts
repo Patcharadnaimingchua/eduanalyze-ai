@@ -1,4 +1,10 @@
-import { ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { RequestUser } from '../../auth/request-user.interface';
 import { UserManagementService } from './user-management.service';
@@ -45,7 +51,6 @@ function setup(opts: {
     userRoleService as never,
     {} as never,
     scopeResolver as never,
-    {} as never,
     {} as never,
     {} as never,
   );
@@ -222,15 +227,29 @@ describe('UserManagementService SUPER_ADMIN safeguards', () => {
   });
 });
 
-describe('UserManagementService.resendInvitation logging', () => {
-  it('never writes the invitation token to any log channel', async () => {
-    const secret = 'super-secret-invite-token';
-    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    const logConsole = jest.spyOn(console, 'log').mockImplementation();
+describe('UserManagementService.resendInvitation', () => {
+  const TOKEN = 'super-secret-setup-token';
+
+  function setupResend(opts: {
+    target?: { roles: Role[]; mustChangePassword: boolean };
+    covered?: boolean;
+    emailFails?: boolean;
+  }) {
+    const target = opts.target ?? { roles: ['STAFF'], mustChangePassword: true };
     const userService = {
-      findOneWhere: jest.fn().mockResolvedValue({ id: 'target', scopes: [], userRoles: [] }),
-      findById: jest.fn().mockResolvedValue({ id: 'target', email: 'x@x.test' }),
+      findOneWhere: jest.fn().mockResolvedValue({
+        id: 'target',
+        email: 'target@x.test',
+        mustChangePassword: target.mustChangePassword,
+        scopes: [],
+        userRoles: target.roles.map((role) => ({ role })),
+      }),
+    };
+    const passwordResetService = { create: jest.fn().mockResolvedValue(TOKEN) };
+    const emailService = {
+      sendPasswordSetupEmail: opts.emailFails
+        ? jest.fn().mockRejectedValue(new Error('SMTP down'))
+        : jest.fn().mockResolvedValue(undefined),
     };
     const service = new UserManagementService(
       {} as never,
@@ -238,17 +257,95 @@ describe('UserManagementService.resendInvitation logging', () => {
       {} as never,
       {} as never,
       { buildUserScopeOrFilter: jest.fn().mockResolvedValue([]) } as never,
-      { resend: jest.fn().mockResolvedValue(secret) } as never,
-      {} as never,
-      {} as never,
+      passwordResetService as never,
+      emailService as never,
     );
+    return { service, userService, passwordResetService, emailService };
+  }
+
+  it('mails a fresh setup link to a user who has not set a password', async () => {
+    const { service, passwordResetService, emailService } = setupResend({});
+    const result = await service.resendInvitation('target', requester('sa', ['SUPER_ADMIN']));
+    expect(passwordResetService.create).toHaveBeenCalledWith('target');
+    expect(emailService.sendPasswordSetupEmail).toHaveBeenCalledWith(
+      'target@x.test',
+      TOKEN,
+      'new-account',
+    );
+    expect(result).toEqual({ passwordSetupEmailSent: true });
+  });
+
+  it('answers 409 in Thai and sends nothing once the password is set', async () => {
+    const { service, passwordResetService, emailService } = setupResend({
+      target: { roles: ['STAFF'], mustChangePassword: false },
+    });
+    const error = await service
+      .resendInvitation('target', requester('sa', ['SUPER_ADMIN']))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ConflictException);
+    expect((error as ConflictException).message).toContain('ตั้งรหัสผ่านแล้ว');
+    expect(passwordResetService.create).not.toHaveBeenCalled();
+    expect(emailService.sendPasswordSetupEmail).not.toHaveBeenCalled();
+  });
+
+  it('refuses to send to the requester themselves', async () => {
+    const { service, emailService } = setupResend({});
+    await expect(
+      service.resendInvitation('sa', requester('sa', ['SUPER_ADMIN'])),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(emailService.sendPasswordSetupEmail).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Role[]]>([
+    ['an ADMIN account', ['ADMIN']],
+    ['a SUPER_ADMIN account', ['SUPER_ADMIN']],
+    ['an account that is not STAFF', ['INSTRUCTOR']],
+  ])('refuses an ADMIN requester on %s', async (_label, roles) => {
+    const { service, emailService } = setupResend({ target: { roles, mustChangePassword: true } });
+    await expect(
+      service.resendInvitation('target', requester('adm', ['ADMIN'])),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(emailService.sendPasswordSetupEmail).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 (not 403) for a target outside the ADMIN scope and sends nothing', async () => {
+    const { service, userService, emailService } = setupResend({});
+    userService.findOneWhere.mockRejectedValue(new NotFoundException('User not found'));
+    await expect(
+      service.resendInvitation('target', requester('adm', ['ADMIN'])),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(emailService.sendPasswordSetupEmail).not.toHaveBeenCalled();
+  });
+
+  it('lets a SUPER_ADMIN resend to another SUPER_ADMIN', async () => {
+    const { service, emailService } = setupResend({
+      target: { roles: ['SUPER_ADMIN'], mustChangePassword: true },
+    });
+    await service.resendInvitation('target', requester('sa', ['SUPER_ADMIN']));
+    expect(emailService.sendPasswordSetupEmail).toHaveBeenCalled();
+  });
+
+  it('answers 503 in Thai when the email cannot be sent, not a silent success', async () => {
+    const { service } = setupResend({ emailFails: true });
+    const error = await service
+      .resendInvitation('target', requester('sa', ['SUPER_ADMIN']))
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ServiceUnavailableException);
+    expect((error as ServiceUnavailableException).message).toContain('ส่งอีเมลไม่สำเร็จ');
+  });
+
+  it('never writes the setup token to any log channel', async () => {
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const logConsole = jest.spyOn(console, 'log').mockImplementation();
+    const { service } = setupResend({});
     await service.resendInvitation('target', requester('sa', ['SUPER_ADMIN']));
     const logged = JSON.stringify([
       ...logSpy.mock.calls,
       ...warnSpy.mock.calls,
       ...logConsole.mock.calls,
     ]);
-    expect(logged).not.toContain(secret);
+    expect(logged).not.toContain(TOKEN);
     expect(logSpy).toHaveBeenCalled();
     jest.restoreAllMocks();
   });
@@ -264,7 +361,6 @@ describe('UserManagementService.listInstructors', () => {
     const service = new UserManagementService(
       {} as never,
       userService as never,
-      {} as never,
       {} as never,
       {} as never,
       {} as never,
