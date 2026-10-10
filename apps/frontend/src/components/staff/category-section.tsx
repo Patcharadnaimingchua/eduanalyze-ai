@@ -16,6 +16,7 @@ import {
   type CurriculumRequirementFormValues,
 } from '@/lib/validation/curriculum-requirement.schema';
 import { describeApiError } from '@/lib/describe-api-error';
+import { CATEGORY_DELETE_BLOCKED } from './course-edit';
 import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
 import { useToast } from '@/lib/toast-context';
 import { creditShare } from '@/lib/progress-ring-geometry';
@@ -97,7 +98,7 @@ export function CategorySection({
       setConfirmingCategoryDelete(false);
       setServerError(
         isAxiosError(error) && error.response?.status === 409
-          ? 'ลบไม่ได้ เพราะยังมีวิชาอยู่ในหมวดนี้'
+          ? CATEGORY_DELETE_BLOCKED
           : describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY),
       );
     } finally {

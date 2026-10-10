@@ -1,6 +1,11 @@
+import { AxiosError } from 'axios';
 import type { CourseListItem } from '@eduanalyze-ai/shared-types';
 import {
+  CATEGORY_DELETE_BLOCKED,
+  COURSE_DELETE_WARNING,
+  courseDeleteTitle,
   courseEditSchema,
+  describeCourseDeleteError,
   courseToFormValues,
   EDITABLE_COURSE_FIELDS,
   toCreateBody,
@@ -64,5 +69,38 @@ describe('courseEditSchema', () => {
     ['category that is not an id', { categoryId: 'K1' }],
   ])('refuses %s', (_label, change) => {
     expect(courseEditSchema.safeParse({ ...ok, ...change }).success).toBe(false);
+  });
+});
+
+function apiError(status: number, message: unknown) {
+  return new AxiosError('failed', 'ERR_BAD_REQUEST', undefined, undefined, {
+    status,
+    data: { message },
+  } as never);
+}
+
+describe('deleting a course', () => {
+  it('names the course in the confirmation and warns about attached data', () => {
+    expect(courseDeleteTitle({ code: 'CPE101', name: 'การเขียนโปรแกรม' })).toBe(
+      'ลบรายวิชา CPE101 การเขียนโปรแกรม?',
+    );
+    expect(COURSE_DELETE_WARNING).toContain('ผลการเรียน อาจารย์ผู้รับผิดชอบ');
+  });
+
+  it('shows the Thai 409 message from the server as is', () => {
+    const message = 'ปิดวิชานี้ไม่ได้ เพราะยังมีข้อมูลผูกอยู่: ผลการเรียนของนักศึกษา 3 รายการ';
+    expect(describeCourseDeleteError(apiError(409, message))).toBe(message);
+  });
+
+  it('explains a 403 as out of scope and never leaks English or network text', () => {
+    expect(describeCourseDeleteError(apiError(403, 'Forbidden'))).toContain('อยู่นอกขอบเขต');
+    expect(describeCourseDeleteError(apiError(409, 'Conflict'))).not.toMatch(/[A-Za-z]/);
+    expect(describeCourseDeleteError(new Error('Network Error'))).not.toMatch(/[A-Za-z]/);
+  });
+
+  it('tells the user how to unblock a category delete', () => {
+    expect(CATEGORY_DELETE_BLOCKED).toBe(
+      'ลบหมวดไม่ได้ เพราะยังมีรายวิชาอยู่ในหมวดนี้ กรุณาลบหรือย้ายรายวิชาออกก่อน',
+    );
   });
 });

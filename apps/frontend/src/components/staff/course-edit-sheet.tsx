@@ -5,10 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isAxiosError } from 'axios';
 import type { CourseCategory, CourseListItem, Prerequisite } from '@eduanalyze-ai/shared-types';
-import { createCourse, updateCourse } from '@/lib/api/staff';
+import { createCourse, deleteCourse, updateCourse } from '@/lib/api/staff';
 import { describeApiError } from '@/lib/describe-api-error';
 import { OWN_SENTENCE_ONLY, STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
+import { useConfirm } from '@/lib/use-confirm';
 import { useToast } from '@/lib/toast-context';
+import { ApiErrorAlert } from '@/components/admin/api-error-alert';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,8 +31,11 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  COURSE_DELETE_WARNING,
+  courseDeleteTitle,
   courseEditSchema,
   courseToFormValues,
+  describeCourseDeleteError,
   toCreateBody,
   toUpdateBody,
   type CourseEditValues,
@@ -52,8 +57,8 @@ const EMPTY: CourseEditValues = {
 };
 
 // Add a course, or edit the seven fields PATCH /courses/:id accepts. The
-// curriculum is shown and never changed, and there is no way to close or
-// delete a course from here.
+// curriculum is shown and never changed. An existing course can also be removed
+// (DELETE /courses/:id) from the foot of the sheet, after a confirmation.
 export function CourseEditSheet({
   target,
   onClose,
@@ -75,6 +80,9 @@ export function CourseEditSheet({
 }>) {
   const toast = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const form = useForm<CourseEditValues>({
     resolver: zodResolver(courseEditSchema),
     defaultValues: EMPTY,
@@ -84,6 +92,7 @@ export function CourseEditSheet({
   useEffect(() => {
     if (!target) return;
     setServerError(null);
+    setDeleteError(null);
     form.reset(
       target.kind === 'edit'
         ? courseToFormValues(target.course)
@@ -114,6 +123,30 @@ export function CourseEditSheet({
       } else {
         setServerError(describeApiError(error, STAFF_WRITE_ERRORS, undefined, OWN_SENTENCE_ONLY));
       }
+    }
+  }
+
+  // Flow that writes: DELETE /courses/:id. The sheet stays open on any error so
+  // the server's reason (e.g. grades still attached) is read where it happened.
+  async function handleDelete() {
+    if (!editing) return;
+    const confirmed = await confirm({
+      title: courseDeleteTitle(editing),
+      description: COURSE_DELETE_WARNING,
+      confirmLabel: 'ลบรายวิชา',
+    });
+    if (!confirmed) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteCourse(editing.id);
+      toast.success('ลบรายวิชาแล้ว');
+      onChanged();
+      onClose();
+    } catch (error) {
+      setDeleteError(describeCourseDeleteError(error));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -280,6 +313,29 @@ export function CourseEditSheet({
           onChanged={onChanged}
         />
       )}
+
+      {editing && (
+        <section
+          aria-labelledby="course-delete-heading"
+          className="mt-6 space-y-3 rounded-md border border-destructive/40 p-4"
+        >
+          <h3 id="course-delete-heading" className="text-sm font-semibold text-destructive">
+            ลบรายวิชา
+          </h3>
+          <p className="text-sm text-muted-foreground">{COURSE_DELETE_WARNING}</p>
+          {deleteError && <ApiErrorAlert message={deleteError} />}
+          <Button
+            type="button"
+            variant="danger"
+            className="w-full border border-destructive/40 sm:w-auto"
+            disabled={deleting || form.formState.isSubmitting}
+            onClick={handleDelete}
+          >
+            {deleting ? 'กำลังลบ...' : 'ลบรายวิชา'}
+          </Button>
+        </section>
+      )}
+      {confirmDialog}
     </StaffSheet>
   );
 }

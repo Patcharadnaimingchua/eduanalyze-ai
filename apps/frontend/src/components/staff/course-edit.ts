@@ -5,11 +5,13 @@ import type {
   UpdateCourseRequest,
 } from '@eduanalyze-ai/shared-types';
 import { courseSchema } from '@/lib/validation/course.schema';
+import { STAFF_WRITE_ERRORS } from '@/lib/api-error-presets';
+import { describeApiError } from '@/lib/describe-api-error';
 
 // The form for adding and editing a course. The fields are exactly the ones
 // PATCH /courses/:id accepts (UpdateCourseDto = CreateCourseDto without the
-// curriculum); the curriculum is shown, never edited, and a course is never
-// closed from here.
+// curriculum); the curriculum is shown, never edited. Removing a course is a
+// separate, confirmed action (DELETE /courses/:id) at the foot of the sheet.
 export const courseEditSchema = courseSchema.extend({
   categoryId: z.string().uuid('กรุณาเลือกหมวดวิชา'),
 });
@@ -66,3 +68,20 @@ export function toCreateBody(curriculumId: string, values: CourseEditValues): Cr
     isRequired: values.isRequired ?? true,
   };
 }
+
+export const COURSE_DELETE_WARNING =
+  'รายวิชานี้จะถูกนำออกจากหลักสูตร ไม่สามารถลบได้หากมีผลการเรียน อาจารย์ผู้รับผิดชอบ หรือผลลัพธ์การเรียนรู้ผูกอยู่';
+
+export function courseDeleteTitle(course: Pick<CourseListItem, 'code' | 'name'>): string {
+  return `ลบรายวิชา ${course.code} ${course.name}?`;
+}
+
+// DELETE /courses/:id answers a blocked delete with a 409 whose Thai message
+// names what is still attached, so unlike the save errors the server's own
+// sentence is shown (anything not in Thai falls back to a generic one).
+export function describeCourseDeleteError(error: unknown): string {
+  return describeApiError(error, STAFF_WRITE_ERRORS);
+}
+
+export const CATEGORY_DELETE_BLOCKED =
+  'ลบหมวดไม่ได้ เพราะยังมีรายวิชาอยู่ในหมวดนี้ กรุณาลบหรือย้ายรายวิชาออกก่อน';
