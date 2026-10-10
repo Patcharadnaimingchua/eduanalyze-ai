@@ -36,6 +36,32 @@ export class DepartmentController {
     return this.departmentService.findAll();
   }
 
+  // Registered before `:id` so "inactive" is never read as an id.
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List deactivated department records (SUPER_ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Deactivated department records' })
+  findInactive() {
+    return this.departmentService.findInactive();
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Restore a deactivated department (SUPER_ADMIN)' })
+  @ApiResponse({ status: 201, description: 'Department reactivated' })
+  @ApiResponse({ status: 404, description: 'Department not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already active, parent still deactivated, or the key is taken by an active record',
+  })
+  reactivate(@Param('id') id: string) {
+    return this.departmentService.reactivate(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a department by id' })
   @ApiResponse({ status: 200, description: 'Department found' })

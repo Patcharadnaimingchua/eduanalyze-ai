@@ -138,6 +138,22 @@ describe('UserManagementService.updateActiveStatus', () => {
     }
   });
 
+  it('SUPER_ADMIN can reactivate a suspended ADMIN or STAFF, wherever their scopes are', async () => {
+    for (const roles of [['ADMIN'], ['STAFF']] as Role[][]) {
+      const { service, userService } = setup({ target: { roles, scopes: [scope('p9')] } });
+      await service.updateActiveStatus('target', true, requester('sa', ['SUPER_ADMIN']));
+      expect(userService.setActiveStatus).toHaveBeenCalledWith('target', true);
+    }
+  });
+
+  it('nobody reactivates another SUPER_ADMIN through the API', async () => {
+    const { service, userService } = setup({ target: { roles: ['SUPER_ADMIN'], scopes: [] } });
+    await expect(
+      service.updateActiveStatus('target', true, requester('sa', ['SUPER_ADMIN'])),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(userService.setActiveStatus).not.toHaveBeenCalled();
+  });
+
   it('keeps the 404 when the target is outside the ADMIN scope', async () => {
     const { service } = setup({ target: null });
     await expect(

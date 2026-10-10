@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { PrismaClientOrTx } from '../../../prisma/prisma.types';
 import { ProgramService } from '../program/program.service';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
@@ -70,6 +71,40 @@ export class CurriculumService {
     }
 
     return this.prisma.curriculum.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.curriculum.findMany({
+      where: { isActive: false },
+      orderBy: [{ programId: 'asc' }, { version: 'asc' }],
+    });
+  }
+
+  // Comes back closed to registration: a program may have only one curriculum open
+  // at a time, and reopening is a separate, confirmed step on the curriculum itself.
+  async reactivate(id: string) {
+    const curriculum = await this.findOne(id);
+    if (curriculum.isActive) {
+      throw new ConflictException('หลักสูตรนี้เปิดใช้งานอยู่แล้ว');
+    }
+    const program = await this.programService.findOne(curriculum.programId);
+    if (!program.isActive) {
+      throw new ConflictException(
+        `เปิดใช้งานไม่ได้ เพราะสาขา "${program.name}" ยังปิดใช้งานอยู่ ให้เปิดสาขาก่อน`,
+      );
+    }
+    const message = `เปิดใช้งานไม่ได้ เพราะฉบับหลักสูตร "${curriculum.version}" ถูกใช้โดยหลักสูตรอื่นในสาขานี้ที่ใช้งานอยู่แล้ว`;
+    const clash = await this.prisma.curriculum.findFirst({
+      where: { programId: curriculum.programId, version: curriculum.version, isActive: true },
+    });
+    if (clash) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.curriculum.update({
+        where: { id },
+        data: { isActive: true, isOpenForRegistration: false },
+      }),
+      message,
+    );
   }
 
   // Leaf of the org hierarchy, but student profiles and curriculum content

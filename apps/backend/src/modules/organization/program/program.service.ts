@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { PrismaClientOrTx } from '../../../prisma/prisma.types';
 import { DepartmentService } from '../department/department.service';
 import { CreateProgramDto } from './dto/create-program.dto';
@@ -56,6 +57,37 @@ export class ProgramService {
     }
 
     return this.prisma.program.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.program.findMany({ where: { isActive: false }, orderBy: { code: 'asc' } });
+  }
+
+  async reactivate(id: string) {
+    const program = await this.findOne(id);
+    if (program.isActive) {
+      throw new ConflictException('สาขานี้เปิดใช้งานอยู่แล้ว');
+    }
+    const department = await this.departmentService.findOne(program.departmentId);
+    if (!department.isActive) {
+      throw new ConflictException(
+        `เปิดใช้งานไม่ได้ เพราะภาควิชา "${department.name}" ยังปิดใช้งานอยู่ ให้เปิดภาควิชาก่อน`,
+      );
+    }
+    const clashes = await Promise.all([
+      this.prisma.program.findFirst({
+        where: { departmentId: program.departmentId, code: program.code, isActive: true },
+      }),
+      this.prisma.program.findFirst({
+        where: { departmentId: program.departmentId, name: program.name, isActive: true },
+      }),
+    ]);
+    const message = 'เปิดใช้งานไม่ได้ เพราะรหัสหรือชื่อสาขานี้ถูกใช้โดยสาขาอื่นในภาควิชาเดียวกันที่ใช้งานอยู่แล้ว';
+    if (clashes.some(Boolean)) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.program.update({ where: { id }, data: { isActive: true } }),
+      message,
+    );
   }
 
   async remove(id: string) {

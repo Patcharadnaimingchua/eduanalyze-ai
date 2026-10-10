@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, SemesterTerm } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { BulkCreateAcademicYearsDto } from './dto/bulk-create-academic-years.dto';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
@@ -140,6 +141,29 @@ export class AcademicYearService {
       await this.assertYearAvailable(dto.year, id);
     }
     return this.prisma.academicYear.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.academicYear.findMany({
+      where: { isActive: false },
+      orderBy: { year: 'desc' },
+    });
+  }
+
+  async reactivate(id: string) {
+    const academicYear = await this.findOne(id);
+    if (academicYear.isActive) {
+      throw new ConflictException('ปีการศึกษานี้เปิดใช้งานอยู่แล้ว');
+    }
+    const message = `เปิดใช้งานไม่ได้ เพราะปีการศึกษา ${academicYear.year} มีอยู่แล้วและใช้งานอยู่`;
+    const clash = await this.prisma.academicYear.findFirst({
+      where: { year: academicYear.year, isActive: true },
+    });
+    if (clash) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.academicYear.update({ where: { id }, data: { isActive: true } }),
+      message,
+    );
   }
 
   async remove(id: string) {

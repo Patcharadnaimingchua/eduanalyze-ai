@@ -36,6 +36,32 @@ export class ProgramController {
     return this.programService.findAll();
   }
 
+  // Registered before `:id` so "inactive" is never read as an id.
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List deactivated program records (SUPER_ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Deactivated program records' })
+  findInactive() {
+    return this.programService.findInactive();
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Restore a deactivated program (SUPER_ADMIN)' })
+  @ApiResponse({ status: 201, description: 'Program reactivated' })
+  @ApiResponse({ status: 404, description: 'Program not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already active, parent still deactivated, or the key is taken by an active record',
+  })
+  reactivate(@Param('id') id: string) {
+    return this.programService.reactivate(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a program by id' })
   @ApiResponse({ status: 200, description: 'Program found' })

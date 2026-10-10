@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { UpdateFacultyDto } from './dto/update-faculty.dto';
 
@@ -45,6 +46,28 @@ export class FacultyService {
       await this.assertCodeAvailable(dto.code, id);
     }
     return this.prisma.faculty.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.faculty.findMany({ where: { isActive: false }, orderBy: { code: 'asc' } });
+  }
+
+  // Restores the same row (its id, and everything that still points at it) — it is
+  // not a new faculty. Children that were deactivated stay deactivated.
+  async reactivate(id: string) {
+    const faculty = await this.findOne(id);
+    if (faculty.isActive) {
+      throw new ConflictException('คณะนี้เปิดใช้งานอยู่แล้ว');
+    }
+    const message = `เปิดใช้งานไม่ได้ เพราะรหัสคณะ "${faculty.code}" ถูกใช้โดยคณะอื่นที่ใช้งานอยู่แล้ว`;
+    const clash = await this.prisma.faculty.findFirst({
+      where: { code: faculty.code, isActive: true },
+    });
+    if (clash) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.faculty.update({ where: { id }, data: { isActive: true } }),
+      message,
+    );
   }
 
   async remove(id: string) {

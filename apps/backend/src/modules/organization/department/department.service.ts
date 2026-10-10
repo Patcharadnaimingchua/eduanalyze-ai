@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { FacultyService } from '../faculty/faculty.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
@@ -54,6 +55,35 @@ export class DepartmentService {
     }
 
     return this.prisma.department.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.department.findMany({
+      where: { isActive: false },
+      orderBy: { code: 'asc' },
+    });
+  }
+
+  async reactivate(id: string) {
+    const department = await this.findOne(id);
+    if (department.isActive) {
+      throw new ConflictException('ภาควิชานี้เปิดใช้งานอยู่แล้ว');
+    }
+    const faculty = await this.facultyService.findOne(department.facultyId);
+    if (!faculty.isActive) {
+      throw new ConflictException(
+        `เปิดใช้งานไม่ได้ เพราะคณะ "${faculty.name}" ยังปิดใช้งานอยู่ ให้เปิดคณะก่อน`,
+      );
+    }
+    const message = `เปิดใช้งานไม่ได้ เพราะรหัสภาควิชา "${department.code}" ถูกใช้โดยภาควิชาอื่นในคณะนี้ที่ใช้งานอยู่แล้ว`;
+    const clash = await this.prisma.department.findFirst({
+      where: { facultyId: department.facultyId, code: department.code, isActive: true },
+    });
+    if (clash) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.department.update({ where: { id }, data: { isActive: true } }),
+      message,
+    );
   }
 
   async remove(id: string) {

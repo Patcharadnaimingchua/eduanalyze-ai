@@ -36,6 +36,32 @@ export class FacultyController {
     return this.facultyService.findAll();
   }
 
+  // Registered before `:id` so "inactive" is never read as an id.
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List deactivated faculty records (SUPER_ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Deactivated faculty records' })
+  findInactive() {
+    return this.facultyService.findInactive();
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Restore a deactivated faculty (SUPER_ADMIN)' })
+  @ApiResponse({ status: 201, description: 'Faculty reactivated' })
+  @ApiResponse({ status: 404, description: 'Faculty not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already active, parent still deactivated, or the key is taken by an active record',
+  })
+  reactivate(@Param('id') id: string) {
+    return this.facultyService.reactivate(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a faculty by id' })
   @ApiResponse({ status: 200, description: 'Faculty found' })

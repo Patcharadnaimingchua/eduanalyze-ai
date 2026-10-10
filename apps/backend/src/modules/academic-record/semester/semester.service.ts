@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { conflictOnDuplicate } from '../../../common/util/reactivate.util';
 import { AcademicYearService } from '../academic-year/academic-year.service';
 import { CreateSemesterDto } from './dto/create-semester.dto';
 import { UpdateSemesterDto } from './dto/update-semester.dto';
@@ -55,6 +56,35 @@ export class SemesterService {
     }
 
     return this.prisma.semester.update({ where: { id }, data: dto });
+  }
+
+  findInactive() {
+    return this.prisma.semester.findMany({
+      where: { isActive: false },
+      orderBy: [{ academicYearId: 'asc' }, { term: 'asc' }],
+    });
+  }
+
+  async reactivate(id: string) {
+    const semester = await this.findOne(id);
+    if (semester.isActive) {
+      throw new ConflictException('ภาคเรียนนี้เปิดใช้งานอยู่แล้ว');
+    }
+    const academicYear = await this.academicYearService.findOne(semester.academicYearId);
+    if (!academicYear.isActive) {
+      throw new ConflictException(
+        `เปิดใช้งานไม่ได้ เพราะปีการศึกษา ${academicYear.year} ยังปิดใช้งานอยู่ ให้เปิดปีการศึกษาก่อน`,
+      );
+    }
+    const message = 'เปิดใช้งานไม่ได้ เพราะภาคเรียนนี้มีอยู่แล้วในปีการศึกษาเดียวกันและใช้งานอยู่';
+    const clash = await this.prisma.semester.findFirst({
+      where: { academicYearId: semester.academicYearId, term: semester.term, isActive: true },
+    });
+    if (clash) throw new ConflictException(message);
+    return conflictOnDuplicate(
+      this.prisma.semester.update({ where: { id }, data: { isActive: true } }),
+      message,
+    );
   }
 
   async remove(id: string) {

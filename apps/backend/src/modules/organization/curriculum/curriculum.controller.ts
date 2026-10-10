@@ -36,6 +36,32 @@ export class CurriculumController {
     return this.curriculumService.findAll();
   }
 
+  // Registered before `:id` so "inactive" is never read as an id.
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List deactivated curriculum records (SUPER_ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Deactivated curriculum records' })
+  findInactive() {
+    return this.curriculumService.findInactive();
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Restore a deactivated curriculum (SUPER_ADMIN)' })
+  @ApiResponse({ status: 201, description: 'Curriculum reactivated' })
+  @ApiResponse({ status: 404, description: 'Curriculum not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already active, parent still deactivated, or the key is taken by an active record',
+  })
+  reactivate(@Param('id') id: string) {
+    return this.curriculumService.reactivate(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a curriculum by id' })
   @ApiResponse({ status: 200, description: 'Curriculum found' })

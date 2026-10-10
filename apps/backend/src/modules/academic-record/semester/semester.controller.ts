@@ -35,6 +35,32 @@ export class SemesterController {
     return this.semesterService.findAll();
   }
 
+  // Registered before `:id` so "inactive" is never read as an id.
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'List deactivated semester records (SUPER_ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Deactivated semester records' })
+  findInactive() {
+    return this.semesterService.findInactive();
+  }
+
+  @Post(':id/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Restore a deactivated semester (SUPER_ADMIN)' })
+  @ApiResponse({ status: 201, description: 'Semester reactivated' })
+  @ApiResponse({ status: 404, description: 'Semester not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already active, parent still deactivated, or the key is taken by an active record',
+  })
+  reactivate(@Param('id') id: string) {
+    return this.semesterService.reactivate(id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
