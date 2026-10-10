@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { AdminUserSummary } from '@eduanalyze-ai/shared-types';
 import { resendInvitation } from '@/lib/api/user-management';
 import { canResendInvitation, describeResendError } from '@/lib/resend-invitation';
@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // Emails a fresh password-setup link to an account that has not set a password
-// yet. Renders nothing when the API would refuse, so it is never a dead button.
-export function ResendInvitationButton({
+// yet. The hook keeps the confirm dialog mounted outside whatever opens it (the
+// row menu closes and unmounts), and `canResend` is false whenever the API would
+// refuse, so there is never a dead action.
+export function useResendInvitation({
   user,
   requesterId,
   requesterIsSuperAdmin,
@@ -28,9 +30,11 @@ export function ResendInvitationButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!canResendInvitation({ isSelf: user.id === requesterId, requesterIsSuperAdmin, user })) {
-    return null;
-  }
+  const canResend = canResendInvitation({
+    isSelf: user.id === requesterId,
+    requesterIsSuperAdmin,
+    user,
+  });
 
   // Flow that writes: POST /users/:id/resend-invitation
   async function send() {
@@ -49,36 +53,61 @@ export function ResendInvitationButton({
     }
   }
 
+  const dialog: ReactNode = (
+    <ConfirmDialog
+      open={confirming}
+      onOpenChange={setConfirming}
+      title={`ส่งคำเชิญซ้ำให้ ${user.fullName}?`}
+      description={
+        <>
+          <p>ระบบจะส่งอีเมลลิงก์ตั้งรหัสผ่านใหม่ไปที่ {user.email}</p>
+          <p className="mt-2">
+            ลิงก์เดิมที่ยังไม่ได้ใช้จะใช้งานไม่ได้อีก และลิงก์ใหม่หมดอายุใน 1 ชั่วโมง
+          </p>
+        </>
+      }
+      confirmLabel="ส่งอีเมล"
+      confirmVariant="default"
+      busy={busy}
+      onConfirm={() => void send()}
+    />
+  );
+
+  return {
+    canResend,
+    busy,
+    error,
+    dismissError: () => setError(null),
+    request: () => setConfirming(true),
+    dialog,
+  };
+}
+
+export function ResendInvitationButton(
+  props: Readonly<{
+    user: AdminUserSummary;
+    requesterId: string;
+    requesterIsSuperAdmin: boolean;
+    errorPlacement?: 'inline' | 'toast';
+  }>,
+) {
+  const resend = useResendInvitation(props);
+  if (!resend.canResend) return null;
+
   return (
     <span className="inline-flex flex-col items-start gap-2">
       <Button
         type="button"
         variant="outline"
         className="px-3"
-        disabled={busy}
-        aria-label={`ส่งคำเชิญซ้ำให้ ${user.fullName}`}
-        onClick={() => setConfirming(true)}
+        disabled={resend.busy}
+        aria-label={`ส่งคำเชิญซ้ำให้ ${props.user.fullName}`}
+        onClick={resend.request}
       >
         ส่งคำเชิญซ้ำ
       </Button>
-      {error && <ApiErrorAlert message={error} onDismiss={() => setError(null)} />}
-      <ConfirmDialog
-        open={confirming}
-        onOpenChange={setConfirming}
-        title={`ส่งคำเชิญซ้ำให้ ${user.fullName}?`}
-        description={
-          <>
-            <p>ระบบจะส่งอีเมลลิงก์ตั้งรหัสผ่านใหม่ไปที่ {user.email}</p>
-            <p className="mt-2">
-              ลิงก์เดิมที่ยังไม่ได้ใช้จะใช้งานไม่ได้อีก และลิงก์ใหม่หมดอายุใน 1 ชั่วโมง
-            </p>
-          </>
-        }
-        confirmLabel="ส่งอีเมล"
-        confirmVariant="default"
-        busy={busy}
-        onConfirm={() => void send()}
-      />
+      {resend.error && <ApiErrorAlert message={resend.error} onDismiss={resend.dismissError} />}
+      {resend.dialog}
     </span>
   );
 }

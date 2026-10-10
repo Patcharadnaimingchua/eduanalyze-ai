@@ -26,8 +26,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SortHeader } from '@/components/ui/sort-header';
-import { ResendInvitationButton } from '@/components/admin/resend-invitation-button';
-import { UserStatusAction } from '@/components/admin/user-status-action';
+import { useResendInvitation } from '@/components/admin/resend-invitation-button';
+import { UserRowMenu } from '@/components/admin/user-row-menu';
+import { UserManageBlocked, useUserStatusToggle } from '@/components/admin/user-status-action';
+import { userMenuEntries } from '@/lib/user-row-actions';
 
 const ALL = 'ALL';
 const NO_SCOPE = 'NO_SCOPE';
@@ -52,6 +54,20 @@ function StatusChip({ isActive }: Readonly<{ isActive: boolean }>) {
       />
       {isActive ? 'ใช้งานอยู่' : 'ระงับการใช้งาน'}
     </Badge>
+  );
+}
+
+// Explains why "ส่งคำเชิญซ้ำ" exists; written out so it does not rely on colour.
+function StatusColumn({ user }: Readonly<{ user: AdminUserSummary }>) {
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <StatusChip isActive={user.isActive} />
+      {user.mustChangePassword && (
+        <Badge tone="warning" className="whitespace-nowrap">
+          ยังไม่ตั้งรหัสผ่าน
+        </Badge>
+      )}
+    </div>
   );
 }
 
@@ -113,22 +129,21 @@ function DetailLink({
   id,
   className,
   label = 'ดูรายละเอียด',
-  variant = 'outline',
-}: Readonly<{ id: string; className?: string; label?: string; variant?: 'outline' | 'default' }>) {
+  arrow = true,
+}: Readonly<{ id: string; className?: string; label?: string; arrow?: boolean }>) {
   return (
     <Link
       href={`/admin/users/${id}`}
-      className={cn(buttonVariants({ variant }), 'gap-1.5', className)}
+      className={cn(buttonVariants({ variant: 'outline' }), 'gap-1.5', className)}
     >
       {label}
-      <ArrowRight size={14} aria-hidden="true" />
+      {arrow && <ArrowRight size={14} aria-hidden="true" />}
     </Link>
   );
 }
 
-// A Super Admin edits and suspends from the row; an Admin only opens the detail page.
-// One line, right-aligned: edit is the main button, suspend the quieter one. Your own
-// account and other Super Admins cannot be managed here, so they get a small note.
+// An Admin only opens the detail page; a Super Admin gets the fixed pair
+// "แก้ไข" + "⋯" on every manageable row (resend and suspend live in the menu).
 function RowActions({
   user,
   superAdminId,
@@ -141,24 +156,62 @@ function RowActions({
   className?: string;
 }>) {
   if (!superAdminId) return <DetailLink id={user.id} className={className} />;
-  const locked = user.roles.includes('SUPER_ADMIN');
   return (
-    <div
-      className={cn('flex flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end', className)}
-    >
-      {!locked && <DetailLink id={user.id} label="แก้ไข" />}
-      <UserStatusAction
-        user={user}
-        requesterId={superAdminId}
-        compact={!showReason}
-        showReason={showReason}
-      />
-      <ResendInvitationButton
-        user={user}
-        requesterId={superAdminId}
-        requesterIsSuperAdmin
-        errorPlacement={showReason ? 'inline' : 'toast'}
-      />
+    <SuperAdminRowActions
+      user={user}
+      superAdminId={superAdminId}
+      showReason={showReason}
+      className={className}
+    />
+  );
+}
+
+function SuperAdminRowActions({
+  user,
+  superAdminId,
+  showReason,
+  className,
+}: Readonly<{
+  user: AdminUserSummary;
+  superAdminId: string;
+  showReason: boolean;
+  className?: string;
+}>) {
+  const status = useUserStatusToggle(user, superAdminId);
+  const resend = useResendInvitation({
+    user,
+    requesterId: superAdminId,
+    requesterIsSuperAdmin: true,
+    errorPlacement: 'toast',
+  });
+  // Other Super Admins and your own account cannot be edited or suspended here.
+  const locked = user.roles.includes('SUPER_ADMIN');
+
+  const actions = { resend: resend.request, suspend: status.request, reactivate: status.request };
+  const menuItems = userMenuEntries({
+    canResend: resend.canResend,
+    statusBlocked: status.blockReason !== null,
+    isActive: user.isActive,
+  }).map((entry) => ({
+    ...entry,
+    onSelect: actions[entry.key],
+    disabled: status.busy || resend.busy,
+  }));
+
+  return (
+    <div className={cn('flex flex-col gap-1', className)}>
+      <div className="flex items-center gap-2 xl:justify-end">
+        {!locked && (
+          <DetailLink id={user.id} label="แก้ไข" arrow={false} className="flex-1 xl:flex-none" />
+        )}
+        {status.blockReason && <UserManageBlocked reason={status.blockReason} />}
+        <UserRowMenu userName={user.fullName} items={menuItems} />
+      </div>
+      {showReason && status.blockReason && (
+        <span className="text-xs text-muted-foreground">{status.blockReason}</span>
+      )}
+      {status.dialog}
+      {resend.dialog}
     </div>
   );
 }
@@ -174,7 +227,7 @@ export function UserListTable({
   const resolveTargetName = useScopeTargetName();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | typeof ALL>(ALL);
-  const [statusFilter, setStatusFilter] = useState<string>(ALL);
+  const [statusFilter, setStatusFilter] = useState<string>(ACTIVE);
   const [scopeFilter, setScopeFilter] = useState<string>(ALL);
 
   const filtered = useMemo(() => {
@@ -294,7 +347,7 @@ export function UserListTable({
                       <p className="break-words font-semibold text-primary">{user.fullName}</p>
                       <p className="break-all text-sm text-muted-foreground">{user.email}</p>
                     </div>
-                    <StatusChip isActive={user.isActive} />
+                    <StatusColumn user={user} />
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <RoleBadges roles={user.roles} />
@@ -311,11 +364,11 @@ export function UserListTable({
             <div className="hidden xl:block">
               <table className="w-full table-fixed text-left text-sm">
                 <colgroup>
-                  <col className="w-[28%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[22%]" />
+                  <col className="w-[26%]" />
                   <col className="w-[14%]" />
-                  <col />
+                  <col className="w-[22%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-48" />
                 </colgroup>
                 <thead>
                   <tr className="border-b-2 border-slate-200 bg-slate-50 text-xs text-muted-foreground">
@@ -361,7 +414,7 @@ export function UserListTable({
                         <ScopeBadges user={user} resolveTargetName={resolveTargetName} />
                       </td>
                       <td className="px-3 py-3">
-                        <StatusChip isActive={user.isActive} />
+                        <StatusColumn user={user} />
                       </td>
                       <td className="px-3 py-2">
                         <RowActions user={user} superAdminId={superAdminId} />

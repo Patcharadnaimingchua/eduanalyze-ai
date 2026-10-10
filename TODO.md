@@ -223,6 +223,7 @@ Three commits delivered (2026-09-30):
 - `POST /users/:id/resend-invitation` ใช้ทางเดียวกับตอนสร้างผู้ใช้ (`passwordResetService.create` ซึ่งลบโทเค็นเก่าที่ยังไม่ใช้ + `sendPasswordSetupEmail(..., 'new-account')`) · เงื่อนไข "ยังไม่ตั้งรหัสผ่าน" = `mustChangePassword` (ไม่เพิ่มฟิลด์/ไม่มี migration) → ตั้งแล้วได้ 409 ไทย · ห้ามส่งให้ตัวเอง (403) · SA ส่งให้ใครก็ได้ยกเว้นตัวเอง, ADMIN เฉพาะ STAFF-only ในขอบเขต (นอกขอบเขต = 404 ตามแบบเดียวกับ endpoint อื่น) · throttle 3/นาที (ตามไอพี ตามค่ากลางของ `ThrottlerGuard`) · ส่งอีเมลไม่ได้ = 503 ข้อความไทย · ไม่ log โทเค็น/ลิงก์
 - หน้า `/admin/users` (ตาราง/การ์ด, เฉพาะ SA) และ `/admin/users/[id]` มีปุ่ม "ส่งคำเชิญซ้ำ" แสดงเฉพาะเมื่อ API จะรับ (`lib/resend-invitation.ts` `canResendInvitation`)
 - **ยังค้างจากชุด 4.1:** `POST /auth/accept-invitation` + `PendingInvitation` ไม่มีผู้ใช้แล้ว (ไม่มีหน้าจอ และ `resend-invitation` เลิกใช้) ต้องตัดสินว่าจะลบหรือเก็บ · ยังไม่ได้ลองส่งอีเมลจริง end-to-end (เทสต์ใช้ mock ทั้งหมด) · throttle ตามไอพี ไม่ใช่ตามผู้ขอ
+- **ลบบัญชีถาวร (ยังไม่ทำ):** ลบถาวรเฉพาะบัญชีที่ไม่มีข้อมูลผูก (backend + นโยบายข้อมูลส่วนบุคคล) — ตอนนี้มีแค่ระงับ/เปิดใช้งาน
 - **ยังไม่ทำ (ชุด 4 ที่เหลือ):** 4.2 ยืนยันอีเมลตอนสมัคร · 4.3 ธง Google login ใน Docker (`NEXT_PUBLIC_ENABLE_GOOGLE_LOGIN` ใส่ผ่าน build arg ไม่ได้) · 4.4 PDPA
 
 **4.2 ยืนยันอีเมลตอนสมัคร (ถ้าเอา)**
